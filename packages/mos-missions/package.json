@@ -1,0 +1,22 @@
+{
+  "name": "@mos/missions",
+  "version": "0.1.0",
+  "description": "MOS v2.0 Missions / Objectives domain — CORE-005 (structured objectives, mission-specific versioned reward specs, draft→active→completed→archived lifecycle)",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "@mos/identity": "workspace:*"
+  }
+}
