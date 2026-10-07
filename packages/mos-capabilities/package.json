@@ -1,0 +1,27 @@
+{
+  "name": "@mos/capabilities",
+  "version": "0.1.0",
+  "description": "MOS v2.0 capability registry (CAP-001) — CapabilityRegistry port + in-memory adapter over the @mos/contracts Capability contract, with the architecture §5 seed capability catalog as test fixtures.",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}

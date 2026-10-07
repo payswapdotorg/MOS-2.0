@@ -807,6 +807,19 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/mos-capabilities:
+    dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   packages/mos-content:
     dependencies:
       '@mos/identity':
@@ -815,6 +828,24 @@ importers:
       '@mos/rights':
         specifier: workspace:*
         version: link:../mos-rights
+
+  packages/mos-contracts: {}
+
+  packages/mos-engines:
+    dependencies:
+      '@mos/capabilities':
+        specifier: workspace:*
+        version: link:../mos-capabilities
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
 
   packages/mos-identity: {}
 
