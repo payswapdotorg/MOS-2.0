@@ -100,5 +100,7 @@
     "openmuse",
     "code-oss"
   ],
-  "revision": "2.0.0"
+  "revision": "2.0.0",
+  "architectureChangeRecord": "spec/architecture-change-records/0001-mos-v2-foundation.md",
+  "researchBasis": "docs/research/MOS-OSS-DESIGN-BASIS-v2.0.md"
 }
