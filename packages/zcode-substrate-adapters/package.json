@@ -1,0 +1,22 @@
+{
+  "name": "@mos/substrate-adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MOS v2.0 substrate adapter firewall (BOOT-003): narrow MOS-owned ports over the ZCode substrate plus the boundary enforcement harness rules anchor.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "@zcode/rpc": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}

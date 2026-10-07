@@ -1341,6 +1341,19 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/zcode-substrate-adapters:
+    dependencies:
+      '@zcode/rpc':
+        specifier: workspace:*
+        version: link:../rpc
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
 packages:
 
   7zip-bin@5.2.0:
