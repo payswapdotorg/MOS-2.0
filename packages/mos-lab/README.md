@@ -1,63 +1,91 @@
 # @mos/lab
 
-MOS v2.0 **Marketing Lab** package — `LAB-001` **SCAFFOLD ONLY** (Wave 1, W1-A).
+MOS v2.0 **Marketing Lab** package — `LAB-001` (reference-first niche corpus runtime) +
+`LAB-002` (multimodal feature bundles) + `LAB-003` (Idea Graph), delivered in Wave 2 (W2-A),
+on top of the W1-A types-only scaffold.
 
 Module registry entry: `lab → packages/mos-lab`, owner `worker-a`, dependencies
 `[contracts, content, production, agents, capabilities, engines, jobs]`.
 
-## Status: scaffold — no runtime
+## Status: corpus / features / idea-graph runtime (in-memory scaffolds)
 
-`LAB-001` ("Reference-First Niche Corpus", deps `CORE-004 + CORE-005`) is grounded in this wave
-by pinning the corpus **vocabulary only**. This package contains:
+All shared vocabulary is imported from **`@mos/contracts`** (W2-A / RECONCILE-A — the W1-A
+scaffold's `@mos/content` re-export path is retired). The package now contains:
 
-- `src/contracts/corpus.ts` — `ReferenceDocument` (id, version, tenantId, sourceRefs,
-  acquiredAt, **rightsRef**, provenanceRef, contentDigest, modality), `CorpusVersion`
-  (immutable snapshot), `CorpusIngestPort` / `CorpusQueryPort` (future runtime boundaries),
-  draft/input/error types;
-- `src/index.ts` — types-only public surface (test-pinned: the compiled package exports NO
-  runtime API);
-- `src/contracts/corpus.test.ts` — type-level invariant tests (constructibility, exact field
-  sets, full modality vocabulary, types-only emission).
+- **LAB-001 — reference-first niche corpus**
+  - `src/contracts/corpus.ts` — `ReferenceDocument` (id, version, tenantId, niche, platform,
+    modality, **`artifact: ArtifactRef`** — a reference to one acquired content artifact, never
+    content bytes, sourceRefs, acquiredAt, **rightsRef**, provenanceRef), `CorpusVersion`
+    (immutable append-only snapshot), `CorpusQuery` (niche / platform / modality / inclusive
+    acquisition time window), `RightsCheckPort` (the injected acquisition rights gate) and the
+    **`CorpusStore`** port (6 methods ≤ 12 policy budget: ingest, get, query, snapshot,
+    get-version, list-versions);
+  - `src/adapters/in-memory-corpus-store.ts` — in-memory `CorpusStore` (disclosed scaffold).
 
-There is deliberately **no corpus storage, no ingest runtime, no query engine, no simulator**
-here — the reference-first corpus implementation (acquisition pipelines, rights-gated ingest,
-versioned snapshots at scale) and everything built on top of it (LAB-002 multimodal feature
-bundles, LAB-003 idea graph, LAB-004 social simulator, LAB-005+ dynamics) are **later waves**.
-This scaffold exists so those waves extend a pinned contract instead of inventing one.
+- **LAB-002 — multimodal feature bundles**
+  - `src/contracts/feature-bundle.ts` — `FeatureDescriptor` (feature kind + **computed
+    `ArtifactRef` + scalar manifest metadata — raw vectors are not representable by type**),
+    `FeatureBundle` (versioned, attach/detach append-only), `FeatureBundleRegistry` port
+    (5 methods), and `FeatureComputationPort` (**declaration only**: the capability contract
+    each feature kind requires, e.g. `semantic_video_relevance` from the
+    `@mos/capabilities` §5 seed catalog — no engine is selected or invoked here);
+  - `src/adapters/in-memory-feature-bundle-registry.ts` + `static-feature-computation.ts`.
 
-## Design notes encoded in the sketch
+- **LAB-003 — Idea Graph**
+  - `src/contracts/idea-graph.ts` — `IdeaNode` (statement, embedding as artifact ref,
+    **mandatory `derivation` to corpus documents / feature bundles**, provenanceRef),
+    `IdeaEdge` (typed relations `supports | contradicts | derives-from | combines-with |
+    competes-with`, signed weight in [-1, 1], versioned), `IdeaGraph` port (8 methods:
+    node add/get/revise, edge add/get/update, neighborhood query, derivation-chain tracing)
+    and `DerivationStep` (idea → feature-bundle → corpus-document → acquired artifact ref);
+  - `src/adapters/in-memory-idea-graph.ts` — in-memory `IdeaGraph` (disclosed scaffold).
 
-- **Rights are structural, not incidental**: `ReferenceDocument.rightsRef` is a REQUIRED field —
-  a document without an explicit rights grant cannot exist in the corpus model at all. The
-  ingest port's error model carries `no-explicit-grant` (the CORE-003/CORE-004 rule: URL
-  accessibility never implies rights). `sourceRefs` describe provenance of acquisition; the
-  rights grant is the only rights authority.
-- **Object-store discipline**: documents are pinned by `contentDigest`
-  (`sha256:<hex>`, aligned with `@mos/content`'s `ContentDigest`); bytes live in object storage
-  and are never inlined into corpus records.
-- **Immutable snapshots**: a `CorpusVersion` is a frozen membership snapshot; changes produce a
-  new version, mirroring CORE-004's artifact version chains. `LabScenario.corpusVersion` (frozen
-  contracts YAML) points at exactly this kind of versioned snapshot so simulations are
-  reproducible.
-- **Async ports**: `CorpusIngestPort`/`CorpusQueryPort` are `Promise`-returning because real
-  ingest crosses storage/process boundaries — the same shape as `@mos/content`'s async
-  `ArtifactStorage` port.
-- **Dependency hygiene**: types come from `@mos/content` (a declared registry dependency that
-  exists in this wave, which re-exports the shared id/ref vocabulary), not from
-  `@mos/identity`/`@mos/rights` directly. The remaining declared dependencies (`production`,
-  `agents`, `capabilities`, `engines`, `jobs`) bind as those packages land.
+- `src/index.ts` — types + four runtime factories
+  (`createInMemoryCorpusStore`, `createStaticFeatureComputationPort`,
+  `createInMemoryFeatureBundleRegistry`, `createInMemoryIdeaGraph`).
 
-## LAB rules honored (architecture policy `specialRules.lab`)
+## Design rules encoded here
 
-- no direct publication — nothing here publishes anywhere (no runtime at all);
+- **Reference-first**: corpus documents only ever reference acquired content artifacts
+  (`@mos/contracts` `ArtifactRef` — versioned, digest-pinned, object-store-backed); no
+  fabricated content, no bytes in the control plane (AGENTS.md "Media").
+- **Rights are structural, not incidental**: ingestion passes the injected
+  `RightsCheckPort` and fails closed with `no-explicit-grant` / `rights-grant-revoked` /
+  `rights-grant-expired` / `rights-grant-tenant-mismatch`. URL/storageRef accessibility never
+  implies rights. The port is lab-owned and STRUCTURAL because the module registry does not
+  list `rights` among lab's dependencies — a composition-root adapter over `@mos/rights`'
+  `RightsRepository.getRights` satisfies the shape (tests use a disclosed double).
+- **Append-only history**: corpus snapshots, feature bundle versions (attach → update →
+  detach) and idea node/edge revisions are versioned records; nothing is mutated in place and
+  nothing is hard-deleted.
+- **Ideas are derived artifacts**: an idea without derivation refs is rejected
+  (`empty-derivation`); every derivation ref must resolve in the tenant corpus
+  (`unknown-derivation-ref`); `traceDerivation` walks ideas → bundles → documents → artifact
+  refs, following `derives-from` edges transitively.
+- **Tenant scoping**: every record carries `tenantId`; every operation names its
+  `TenantScope`; unknown and cross-tenant are indistinguishable on reads (no existence leak).
+- **Capabilities, not engines**: feature computation requirements are DECLARED
+  (`CapabilityRequirement` from `@mos/contracts`, pinned to exact versions); engines are
+  resolved through the Engine Registry (ENG-001/ENG-002) in a later wave — the lab never
+  invokes engines or providers directly.
+
+## Lab rules honored (architecture policy `specialRules.lab`)
+
+- no direct publication — nothing here publishes anywhere;
 - no direct provider calls — no provider SDK imports (boundary-check enforced);
-- counterfactuals labeled / delayed-mode leakage prevention — future simulator concerns, to be
-  built on these versioned, reproducible corpus snapshots.
+- counterfactuals labeled / delayed-mode leakage prevention — future simulator concerns
+  (LAB-004+), to be built on these versioned, reproducible corpus snapshots
+  (`LabScenario.corpusVersion` in the frozen contracts YAML points at exactly this snapshot
+  kind).
 
 ## Disclosed limitations
 
-- Types-only: no storage, ingest, query, or calibration runtime (by design for this wave).
-- `CorpusIngestPort`/`CorpusQueryPort` are declared but UNIMPLEMENTED — implementors arrive in
-  later waves and must honor the documented error model (including the rights gate).
-- The `@mos/contracts` reconciliation (CORE-001, Wave 2) applies to these types like every
-  other MOS domain package.
+- In-memory adapters are ephemeral scaffolds (no durable persistence; central schema is
+  TL-owned) — a durable adapter replaces them without touching the ports.
+- `RightsCheckPort` is exercised by a DISCLOSED STRUCTURAL TEST DOUBLE in tests; the real
+  `@mos/rights` adapter is composition-root wiring (TL-owned).
+- `FeatureComputationPort` is a declaration carrier only — no engine binding, no computation.
+- `@mos/capabilities` is imported for the §5 seed catalog ids used as test fixtures
+  (registry-declared dependency); the seed catalog makes no engine claims.
+- No idea/edge hard-delete by design (versioned corrections only); neighborhood queries
+  return the induced subgraph within the hop radius.

@@ -5,8 +5,10 @@
  * `createInMemoryMissionRepository`. No helper constructors, error classes, or
  * internals are exposed.
  *
- * Cross-package usage note: this package imports `@mos/identity` type-only
- * (`TenantId`, `TenantScope`); runtime wiring happens at the composition root.
+ * Cross-package usage note (W2-A / RECONCILE-A): this package imports the shared
+ * vocabulary type-only from `@mos/contracts` (`TenantId`, `TenantScope`,
+ * `StrategyRef`, and `MissionId` = the contracts `MissionRef`); runtime wiring
+ * happens at the composition root.
  */
 
 export type {
@@ -27,7 +29,7 @@ export type {
   MissionRepositoryError,
   MissionRepositoryErrorCode,
 } from './ports/mission-repository.js';
-export type { TenantId, TenantScope } from '@mos/identity';
+export type { TenantId, TenantScope } from '@mos/contracts';
 export type { InMemoryMissionRepositoryOptions } from './adapters/in-memory-mission-repository.js';
 
 export { createInMemoryMissionRepository } from './adapters/in-memory-mission-repository.js';

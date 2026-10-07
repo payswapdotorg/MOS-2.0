@@ -822,6 +822,9 @@ importers:
 
   packages/mos-content:
     dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
       '@mos/identity':
         specifier: workspace:*
         version: link:../mos-identity
@@ -847,22 +850,32 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
-  packages/mos-identity: {}
+  packages/mos-identity:
+    dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
 
   packages/mos-lab:
     dependencies:
-      '@mos/content':
+      '@mos/capabilities':
         specifier: workspace:*
-        version: link:../mos-content
+        version: link:../mos-capabilities
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
 
   packages/mos-missions:
     dependencies:
-      '@mos/identity':
+      '@mos/contracts':
         specifier: workspace:*
-        version: link:../mos-identity
+        version: link:../mos-contracts
 
   packages/mos-rights:
     dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
       '@mos/identity':
         specifier: workspace:*
         version: link:../mos-identity

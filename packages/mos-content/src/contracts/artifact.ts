@@ -1,83 +1,63 @@
-import type { TenantId } from '@mos/identity';
-import type { ProvenanceRef, RightsRef } from '@mos/rights';
+import type {
+  Artifact as ContractsArtifact,
+  ArtifactId,
+  ArtifactRef,
+  ArtifactType,
+  ContentDigest,
+  CreationMethod as ContractsCreationMethod,
+  ProvenanceRef,
+  RightsRef,
+  StorageRef,
+  TenantId,
+  Version,
+} from '@mos/contracts';
 
 /**
  * Local contract types for the MOS content domain (CORE-004).
  *
- * Aligned field-for-field to `spec/contracts/core-contracts-v2.0.yaml` (FROZEN):
+ * RECONCILED (W2-A / RECONCILE-A): the shared artifact vocabulary —
+ * `ArtifactId`, `ArtifactType`, `StorageRef`, `ContentDigest`, `Version` and
+ * the whole `ArtifactRef` reference record — is imported from
+ * `@mos/contracts` (CORE-001 canonical authority, aligned field-for-field to
+ * `spec/contracts/core-contracts-v2.0.yaml`):
  *
  * - `Artifact` required: [id, version, tenantId, type, digest, storageRef,
  *   provenanceRef, rightsRef, lineage, creationMethod]
  * - `ArtifactRef` required: [artifactId, version, tenantId, digest, type,
  *   storageRef, rightsRef, provenanceRef]
  *
- * `@mos/contracts` (CORE-001) is not in this branch base; types are defined
- * locally and switch to `@mos/contracts` at TL reconciliation (Wave 2).
+ * `ArtifactRef` — the cross-package currency of the production system — is
+ * now the CONTRACTS type itself (type identity, not a structural twin), so
+ * artifact references flow between content, lab, engines and studio packages
+ * without adapter mapping.
+ *
+ * `Artifact` extends the contracts base locally: content's
+ * `CreationMethod` vocabulary (architecture §6 conceptual chain: reference →
+ * acquisition → raw capture → transform → composition) is a SUPERSET of the
+ * contracts projection's vocabulary, and the frozen YAML pins only the field
+ * NAME (not the value vocabulary), so the local union includes the contracts
+ * base and adds the content-domain provenance methods. Unifying the two
+ * vocabularies is a Tech-Lead contracts decision, disclosed in the W2-A
+ * report.
  */
 
-declare const artifactIdBrand: unique symbol;
-declare const artifactTypeBrand: unique symbol;
-declare const storageRefBrand: unique symbol;
-declare const contentDigestBrand: unique symbol;
-
-/** Unique identifier of an artifact (stable across all its versions). */
-export type ArtifactId = string & { readonly [artifactIdBrand]: true };
-
 /**
- * Artifact content type — a MIME type or MOS type token (e.g.
- * `audio/wav`, `video/mp4`, `text/plain`, `graph/conversation`).
- */
-export type ArtifactType = string & { readonly [artifactTypeBrand]: true };
-
-/**
- * Opaque reference to an object-store location (e.g.
- * `mem://tenant/digest`, `s3://bucket/key`). Artifacts carry ONLY this
- * reference — large media bytes never travel through the control plane
- * (architecture §6, policy `forbidMediaOverControlRpc`).
- */
-export type StorageRef = string & { readonly [storageRefBrand]: true };
-
-/**
- * Content digest of the stored bytes: `sha256:<lowercase-hex>` — the same
- * format produced by the substrate object-storage adapters
- * (`@mos/substrate-adapters`), so digest verification is interchangeable
- * across storage backends.
- */
-export type ContentDigest = string & { readonly [contentDigestBrand]: true };
-
-/**
- * How an artifact came to exist (architecture §6 conceptual chain:
- * reference → acquired input → raw capture → transform → composition).
- * Vocabulary shared with `@mos/rights`' `ProvenanceCreationMethod`; unified
- * at CORE-001 reconciliation.
+ * How an artifact came to exist. The contracts base vocabulary (CORE-001)
+ * plus the content-domain provenance methods shared with `@mos/rights`'
+ * `ProvenanceCreationMethod` (architecture §6 conceptual chain).
  */
 export type CreationMethod =
+  | ContractsCreationMethod
   | 'reference'
   | 'acquisition'
   | 'raw-capture'
   | 'transform'
-  | 'composition'
   | 'engine-output'
   | 'human-contribution';
 
 /**
- * Reference to a specific artifact version — the frozen `ArtifactRef`
- * contract, field-for-field.
- */
-export interface ArtifactRef {
-  readonly artifactId: ArtifactId;
-  readonly version: number;
-  readonly tenantId: TenantId;
-  readonly digest: ContentDigest;
-  readonly type: ArtifactType;
-  readonly storageRef: StorageRef;
-  readonly rightsRef: RightsRef;
-  readonly provenanceRef: ProvenanceRef;
-}
-
-/**
- * An immutable artifact record — the frozen `Artifact` contract,
- * field-for-field.
+ * An immutable artifact record — the frozen `Artifact` contract with the
+ * content-domain creation-method vocabulary.
  *
  * Immutability is BY CONSTRUCTION: the repository port exposes no update or
  * delete operation. A new version of an artifact is a NEW record (same `id`,
@@ -86,20 +66,22 @@ export interface ArtifactRef {
  * capture is never silently treated as final — it enters the graph as a
  * `raw-capture` record that later steps explicitly build upon.
  */
-export interface Artifact {
-  readonly id: ArtifactId;
+export interface Artifact extends Omit<ContractsArtifact, 'creationMethod'> {
   /** Version of this record within the artifact's version chain (starts at 1). */
-  readonly version: number;
-  readonly tenantId: TenantId;
-  readonly type: ArtifactType;
-  readonly digest: ContentDigest;
-  readonly storageRef: StorageRef;
-  readonly provenanceRef: ProvenanceRef;
-  readonly rightsRef: RightsRef;
-  /** Parent artifact refs (lineage; empty only for root records). */
-  readonly lineage: readonly ArtifactRef[];
+  readonly version: Version;
+  /** How this artifact came to exist (content-domain vocabulary). */
   readonly creationMethod: CreationMethod;
 }
 
 /** Re-exported for downstream contract definitions (CORE-004 consumers). */
-export type { ProvenanceRef, RightsRef, TenantId };
+export type {
+  ArtifactId,
+  ArtifactRef,
+  ArtifactType,
+  ContentDigest,
+  ProvenanceRef,
+  RightsRef,
+  StorageRef,
+  TenantId,
+  Version,
+};

@@ -17,6 +17,7 @@
     "lint": "oxlint"
   },
   "dependencies": {
+    "@mos/contracts": "workspace:*",
     "@mos/identity": "workspace:*",
     "@mos/rights": "workspace:*"
   }

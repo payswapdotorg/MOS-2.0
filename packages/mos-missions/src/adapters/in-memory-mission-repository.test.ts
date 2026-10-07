@@ -4,10 +4,11 @@ import { test } from 'node:test';
 import { createInMemoryMissionRepository } from './in-memory-mission-repository.js';
 import type { MissionRepository } from '../ports/mission-repository.js';
 import type { MissionId, Mission, MissionRewardSpec } from '../domain/mission.js';
-import type { TenantId } from '@mos/identity';
+import type { StrategyRef, TenantId } from '@mos/contracts';
 
 const tenantId = (value: string): TenantId => value as TenantId;
 const missionId = (value: string): MissionId => value as MissionId;
+const strategyRef = (value: string): StrategyRef => value as StrategyRef;
 
 const createDeterministicClock = (): (() => string) => {
   const start = Date.UTC(2026, 0, 1);
@@ -56,7 +57,7 @@ const createInput = (overrides: { id?: string; tenant?: string } = {}) => ({
   id: missionId(overrides.id ?? 'mission-1'),
   objective,
   rewardSpec: rewardSpec(1),
-  strategyRefs: ['strategy://baseline-noop', 'strategy://clip-compilation'],
+  strategyRefs: [strategyRef('strategy://baseline-noop'), strategyRef('strategy://clip-compilation')],
 });
 
 const expectMission = (result: Mission | { error: string }): Mission => {
@@ -316,7 +317,7 @@ test('strategy refs default to empty and are preserved when provided', () => {
       id: missionId('mission-strat'),
       objective,
       rewardSpec: rewardSpec(1),
-      strategyRefs: ['strategy://x'],
+      strategyRefs: [strategyRef('strategy://x')],
     }),
   );
   assert.deepEqual(withRefs.strategyRefs, ['strategy://x']);

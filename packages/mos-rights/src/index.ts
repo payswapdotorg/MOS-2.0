@@ -38,7 +38,7 @@ export type {
   RightsRepositoryError,
   RightsRepositoryErrorCode,
 } from './ports/rights-repository.js';
-export type { TenantScope } from '@mos/identity';
+export type { TenantScope } from '@mos/contracts';
 export type {
   RightsDenialReason,
   RightsEvaluationRequest,

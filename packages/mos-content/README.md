@@ -9,12 +9,14 @@ Module registry entry: `content → packages/mos-content`, owner `worker-a`, dep
 
 Wave-1 implementation of the artifact authority: immutable versioned artifacts, the
 lineage-preserving artifact graph, an in-package object-storage port, and rights-gated
-registration. `@mos/contracts` (CORE-001, Worker B, same wave) is not in this branch base, so
-contract-shaped types are defined **locally** and aligned field-for-field to
-`spec/contracts/core-contracts-v2.0.yaml` (the frozen authority). Imports switch to
-`@mos/contracts` at TL reconciliation (Wave 2). `@mos/identity` and `@mos/rights` are imported
-**type-only** (branded ids, refs, and the `RightsRepository` shape used by the injected rights
-gate) — both exist on this branch per the module registry dependency chain.
+registration. RECONCILED in Wave 2 (W2-A / RECONCILE-A): the shared artifact vocabulary —
+`ArtifactId`, `ArtifactType`, `StorageRef`, `ContentDigest`, `Version`, `TenantId`, `TenantScope`,
+`RightsRef`, `ProvenanceRef` and the whole `ArtifactRef` reference record — is imported from
+`@mos/contracts` (CORE-001 canonical authority), giving artifact references TRUE type identity
+across content, lab, engines and studio packages. `Artifact` extends the contracts base locally
+with the content-domain `CreationMethod` vocabulary. `@mos/identity` and `@mos/rights` are still
+imported **type-only** (ids and the `RightsRepository` shape used by the injected rights gate)
+per the module registry dependency chain.
 
 ## What exists
 
@@ -31,7 +33,7 @@ Tests (`node:test`, zero test-framework dependencies): contract-shape exactness 
 version-chain immutability, lineage transitivity (a→b→c, diamonds), rights gate, tenant scoping,
 object-store refs, storage double behavior.
 
-## Contract alignment (CORE-001 reconciliation, pending Wave 2)
+## Contract alignment (CORE-001 reconciliation: DONE in W2-A)
 
 `spec/contracts/core-contracts-v2.0.yaml`:
 
@@ -43,8 +45,10 @@ object-store refs, storage double behavior.
 | `EngineJob.inputArtifactRefs` / `EngineResult.outputArtifactRefs` | `ArtifactRef` shape |
 | `StudioArtifactPackage.raw/intermediate/final` stages | artifacts enter as `raw-capture` records and are never silently final (§6) |
 
-`CreationMethod` is a provisional local vocabulary shared with `@mos/rights`'
-`ProvenanceCreationMethod`; it unifies with `@mos/contracts` at CORE-001 reconciliation.
+`CreationMethod` is a local superset of the contracts `CreationMethod` vocabulary: the frozen
+YAML pins only the field NAME, so the content-domain provenance methods (`reference`,
+`acquisition`, `raw-capture`, `transform`, `human-contribution`) extend the contracts base;
+unifying the two vocabularies is a disclosed TL decision (see the W2-A report).
 
 ## Public surface budget
 

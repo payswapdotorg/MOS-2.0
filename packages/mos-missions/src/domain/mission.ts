@@ -1,4 +1,4 @@
-import type { TenantId } from '@mos/identity';
+import type { MissionRef, StrategyRef, TenantId } from '@mos/contracts';
 
 /**
  * Mission domain types (CORE-005).
@@ -6,15 +6,20 @@ import type { TenantId } from '@mos/identity';
  * Aligned to the architecture, not to a single frozen contract (the contracts
  * YAML has no `Mission` record; missions are referenced BY other contracts —
  * `RealExperimentBinding.missionRef`, `LabScenario`-adjacent flows — and the
- * reward model is specified by architecture §21). `@mos/contracts` (CORE-001)
- * is not in this branch base; types are defined locally and switch to
- * `@mos/contracts` at TL reconciliation (Wave 2).
+ * reward model is specified by architecture §21).
+ *
+ * RECONCILED (W2-A / RECONCILE-A): `TenantId` / `TenantScope` and the
+ * `StrategyRef` vocabulary are imported from `@mos/contracts` (CORE-001
+ * canonical authority). `MissionId` — the missions-owned record identifier —
+ * is an ALIAS of the contracts `MissionRef` opaque reference, following the
+ * same ref-equals-record-id resolution model `@mos/rights` uses for
+ * `RightsRef`: a `RealExperimentBinding.missionRef` value from any package
+ * resolves directly through `MissionRepository.getMission` with no adapter
+ * mapping.
  */
 
-declare const missionIdBrand: unique symbol;
-
 /** Unique identifier of a mission (stable across all its record versions). */
-export type MissionId = string & { readonly [missionIdBrand]: true };
+export type MissionId = MissionRef;
 
 /** Mission lifecycle: strict forward chain (architecture/backlog CORE-005). */
 export type MissionStatus = 'draft' | 'active' | 'completed' | 'archived';
@@ -125,7 +130,7 @@ export interface Mission {
   /** Mission-specific, independently versioned reward spec (§21). */
   readonly rewardSpec: MissionRewardSpec;
   /** References to strategies associated with the mission (opaque refs). */
-  readonly strategyRefs: readonly string[];
+  readonly strategyRefs: readonly StrategyRef[];
   readonly status: MissionStatus;
   /** ISO-8601 timestamp of creation. */
   readonly createdAt: string;

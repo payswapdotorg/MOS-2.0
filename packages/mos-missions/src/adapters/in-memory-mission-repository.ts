@@ -1,4 +1,4 @@
-import type { TenantScope } from '@mos/identity';
+import type { TenantScope } from '@mos/contracts';
 import type { Mission, MissionId, MissionRewardSpec } from '../domain/mission.js';
 import type {
   CreateMissionInput,

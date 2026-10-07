@@ -6,10 +6,12 @@ Module registry entry: `identity → packages/mos-identity`, owner `worker-a`, d
 
 ## Status
 
-Wave-0 groundwork scaffold. `@mos/contracts` (CORE-001, Wave 1) does **not** exist yet, so this package
-currently depends on nothing at runtime. **Reconciliation with `@mos/contracts` happens when CORE-001
-lands (Wave 1)** — see the mapping table below. Until then the types here are the provisional
-identity vocabulary, not frozen contract types.
+Wave-0 groundwork, RECONCILED in Wave 2 (W2-A / RECONCILE-A): the shared `TenantId` /
+`WorkspaceId` brands and `TenantScope` are imported (type-only) from `@mos/contracts`
+(CORE-001 — the canonical value-type authority) and re-exported from this package so
+existing import sites keep resolving. The identity-owned record ids (`IdentityId`,
+`MembershipId`) and the domain records stay local — `@mos/contracts` models identity
+principals only as the opaque `IdentityRef`.
 
 ## What exists
 
@@ -61,10 +63,12 @@ Public method budget (architecture policy `maxPublicMethods: 12`): the port expo
   imports in runtime code (tests use `node:test` / `node:assert` builtins). Identifiers are
   caller-supplied; the clock is injectable.
 
-## CORE-001 reconciliation mapping (pending, Wave 1)
+## CORE-001 reconciliation mapping (DONE, W2-A)
 
-When `@mos/contracts` (CORE-001) lands, the contract fields below are the consumers of this
-package's types (source: `spec/contracts/core-contracts-v2.0.yaml`):
+The shared branded types were reconciled with `@mos/contracts` in W2-A (RECONCILE-A):
+`TenantId` / `WorkspaceId` / `TenantScope` are now the `@mos/contracts` types themselves
+(type identity, not a structural twin). The contract fields below are the consumers of
+this package's types (source: `spec/contracts/core-contracts-v2.0.yaml`):
 
 | Contract field | Identity type |
 |---|---|
@@ -76,9 +80,9 @@ package's types (source: `spec/contracts/core-contracts-v2.0.yaml`):
 | `RealExperimentBinding.*Ref` chain | scope/refs carrying `TenantId` (CORE-005 / BRIDGE) |
 | every contract's `id` + `version` | aligned with the explicit-version discipline here |
 
-Reconciliation is a Tech-Lead-owned decision at CORE-001 merge time: identity branded types will
-either be adopted by / re-exported from `@mos/contracts`, or mapped through an explicit adapter.
-This package must not be treated as contract-frozen until that reconciliation is recorded.
+`IdentityId` / `MembershipId` and the domain records stay identity-owned: `@mos/contracts`
+models identity principals only as the opaque `IdentityRef`, so these are package-specific,
+not true duplicates (per the W2-A assignment rule).
 
 ## Verification (commands run green in this repo)
 

@@ -343,7 +343,7 @@ test('unknown parents and cross-tenant parents are rejected', () => {
       lineage: [
         {
           artifactId: artifactId('art-ghost'),
-          version: 1,
+          version: 1 as ArtifactRef['version'],
           tenantId: tenantId('tenant-a'),
           digest: digest('ff'),
           type: artifactType('video/mp4'),

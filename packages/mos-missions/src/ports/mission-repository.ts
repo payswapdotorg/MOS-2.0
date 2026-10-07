@@ -1,4 +1,4 @@
-import type { TenantScope } from '@mos/identity';
+import type { StrategyRef, TenantScope } from '@mos/contracts';
 import type {
   Mission,
   MissionId,
@@ -84,7 +84,7 @@ export interface CreateMissionInput {
   readonly id: MissionId;
   readonly objective: MissionObjective;
   readonly rewardSpec: MissionRewardSpec;
-  readonly strategyRefs?: readonly string[];
+  readonly strategyRefs?: readonly StrategyRef[];
 }
 
 /** Machine-readable failure codes returned by mutating operations. */

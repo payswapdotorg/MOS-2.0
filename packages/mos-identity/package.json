@@ -15,5 +15,8 @@
     "build": "tsc -b",
     "test": "tsc -b && node --test 'dist/**/*.test.js'",
     "lint": "oxlint"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*"
   }
 }

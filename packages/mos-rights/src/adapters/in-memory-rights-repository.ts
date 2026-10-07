@@ -1,4 +1,4 @@
-import type { TenantScope } from '@mos/identity';
+import type { TenantScope } from '@mos/contracts';
 import type { ConsentRecord } from '../domain/consent.js';
 import type { ProvenanceRecord } from '../domain/provenance.js';
 import type { RightsGrant } from '../domain/rights-grant.js';

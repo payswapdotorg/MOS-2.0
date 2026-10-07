@@ -1,26 +1,30 @@
 /**
  * Branded nominal identifier types for the MOS identity domain.
  *
+ * RECONCILED (W2-A / RECONCILE-A): the shared `TenantId` and `WorkspaceId`
+ * brands are imported from `@mos/contracts` (CORE-001 — the canonical
+ * cross-package authority for the shared value-type vocabulary) and
+ * re-exported here so existing import sites keep resolving unchanged.
+ *
+ * `IdentityId` and `MembershipId` are identity-owned record identifiers with
+ * no `@mos/contracts` equivalent (contracts models identity principals only
+ * as the opaque `IdentityRef`), so they stay locally branded.
+ *
  * These are compile-time-only types: at runtime every identifier is a plain
  * string. Branding keeps `TenantId`, `WorkspaceId`, `IdentityId` and
  * `MembershipId` from being mixed up where a plain `string` would compile.
- *
- * Per the Wave-0 public-surface rule, no runtime constructors are exported
- * from the package entry point; callers construct branded values with their
- * own assertion helpers (e.g. `value as TenantId`) until the CORE-001
- * reconciliation decides the canonical construction/validation story.
+ * No runtime constructors are exported from the package entry point; callers
+ * construct branded values with their own assertion helpers
+ * (e.g. `value as TenantId`).
  */
 
-declare const tenantIdBrand: unique symbol;
-declare const workspaceIdBrand: unique symbol;
+import type { TenantId, WorkspaceId } from '@mos/contracts';
+
+// Re-exported as the canonical shared brands (see module doc).
+export type { TenantId, WorkspaceId };
+
 declare const identityIdBrand: unique symbol;
 declare const membershipIdBrand: unique symbol;
-
-/** Unique identifier of a tenant (the tenant-scoping root of MOS v2.0). */
-export type TenantId = string & { readonly [tenantIdBrand]: true };
-
-/** Unique identifier of a workspace. Every workspace belongs to exactly one tenant. */
-export type WorkspaceId = string & { readonly [workspaceIdBrand]: true };
 
 /** Unique identifier of an identity principal (`user` or `service`). */
 export type IdentityId = string & { readonly [identityIdBrand]: true };
