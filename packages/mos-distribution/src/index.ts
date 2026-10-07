@@ -1,6 +1,7 @@
 /**
  * Public surface of `@mos/distribution` (MOS v2.0 SOCIAL-001 + the
- * SOCIAL-002..006 provider-profile extension).
+ * SOCIAL-002..006 provider-profile extension + the HEALTH-001
+ * platform-health observation surface).
  *
  * The social-distribution authority: the provider-neutral social adapter
  * contract (SocialAdapterPort — publish/schedule/read-observations/
@@ -21,6 +22,14 @@
  * the closed vocabularies it selects from, and the transport-observed
  * rate-limit posture records.
  *
+ * W8-C adds the HEALTH-001 platform-health observation surface:
+ * OBSERVABLE-ONLY health records where a provider-CONFIRMED restriction
+ * (from the W6-C list-restrictions surface) is TYPED apart from a
+ * SUSPECTED distribution anomaly (a DERIVED record citing one of the
+ * DECLARED, DOCUMENTED derivation rules — never invented), queryable per
+ * provider/channel/tenant. The surface carries NO maneuver authority
+ * (§3): compliant maneuvers are decided by the owning authorities.
+ *
  * AUTHORITY DISCIPLINE (test-pinned): this surface is PROVIDER-NEUTRAL.
  * No provider name and no provider-specific type appears in any exported
  * contract, port, error or adapter — provider specifics live exclusively
@@ -29,16 +38,20 @@
  * providers) are deliberately NOT exported from this index: provider
  * data never becomes package surface.
  *
- * Export budget: 9 runtime functions (5 factories + the canonical
- * capability-matrix projection helper + the two documented
+ * Export budget: 14 runtime functions (the 5 in-memory social factories +
+ * the canonical capability-matrix projection helper + the two documented
  * rights-subject derivations + the documented artifact-type-family
- * derivation) + 8 frozen constants (the 7 closed vocabularies + the
- * transport-source label) + 1 error class — pinned by test; the
- * 12-public-method policy budget applies PER PORT.
+ * derivation + the HEALTH-001 in-memory health-surface factory + the two
+ * declared health-derivation functions + the observations-provider
+ * helper + the canonical platform-health projection) + 10 frozen
+ * constants (the 7 closed social vocabularies + the transport-source
+ * label + the 2 HEALTH-001 vocabularies) + 1 error class — pinned by
+ * test; the 12-public-method policy budget applies PER PORT.
  */
 
 // ---- Contracts: identifiers and handles ----
 export type {
+  HealthObservationId,
   PlatformPostRef,
   SocialChannelId,
   SocialDistributionId,
@@ -171,3 +184,42 @@ export type {
 } from "./adapters/in-memory-social-transport.js";
 export { createInMemorySocialAdapter } from "./adapters/in-memory-social-adapter.js";
 export type { InMemorySocialAdapterOptions } from "./adapters/in-memory-social-adapter.js";
+
+// ---- Platform health (HEALTH-001, W8-C) — OBSERVABLE-ONLY health records ----
+// The provider-CONFIRMED restriction (from the W6-C list-restrictions
+// surface) and the SUSPECTED distribution anomaly (a DERIVED record citing
+// one of the DECLARED, DOCUMENTED derivation rules) are TYPED apart and
+// never conflated; the surface records and queries observations only — NO
+// maneuver authority (§3: compliant maneuvers are decided by the owning
+// authorities consuming these records).
+export type {
+  HealthDerivationRuleId,
+  HealthObservation,
+  HealthObservationFilter,
+  HealthObservationKind,
+  MetricDeclineDerivationInputs,
+  ObservationAbsenceDerivationInputs,
+  ProviderConfirmedRestrictionObservation,
+  ProviderHealthSummary,
+  SuspectedAnomalyDerivation,
+  SuspectedDistributionAnomalyObservation,
+} from "./contracts/health-record.js";
+export {
+  HEALTH_DERIVATION_RULES,
+  HEALTH_OBSERVATION_KINDS,
+  platformHealthProjectionOf,
+} from "./contracts/health-record.js";
+export type {
+  HealthRecordFailure,
+  HealthRecordOutcome,
+  HealthSurfacePort,
+  RecordConfirmedRestrictionInput,
+  RecordSuspectedAnomalyInput,
+} from "./ports/health-surface.port.js";
+export {
+  deriveMetricDecline,
+  deriveObservationAbsence,
+  providerIdOf,
+} from "./domain/health-derivations.js";
+export { createInMemoryHealthSurface } from "./adapters/in-memory-health-surface.js";
+export type { InMemoryHealthSurfaceOptions } from "./adapters/in-memory-health-surface.js";

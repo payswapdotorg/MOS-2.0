@@ -1015,9 +1015,15 @@ importers:
       '@mos/contracts':
         specifier: workspace:*
         version: link:../mos-contracts
+      '@mos/engines':
+        specifier: workspace:*
+        version: link:../mos-engines
       '@mos/identity':
         specifier: workspace:*
         version: link:../mos-identity
+      '@mos/production':
+        specifier: workspace:*
+        version: link:../mos-production
       '@mos/rights':
         specifier: workspace:*
         version: link:../mos-rights

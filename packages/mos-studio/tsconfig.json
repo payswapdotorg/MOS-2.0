@@ -23,6 +23,8 @@
     { "path": "../mos-identity" },
     { "path": "../mos-rights" },
     { "path": "../mos-agents" },
-    { "path": "../mos-agent-runtime" }
+    { "path": "../mos-agent-runtime" },
+    { "path": "../mos-production" },
+    { "path": "../mos-engines" }
   ]
 }

@@ -1,12 +1,15 @@
 # @mos/studio
 
-MOS v2.0 Content Studio — **Wave 3: STUDIO-004 adaptive interviewer (REAL
-`@mos/agent-runtime` agent-instance binding) + STUDIO-010 podcast formats +
-STUDIO-011 audio-podcast end-to-end flow**, on top of the Wave 2 RECONCILE-C +
-STUDIO-006 multi-account sessions (REAL identity/rights bindings) + STUDIO-003
-intent→script/question graphs + STUDIO-007 organization loader binding, and
-the Wave 1 STUDIO-001 runtime + STUDIO-002 pluggable format framework +
-STUDIO-005 capture ports (worker-c).
+MOS v2.0 Content Studio — **Wave 8: STUDIO-008 AI editing/composition**
+(the W7-B Editor Pawn composed through the REAL `@mos/production` surfaces,
+closed-vocabulary edit kinds, §12 interoperable edit graphs, treatment-
+versioned packages), on top of the Wave 3 STUDIO-004 adaptive interviewer
+(REAL `@mos/agent-runtime` agent-instance binding) + STUDIO-010 podcast
+formats + STUDIO-011 audio-podcast end-to-end flow, the Wave 2 RECONCILE-C +
+STUDIO-006 multi-account sessions (REAL identity/rights bindings) +
+STUDIO-003 intent→script/question graphs + STUDIO-007 organization loader
+binding, and the Wave 1 STUDIO-001 runtime + STUDIO-002 pluggable format
+framework + STUDIO-005 capture ports (worker-c).
 
 ONE runtime, MANY formats (spec/mos-architecture-v2.0.md §13). The package
 contains the single session lifecycle runtime, the format registry with the
@@ -14,9 +17,12 @@ three initial format descriptors (`reaction`, `audio-podcast`,
 `video-podcast`), the capture source port with a disclosed in-memory test
 double, the versioned script/question graph system (§14), the adaptive
 interviewer bound to the REAL agent stack, the audio-podcast end-to-end flow
-(conversation graph, edit graph, packaged artifact), and the studio-owned
-dependency ports bound to REAL sibling packages where they exist and
-disclosed in-memory doubles where they do not.
+(conversation graph, edit graph, packaged artifact), the AI editing /
+composition surface (STUDIO-008: editing sessions over packaged artifacts or
+intermediates → NEW immutable package versions with recorded,
+§12-interoperable edit graphs), and the studio-owned dependency ports bound
+to REAL sibling packages where they exist and disclosed in-memory doubles
+where they do not.
 
 **THE STUDIO NEVER PUBLISHES** (architecture policy
 `studio.noDirectPublication`): there is no distribution/provider/publish
@@ -30,12 +36,19 @@ model router): the interviewer agent's model is chosen exclusively behind
 `@mos/agent-runtime`'s single model boundary; no studio surface carries a
 model identity or preference — asserted four ways by
 `src/runtime/interviewer/no-model-selection.test.ts` (exported-surface scan,
-production-source scan, compile-time type pins, behavioral pin).
+production-source scan, compile-time type pins, behavioral pin). **The W3-C
+pin EXTENDS to the editing surface** (`src/runtime/editing/
+editing-no-model-selection.test.ts`): the W7-B Editor Pawn is DETERMINISTIC
+— instantiated without any model binding, every execution records
+`modelBinding: null`, and the editing contracts cannot express a model
+preference at all.
 
-Workspace dependencies (Wave 3): `@mos/contracts`, `@mos/identity`,
-`@mos/rights`, `@mos/agents`, `@mos/agent-runtime` (all `workspace:*`, all
-within the studio's frozen registry dependency list). No `@zcode/*`, no
-engine/provider SDKs — substrate firewall in
+Workspace dependencies (Wave 8): `@mos/contracts`, `@mos/identity`,
+`@mos/rights`, `@mos/agents`, `@mos/agent-runtime`, **`@mos/production`,
+`@mos/engines`** (all `workspace:*`, all within the studio's frozen registry
+dependency list — production and engines are registry-listed studio deps
+since W7-B; the Editor Pawn and the engines runner seam are composed through
+them). No `@zcode/*`, no engine/provider SDKs — substrate firewall in
 `spec/mos-architecture-policy-v2.0.yaml`, enforced by
 `harness/mos-boundary-check.mjs`.
 
@@ -56,11 +69,12 @@ Module registry (frozen): `packages/mos-studio`, owner `worker-c`, authority
 | Organization loader (STUDIO-007) | `src/runtime/organization-loading/**` | **REAL studio loader** over an `OrganizationSourcePort`: validates the frozen `AgentOrganization` descriptor structure (id/version/nodes/edges/modelAssignments/memoryPolicy/budgetPolicy/terminationPolicy/evaluator), computes compatibility verdicts (required capabilities + minimum version), caches BY VERSION, never silently substitutes (a version change is an explicit new session binding); the W1-C loader double is superseded by a thin in-memory SOURCE double |
 | Adaptive interviewer (STUDIO-004, §14) | `src/runtime/interviewer/**` | **REAL `@mos/agent-runtime` binding:** `interviewer-agent-body.ts` (the studio's interviewer `AgentBody` data record — role contract for adaptive interviewing, §9 Podcast Interviewer Pawn duties, §14 provenance rules, AGENTS.md safety prohibitions; pins NO model); `agent-instance-interviewer.ts` (two adapters over the REAL `AgentInstanceRegistry` + `InstanceExecutorPort`: lifecycle binding with NO model preference, question presentation by EXECUTING the bound instance with an audit trace); `interviewer-session.ts` (the adaptive loop: bind agent → present sequencer-selected question → record typed answer → declared branch selection → repeat until terminal; beats are walked over; declared cycles fail loudly; mid-session representation switch preserves session + provenance; completion RELEASES the agent instance) |
 | Audio-podcast flow (STUDIO-010/011) | `src/runtime/podcast/**` | `audio-podcast-flow.ts` (full orchestration: createSession(format='audio-podcast') → loadOrganization → joinParticipant through the REAL authorities → adaptive interview with one capture round per question/answer → transcripts through `StudioArtifactFactoryPort` → conversation graph → edit graph → final audio artifact → completeProcessing → submitReview accept → packaged `StudioArtifactPackage`); `conversation-graph.ts` (question/answer nodes from the adaptive loop, interviewer provenance + agent traces end-to-end, synthetic-material disclosure); `edit-graph.ts` (organization edit decisions RECORDED as versioned refs — the org decides, the studio records; decisions outside the format's declared points are rejected) |
-| Test doubles (DISCLOSED) | `src/testing/**` | in-memory organization SOURCE / artifact factory / treatment executor / capture source / script-graph generator (deterministic, provenance-labeled) / interviewer agent (echo-only, for tests that do not exercise the agent runtime) + deterministic composition for tests. NOT production bindings and NOT real device capture |
+| **AI editing / composition (STUDIO-008)** | `src/runtime/editing/**`, `src/contracts/editing-composition.ts`, `src/contracts/edit-graph-interop.ts`, `src/ports/editing-composition.port.ts` | **`EditingCompositionPort` (8 methods ≤12): the editing SESSION — packaged artifact (or intermediates) + organization → NEW IMMUTABLE package version (treatment-versioned like W3-C: same id at version+1, or a new id for intermediates sources) with a recorded edit graph.** Contracts: the CLOSED edit-kind vocabulary (`cut/trim/reorder/overlay/caption/dub-track/scale` — unknown kinds are typed failures; `EDIT_KIND_TRANSFORM_ALIGNMENT` declares the §5 transform-kind alignment as data) + org edit choices at the format's DECLARED decision points (§16-style: the ORG decides, the studio records — every choice carries the org's provenance) + typed §30 engine-invocation summaries (verbatim typed failures) + the versioned append-only `EditingCompositionGraph`. Runtime: `editing-composition-runtime.ts` (7-phase session flow: validation gate → editor pawn composition → operation execution → final assembly → graph recording → new package version → §30 record + release), `editor-pawn-binding.ts` (the W7-B Editor Pawn via the REAL `@mos/production` `PawnExecutionPort` — deterministic, NO model binding; engine invocations are EngineJobs through the REAL `@mos/engines` runner seam behind production's runner port), `editing-validation.ts` (the W3-C org-decision pin extended: undeclared points, duplicate points, malformed choices, unknown kinds, unresolved inputs, cross-tenant sources, §15 consent gates), `editing-graph-store.ts` (tenant-scoped append-only graph registry + the §12 interchange operations), `edit-graph-interop.ts` (the ONE declared export format `mos-edit-graph-interchange/1` — complete record, nothing projected away; import validates + re-versions; no silent lossy conversion), `editing-graph-comparison.ts` (structural comparison of two versions — comparable shapes, no conversion), `editing-package-assembly.ts` (the new immutable version assembly) |
+| Test doubles (DISCLOSED) | `src/testing/**` | in-memory organization SOURCE / artifact factory / treatment executor / capture source / script-graph generator (deterministic, provenance-labeled) / interviewer agent (echo-only, for tests that do not exercise the agent runtime) + deterministic composition for tests. NOT production bindings and NOT real device capture. **`compose-editing-stack.ts` (STUDIO-008 disclosed seam): the REAL `@mos/production` pawn execution runtime (all ten W7-B pawn bodies registered) over the REAL `@mos/agents` body registry + the REAL `@mos/agent-runtime` instance registry + the REAL `@mos/engines` runner (registry + artifact store + job event sink + the disclosed test-double timeline-renderer adapter) + the REAL `@mos/rights` repository/evaluation behind BOTH gates (§15 participant consent + the pawn rights gate)**; `editing-fixtures.ts` (org/transform citations, session-input builders, REAL session-consent seeding) |
 | REAL authority composition (STUDIO-006/004) | `src/testing/participant-authority-adapters.ts`, `src/testing/real-participant-authorities.ts`, `src/testing/real-interviewer-agent.ts` | **The REAL `@mos/identity` `IdentityRepository` + `@mos/rights` `RightsRepository` behind the studio ports**; **the REAL `@mos/agents` body registry (interviewer body registered) + `@mos/agent-runtime` instance registry over THE single model boundary + the REAL substrate instance executor over the DISCLOSED in-memory substrate double**. Composition at the studio testing seam; identity/rights/agents/agent-runtime remain the AUTHORITIES. Runtime import disclosure: identity/rights exports maps point the runtime condition at untranspiled `src/index.ts`, so those two keep the W2-C relative-dist imports; agents/agent-runtime export built `dist/index.js`, so bare specifiers work there |
-| Tests | `src/**/*.test.ts` | 70 node:test cases: lifecycle happy path, invalid transitions, §15 consent/multi-account through the REAL authorities (two identities with separate consent records, join/refusal gates, mid-session revocation, per-participant provenance, credentials-never-merged structural test), org loader versioned cache/verdicts/no-substitution, processing-output validation, treatment version chains, rejection discrimination, capture lifecycle + provenance labeling, format pluggability/fail-closed, script-graph generation provenance + adaptive branch selection + version immutability, **STUDIO-004 adaptive-loop round-trip + agent-instance lifecycle + §14 provenance labels + representation switching + no-model-selection pins (4 ways)**, **STUDIO-010 podcast plugin validation + intake validation + decision points**, **STUDIO-011 one-person e2e + multi-account consent gates + revoked/missing-consent refusals + treatment immutability + fail-closed paths**, no-publish assertion |
+| Tests | `src/**/*.test.ts` | 100 node:test cases: lifecycle happy path, invalid transitions, §15 consent/multi-account through the REAL authorities (two identities with separate consent records, join/refusal gates, mid-session revocation, per-participant provenance, credentials-never-merged structural test), org loader versioned cache/verdicts/no-substitution, processing-output validation, treatment version chains, rejection discrimination, capture lifecycle + provenance labeling, format pluggability/fail-closed, script-graph generation provenance + adaptive branch selection + version immutability, **STUDIO-004 adaptive-loop round-trip + agent-instance lifecycle + §14 provenance labels + representation switching + no-model-selection pins (4 ways)**, **STUDIO-010 podcast plugin validation + intake validation + decision points**, **STUDIO-011 one-person e2e + multi-account consent gates + revoked/missing-consent refusals + treatment immutability + fail-closed paths**, no-publish assertion, **STUDIO-008 (30 tests): editing-session round-trip (new immutable version + complete edit graph + versioned intermediates + §30 engine invocations through the REAL runner), treatment chain + no-op session, intermediates source, org edit-decision discipline (undeclared/duplicate/malformed/unknown-kind/unresolved-input/cross-tenant/§15 consent gates — no §30 record for validation failures), editor-pawn binding (REAL production surfaces, §30 audit trail, typed engine failure passthrough VERBATIM, rights-gate-precedes-invocation, service actors fail closed, tenant scoping), §12 edit-graph export/import round-trip (validated + re-versioned, enumerated import failures, format/tenant enforcement, structural comparison), no-model-selection pin (4 ways)** |
 
-## Dependency reconciliation (disclosed, updated Wave 3)
+## Dependency reconciliation (disclosed, updated Wave 8)
 
 RECONCILE-C is DONE: the W0-C mirror types are replaced by canonical
 `@mos/contracts` imports (see the contracts row above); `@mos/identity` and
@@ -77,7 +91,7 @@ to their final substrates yet (later waves):
 | `content`/CORE-004 | `StudioArtifactFactoryPort` (`ports/artifact-factory.ts`) | `testing/in-memory-artifact-factory.ts` | later wave |
 | engine-backed script generation (ENG-002) | `ScriptGraphGeneratorPort` (`ports/script-graph-generator.ts`) | `testing/in-memory-script-graph-generator.ts` (deterministic, provenance-labeled) | later wave |
 | capabilities/engines treatment execution | `StudioOutputTreatmentPort` (`contracts/treatment.ts`) | `testing/in-memory-treatment-executor.ts` | later wave |
-| organization editing/composition execution (STUDIO-008) | edit decisions arrive as caller-supplied recorded data standing in for the organization's decision output; the recorder/validation/versioning are REAL | `runtime/podcast/edit-graph.ts` | STUDIO-008 |
+| organization editing/composition execution (STUDIO-008) | **DELIVERED**: the editing executor composes the W7-B Editor Pawn through the REAL `@mos/production` `PawnExecutionPort` (registry-listed studio dependency); engine invocations run through the REAL `@mos/engines` runner seam behind production's runner port | `runtime/editing/**` + `testing/compose-editing-stack.ts` (the disclosed seam; production TL composition root binds durable stores/real engines) | — |
 | browser/desktop media APIs | `CaptureSourcePort` (`runtime/capture/capture-source-port.ts`) | `runtime/capture/in-memory-capture-source.ts` | with the mos-web/mos-desktop shells |
 
 Session/package state is in memory; durable persistence belongs to the
@@ -126,6 +140,28 @@ jobs/content modules.
   organization's decisions into a versioned edit graph and rejects decisions
   for points it never exposed; OpenTimelineIO is interchange only, never the
   authority (`otioInterchange` marks export existence).
+- **AI editing / composition (STUDIO-008, §12/§13/§16/§19):** the editing
+  session takes a packaged artifact (or intermediates) + an organization
+  and produces a NEW IMMUTABLE package version with a recorded edit graph —
+  THE ORG DECIDES (choices only at the format's DECLARED decision points,
+  recorded verbatim with the org's provenance), THE STUDIO RECORDS.
+  Composition operations are the CLOSED edit-kind vocabulary
+  (cut/trim/reorder/overlay/caption/dub-track/scale — unknown kinds are
+  typed failures; the §5 transform-kind alignment is declared data); every
+  operation declares its input artifact refs, parameters and output refs;
+  intermediates are versioned through the ArtifactFactoryPort with parents =
+  the declared inputs (CORE-004 discipline). The editor is the W7-B Editor
+  Pawn composed through `@mos/production` (deterministic — NO model
+  binding, the lock-rule-9 pin extends to the editing surface); its engine
+  invocations are EngineJobs through the REAL engines runner seam with
+  typed failures passing through VERBATIM into the §30 records. Edit graphs
+  are INTEROPERABLE RECORDS (§12): ONE declared interchange format
+  (`mos-edit-graph-interchange/1`) exports the COMPLETE record and import
+  validates + re-versions returned records — no silent lossy conversion;
+  foreign-tenant exports are rejected (§31). A zero-operation session is
+  the honest no-op (lock rule 5). The rights gate precedes every engine
+  invocation; §15 consent gates precede composition for multi-account
+  sources.
 - Raw human output is intermediate (§6, §16): raw capture enters packages as
   `raw` AND as lineage parents of intermediates; parentless finals are
   rejected; the pipeline stage is explicit on every artifact ref.
