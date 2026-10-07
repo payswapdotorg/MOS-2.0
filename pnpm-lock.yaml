@@ -807,6 +807,38 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/mos-agent-runtime:
+    dependencies:
+      '@mos/agents':
+        specifier: workspace:*
+        version: link:../mos-agents
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
+      '@mos/substrate-adapters':
+        specifier: workspace:*
+        version: link:../zcode-substrate-adapters
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  packages/mos-agents:
+    dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   packages/mos-capabilities:
     dependencies:
       '@mos/contracts':

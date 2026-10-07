@@ -1,0 +1,29 @@
+{
+  "name": "@mos/agent-runtime",
+  "version": "0.1.0",
+  "description": "MOS v2.0 agent instance runtime (AGT-002) — AgentInstance lifecycle (instantiate/bind/release), THE single model/runtime boundary (ModelRuntimePort — the only place model selection happens; no second router), and the InstanceExecutorPort bound to the substrate AgentRuntimePort.",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js' && tsc -p tsconfig.compat.json && node --test compat/substrate-skeleton.test.ts",
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*",
+    "@mos/agents": "workspace:*",
+    "@mos/substrate-adapters": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}
