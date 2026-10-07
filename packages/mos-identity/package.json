@@ -1,0 +1,19 @@
+{
+  "name": "@mos/identity",
+  "version": "0.1.0",
+  "description": "MOS v2.0 Identity / Tenant / Workspace domain — CORE-002 Wave-0 groundwork (branded IDs, domain records, repository port, in-memory adapter)",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint"
+  }
+}
