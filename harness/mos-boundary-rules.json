@@ -1,0 +1,72 @@
+{
+  "$schema": "mos-boundary-rules-v1",
+  "version": 1,
+  "name": "mos-substrate-firewall",
+  "description": "MOS v2.0 substrate boundary rules (W0-B / BOOT-003). Machine-readable authority for harness/mos-boundary-check.mjs. Mirrors spec/mos-architecture-policy-v2.0.yaml (forbidDeepImports, forbidConcreteEngineImportsFromDomain, forbidProviderCallsOutsideIntegration) and the ZCode substrate firewall section of docs/architecture/ZCODE-SUBSTRATE-INVENTORY-v1.md.",
+  "managedScan": {
+    "domainPackageGlob": "packages/mos-*",
+    "substratePackagePath": "packages/zcode-substrate-adapters",
+    "sourceExtensions": [".ts", ".tsx", ".mts", ".js", ".mjs"],
+    "excludedPathSegments": ["node_modules", "dist", "dist-types", "out", "coverage", ".turbo"]
+  },
+  "rules": [
+    {
+      "id": "MOS-DOMAIN-IMPORT-BOUNDARY",
+      "appliesTo": "mos-domain-packages",
+      "description": "MOS domain packages (packages/mos-*) may import ONLY: relative paths within their own package, @mos/* workspace packages, and node builtins (node: prefixed form or bare builtin name). Any @zcode/* import in a MOS domain package is a violation (kind zcode-import); any other non-relative import is a violation (kind disallowed-import).",
+      "allowedImportPrefixes": ["./", "../", "@mos/", "node:"],
+      "allowBareNodeBuiltins": true,
+      "violationKinds": ["zcode-import", "disallowed-import"]
+    },
+    {
+      "id": "ZCODE-ADAPTER-ONLY-IMPORTS",
+      "appliesTo": "all-managed-files",
+      "description": "ONLY packages/zcode-substrate-adapters/src/adapters/** may import @zcode/*. Inside that root, only the exact package-entry names in zcodeEntryAllowlist are allowed — deep imports (e.g. @zcode/rpc/dist/internal) and non-allowlisted entries (e.g. @zcode/web) are violations (kind non-allowlisted-entry). Any @zcode/* import outside the adapters root is a violation (kind outside-adapter-root). Files in MOS domain packages additionally violate MOS-DOMAIN-IMPORT-BOUNDARY (dual reporting is intentional: each rule has its own remediation).",
+      "zcodeImportAllowedOnlyUnder": "packages/zcode-substrate-adapters/src/adapters",
+      "zcodeEntryAllowlist": [
+        "@zcode/rpc",
+        "@zcode/shared",
+        "@zcode/client",
+        "@zcode/server",
+        "@zcode/services",
+        "@zcode/ui",
+        "@zcode/provider"
+      ],
+      "violationKinds": ["outside-adapter-root", "non-allowlisted-entry"]
+    },
+    {
+      "id": "MOS-NO-ENGINE-SDK",
+      "appliesTo": "all-managed-files",
+      "description": "No MOS-managed package (packages/mos-* or packages/zcode-substrate-adapters) may import engine/provider SDKs. Matching is by package root: exact match for bare names (openai, ffmpeg, ...), scope-prefix match for scoped names (@google/*, @aws-sdk/*). Engines are reached through capability contract -> engine registry -> engine adapter -> sandbox, never imported directly (spec/mos-architecture-policy-v2.0.yaml forbidConcreteEngineImportsFromDomain).",
+      "denylist": [
+        "openclip",
+        "whisperx",
+        "ffmpeg",
+        "@ffmpeg-installer",
+        "fluent-ffmpeg",
+        "pyscenedetect",
+        "sam2",
+        "livekit",
+        "mediasoup",
+        "opentimelineio",
+        "internvideo",
+        "vjepa",
+        "comfyui",
+        "remotion",
+        "openai",
+        "anthropic",
+        "@google",
+        "@aws-sdk",
+        "stripe"
+      ],
+      "violationKinds": ["engine-provider-sdk"]
+    },
+    {
+      "id": "PORTS-NO-ZCODE",
+      "appliesTo": "port-files",
+      "description": "Port contract files (any path containing the segment sequence src/ports/) never import @zcode/* — only adapters may. Port files must stay MOS-owned and substrate-free so the contracts can be extracted/promoted (e.g. into @mos/contracts) without untangling substrate types.",
+      "portPathSegment": "src/ports",
+      "violationKinds": ["port-file-zcode-import"]
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "comment": "Self-test fixtures for harness/mos-boundary-check.mjs. Each fixture is scanned AS IF it lived at virtualPath. expectViolations lists every violation the engine must produce — both misses (missing detection) and extras (false positives) fail the self-test. Fixtures live outside packages/ so the real-tree scan never sees them.",
+  "fixtures": [
+    {
+      "file": "mos-domain-clean.ts",
+      "virtualPath": "packages/mos-fixture/src/service.ts",
+      "expectViolations": []
+    },
+    {
+      "file": "mos-domain-zcode-import.ts",
+      "virtualPath": "packages/mos-fixture/src/client.ts",
+      "expectViolations": [
+        { "rule": "MOS-DOMAIN-IMPORT-BOUNDARY", "kind": "zcode-import", "specifier": "@zcode/rpc" },
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "outside-adapter-root", "specifier": "@zcode/rpc" }
+      ]
+    },
+    {
+      "file": "mos-domain-bare-import.ts",
+      "virtualPath": "packages/mos-fixture/src/util.ts",
+      "expectViolations": [
+        { "rule": "MOS-DOMAIN-IMPORT-BOUNDARY", "kind": "disallowed-import", "specifier": "lodash" },
+        { "rule": "MOS-DOMAIN-IMPORT-BOUNDARY", "kind": "disallowed-import", "specifier": "/absolute/path/module.js" }
+      ]
+    },
+    {
+      "file": "adapters-clean.ts",
+      "virtualPath": "packages/zcode-substrate-adapters/src/adapters/zcode-rpc.adapter.ts",
+      "expectViolations": []
+    },
+    {
+      "file": "adapters-deep-import.ts",
+      "virtualPath": "packages/zcode-substrate-adapters/src/adapters/bad.adapter.ts",
+      "expectViolations": [
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "non-allowlisted-entry", "specifier": "@zcode/rpc/dist/internal" },
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "non-allowlisted-entry", "specifier": "@zcode/services/src/secret.ts" }
+      ]
+    },
+    {
+      "file": "adapters-nonallowlisted-entry.ts",
+      "virtualPath": "packages/zcode-substrate-adapters/src/adapters/web.adapter.ts",
+      "expectViolations": [
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "non-allowlisted-entry", "specifier": "@zcode/web" },
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "non-allowlisted-entry", "specifier": "@zcode/desktop" },
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "non-allowlisted-entry", "specifier": "@zcode/web/styles.css" }
+      ]
+    },
+    {
+      "file": "substrate-outside-adapters.ts",
+      "virtualPath": "packages/zcode-substrate-adapters/src/index.ts",
+      "expectViolations": [
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "outside-adapter-root", "specifier": "@zcode/shared" }
+      ]
+    },
+    {
+      "file": "substrate-port-zcode.ts",
+      "virtualPath": "packages/zcode-substrate-adapters/src/ports/rpc.port.ts",
+      "expectViolations": [
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "outside-adapter-root", "specifier": "@zcode/rpc" },
+        { "rule": "PORTS-NO-ZCODE", "kind": "port-file-zcode-import", "specifier": "@zcode/rpc" }
+      ]
+    },
+    {
+      "file": "mos-domain-port-zcode.ts",
+      "virtualPath": "packages/mos-fixture/src/ports/hybrid.port.ts",
+      "expectViolations": [
+        { "rule": "MOS-DOMAIN-IMPORT-BOUNDARY", "kind": "zcode-import", "specifier": "@zcode/rpc" },
+        { "rule": "ZCODE-ADAPTER-ONLY-IMPORTS", "kind": "outside-adapter-root", "specifier": "@zcode/rpc" },
+        { "rule": "PORTS-NO-ZCODE", "kind": "port-file-zcode-import", "specifier": "@zcode/rpc" }
+      ]
+    },
+    {
+      "file": "denylist-substrate.ts",
+      "virtualPath": "packages/zcode-substrate-adapters/src/adapters/engine.adapter.ts",
+      "expectViolations": [
+        { "rule": "MOS-NO-ENGINE-SDK", "kind": "engine-provider-sdk", "specifier": "openai" },
+        { "rule": "MOS-NO-ENGINE-SDK", "kind": "engine-provider-sdk", "specifier": "livekit" },
+        { "rule": "MOS-NO-ENGINE-SDK", "kind": "engine-provider-sdk", "specifier": "@aws-sdk/client-s3" },
+        { "rule": "MOS-NO-ENGINE-SDK", "kind": "engine-provider-sdk", "specifier": "@google/generative-ai" },
+        { "rule": "MOS-NO-ENGINE-SDK", "kind": "engine-provider-sdk", "specifier": "fluent-ffmpeg" },
+        { "rule": "MOS-NO-ENGINE-SDK", "kind": "engine-provider-sdk", "specifier": "whisperx/cli" }
+      ]
+    },
+    {
+      "file": "denylist-mos-domain.ts",
+      "virtualPath": "packages/mos-fixture/src/engine.ts",
+      "expectViolations": [
+        { "rule": "MOS-DOMAIN-IMPORT-BOUNDARY", "kind": "disallowed-import", "specifier": "fluent-ffmpeg" },
+        { "rule": "MOS-NO-ENGINE-SDK", "kind": "engine-provider-sdk", "specifier": "fluent-ffmpeg" }
+      ]
+    },
+    {
+      "file": "comment-and-string-resistance.ts",
+      "virtualPath": "packages/mos-fixture/src/tricky.ts",
+      "expectViolations": []
+    }
+  ]
+}
