@@ -1,0 +1,27 @@
+{
+  "name": "@mos/jobs",
+  "version": "0.1.0",
+  "description": "MOS v2.0 durable-job authority (JOBS-001) — DurableJobRecord per §26/§30/§31 (tenant-scoped, §26 job kinds, artifact-ref inputs, lifecycle queued→running→succeeded|failed|cancelled|timed_out, declared retry policies), the JobQueuePort work-polling surface (idempotent enqueue by client job key, leased claims, heartbeats, typed complete/fail/cancel, retries driven from typed failures, dead-lettering with full append-only history), the DurableJobStorePort persistence seam, and the ENG-003 runner-seam bridge adapter with §30 actor enrichment. No scheduling authority: workers poll claimNextRunnable.",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js' && tsc -b ../mos-engines && tsc -p tsconfig.compat.json && node --test compat/engine-runner-bridge.test.ts",
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}

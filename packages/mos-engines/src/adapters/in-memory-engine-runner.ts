@@ -408,6 +408,19 @@ export function createInMemoryEngineRunner(
         );
       }
 
+      // ---- Adapter-reported typed failure: an honest FAILED run --------
+      // The frozen EngineResult contract carries failure === null ONLY on
+      // success; an adapter that RESOLVES with a typed failure is a failed
+      // run whose result record stays auditable. The lifecycle event must
+      // say so: the JobEventSinkPort seam (§30 observability, the durable
+      // jobs consumer) drives retries from this typed failure — reporting
+      // it as job-succeeded would materialize failed engine work as a
+      // successful durable job. (W4-B regression-sweep fix, pinned by
+      // in-memory-engine-runner.test.ts.)
+      if (adapterResult.failure !== null) {
+        return complete(job, "failed", adapterResult, wallMs);
+      }
+
       return complete(job, "succeeded", adapterResult, wallMs);
     },
   };
