@@ -1,11 +1,12 @@
 # @mos/production
 
-MOS v2.0 production authority, first slice — **LAB-013 Transform Pawn
-Agents** (Worker B, Agent/Engine/Production Backend lane). Authority:
-`production` per `spec/mos-module-registry-v2.0.yaml` (deps:
-`[contracts, content, rights, policy]` — `@mos/policy` does not exist yet on
-main, so this slice imports the registry dependencies that exist:
-`@mos/contracts`, `@mos/content`, `@mos/rights`; disclosed below).
+MOS v2.0 production authority — **LAB-013 Transform Pawn Agents** (Wave 7)
++ **LAB-016 Production Program Search** (Wave 8) (Worker B,
+Agent/Engine/Production Backend lane). Authority: `production` per
+`spec/mos-module-registry-v2.0.yaml` (deps: `[contracts, content, rights,
+policy]` — `@mos/policy` does not exist yet on main, so this slice imports
+the registry dependencies that exist: `@mos/contracts`, `@mos/content`,
+`@mos/rights`; disclosed below).
 
 ## What this package provides (§9 — pawns ARE specialized Agent Instances)
 
@@ -122,14 +123,117 @@ assignment is DATA resolved at the boundary). Registered append-only
 bit-for-bit), tenant-scoped, deep-frozen records, every named rejection
 reason at once.
 
+## LAB-016 — Production Program Search (§7: the Lab searches the FULL
+production program, not only ideas)
+
+### `ProductionProgramSearchPort` — `searchPrograms` (1 method)
+
+`searchPrograms(mission/scope refs, source artifact refs, search policy,
+budget, seed)` → a **RANKED, uncertainty-labeled, counterfactual candidate
+set**. Every ranked candidate carries:
+
+- a **`CandidateProgram`** — the SIXTEEN §7 dimensions as explicit typed
+  data (`source-reference` is GIVEN by the input; `no-op-repost` is the
+  synthesized baseline; transform chain + parameters from the promoted-
+  transform catalog seam; production modality; organization citation;
+  pawn agents from the ten §9 bodies; model assignments as DATA refs from
+  the single-boundary vocabulary — declared, NEVER resolved here; engine
+  portfolio at exact versions; LAB-014 human task refs by reference;
+  capability acquisition with coverage; quality thresholds; cost; latency;
+  the §18 delay terms with provenance-cited expectations; stopping/
+  substitution policy);
+- a **canonical CORE-001 `ProductionRequest`** — the frozen contract's
+  required fields composed from (candidate, input),
+  `assertRequiredFields`-checked at composition time so completeness holds
+  BY CONSTRUCTION (test-pinned anyway);
+- a **§22-labeled evaluation** through the `ProgramEvaluationPort` seam —
+  expected reward + interval + ensemble disagreement + seed robustness +
+  **the §2 EV of delay** (computed BY the seam under the declared
+  `ev-delay-1` shape — the search itself never computes a delay EV);
+- **provenance** — the dimensions varied (EXACTLY the sixteen-dimension
+  fingerprint diff vs the parent — the honest provenance), the fingerprint,
+  the parent fingerprint, generation index, policy version, seed,
+  evaluation seeds, and the evaluation-surface version pins
+  (ensemble/simulator/reward-spec);
+- the **declared comparison against the no-op baseline** (§7: comparisons
+  are against the always-present baseline) and the interval overlap with
+  the rank-1 leader.
+
+**THE NO-OP BASELINE IS STRUCTURALLY PRESENT ON EVERY RESULT** (`noopBaseline`
+is a required field, not an array slot that could be empty — §7/lock rule 5):
+the empty-chain repost with zero delay terms, never a generation parent,
+never claimable by a caller (typed rejection).
+
+The **declared search policy** (versioned, deterministic given (inputs,
+seed, policy version)) carries every vocabulary the mutation operators
+cycle through (presets, modalities, models, engines, quality ladder,
+budget scale, duration/wait ladders, retry cap), the pruning rule
+(`none` | `interval-dominance` — pruned entries STAY RANKED, comparison
+transparency) and the stopping rules (budget floor, plateau window,
+iteration cap). The search loop is the W5-B generation discipline applied
+to program candidates: mutants of the incumbent in frozen §7 dimension
+order, deduplicated by sixteen-dimension fingerprint, evaluated while the
+budget allows, best improving mutant (above `improvementTolerance`)
+becomes incumbent.
+
+**§24 BOUNDARY (pinned on every record):** the output is a ranked
+lab-labeled candidate set — `counterfactual: true`, the disclosure
+strings, and the `labOnly` statement — **never a deployment decision**;
+the real-experiment boundary is untouched.
+
+### The three lab-side seams (the W7-B pattern — disclosed)
+
+The frozen module registry does NOT make `lab` or `agents` a production
+dependency, so the lab-side inputs arrive through DECLARED PORT SEAMS with
+DISCLOSED in-memory doubles (`src/adapters/`):
+
+- **`ProgramTransformCatalogPort`** (1 method) — the LAB-011/012 promoted-
+  transform vocabulary listing. The REAL `@mos/lab`
+  `TransformDefinitionRegistry.listTransformDefinitions` satisfies it with
+  a ONE-LINE DELEGATION (compat-pinned); the no-op-repost KIND is filtered
+  from the chain vocabulary (the no-op path is the EMPTY-chain baseline,
+  never a chain step — pinned).
+- **`ProgramOrganizationSourcePort`** (1 method) — the LAB-010-style
+  organization descriptor listing (canonical organization field set + the
+  two declared §23 features `criticNodeIds`/`executionOrdering`). REAL
+  `@mos/agents` organization registry records + LAB-010 declared features
+  compose into the descriptor (compat-pinned); tenant-scoped.
+- **`ProgramEvaluationPort`** (1 method) — the LAB-007-style §22 evaluation
+  surface: one (action, delayTerms, seed) → expected reward + interval +
+  disagreement + the §2 EV of delay + surface version pins. The REAL lab
+  ensemble prediction + the REAL LAB-015 `ev-delay-1` computation satisfy
+  it behind the documented composition-root mapping
+  (compat/program-search-compat.ts pins the wiring type-checks;
+  compat/program-real-stack.test.ts RUNS the search against the REAL lab
+  registry + REAL agents organizations + REAL lab ensemble + REAL delay
+  authority).
+
+The evaluation double's synthetic action mapping is DOCUMENTED (never a
+claim about real production performance): the no-op baseline maps to the
+LAB-004 first-class `no-op` action kind — the ZERO-KNOB action (cadence 0,
+novelty 0, engagement 0; a no-op produces no activity).
+
+### Canonical drops (documented — the W6-A/W7-A precedent)
+
+The candidate's pawn agents / model assignments / engine portfolio /
+acquisition modes / stopping-substitution policy / declared delay
+expectations have no field on the frozen `ProductionRequest` contract —
+they stay on the candidate record (the composition root binds them when a
+real execution is requested). The synthesized transform-graph/
+organization/format citation refs of the no-op baseline
+(`NO_OP_PROGRAM_REFS`) are DECLARED SYNTHETIC refs — the composition root
+rebinds them for real executions.
+
 ## Disclosed limitations
 
-- The agent-stack/runner/transform-source implementations shipped here are
-  **DISCLOSED in-memory doubles** (`src/adapters/`): same fail-closed
-  semantics, no durability, no substrate. The composition root swaps the
-  REAL `@mos/agents` / `@mos/agent-runtime` / `@mos/engines` / `@mos/lab`
-  adapters in behind the same port types (compat-proven). Never represent
-  the doubles as the real runtime.
+- The agent-stack/runner/transform-source/program-search implementations
+  shipped here are **DISCLOSED in-memory doubles** (`src/adapters/`): same
+  fail-closed semantics, no durability, no substrate. The composition root
+  swaps the REAL `@mos/agents` / `@mos/agent-runtime` / `@mos/engines` /
+  `@mos/lab` adapters in behind the same port types (compat-proven). Never
+  represent the doubles as the real runtime. The program EVALUATION double
+  is a self-labeling deterministic synthetic response function — its
+  reward numbers are NOT claims about real production performance.
 - `@mos/rights` and `@mos/content` are TYPE-ONLY imports in `src/`; the
   REAL authorities (in-memory rights repository + `evaluateRights`, the
   in-memory artifact repository) are wired at the testing/composition seam
@@ -149,10 +253,19 @@ reason at once.
   work behind that declared evaluator.
 - Durable execution history/organization storage is later-wave work behind
   the same ports.
+- Program search is an IN-MEMORY, single-process search (deterministic
+  hill-climb over the sixteen dimensions — no invented sophistication);
+  the composed `ProductionRequest`s cite SYNTHESIZED transform-graph refs
+  (`program-graph:<hash>`) that the composition root rebinds to real
+  LAB-011 TransformGraph versions at execution time. Durable search
+  history + real-execution binding are later-wave work behind the same
+  port. The search results are LAB-LABELED COUNTERFACTUAL candidate sets
+  (§24) — executing one goes through the owning authorities (Mission →
+  Policy/Rights → Production/Studio → …), never this surface.
 
 ## Scripts
 
 `pnpm --filter @mos/production build | test | lint | typecheck`
 
-The `test` script = build + `node --test dist/**` (57 tests) + sibling
-builds + compat typecheck + compat real-stack test (5 tests).
+The `test` script = build + `node --test dist/**` (94 tests) + sibling
+builds + compat typecheck + compat real-stack tests (10 tests).
