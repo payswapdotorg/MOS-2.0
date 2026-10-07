@@ -170,7 +170,56 @@ Dependencies: STUDIO-009, STUDIO-011, STUDIO-012, CORE-004
 ### STUDIO-014 — Standalone Studio Product
 Dependencies: STUDIO-009, STUDIO-011, STUDIO-012
 
-## Phase 5 — Reality bridge and productization
+## Phase 5 — Integrations and carried-forward MOS capabilities
+
+### INTEG-001 — Connector Provider Contract
+Dependencies: CORE-001, CORE-003.
+Implement provider-definition → implementation → merchant/client instance → availability capability structure.
+Acceptance: capability instances are explicit, provider status/evidence/UNKNOWN states are preserved, no provider-specific semantics leak into authorities.
+
+### SOCIAL-001 — Social Adapter Contract
+Dependencies: INTEG-001, CORE-003, CORE-004.
+Build provider-neutral social adapter contract and capability matrix.
+Acceptance: capability parity is never assumed; every provider declares supported/unsupported/unknown capabilities; rights/policy gates precede provider calls.
+
+### SOCIAL-002 — YouTube Adapter
+Dependencies: SOCIAL-001.
+### SOCIAL-003 — Instagram Adapter
+Dependencies: SOCIAL-001.
+### SOCIAL-004 — Facebook Pages Adapter
+Dependencies: SOCIAL-001.
+### SOCIAL-005 — TikTok Adapter
+Dependencies: SOCIAL-001.
+### SOCIAL-006 — X Adapter
+Dependencies: SOCIAL-001.
+Acceptance for provider adapters:
+- provider-specific operations remain inside adapter subtrees;
+- real API/auth contract evidence where available;
+- unsupported capabilities fail closed;
+- replay/idempotency and rate-limit observations are explicit;
+- no fabricated provider internals.
+
+### HEALTH-001 — Platform Health / Distribution Anomaly
+Dependencies: SOCIAL-001.
+Acceptance: observable-only health; provider-confirmed restriction distinguished from suspected_distribution_anomaly; compliant maneuvers only.
+
+### NOTIFY-001 — Notification Delivery Plane
+Dependencies: CORE-001, INTEG-001.
+Acceptance: durable notification records, deduplication, receipts and provider adapters without task/workflow duplication.
+
+### MARKETING-001 — Product Marketing Mission Planning
+Dependencies: CORE-005, product-intelligence, HEALTH-001.
+Acceptance: evidence-linked platform/metric/experiment plan; no second Mission authority.
+
+### COMMERCE-001 — Commerce Discovery
+Dependencies: CORE-005, CORE-003, INTEG-001, experiments.
+Acceptance: discovery candidates carry provenance and demand tests use the real Experiment authority; no listing/order/inventory authority duplication.
+
+### ATTRIB-001 — Social-to-Commerce Attribution
+Dependencies: SOCIAL-001, COMMERCE-001, PROD-002.
+Acceptance: attribution remains distinct from causality and references authoritative observations.
+
+## Phase 6 — Reality bridge and productization
 
 ### BRIDGE-001 — Lab → Studio
 Dependencies: LAB-016, STUDIO-007, STUDIO-013
@@ -187,7 +236,7 @@ Dependencies: BRIDGE-003, AGT-003
 ### PROD-004 — Complete Closed-Loop Proof
 Dependencies: PROD-002, PROD-003, LAB-018
 
-## Phase 6 — UX and release
+## Phase 7 — UX and release
 
 ### UX-001 — MOS Home / Missions
 Dependencies: CORE-002, CORE-005
