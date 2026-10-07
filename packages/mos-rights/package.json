@@ -1,0 +1,22 @@
+{
+  "name": "@mos/rights",
+  "version": "0.1.0",
+  "description": "MOS v2.0 Rights / Consent / Provenance domain — CORE-003 (explicit grants, append-only revocation, provenance records, URL-never-implies-rights evaluation)",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "@mos/identity": "workspace:*"
+  }
+}

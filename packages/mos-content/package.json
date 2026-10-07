@@ -1,0 +1,23 @@
+{
+  "name": "@mos/content",
+  "version": "0.1.0",
+  "description": "MOS v2.0 Content Artifact + Artifact Graph — CORE-004 (immutable versioned artifacts, lineage-preserving graph, object-store refs, rights-gated registration)",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "@mos/identity": "workspace:*",
+    "@mos/rights": "workspace:*"
+  }
+}

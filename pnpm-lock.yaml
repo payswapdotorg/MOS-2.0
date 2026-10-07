@@ -807,7 +807,34 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/mos-content:
+    dependencies:
+      '@mos/identity':
+        specifier: workspace:*
+        version: link:../mos-identity
+      '@mos/rights':
+        specifier: workspace:*
+        version: link:../mos-rights
+
   packages/mos-identity: {}
+
+  packages/mos-lab:
+    dependencies:
+      '@mos/content':
+        specifier: workspace:*
+        version: link:../mos-content
+
+  packages/mos-missions:
+    dependencies:
+      '@mos/identity':
+        specifier: workspace:*
+        version: link:../mos-identity
+
+  packages/mos-rights:
+    dependencies:
+      '@mos/identity':
+        specifier: workspace:*
+        version: link:../mos-identity
 
   packages/mos-studio: {}
 
