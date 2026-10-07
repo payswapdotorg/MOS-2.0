@@ -84,7 +84,7 @@ function parseResolution(resolution: string): { width: number; height: number } 
 export function createInMemoryCaptureSourcePort(
   options: InMemoryCaptureSourceOptions = {},
 ): CaptureSourcePort & { readonly sources: readonly CaptureSourceDescriptor[] } {
-  const now = options.now ?? (() => new Date().toISOString());
+  const now = options.now ?? (() => new Date().toISOString() as Timestamp);
   let takeCounter = 0;
 
   const validateSource = (

@@ -9,10 +9,12 @@ import {
   driveToReview,
   mustOk,
   participantJoin,
+  seedDefaultSubjectConsent,
   standaloneIntent,
   buildProcessingArtifacts,
 } from "../testing/test-fixtures.js";
 import type { OutputTreatmentRequest } from "../contracts/treatment.js";
+import type { Timestamp } from "../contracts/refs.js";
 import type { StudioArtifactRef } from "../contracts/studio-artifact-package.js";
 import type { SubmitReviewInput } from "./intake-types.js";
 
@@ -93,7 +95,7 @@ test("treatment on a packaged session creates a NEW immutable linked package ver
     treatment: "trim",
     parametersRef: "params-trim-1",
     requestedBy: OPERATOR,
-    requestedAt: "2026-01-02T00:00:00.000Z",
+    requestedAt: "2026-01-02T00:00:00.000Z" as Timestamp,
   };
   const treated = await mustOk(
     runtime.applyTreatment(sessionId, treatmentRequest),
@@ -137,7 +139,7 @@ test("treatment on a packaged session creates a NEW immutable linked package ver
       targetArtifact: successor,
       treatment: "re-render",
       requestedBy: OPERATOR,
-      requestedAt: "2026-01-03T00:00:00.000Z",
+      requestedAt: "2026-01-03T00:00:00.000Z" as Timestamp,
     }),
     "applyTreatment again",
   );
@@ -166,7 +168,7 @@ test("treatment branch from review: request-treatment → processing → treatme
       targetArtifact: finals[0] as StudioArtifactRef,
       treatment: "adjust-composition",
       requestedBy: OPERATOR,
-      requestedAt: "2026-01-02T00:00:00.000Z",
+      requestedAt: "2026-01-02T00:00:00.000Z" as Timestamp,
     }),
     "applyTreatment(processing)",
   );
@@ -189,18 +191,19 @@ test("treatment branch from review: request-treatment → processing → treatme
 });
 
 test("failed treatments: rights/policy rejection recorded distinctly; session state preserved", async () => {
-  const composed = composeTestRuntime({
+  const { runtime, artifactFactory, authorities } = composeTestRuntime({
     treatmentFailWith: {
       kind: "rights-policy-rejection",
       violations: ["violation-copyrighted-source"],
     },
   });
-  const { runtime, artifactFactory } = composed;
   const created = await mustOk(
     runtime.createSession(standaloneIntent()),
     "create",
   );
   await mustOk(runtime.loadOrganization(created.session.id), "load");
+  // STUDIO-006: seed the REAL identity + consent records for the subject.
+  seedDefaultSubjectConsent(authorities, created.session.id);
   await mustOk(runtime.joinParticipant(created.session.id, participantJoin()), "join");
   const rawArtifact = await captureRawTake(runtime, created.session.id, {});
   const { intermediate, finals } = await buildProcessingArtifacts(artifactFactory, [rawArtifact]);
@@ -224,7 +227,7 @@ test("failed treatments: rights/policy rejection recorded distinctly; session st
     targetArtifact: finals[0] as StudioArtifactRef,
     treatment: "edit",
     requestedBy: OPERATOR,
-    requestedAt: "2026-01-04T00:00:00.000Z",
+    requestedAt: "2026-01-04T00:00:00.000Z" as Timestamp,
   });
   assert.ok(!rightsFailure.ok && rightsFailure.error.kind === "treatment-failed");
   assert.equal((rightsFailure.error as { failure: { kind: string } }).failure.kind, "rights-policy-rejection");
@@ -234,11 +237,12 @@ test("failed treatments: rights/policy rejection recorded distinctly; session st
   assert.equal(runtime.getSession(sessionId)?.packages.length, 1);
 
   // Execution failure mode is distinct.
-  const { runtime: execRuntime, artifactFactory: execFactory } = composeTestRuntime({
+  const { runtime: execRuntime, artifactFactory: execFactory, authorities: execAuthorities } = composeTestRuntime({
     treatmentFailWith: { kind: "execution-failure", reason: "engine exploded" },
   });
   const execCreated = await mustOk(execRuntime.createSession(standaloneIntent()), "create");
   await mustOk(execRuntime.loadOrganization(execCreated.session.id), "load");
+  seedDefaultSubjectConsent(execAuthorities, execCreated.session.id);
   await mustOk(execRuntime.joinParticipant(execCreated.session.id, participantJoin()), "join");
   const execRaw = await captureRawTake(execRuntime, execCreated.session.id, {});
   const execProcessed = await buildProcessingArtifacts(execFactory, [execRaw]);
@@ -263,7 +267,7 @@ test("failed treatments: rights/policy rejection recorded distinctly; session st
     targetArtifact: execProcessed.finals[0] as StudioArtifactRef,
     treatment: "re-transcribe",
     requestedBy: OPERATOR,
-    requestedAt: "2026-01-05T00:00:00.000Z",
+    requestedAt: "2026-01-05T00:00:00.000Z" as Timestamp,
   });
   assert.ok(!execFailure.ok && (execFailure.error as { failure: { kind: string } }).failure.kind === "execution-failure");
 });

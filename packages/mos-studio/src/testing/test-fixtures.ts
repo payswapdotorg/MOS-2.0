@@ -7,13 +7,14 @@
 import assert from "node:assert/strict";
 
 import type { StudioRuntime } from "../runtime/studio-runtime.js";
-import type { JoinParticipantRequest, OpenCaptureRequest } from "../runtime/intake-types.js";
+import type { CreateStudioSessionInput, JoinParticipantRequest, OpenCaptureRequest, StandaloneSessionIntent } from "../runtime/intake-types.js";
 import type { StudioRuntimeOutcome } from "../runtime/errors.js";
 import { composeTestRuntime, TEST_ORGANIZATION } from "./compose-runtime-for-tests.js";
+import type { RealParticipantAuthorities } from "./real-participant-authorities.js";
 import type { StudioArtifactRef } from "../contracts/studio-artifact-package.js";
 import type { StudioArtifactCreationResult } from "../ports/artifact-factory.js";
 import type { StudioCaptureTakeOutcome, StudioCaptureTakeResult } from "../runtime/capture/studio-capture-session.js";
-import type { ConsentRef, IdentityRef, StudioSessionId, TenantId } from "../contracts/refs.js";
+import type { ConsentRef, IdentityRef, StudioFormatId, StudioSessionId, TenantId } from "../contracts/refs.js";
 
 // ——— Branded refs cast once; deterministic ids come from the test runtime ———
 
@@ -23,21 +24,29 @@ export const consentRef = (n: number): ConsentRef => `consent-${n}` as ConsentRe
 
 export const OPERATOR = { kind: "studio-operator", identityRef: "identity-operator-1" } as const;
 
-export const standaloneIntent = (overrides: Record<string, unknown> = {}) => ({
+export const standaloneIntent = (overrides: Record<string, unknown> = {}): CreateStudioSessionInput => ({
   kind: "standalone-intent" as const,
   intent: {
     supplier: { kind: "standalone-user" as const, identityRef: USER },
     tenantId: TENANT,
-    format: { formatId: "reaction", version: 1 },
+    format: { formatId: "reaction" as StudioFormatId, version: 1 },
     inputKind: "intent-with-source-material" as const,
     intent: "React to the source video with honest first-impression commentary",
     sourceArtifacts: [{ artifactId: "artifact-src-1" as never, rightsCleared: true }],
     organizationRef: { id: TEST_ORGANIZATION.id, version: TEST_ORGANIZATION.version },
     plannedParticipants: 1,
     ...overrides,
-  },
+  } as StandaloneSessionIntent,
 });
 
+/**
+ * Request-shaped join fixture. Consent coverage is NOT part of the shape
+ * anymore (STUDIO-006): the refs passed here must reference REAL records in
+ * the composed rights authority — `createSessionReadyForCapture` seeds the
+ * default `consent-1` (capture/use) + `consent-2` (processing/transform)
+ * records for the default subject identity, and scenario tests seed their
+ * own records through `authorities.recordSessionConsent`.
+ */
 export const participantJoin = (overrides: Partial<JoinParticipantRequest> = {}): JoinParticipantRequest => ({
   participantId: "participant-1" as never,
   identityRef: USER,
@@ -47,8 +56,6 @@ export const participantJoin = (overrides: Partial<JoinParticipantRequest> = {})
   grant: { grantedBy: USER },
   consent: {
     consentRefs: [consentRef(1), consentRef(2)],
-    coversCapture: true,
-    coversProcessingIntoArtifacts: true,
   },
   ...overrides,
 });
@@ -84,12 +91,50 @@ export async function mustTake(
 
 // ——— Scenario drivers ———
 
-/** Create a standalone-intent session and load the organization (→ capturing). */
+/**
+ * Seed the REAL authorities (STUDIO-006) for the default subject identity:
+ * tenant + workspace + identity + ACTIVE membership, then two REAL
+ * session-scoped consent records (`use` for capture, `transform` for
+ * processing). Returns the refs so manual compositions can pass them on.
+ */
+export function seedDefaultSubjectConsent(
+  authorities: RealParticipantAuthorities,
+  sessionId: StudioSessionId,
+): { readonly captureConsent: ConsentRef; readonly processingConsent: ConsentRef } {
+  authorities.ensureIdentity({ tenantId: TENANT, identityRef: USER });
+  const captureConsent = authorities.recordSessionConsent({
+    tenantId: TENANT,
+    identityRef: USER,
+    sessionId,
+    actions: ["use"],
+  });
+  const processingConsent = authorities.recordSessionConsent({
+    tenantId: TENANT,
+    identityRef: USER,
+    sessionId,
+    actions: ["transform"],
+  });
+  return { captureConsent, processingConsent };
+}
+
+/**
+ * Create a standalone-intent session, load the organization (→ capturing)
+ * and seed the REAL participant authorities for the default subject. The
+ * deterministic ids of a freshly composed authority are `consent-1` and
+ * `consent-2` — asserted so the `participantJoin()` default refs always
+ * point at REAL rights records (no caller-asserted consent anywhere).
+ */
 export async function createSessionReadyForCapture() {
   const composed = composeTestRuntime();
   const created = await mustOk(composed.runtime.createSession(standaloneIntent()), "createSession");
   const sessionId = created.session.id;
   await mustOk(composed.runtime.loadOrganization(sessionId), "loadOrganization");
+  const { captureConsent, processingConsent } = seedDefaultSubjectConsent(composed.authorities, sessionId);
+  assert.deepEqual(
+    [captureConsent, processingConsent],
+    [consentRef(1), consentRef(2)],
+    "participantJoin() default refs must be the seeded REAL consent records",
+  );
   return { ...composed, sessionId };
 }
 

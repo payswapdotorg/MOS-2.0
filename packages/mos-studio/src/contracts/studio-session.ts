@@ -51,6 +51,15 @@ import type {
 } from "./refs.js";
 import type { StudioFormatVersion } from "./studio-format.js";
 import type { StudioOrganizationRef } from "./organization-loading.js";
+// RECONCILE-C: the lifecycle state union and the base transition record are
+// TRUE duplicates of the canonical `@mos/contracts` StudioSession projection —
+// imported, not mirrored. The studio transition EXTENDS the canonical record
+// with optional audit fields (reason/actor); the studio lifecycle built from
+// richer transitions stays structurally assignable to the canonical one.
+import type {
+  SessionStateTransition as CanonicalSessionStateTransition,
+  StudioSessionLifecycleState as CanonicalStudioSessionLifecycleState,
+} from "@mos/contracts";
 
 /**
  * Versioned reference to the artifact package produced by a session.
@@ -148,7 +157,8 @@ export interface SessionParticipant {
 /**
  * Session lifecycle state machine (§13 standalone flow: → capture →
  * processing → review → packaged; Lab mode adds Lab evaluation after
- * packaging).
+ * packaging). Canonical state union imported from `@mos/contracts`
+ * (RECONCILE-C — true duplicate of the W0-C mirror).
  *
  * Legal forward transitions:
  * - requested → loading | abandoned | failed
@@ -159,29 +169,21 @@ export interface SessionParticipant {
  * - packaged → closed
  * - closed / abandoned / failed are TERMINAL (append-only history retained)
  */
-export type StudioSessionLifecycleState =
-  | "requested"
-  | "loading"
-  | "capturing"
-  | "processing"
-  | "review"
-  | "packaged"
-  | "closed"
-  | "abandoned"
-  | "failed";
+export type StudioSessionLifecycleState = CanonicalStudioSessionLifecycleState;
 
 /** One recorded lifecycle transition (append-only — history is never rewritten). */
-export interface StudioSessionLifecycleTransition {
-  readonly from: StudioSessionLifecycleState;
-  readonly to: StudioSessionLifecycleState;
-  readonly at: Timestamp;
+export interface StudioSessionLifecycleTransition extends CanonicalSessionStateTransition {
   /** Why the transition happened (treatment request, Lab decision, failure...). */
   readonly reason?: string;
   /** Who/what caused it, when attributable (participant, Lab, system). */
   readonly actor?: string;
 }
 
-/** Lifecycle of a session: current state plus append-only transition history. */
+/**
+ * Lifecycle of a session: current state plus append-only transition history.
+ * (Transitions are the studio-extended canonical record; the lifecycle value
+ * remains structurally assignable to the canonical `StudioSessionLifecycle`.)
+ */
 export interface StudioSessionLifecycle {
   readonly state: StudioSessionLifecycleState;
   readonly transitions: readonly StudioSessionLifecycleTransition[];

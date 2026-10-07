@@ -11,8 +11,9 @@ import {
   mustOk,
   mustTake,
   participantJoin,
+  TENANT,
 } from "../../testing/test-fixtures.js";
-import type { ConsentRef } from "../../contracts/refs.js";
+import type { ConsentRef, IdentityRef } from "../../contracts/refs.js";
 
 // ---------------------------------------------------------------------------
 // STUDIO-005: capture session lifecycle, consent gate, raw artifact emission
@@ -136,12 +137,25 @@ test("multiple takes accumulate: durations and contribution provenance per parti
 });
 
 test("capture cannot be opened by an observer (role derives no capture capability)", async () => {
-  const { runtime, sessionId } = await createSessionReadyForCapture();
+  const { runtime, sessionId, authorities } = await createSessionReadyForCapture();
+  // The observer joins with REAL capture-consenting records (so the consent
+  // gate passes); the denial below is therefore purely the role capability.
+  const OBSERVER_IDENTITY = "identity-observer-1" as IdentityRef;
+  authorities.ensureIdentity({ tenantId: TENANT, identityRef: OBSERVER_IDENTITY });
+  const observerConsent = authorities.recordSessionConsent({
+    tenantId: TENANT,
+    identityRef: OBSERVER_IDENTITY,
+    sessionId,
+    actions: ["use", "transform"],
+  });
   await mustOk(
     runtime.joinParticipant(sessionId, participantJoin({
       participantId: "participant-obs" as never,
+      identityRef: OBSERVER_IDENTITY,
       roles: ["observer"],
-      consent: { consentRefs: ["consent-obs-1" as never], coversCapture: true, coversProcessingIntoArtifacts: true },
+      grantedActions: ["observe"],
+      grant: { grantedBy: OBSERVER_IDENTITY },
+      consent: { consentRefs: [observerConsent] },
     })),
     "join observer",
   );

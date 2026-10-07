@@ -14,7 +14,7 @@ import type {
   OrganizationLoadError,
   StudioOrganizationRef,
 } from "../contracts/organization-loading.js";
-import type { SessionParticipantId, StudioSessionId } from "../contracts/refs.js";
+import type { IdentityRef, SessionParticipantId, StudioSessionId } from "../contracts/refs.js";
 import type { StudioSessionLifecycleState } from "../contracts/studio-session.js";
 import type { OutputTreatmentRequest, RightsPolicyRejection } from "../contracts/treatment.js";
 
@@ -53,6 +53,18 @@ export type StudioRuntimeError =
   | {
       readonly kind: "consent-required-for-capture";
       readonly participantId: SessionParticipantId;
+    }
+  | {
+      /** STUDIO-006 (§15): the referenced identity principal does not exist in the identity authority. */
+      readonly kind: "participant-identity-unknown";
+      readonly participantId: SessionParticipantId;
+      readonly identityRef: IdentityRef;
+    }
+  | {
+      /** STUDIO-006 (§15): the identity holds no active workspace membership in the session tenant. */
+      readonly kind: "participant-not-authorized";
+      readonly participantId: SessionParticipantId;
+      readonly identityRef: IdentityRef;
     }
   | {
       readonly kind: "participant-not-found";

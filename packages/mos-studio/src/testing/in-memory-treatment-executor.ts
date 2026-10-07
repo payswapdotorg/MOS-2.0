@@ -32,7 +32,7 @@ export interface InMemoryTreatmentExecutorOptions {
 export function createInMemoryTreatmentExecutor(
   options: InMemoryTreatmentExecutorOptions,
 ): StudioOutputTreatmentPort {
-  const clock = options.clock ?? (() => new Date().toISOString());
+  const clock = options.clock ?? (() => new Date().toISOString() as Timestamp);
   return {
     async applyTreatment(request: OutputTreatmentRequest): Promise<OutputTreatmentOutcome> {
       if (options.failWith?.kind === "execution-failure") {

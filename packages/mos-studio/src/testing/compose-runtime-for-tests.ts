@@ -11,17 +11,25 @@
 import { createFormatRegistryWithInitialFormats } from "../runtime/formats/initial-formats.js";
 import type { FormatRegistry } from "../runtime/format-registry.js";
 import { createStudioRuntime, type StudioRuntime } from "../runtime/studio-runtime.js";
-import { createInMemoryOrganizationLoader } from "./in-memory-organization-loader.js";
+import { createInMemoryOrganizationSource } from "./in-memory-organization-source.js";
+import { createStudioOrganizationLoader } from "../runtime/organization-loading/studio-organization-loader.js";
 import { createInMemoryArtifactFactory } from "./in-memory-artifact-factory.js";
 import { createInMemoryTreatmentExecutor } from "./in-memory-treatment-executor.js";
 import { createInMemoryCaptureSourcePort } from "../runtime/capture/in-memory-capture-source.js";
 import type { InMemoryTreatmentExecutorOptions } from "./in-memory-treatment-executor.js";
 import type { StudioArtifactFactoryPort } from "../ports/artifact-factory.js";
+import type { Timestamp } from "../contracts/refs.js";
+import {
+  composeRealParticipantAuthorities,
+  type RealParticipantAuthorities,
+} from "./real-participant-authorities.js";
 
 /** Deterministic clock: fixed base, +1s per call. */
-export function createDeterministicClock(baseEpochMs = Date.UTC(2026, 0, 1, 12, 0, 0)): () => string {
+export function createDeterministicClock(baseEpochMs = Date.UTC(2026, 0, 1, 12, 0, 0)): () => Timestamp {
   let tick = 0;
-  return () => new Date(baseEpochMs + (tick++) * 1000).toISOString();
+  // The cast is the single clock-seam brand point: the canonical Timestamp
+  // is a branded string; every produced value is a real ISO-8601 string.
+  return () => new Date(baseEpochMs + (tick++) * 1000).toISOString() as Timestamp;
 }
 
 /** Deterministic id factory: `t-<prefix>-<counter>`. */
@@ -44,7 +52,7 @@ export const TEST_ORGANIZATION = {
   ],
 } as const;
 
-/** Assemble a test runtime bound to disclosed in-memory doubles. */
+/** Assemble a test runtime bound to disclosed in-memory doubles + the REAL participant authorities (STUDIO-006). */
 export function composeTestRuntime(options: {
   /** Custom format registry (defaults to the three initial formats). */
   readonly formatRegistry?: FormatRegistry;
@@ -57,18 +65,28 @@ export function composeTestRuntime(options: {
   readonly baseEpochMs?: number;
 } = {}): {
   readonly runtime: StudioRuntime;
-  readonly clock: () => string;
+  readonly clock: () => Timestamp;
   /** The shared factory the runtime and treatment executor use (test-created artifacts close the lineage). */
   readonly artifactFactory: StudioArtifactFactoryPort & { readonly createdArtifacts: readonly import("../contracts/studio-artifact-package.js").StudioArtifactRef[] };
+  /** STUDIO-006: the REAL identity + rights authorities behind the ports. */
+  readonly authorities: RealParticipantAuthorities;
 } {
   const clock = createDeterministicClock(options.baseEpochMs);
+  // STUDIO-006: REAL @mos/identity + @mos/rights in-memory repositories behind
+  // the studio-owned participant ports (adapters + composition disclosed in
+  // testing/participant-authority-adapters.ts + real-participant-authorities.ts).
+  const authorities = composeRealParticipantAuthorities({ now: clock });
   // One shared artifact factory: treatments create successors whose parents
   // are artifacts created by the runtime's factory (closed lineage §6).
   const artifactFactory = createInMemoryArtifactFactory({ idFactory: createDeterministicIdFactory("art") });
   const runtime = createStudioRuntime({
     formatRegistry: options.formatRegistry ?? createFormatRegistryWithInitialFormats(),
-    organizationLoader: createInMemoryOrganizationLoader({
-      organizations: options.organizations ?? [TEST_ORGANIZATION],
+    // STUDIO-007: the REAL studio loader over a disclosed in-memory source double
+    // (validation/verdicts/caching live in the loader; only the source is doubled).
+    organizationLoader: createStudioOrganizationLoader({
+      source: createInMemoryOrganizationSource({
+        organizations: options.organizations ?? [TEST_ORGANIZATION],
+      }),
     }),
     artifactFactory,
     treatmentExecutor: createInMemoryTreatmentExecutor({
@@ -77,8 +95,10 @@ export function composeTestRuntime(options: {
       failWith: options.treatmentFailWith,
     }),
     captureSourcePort: createInMemoryCaptureSourcePort({ now: clock, fixedTakeSeconds: 42 }),
+    participantIdentityPort: authorities.participantIdentityPort,
+    participantConsentPort: authorities.participantConsentPort,
     clock,
     idFactory: createDeterministicIdFactory("id"),
   });
-  return { runtime, clock, artifactFactory };
+  return { runtime, clock, artifactFactory, authorities };
 }

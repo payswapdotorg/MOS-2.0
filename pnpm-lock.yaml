@@ -867,7 +867,17 @@ importers:
         specifier: workspace:*
         version: link:../mos-identity
 
-  packages/mos-studio: {}
+  packages/mos-studio:
+    dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
+      '@mos/identity':
+        specifier: workspace:*
+        version: link:../mos-identity
+      '@mos/rights':
+        specifier: workspace:*
+        version: link:../mos-rights
 
   packages/provider:
     dependencies:

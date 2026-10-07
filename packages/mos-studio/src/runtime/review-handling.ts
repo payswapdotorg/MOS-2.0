@@ -14,6 +14,7 @@ import type { StudioSessionRecord } from "./session-state.js";
 import { applyLifecycleTransition, attachPackageVersion, snapshotSession } from "./session-state.js";
 import { assembleArtifactPackage } from "./package-assembly.js";
 import type { StudioArtifactPackageId } from "../contracts/refs.js";
+import type { Timestamp } from "../contracts/refs.js";
 import type { StudioArtifactPackage } from "../contracts/studio-artifact-package.js";
 import type { StudioSession } from "../contracts/studio-session.js";
 import type { StudioOutputReview, StudioOutputReviewOutcome } from "../contracts/treatment.js";
@@ -34,7 +35,7 @@ export function applyReviewOutcome(
   record: StudioSessionRecord,
   review: StudioOutputReview,
   deps: {
-    readonly now: () => string;
+    readonly now: () => Timestamp;
     readonly nextPackageId: () => string;
   },
 ): { ok: true; value: AppliedReviewValue } | { ok: false; error: StudioRuntimeError } {

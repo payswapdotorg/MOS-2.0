@@ -13,7 +13,7 @@ import {
 import { createReactionFormatPlugin } from "./formats/reaction.js";
 import { createAudioPodcastFormatPlugin } from "./formats/audio-podcast.js";
 import { createVideoPodcastFormatPlugin } from "./formats/video-podcast.js";
-import type { StudioFormatPlugin } from "../contracts/studio-format.js";
+import type { StudioFormatId, StudioFormatPlugin } from "../contracts/studio-format.js";
 import { capabilityId, capabilityIds } from "./formats/format-plugin-basics.js";
 import { composeTestRuntime } from "../testing/compose-runtime-for-tests.js";
 
@@ -100,7 +100,7 @@ test('reaction format: exposes organization decision points and hard-codes NO la
 test('pluggability: a custom format plugin is accepted at runtime and drives a session end-to-end', async () => {
   const registry = createFormatRegistryWithInitialFormats();
   const customPlugin: StudioFormatPlugin = {
-    id: 'test-cast',
+    id: 'test-cast' as StudioFormatId,
     version: 2,
     inputRequirements: {
       acceptedInputs: ['intent'],
@@ -155,7 +155,7 @@ test('pluggability: a custom format plugin is accepted at runtime and drives a s
   // The custom format actually resolves and the runtime accepts it —
   // pluggability is live, not compile-time. The runtime is composed with the
   // SAME registry instance the plugin was registered into at runtime.
-  const resolved = registry.resolve('test-cast', 2);
+  const resolved = registry.resolve('test-cast' as StudioFormatId, 2);
   assert.equal(resolved.ok, true);
   const { runtime } = composeTestRuntime({ formatRegistry: registry });
   const created = await runtime.createSession({
@@ -163,7 +163,7 @@ test('pluggability: a custom format plugin is accepted at runtime and drives a s
     intent: {
       supplier: { kind: 'standalone-user', identityRef: 'identity-user-1' as never },
       tenantId: 'tenant-custom' as never,
-      format: { formatId: 'test-cast', version: 2 },
+      format: { formatId: 'test-cast' as StudioFormatId, version: 2 },
       inputKind: 'intent',
       intent: 'produce a test cast',
       organizationRef: { id: 'org-test-full', version: 3 },
@@ -240,18 +240,18 @@ test('fail-closed: duplicate format id+version is rejected; other versions coexi
   const reactionV2 = { ...createReactionFormatPlugin(), version: 2 };
   const upgraded = registry.register(reactionV2);
   assert.equal(upgraded.ok, true);
-  const latest = registry.resolve('reaction');
+  const latest = registry.resolve('reaction' as StudioFormatId);
   assert.ok(latest.ok && latest.plugin.version === 2);
-  const pinnedV1 = registry.resolve('reaction', 1);
+  const pinnedV1 = registry.resolve('reaction' as StudioFormatId, 1);
   assert.ok(pinnedV1.ok && pinnedV1.plugin.version === 1);
 });
 
 test('resolution: unknown formats and versions fail explicitly (never a fallback)', () => {
   const registry = createFormatRegistryWithInitialFormats();
-  const unknown = registry.resolve('does-not-exist');
+  const unknown = registry.resolve('does-not-exist' as StudioFormatId);
   assert.ok(!unknown.ok && unknown.error.kind === 'format-not-registered');
 
-  const wrongVersion = registry.resolve('reaction', 99);
+  const wrongVersion = registry.resolve('reaction' as StudioFormatId, 99);
   assert.ok(!wrongVersion.ok && wrongVersion.error.kind === 'format-version-not-registered');
   assert.deepEqual(wrongVersion.error.availableVersions, [1]);
 });

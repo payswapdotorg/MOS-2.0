@@ -23,22 +23,22 @@
  */
 
 import type {
-  ArtifactId,
   ConsentRef,
-  ContentDigest,
   ContractVersion,
   DurationSeconds,
   MoneyAmount,
   ProvenanceRef,
-  RightsRef,
   StudioArtifactPackageId,
   StudioSessionId,
-  StorageRef,
-  TenantId,
   Timestamp,
   ConversationGraphId,
   EditGraphId,
 } from "./refs.js";
+// RECONCILE-C: the frozen ArtifactRef core contract (artifactId, version,
+// tenantId, digest, type, storageRef, rightsRef, provenanceRef) and the
+// creation-method vocabulary are canonical in `@mos/contracts` — imported and
+// extended below instead of mirrored (studio adds stage/lineage detail).
+import type { ArtifactRef as CanonicalArtifactRef, CreationMethod } from "@mos/contracts";
 
 /**
  * Artifact stage in the Studio pipeline. The distinction is load-bearing:
@@ -57,29 +57,20 @@ export type StudioArtifactStage = "raw" | "intermediate" | "final";
 /** Coarse artifact media/type classification used by format output contracts. */
 export type StudioArtifactType = "audio" | "video" | "image" | "text" | "timeline" | "graph";
 
-/** How an artifact came to exist (§6 artifact metadata: creation method). */
-export type StudioArtifactCreationMethod =
-  | "human-capture"
-  | "human-import"
-  | "engine-generated"
-  | "organization-transform"
-  | "composition";
+/**
+ * How an artifact came to exist (§6 artifact metadata: creation method).
+ * Canonical `@mos/contracts` vocabulary (RECONCILE-C — identical union).
+ */
+export type StudioArtifactCreationMethod = CreationMethod;
 
 /**
- * Studio-side artifact reference. Field-for-field superset of the frozen
- * `ArtifactRef` core contract (artifactId, version, tenantId, digest, type,
- * storageRef, rightsRef, provenanceRef) plus the Studio stage, lineage
- * parents and creation method required by §6.
+ * Studio-side artifact reference: the CANONICAL frozen `ArtifactRef` contract
+ * (artifactId, version, tenantId, digest, type, storageRef, rightsRef,
+ * provenanceRef — imported from `@mos/contracts`, RECONCILE-C) EXTENDED with
+ * the Studio stage, lineage parents and creation method required by §6.
  */
-export interface StudioArtifactRef {
-  readonly artifactId: ArtifactId;
-  readonly version: ContractVersion;
-  readonly tenantId: TenantId;
-  readonly digest: ContentDigest;
+export interface StudioArtifactRef extends CanonicalArtifactRef {
   readonly type: StudioArtifactType;
-  readonly storageRef: StorageRef;
-  readonly rightsRef: RightsRef;
-  readonly provenanceRef: ProvenanceRef;
   /** Pipeline stage of THIS version (raw/intermediate/final). */
   readonly stage: StudioArtifactStage;
   /** Parent artifact versions (immutable lineage, §6; empty only for pure raw capture). */

@@ -15,7 +15,7 @@
  * Studio runtime has no authority over their values.
  */
 
-import type { StudioFormatPlugin } from "../../contracts/studio-format.js";
+import type { StudioFormatId, StudioFormatPlugin } from "../../contracts/studio-format.js";
 import { capabilityId, capabilityIds, validateIntakeAsDeclared } from "./format-plugin-basics.js";
 
 /** Reaction format version (contract evolution counter). */
@@ -24,7 +24,7 @@ export const REACTION_FORMAT_VERSION = 1;
 /** The reaction format plugin descriptor. */
 export function createReactionFormatPlugin(): StudioFormatPlugin {
   const plugin: StudioFormatPlugin = {
-    id: "reaction",
+    id: "reaction" as StudioFormatId,
     version: REACTION_FORMAT_VERSION,
     inputRequirements: {
       // A reaction needs something to react to: source material must be part

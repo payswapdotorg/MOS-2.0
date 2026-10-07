@@ -12,8 +12,8 @@ import { createHash, randomUUID } from "node:crypto";
 import type {
   ArtifactId,
   ContentDigest,
-  ContractVersion,
   StorageRef,
+  Version,
 } from "../contracts/refs.js";
 import type { StudioArtifactRef } from "../contracts/studio-artifact-package.js";
 import type {
@@ -82,7 +82,10 @@ export function createInMemoryArtifactFactory(
       }
       const artifactId = `art_${idFactory()}` as ArtifactId;
       const versions = byId.get(artifactId) ?? [];
-      const version: ContractVersion = versions.length + 1;
+      // Canonical branded Version (RECONCILE-C): StudioArtifactRef extends the
+      // canonical ArtifactRef, so its version carries the contract brand; the
+      // cast is the single brand point for this monotonic counter.
+      const version = (versions.length + 1) as Version;
       const digest: ContentDigest = hasDigest
         ? (input.precomputedDigest as ContentDigest)
         : (`sha256:${createHash("sha256").update(content as Uint8Array).digest("hex")}` as ContentDigest);

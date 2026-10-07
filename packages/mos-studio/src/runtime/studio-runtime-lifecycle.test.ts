@@ -5,11 +5,14 @@ import { isLegalTransition } from "./lifecycle.js";
 import { composeTestRuntime, TEST_ORGANIZATION } from "../testing/compose-runtime-for-tests.js";
 import { createStudioRuntime } from "./studio-runtime.js";
 import { createFormatRegistryWithInitialFormats } from "./formats/initial-formats.js";
-import { createInMemoryOrganizationLoader } from "../testing/in-memory-organization-loader.js";
+import { createInMemoryOrganizationSource } from "../testing/in-memory-organization-source.js";
+import { createStudioOrganizationLoader } from "./organization-loading/studio-organization-loader.js";
 import { createInMemoryArtifactFactory } from "../testing/in-memory-artifact-factory.js";
 import { createInMemoryTreatmentExecutor } from "../testing/in-memory-treatment-executor.js";
 import { createInMemoryCaptureSourcePort } from "./capture/in-memory-capture-source.js";
+import { composeRealParticipantAuthorities } from "../testing/real-participant-authorities.js";
 import type { OutputTreatmentRequest } from "../contracts/treatment.js";
+import type { StudioFormatId, Timestamp } from "../contracts/refs.js";
 import type { StudioArtifactRef } from "../contracts/studio-artifact-package.js";
 import {
   OPERATOR,
@@ -137,7 +140,7 @@ test("production-request entry mode: Lab request view is consumed read-only", as
     strategyRef: "strategy-17" as never,
     transformGraphRef: "transform-17" as never,
     organizationRef: { id: TEST_ORGANIZATION.id as never, version: TEST_ORGANIZATION.version },
-    studioFormat: { formatId: "reaction", version: 1 },
+    studioFormat: { formatId: "reaction" as StudioFormatId, version: 1 },
     capabilityRequirements: ["compose_reaction" as never],
     humanTasks: ["human-task-1" as never],
     acceptanceCriteria: "acceptance-17" as never,
@@ -224,7 +227,7 @@ test("invalid lifecycle jumps are rejected with explicit errors", async () => {
     targetArtifact: { artifactId: "art-none" } as never,
     treatment: "trim",
     requestedBy: OPERATOR,
-    requestedAt: "2026-01-01T00:00:00.000Z",
+    requestedAt: "2026-01-01T00:00:00.000Z" as Timestamp,
   } as OutputTreatmentRequest);
   assert.ok(!earlyTreatment.ok && earlyTreatment.error.kind === "operation-not-allowed-in-state");
 
@@ -252,7 +255,7 @@ test("unknown sessions fail with session-not-found", async () => {
       targetArtifact: { artifactId: "x" } as never,
       treatment: "edit",
       requestedBy: OPERATOR,
-      requestedAt: "2026-01-01T00:00:00.000Z",
+      requestedAt: "2026-01-01T00:00:00.000Z" as Timestamp,
     } as OutputTreatmentRequest),
     await runtime.closeSession(unknown),
     await runtime.abandonSession(unknown),
@@ -292,17 +295,24 @@ test("organization loading fails loudly: not-found, incompatible verdict, unavai
   assert.equal(runtimeIncompat.getSession(weak.session.id)?.session.lifecycle.state, "failed");
 
   // Loader unavailable → explicit loader-unavailable failure (session not created → not-found on later ops).
+  // STUDIO-006: the manually composed runtime binds the REAL participant
+  // authorities behind the studio ports, exactly like composeTestRuntime.
+  const authorities = composeRealParticipantAuthorities();
   const unavailable = createStudioRuntime({
     formatRegistry: createFormatRegistryWithInitialFormats(),
-    organizationLoader: createInMemoryOrganizationLoader({
-      organizations: [TEST_ORGANIZATION],
-      unavailable: true,
+    organizationLoader: createStudioOrganizationLoader({
+      source: createInMemoryOrganizationSource({
+        organizations: [TEST_ORGANIZATION],
+        unavailable: true,
+      }),
     }),
     artifactFactory: createInMemoryArtifactFactory(),
     treatmentExecutor: createInMemoryTreatmentExecutor({
       artifactFactory: createInMemoryArtifactFactory(),
     }),
     captureSourcePort: createInMemoryCaptureSourcePort(),
+    participantIdentityPort: authorities.participantIdentityPort,
+    participantConsentPort: authorities.participantConsentPort,
   });
   const unavailableSession = await mustOk(
     unavailable.createSession(standaloneIntent()),

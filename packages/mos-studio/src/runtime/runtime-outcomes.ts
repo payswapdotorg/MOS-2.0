@@ -13,6 +13,8 @@ import type { StudioArtifactPackage } from "../contracts/studio-artifact-package
 import type { OutputTreatmentResult, StudioOutputReview, StudioOutputTreatmentPort } from "../contracts/treatment.js";
 import type { StudioOrganizationLoader } from "../contracts/organization-loading.js";
 import type { StudioArtifactFactoryPort } from "../ports/artifact-factory.js";
+import type { ParticipantConsentPort } from "../ports/participant-consent.js";
+import type { ParticipantIdentityPort } from "../ports/participant-identity.js";
 import type { FormatRegistry } from "./format-registry.js";
 import type { CaptureSourcePort } from "./capture/capture-source-port.js";
 
@@ -23,6 +25,13 @@ export interface StudioRuntimeDeps {
   readonly artifactFactory: StudioArtifactFactoryPort;
   readonly treatmentExecutor: StudioOutputTreatmentPort;
   readonly captureSourcePort: CaptureSourcePort;
+  /**
+   * STUDIO-006: the REAL identity + rights authorities behind the studio's
+   * narrow participant ports (identity/rights remain the authorities; the
+   * studio only consumes them).
+   */
+  readonly participantIdentityPort: ParticipantIdentityPort;
+  readonly participantConsentPort: ParticipantConsentPort;
   /** Injectable clock (default: real UTC ISO timestamps). */
   readonly clock?: () => Timestamp;
   /** Injectable id source (default: crypto.randomUUID). */

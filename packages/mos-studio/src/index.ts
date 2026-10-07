@@ -18,17 +18,52 @@ export type * from "./contracts/refs.js";
 export type * from "./contracts/capture.js";
 export type * from "./contracts/interviewer.js";
 export type * from "./contracts/organization-loading.js";
+export type * from "./contracts/script-graph.js";
 export type * from "./contracts/studio-artifact-package.js";
 export type * from "./contracts/studio-format.js";
 export type * from "./contracts/studio-session.js";
 export type * from "./contracts/treatment.js";
 
-// ——— Ports (studio-owned dependency seams; Wave-1 disclosed doubles) ———
+// ——— Ports (studio-owned dependency seams) ———
 export type {
   StudioArtifactCreationInput,
   StudioArtifactCreationResult,
   StudioArtifactFactoryPort,
 } from "./ports/artifact-factory.js";
+export type {
+  ParticipantConsentPort,
+  ParticipantConsentQuery,
+  ParticipantConsentResolution,
+} from "./ports/participant-consent.js";
+export {
+  STUDIO_CONSENT_CAPTURE_ACTION,
+  STUDIO_CONSENT_PROCESSING_ACTION,
+  studioSessionConsentSubject,
+} from "./ports/participant-consent.js";
+export type {
+  ParticipantIdentityPort,
+  ParticipantIdentityQuery,
+  ParticipantIdentityResolution,
+} from "./ports/participant-identity.js";
+export type {
+  AdaptiveSelectionError,
+  AdaptiveSelectionInput,
+  AdaptiveSelectionResult,
+  AdaptiveSequencerPort,
+} from "./ports/adaptive-sequencer.js";
+export type {
+  InterviewerAgentPort,
+  InterviewerPresentationError,
+  InterviewerQuestionPresentation,
+  InterviewerQuestionPresentationInput,
+  InterviewerQuestionPresentationResult,
+} from "./ports/interviewer-agent.js";
+export type {
+  ScriptGraphGenerationError,
+  ScriptGraphGenerationInput,
+  ScriptGraphGenerationResult,
+  ScriptGraphGeneratorPort,
+} from "./ports/script-graph-generator.js";
 
 // ——— Runtime: lifecycle machine ———
 export {
@@ -109,13 +144,68 @@ export type {
 export type { StudioRuntimeError, StudioRuntimeOutcome } from "./runtime/errors.js";
 export type { StudioSessionView } from "./runtime/session-state.js";
 
-// ——— Disclosed in-memory test doubles (NOT production bindings) ———
-export { createInMemoryOrganizationLoader } from "./testing/in-memory-organization-loader.js";
+// ——— Runtime: organization loader binding (STUDIO-007) ———
+export {
+  createStudioOrganizationLoader,
+  checkOrganizationCompatibility,
+  validateOrganizationDescriptor,
+} from "./runtime/organization-loading/studio-organization-loader.js";
 export type {
-  InMemoryOrganizationDefinition,
-  InMemoryOrganizationLoaderOptions,
-} from "./testing/in-memory-organization-loader.js";
+  OrganizationInvalidReason,
+  StudioOrganizationLoaderOptions,
+} from "./runtime/organization-loading/studio-organization-loader.js";
+export type {
+  OrganizationSourceError,
+  OrganizationSourcePort,
+  OrganizationSourceResult,
+  StudioOrganizationDescriptor,
+  StudioOrganizationLoaderPort,
+} from "./contracts/organization-loading.js";
+
+// ——— Runtime: script/question graphs (STUDIO-003, §14) ———
+export {
+  createScriptGraphStore,
+  validateScriptGraphDraft,
+} from "./runtime/script-graph/script-graph-store.js";
+export type {
+  RegisteredScriptGraph,
+  ScriptGraphStore,
+  ScriptGraphStoreError,
+  ScriptGraphStoreOptions,
+} from "./runtime/script-graph/script-graph-store.js";
+export { createAdaptiveSequencer } from "./runtime/script-graph/adaptive-sequencer.js";
+export type { AdaptiveSequencerOptions } from "./runtime/script-graph/adaptive-sequencer.js";
+
+// ——— Disclosed in-memory test doubles (NOT production bindings) ———
+export { createInMemoryOrganizationSource, expandOrganizationSeed } from "./testing/in-memory-organization-source.js";
+export type {
+  InMemoryOrganizationSeed,
+  InMemoryOrganizationSourceOptions,
+} from "./testing/in-memory-organization-source.js";
 export { createInMemoryArtifactFactory } from "./testing/in-memory-artifact-factory.js";
 export type { InMemoryArtifactFactoryOptions } from "./testing/in-memory-artifact-factory.js";
 export { createInMemoryTreatmentExecutor } from "./testing/in-memory-treatment-executor.js";
 export type { InMemoryTreatmentExecutorOptions } from "./testing/in-memory-treatment-executor.js";
+export {
+  ANSWER_CONCLUDE,
+  ANSWER_ELABORATE,
+  createInMemoryScriptGraphGenerator,
+  intentRecordFixture,
+} from "./testing/in-memory-script-graph-generator.js";
+export { createInMemoryInterviewerAgent } from "./testing/in-memory-interviewer-agent.js";
+export type { InMemoryInterviewerAgentOptions } from "./testing/in-memory-interviewer-agent.js";
+
+// ——— REAL participant-authority adapters + composition (STUDIO-006) ———
+// The adapters compose the REAL @mos/identity / @mos/rights repositories
+// behind the studio ports (identity/rights remain the authorities).
+export {
+  createParticipantIdentityPortFromRepository,
+  createParticipantConsentPortFromRightsRepository,
+} from "./testing/participant-authority-adapters.js";
+export {
+  composeRealParticipantAuthorities,
+} from "./testing/real-participant-authorities.js";
+export type {
+  RealParticipantAuthorities,
+  RealParticipantAuthoritiesOptions,
+} from "./testing/real-participant-authorities.js";

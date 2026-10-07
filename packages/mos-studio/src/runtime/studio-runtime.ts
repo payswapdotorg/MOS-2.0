@@ -68,7 +68,9 @@ import type {
   TreatmentAppliedValue,
 } from "./runtime-outcomes.js";
 import { checkRejectionMatchesOutcome, validateProcessingOutput } from "./intake-validation.js";
-import { buildSessionParticipant, checkJoinPreconditions } from "./participant-intake.js";
+import { admitParticipant, buildSessionParticipant } from "./participant-intake.js";
+import type { ParticipantConsentPort } from "../ports/participant-consent.js";
+import type { ParticipantIdentityPort } from "../ports/participant-identity.js";
 import { applyReviewOutcome } from "./review-handling.js";
 import { openCaptureForSession } from "./capture/open-capture.js";
 import type { StudioCaptureSession } from "./capture/studio-capture-session.js";
@@ -90,6 +92,9 @@ export class StudioRuntime {
   private readonly artifactFactory: StudioArtifactFactoryPort;
   private readonly treatmentExecutor: StudioOutputTreatmentPort;
   private readonly captureSourcePort: CaptureSourcePort;
+  /** STUDIO-006: REAL identity + rights authorities behind studio ports. */
+  private readonly participantIdentityPort: ParticipantIdentityPort;
+  private readonly participantConsentPort: ParticipantConsentPort;
   private readonly clock: () => Timestamp;
   private readonly idFactory: () => string;
 
@@ -99,7 +104,9 @@ export class StudioRuntime {
     this.artifactFactory = deps.artifactFactory;
     this.treatmentExecutor = deps.treatmentExecutor;
     this.captureSourcePort = deps.captureSourcePort;
-    this.clock = deps.clock ?? (() => new Date().toISOString());
+    this.participantIdentityPort = deps.participantIdentityPort;
+    this.participantConsentPort = deps.participantConsentPort;
+    this.clock = deps.clock ?? (() => new Date().toISOString() as Timestamp);
     this.idFactory = deps.idFactory ?? (() => randomUUID());
   }
 
@@ -195,17 +202,30 @@ export class StudioRuntime {
     return { ok: true, value: { session: snapshotSession(record) } };
   }
 
-  /** Join a participant; consent coverage is enforced per format requirements. */
+  /**
+   * Join a participant through the REAL identity + rights authorities
+   * (§15/STUDIO-006): the identity must exist with an active tenant
+   * membership, and consent coverage is DERIVED from real consent records.
+   */
   async joinParticipant(sessionId: StudioSessionId, request: JoinParticipantRequest): Promise<StudioRuntimeOutcome<JoinedParticipantValue>> {
     const record = this.sessions.get(sessionId);
     if (record === undefined) {
       return notFound(sessionId);
     }
-    const preconditionError = checkJoinPreconditions(record, request);
-    if (preconditionError !== undefined) {
-      return { ok: false, error: preconditionError };
+    const admission = await admitParticipant(record, request, {
+      participantIdentityPort: this.participantIdentityPort,
+      participantConsentPort: this.participantConsentPort,
+    });
+    if (!admission.ok) {
+      return { ok: false, error: admission.error };
     }
-    const participant = buildSessionParticipant(request, sessionId, this.clock(), () => `grant_${this.idFactory()}`);
+    const participant = buildSessionParticipant(
+      request,
+      sessionId,
+      this.clock(),
+      () => `grant_${this.idFactory()}`,
+      admission.consent,
+    );
     appendParticipant(record, participant);
     return { ok: true, value: { session: snapshotSession(record), participant } };
   }
@@ -222,6 +242,7 @@ export class StudioRuntime {
     const opened = await openCaptureForSession(record, request, {
       captureSourcePort: this.captureSourcePort,
       artifactFactory: this.artifactFactory,
+      participantConsentPort: this.participantConsentPort,
     });
     return opened.ok ? { ok: true, value: opened.capture } : { ok: false, error: opened.error };
   }
@@ -248,8 +269,17 @@ export class StudioRuntime {
       };
     }
     if (record.draft.rawArtifacts.length > 0) {
+      // STUDIO-006: LIVE consent re-resolution — a mid-session revocation in
+      // the rights authority blocks processing even though the join-time
+      // consent snapshot stayed frozen.
       for (const participant of record.participants.values()) {
-        if (!participant.consent.coversProcessingIntoArtifacts) {
+        const consent = await this.participantConsentPort.resolveParticipantConsent({
+          tenantId: record.tenantId,
+          sessionId: record.sessionId,
+          participantIdentityRef: participant.identityRef,
+          consentRefs: participant.consent.consentRefs,
+        });
+        if (!consent.coversProcessingIntoArtifacts) {
           return { ok: false, error: { kind: "consent-required-for-processing", participantId: participant.participantId } };
         }
       }
