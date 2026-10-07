@@ -809,6 +809,8 @@ importers:
 
   packages/mos-identity: {}
 
+  packages/mos-studio: {}
+
   packages/provider:
     dependencies:
       '@zcode/model-option-map':
