@@ -1,26 +1,36 @@
 /**
- * DISCLOSED TEST DOUBLE — EngineAdapter implementation (ENG-002).
+ * DISCLOSED TEST DOUBLE — EngineAdapter implementation (ENG-002, ENG-003
+ * context-aware).
  *
  * ⚠ TEST DOUBLE ONLY — NEVER A PRODUCTION ENGINE ⚠
  *
  * This adapter demonstrates and exercises the EngineAdapter contract
- * (EngineJob → EngineResult). It is deterministic, dependency-free and
- * makes NO claim about any real engine, model, license or benchmark. It
- * exists so the adapter contract, the job/result shapes and the typed
- * failure path can be tested without any engine SDK (which the boundary
- * harness forbids anyway).
+ * (EngineJob + sandbox context → EngineResult). It is deterministic,
+ * dependency-free and makes NO claim about any real engine, model,
+ * license or benchmark. It exists so the adapter contract, the job/result
+ * shapes and the typed failure path can be tested without any engine SDK
+ * (which the boundary harness forbids anyway).
  *
  * Behavior (fully deterministic):
  * - validates the incoming job against the EngineJob contract's required
  *   fields (fail-closed: malformed jobs throw);
+ * - verifies the sandbox context carries NO credential-shaped surface
+ *   (adapter-side defense: any key matching the credential vocabulary
+ *   fails the invocation closed);
  * - echoes `job.inputArtifactRefs` as `outputArtifactRefs` on success (an
  *   obvious placeholder transform — the point is contract shape, not
- *   semantics); a failed invocation produces NO output artifacts;
+ *   semantics; echoed inputs are in scope, so the runner accepts them);
+ *   a failed invocation produces NO output artifacts;
  * - builds a complete EngineResult: provenance from the job's exact
  *   engine/capability identity plus the configured model identity,
  *   zero duration/resource usage, configurable cost and warnings, and the
  *   configured failure (typed failure path) or `null`;
  * - `recordedAt` uses a fixed epoch stamp so results are reproducible.
+ *
+ * For sandbox-AWARE behavior (real artifact resolution/persist, quota
+ * simulation, network attempts, hangs) use
+ * `createSandboxAwareTestAdapter` — this double stays minimal so the
+ * ENG-002 contract tests remain a stable baseline.
  */
 
 import { assertRequiredFields } from "@mos/contracts";
@@ -36,10 +46,15 @@ import type {
   Version,
 } from "@mos/contracts";
 
+import type { EngineSandboxContext } from "../ports/engine-runner.port.js";
 import type { EngineAdapter } from "../ports/engine-adapter.port.js";
 
 /** Fixed provenance stamp: the double must be fully deterministic. */
 const RECORDED_AT = "1970-01-01T00:00:00.000Z" as Timestamp;
+
+/** Credential-shaped vocabulary that must NEVER appear on a context. */
+const CREDENTIAL_KEY_PATTERN =
+  /credential|secret|token|password|passphrase|apikey|api_key|privatekey/i;
 
 /** Options for the disclosed test-double adapter. */
 export interface TestDoubleEngineAdapterOptions {
@@ -68,9 +83,24 @@ export function createTestDoubleEngineAdapter(
     engineId: options.engineId,
     engineVersion: options.engineVersion,
 
-    async invoke(job: EngineJob): Promise<EngineResult> {
+    async invoke(
+      job: EngineJob,
+      context: EngineSandboxContext,
+    ): Promise<EngineResult> {
       // Fail-closed: the double enforces the EngineJob contract surface.
       assertRequiredFields(job, "EngineJob");
+
+      // Adapter-side defense: the sandbox context must have NO credential
+      // surface (policy runner.databaseCredentials/providerCredentials:
+      // none). A context smuggling credentials fails the invocation.
+      const offendingKeys = Object.keys(context).filter((key) =>
+        CREDENTIAL_KEY_PATTERN.test(key),
+      );
+      if (offendingKeys.length > 0) {
+        throw new Error(
+          `sandbox context carries credential-shaped fields: ${offendingKeys.join(", ")}`,
+        );
+      }
 
       const failure: EngineJobFailure | null = options.failure ?? null;
 
