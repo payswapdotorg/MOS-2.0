@@ -1,4 +1,4 @@
-# @mos/jobs — MOS v2.0 durable-job authority (JOBS-001)
+# @mos/jobs — MOS v2.0 durable-job authority (JOBS-001) + notification delivery plane (NOTIFY-001)
 
 The durable job/worker path that spec/mos-architecture-v2.0.md §26 makes
 MANDATORY for long-running work: Lab runs, media processing, engine
@@ -11,6 +11,21 @@ the model), an append-only immutable event history per job, and full §30
 observability on every completion. Module authority: `durable-job`
 (spec/mos-module-registry-v2.0.yaml — owner worker-b, dependencies
 `[contracts]`).
+
+The **notification delivery plane** (NOTIFY-001) lives in this package
+by the MOS2-WAVE5-HARVEST TL topology decision (no notify module exists
+in the frozen registry): durable, tenant-scoped, append-only
+NotificationRecords with declarative semantic kinds, identity-ref
+recipients, REFERENCE-ONLY subjects (artifact/task/mission refs — never
+inline content), dedup-key idempotency (the same logical notification
+submitted twice yields ONE record), lifecycle `queued → delivered |
+failed | suppressed`, delivery attempts as RECORDED §30 events through a
+declared provider transport seam (immutable receipts on success, typed
+retries with declared backoff otherwise, terminal failure on
+exhaustion), suppression at recipient or record level as a FIRST-CLASS
+recorded outcome with a reason — and, structurally test-pinned, NO
+task/workflow duplication: no claim/lease/execute semantics anywhere on
+notifications (see “The no-task-engine discipline”).
 
 **No scheduling authority.** There is no cron, no HTTP timer, no
 clock-driven dispatch (§26 forbids synchronous HTTP / Hobby-Cron as the
@@ -37,11 +52,25 @@ the consumption model.
 | `createJobPollerDouble` / `JobPollerDouble` / `JobPollerTimers` | **DISCLOSED TEST DOUBLE** — clock-driven poller |
 | `decideRetry` / `retryDelayMs` / `retryPolicyViolations` / `RetryDecision` | pure retry domain logic |
 | `JobQueueError` / `JobQueueErrorCode` | typed errors (7 codes) with machine-readable `details` |
+| `NotificationRecord` + `NotificationSubmission` / `NotificationSubject` / `NotificationReceipt` / `RecipientSuppression` / `NotificationSuppressionInfo` / `NotificationAttemptObservability` / `TypedNotificationFailure` / `NotificationRetryPolicy` / `NotificationListQuery` / actor aliases | the notification-plane record vocabulary (NOTIFY-001, §30/§31) |
+| `NOTIFICATION_KINDS` / `NOTIFICATION_STATUSES` / `TERMINAL_NOTIFICATION_STATUSES` / `NOTIFICATION_EVENT_TYPES` / `NOTIFICATION_DELIVERY_FAILURE_CODES` | frozen vocabularies (declarative kinds; test-pinned) |
+| `NotificationId` / `NotificationDedupKey` / `DeliveryAttemptId` / `NotificationReceiptId` / `ProviderAckRef` + builders | notification-plane branded ids + builders |
+| `NotificationEvent` (5 event types) + `NotificationEventInput` | append-only immutable notification event history vocabulary |
+| `NotificationDeliveryPort` / `NotificationDeliveryResult` / `DeliveryAttemptOptions` | the notification plane's consumer surface (11 methods; policy budget 12) |
+| `NotificationProviderPort` / `NotificationDeliveryRequest` / `NotificationProviderResponse` | the declared transport seam (1 method; §30 provider ref + self-labeling responses) |
+| `NotificationStorePort` | the notification persistence seam (11 methods; policy budget 12) |
+| `createNotificationDeliveryPlane` | the plane adapter (MOS-owned domain logic over any store + provider seam) |
+| `createInMemoryNotificationStore` | **DISCLOSED TEST DOUBLE** — in-memory notification persistence |
+| `createInMemoryNotificationProviderDouble` / `InMemoryNotificationRoute` | **DISCLOSED TEST DOUBLE** — deterministic self-labeling transport |
+| `decideNotificationRetry` / `notificationRetryDelayMs` / `notificationSubmissionViolations` / `NotificationRetryDecision` | pure notification-plane domain logic |
+| `NotificationPlaneError` / `NotificationPlaneErrorCode` | typed errors (7 codes) with machine-readable `details` |
 
-Runtime export count: 11 (4 factories, 3 pure domain functions, 3
-branded-id builders, 1 error class) + 4 frozen vocabulary constants. The
+Runtime export count: 32 (7 factories, 8 pure domain functions, 8
+branded-id builders, 2 error classes, 1 compat builder helper group)
+plus 9 frozen vocabulary constants — see the table rows above. The
 12-public-method policy budget applies PER PORT — JobQueuePort 10,
-DurableJobStorePort 7.
+DurableJobStorePort 7, NotificationDeliveryPort 11,
+NotificationStorePort 11, NotificationProviderPort 1.
 
 ## Semantics (all test-pinned)
 
@@ -141,11 +170,115 @@ the real engine package via RELATIVE references (no package.json edge):
   observability + actor enrichment, and a real retriable failure retries
   then dead-letters through the bridge.
 
+## The notification plane (NOTIFY-001)
+
+`createNotificationDeliveryPlane({ store, provider, clock, now, ... })`
+builds the plane over any `NotificationStorePort` persistence seam and
+any `NotificationProviderPort` transport seam. Semantics (all
+test-pinned):
+
+- **Dedup idempotency** — per `(tenant, dedupKey)`: the SAME logical
+  notification submitted twice yields ONE record; the duplicate submit
+  returns the EXISTING record (no second event, no second delivery),
+  whatever its status — the key is permanently bound (new notification =
+  new key).
+- **Declarative kinds** — `mission-event` / `task-assignment` /
+  `task-reminder` / `rights-event` / `system-alert`: SEMANTIC categories
+  of what happened, never provider/transport specifics. The recipient is
+  an `IdentityRef` from the `@mos/contracts` vocabulary; the subject is
+  REFERENCES ONLY (artifact refs, human-production-task refs, mission
+  refs — never inline content; cross-tenant artifact refs are denied at
+  enqueue, §31).
+- **Delivery attempts are RECORDED §30 EVENTS** —
+  `recordDeliveryAttempt(scope, id, { executor })` performs ONE attempt
+  through the injected provider seam and appends exactly one immutable
+  event carrying request id (the attempt id), provider ref, actor
+  attribution (executor + submitting actor), duration, failure/warnings
+  and the transport self-label. Success mints the immutable receipt and
+  terminates the record as `delivered`.
+- **Receipts (proof-of-delivery surface)** — every successful delivery
+  produces an immutable receipt: delivered-at, provider ref, the
+  provider's ack ref when it returns one, transport label. Receipts are
+  stored once, never updated or deleted, deep-frozen at the store
+  boundary, re-readable by receipt id or by notification (both
+  tenant-scoped, no existence leaks).
+- **Failed delivery → typed reason + declared retry backoff → terminal
+  failure** — provider failures are TYPED records over the closed code
+  vocabulary (`provider-rejected` permanent / `provider-transport-failed`
+  transient). Retriable failures re-queue with the DECLARED backoff
+  (the job queue's `JobRetryPolicy` shape, the SHARED `retryDelayMs`
+  implementation — zero drift); the next attempt is gated until the
+  window elapses (typed `delivery-backoff-not-elapsed`). Declared
+  retry-policy EXHAUSTION and non-retriable failures terminate as
+  `failed` with the typed failure recorded on the record and in the
+  `delivery-failed` event (exhaustion flagged).
+- **Suppression is a FIRST-CLASS recorded outcome, never a silent
+  drop** — `suppressRecipient(scope, recipient, reason, by)` activates
+  the tenant-scoped rule; every FUTURE enqueue for that recipient is
+  CREATED with status `suppressed` carrying the rule's reason (events:
+  `enqueued` + `suppressed`; the record is readable and listed).
+  `suppressNotification(scope, id, reason, by)` suppresses one QUEUED
+  notification at record level (terminal records are immutable — typed
+  `notification-not-suppressible`). `liftRecipientSuppression` affects
+  only future notifications; already-suppressed records stay
+  suppressed. Suppression reasons and attributions are validated
+  non-empty (typed `invalid-suppression`).
+- **Tenant isolation (§31)** — every read/mutation is tenant-scoped;
+  foreign-scope access is INDISTINGUISHABLE from unknown (no existence
+  leaks). The store keys by `(tenant, id)` / `(tenant, dedupKey)` /
+  `(tenant, recipient)` — the W3-A cross-tenant bleed lesson baked in.
+- **Ownership** — the store deep-CLONES then freezes everything it
+  saves: caller-supplied submissions/subjects/failures are never mutated
+  or frozen in place.
+- **Determinism** — all stamps come from injectable clocks (ISO +
+  epoch-ms), ids from injectable factories; the shipped provider double
+  is a pure function of (request, routes). Identical stacks produce
+  bit-identical records/events/receipts (pinned).
+
+### The no-task-engine discipline (acceptance core, test-pinned)
+
+The notification plane CONSUMES the durable-record discipline
+(idempotency, typed failures, retry, terminal failure, append-only
+history) as a parallel narrow surface — it does NOT re-implement
+jobs/tasks. Pinned four ways in
+`src/adapters/notification-no-task-engine.test.ts`:
+
+1. **Vocabulary scan** — the notification-plane sources (comments and
+   strings stripped) contain NO claim/lease/execute/poll/dispatch/
+   cancel/heartbeat/renew/work-unit tokens;
+2. **Method-set pin** — `NotificationDeliveryPort` exposes exactly the
+   eleven declared methods; none is a claim/lease/execute/poll/
+   dispatch/cancel surface;
+3. **Record-shape pin** — the record vocabulary has no lease/claim/
+   token/worker fields and the lifecycle has NO in-flight/running state
+   (a failed attempt re-queues; the record is never held);
+4. **Semantic pin** — one `recordDeliveryAttempt` call appends exactly
+   ONE event (the attempt IS the event) and no plane return value ever
+   carries a token-bearing claim object. The durable JOB queue keeps its
+   own surface untouched (no notify method — pinned).
+
+### The provider transport seam (disclosed double)
+
+`NotificationProviderPort` is the declared transport seam: ONE method
+`deliver(request) → response` plus the binding's declared `providerId`
+(§30 provider ref — DATA through the `@mos/contracts` `ProviderId`
+vocabulary, the same family the INTEG-001 provider-contract module
+owns; this package never imports `mos-integrations`). Every response
+SELF-LABELS its `source` — copied onto the §30 attempt record and the
+receipt — so double output can never masquerade as live provider
+evidence. The shipped `createInMemoryNotificationProviderDouble` is a
+DISCLOSED deterministic double (no I/O, pure function of
+(request, routes), attempt-indexed DATA routes). REAL provider
+bindings (email/push/webhook adapters over the provider-contract
+vocabulary) are composition-root work behind the same port.
+
 ## Dependencies
 
 - `@mos/contracts` (runtime, the only registry-declared dependency):
   branded ids, `ArtifactRef`, `TenantScope`, `Version`, engine observability
-  types.
+  types, and for the notification plane `IdentityRef` / `MissionRef` /
+  `HumanProductionTaskId` / `ProviderId` (the provider-contract vocabulary
+  seam — TYPE-level alignment only, no `mos-integrations` import).
 - Dev: `@types/node`, `typescript`. The compat directory references
   `../mos-engines` via relative paths (types from source for the pin,
   built dist for the runtime test) — deliberately NOT a package
@@ -157,6 +290,22 @@ the real engine package via RELATIVE references (no package.json edge):
   -local, ephemeral, never a durability claim. The real durable store +
   Zcode task-infra adapter are future substrate work behind the same
   port.
+- `createInMemoryNotificationStore` is the same class of DISCLOSED
+  double for the notification plane (process-local, ephemeral — never a
+  durability claim); the real store binds behind `NotificationStorePort`.
+- `createInMemoryNotificationProviderDouble` is a DISCLOSED transport
+  double: deterministic, no I/O, self-labeling every response
+  (`in-memory-notification-provider-double`). Real email/push/webhook
+  provider bindings over the INTEG-001 provider-contract vocabulary are
+  composition-root work — the plane never claims live delivery evidence.
+- Recipient-suppression rule changes are upserts (one active rule per
+  (tenant, recipient); re-suppressing replaces the reason). The durable
+  audit trail of WHO was suppressed and WHY lives on the notification
+  records' `suppressed` events + suppression info — the rule itself is
+  current-state, not history.
+- A notification delivered is terminal (exactly one receipt per
+  notification in this wave); re-delivery / multi-transport fan-out is a
+  future surface if the composition root needs it.
 - `createJobPollerDouble` is a DISCLOSED clock-driven double demonstrating
   the polling consumption model — never a scheduling authority.
 - The bridge's synchronous-event wiring matches the in-memory runner
@@ -170,10 +319,19 @@ the real engine package via RELATIVE references (no package.json edge):
 ## Verification
 
 `pnpm test` (in this package) runs: `tsc -b` → `node --test
-'dist/**/*.test.js'` (52 tests: enqueue idempotency, lease double-claim
-prevention, backoff-gated retries, dead-letter with full history, cancel,
-tenant isolation/no existence leaks, §30 bridge completeness, heartbeat
-expiry → reclaim, ownership cloning, vocabulary pins, no-scheduling
--authority pins, poller double) → builds `../mos-engines` →
-`tsc -p tsconfig.compat.json` (the compile-time pin) → `node --test
-compat/engine-runner-bridge.test.ts` (the real-runner round-trips).
+'dist/**/*.test.js'` (101 tests: the 52 JOBS-001 tests — enqueue
+idempotency, lease double-claim prevention, backoff-gated retries,
+dead-letter with full history, cancel, tenant isolation/no existence
+leaks, §30 bridge completeness, heartbeat expiry → reclaim, ownership
+cloning, vocabulary pins, no-scheduling-authority pins, poller double —
+plus 49 NOTIFY-001 tests: dedup idempotency incl. after delivery,
+reference-only subjects, fail-closed validation, tenant/workspace
+scoping, receipt immutability + completeness incl. null/custom ack refs,
+§30 attempt completeness + executor attribution, retriable failure →
+declared backoff + gating → retry → success, retry exhaustion +
+non-retriable terminal failures, terminal immutability, recipient +
+record suppression with reasons, lifting, dedup interplay, the four-way
+no-task-engine structural pin, determinism with injectable clocks) →
+builds `../mos-engines` → `tsc -p tsconfig.compat.json` (the
+compile-time pin) → `node --test compat/engine-runner-bridge.test.ts`
+(the real-runner round-trips).
