@@ -18,6 +18,7 @@ import type {
   InterviewerQuestionPresentationInput,
   InterviewerQuestionPresentationResult,
 } from "../ports/interviewer-agent.js";
+import { derivePresentationProvenance } from "../ports/interviewer-agent.js";
 import type { Timestamp } from "../contracts/refs.js";
 
 /** Options for {@link createInMemoryInterviewerAgent}. */
@@ -36,21 +37,10 @@ export function createInMemoryInterviewerAgent(
       if (input.question.text.trim().length === 0) {
         return { ok: false, error: { kind: "question-blank" } };
       }
-      if (input.representation.representation !== "hybrid" && input.representation.provenance === undefined) {
+      const provenance = derivePresentationProvenance(input.representation);
+      if (provenance === undefined) {
         return { ok: false, error: { kind: "representation-provenance-missing" } };
       }
-      const provenance =
-        input.representation.representation === "hybrid"
-          ? // A hybrid carries provenance per component; the presentation
-            // reports the mixed union of its components' origins.
-            {
-              origin: input.representation.components.every((c) => c.provenance.origin === "human-performed")
-                ? ("human-performed" as const)
-                : input.representation.components.every((c) => c.provenance.origin === "synthetic-generated")
-                  ? ("synthetic-generated" as const)
-                  : ("mixed" as const),
-            }
-          : input.representation.provenance;
       return {
         ok: true,
         presentation: {

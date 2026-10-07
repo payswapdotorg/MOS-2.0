@@ -35,6 +35,8 @@ import type {
   StudioArtifactPackage,
   StudioArtifactRef,
   TranscriptRef,
+  ConversationGraphRef,
+  EditGraphRef,
 } from "../contracts/studio-artifact-package.js";
 import type { OutputTreatmentResult, StudioOutputReview, RightsPolicyRejection } from "../contracts/treatment.js";
 import type { CapturedMediaReceipt } from "../contracts/capture.js";
@@ -46,6 +48,10 @@ export interface StudioSessionDraft {
   readonly intermediateArtifacts: StudioArtifactRef[];
   readonly finalArtifacts: StudioArtifactRef[];
   readonly transcriptRefs: TranscriptRef[];
+  /** STUDIO-011: the real conversation graph ref (once processing recorded one). */
+  conversationGraphRef: ConversationGraphRef | undefined;
+  /** STUDIO-011: the real edit graph ref (once processing recorded one). */
+  editGraphRef: EditGraphRef | undefined;
   /** Consent records covering each raw artifact (key: artifactId) — drives package consent summary. */
   readonly rawArtifactConsent: Map<string, readonly ConsentRef[]>;
   /** Cost lines accumulated from processing outputs and treatments. */
@@ -109,6 +115,8 @@ export function createEmptyDraft(): StudioSessionDraft {
     intermediateArtifacts: [],
     finalArtifacts: [],
     transcriptRefs: [],
+    conversationGraphRef: undefined,
+    editGraphRef: undefined,
     rawArtifactConsent: new Map(),
     costLines: [],
     captureSeconds: 0,

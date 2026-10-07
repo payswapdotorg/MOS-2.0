@@ -8,16 +8,27 @@
  * disclosed in-memory doubles for the studio-owned ports (organization
  * loader, artifact factory, treatment executor).
  *
+ * Wave 3 (STUDIO-004/010/011): the adaptive interviewer bound to the REAL
+ * @mos/agent-runtime agent-instance lifecycle (model selection stays behind
+ * the single model boundary — pinned by no-model-selection.test.ts), the
+ * podcast format descriptors with organization edit decision points, and
+ * the audio-podcast end-to-end flow (conversation graph, edit graph, packaged
+ * StudioArtifactPackage with full provenance).
+ *
  * THE STUDIO NEVER PUBLISHES (architecture policy studio.noDirectPublication):
  * there is no distribution/provider/publish surface in this package —
- * asserted by src/runtime/no-publish.test.ts.
+ * asserted by src/runtime/no-publish.test.ts. THE STUDIO NEVER SELECTS
+ * MODELS (lock rule 9): there is no model-selection surface — asserted by
+ * src/runtime/interviewer/no-model-selection.test.ts.
  */
 
 // ——— Contracts (types only) ———
 export type * from "./contracts/refs.js";
 export type * from "./contracts/capture.js";
 export type * from "./contracts/interviewer.js";
+export type * from "./contracts/interviewer-session.js";
 export type * from "./contracts/organization-loading.js";
+export type * from "./contracts/podcast-graphs.js";
 export type * from "./contracts/script-graph.js";
 export type * from "./contracts/studio-artifact-package.js";
 export type * from "./contracts/studio-format.js";
@@ -58,6 +69,14 @@ export type {
   InterviewerQuestionPresentationInput,
   InterviewerQuestionPresentationResult,
 } from "./ports/interviewer-agent.js";
+export { derivePresentationProvenance } from "./ports/interviewer-agent.js";
+export type {
+  InterviewerAgentBindingError,
+  InterviewerAgentBindingInput,
+  InterviewerAgentBindingPort,
+  InterviewerAgentBindingResult,
+  InterviewerAgentReleaseResult,
+} from "./ports/interviewer-agent-binding.js";
 export type {
   ScriptGraphGenerationError,
   ScriptGraphGenerationInput,
@@ -176,6 +195,43 @@ export type {
 export { createAdaptiveSequencer } from "./runtime/script-graph/adaptive-sequencer.js";
 export type { AdaptiveSequencerOptions } from "./runtime/script-graph/adaptive-sequencer.js";
 
+// ——— Runtime: adaptive interviewer over the REAL agent runtime (STUDIO-004, §14) ———
+export {
+  createInterviewerSession,
+  InterviewerSession,
+  interviewerRepresentationIssues,
+} from "./runtime/interviewer/interviewer-session.js";
+export type { InterviewerSessionDeps } from "./runtime/interviewer/interviewer-session.js";
+export {
+  INTERVIEWER_AGENT_BODY,
+  INTERVIEWER_AGENT_BODY_ID,
+  INTERVIEWER_AGENT_BODY_VERSION,
+} from "./runtime/interviewer/interviewer-agent-body.js";
+export {
+  createAgentInstanceInterviewerAgent,
+  createAgentInstanceInterviewerBinding,
+} from "./runtime/interviewer/agent-instance-interviewer.js";
+export type {
+  AgentInstanceInterviewerAgentOptions,
+  AgentInstanceInterviewerBindingOptions,
+} from "./runtime/interviewer/agent-instance-interviewer.js";
+
+// ——— Runtime: audio-podcast flow + conversation/edit graphs (STUDIO-010/011) ———
+export { createAudioPodcastFlow } from "./runtime/podcast/audio-podcast-flow.js";
+export type {
+  AudioPodcastFlowDeps,
+  AudioPodcastFlowError,
+  AudioPodcastFlowOutcome,
+  AudioPodcastFlowResult,
+  AudioPodcastProductionPlan,
+  PodcastInterviewRound,
+  PodcastParticipantPlan,
+} from "./runtime/podcast/audio-podcast-flow.js";
+export { buildConversationGraph } from "./runtime/podcast/conversation-graph.js";
+export type { BuildConversationGraphInput } from "./runtime/podcast/conversation-graph.js";
+export { recordEditDecisions } from "./runtime/podcast/edit-graph.js";
+export type { RecordEditDecisionsInput } from "./runtime/podcast/edit-graph.js";
+
 // ——— Disclosed in-memory test doubles (NOT production bindings) ———
 export { createInMemoryOrganizationSource, expandOrganizationSeed } from "./testing/in-memory-organization-source.js";
 export type {
@@ -194,6 +250,17 @@ export {
 } from "./testing/in-memory-script-graph-generator.js";
 export { createInMemoryInterviewerAgent } from "./testing/in-memory-interviewer-agent.js";
 export type { InMemoryInterviewerAgentOptions } from "./testing/in-memory-interviewer-agent.js";
+
+// ——— REAL interviewer agent stack over @mos/agents + @mos/agent-runtime (STUDIO-004) ———
+// Composed at the disclosed testing seam: real body registry (interviewer
+// AgentBody registered) + real instance registry over the single model
+// boundary + the real substrate executor over the disclosed in-memory
+// substrate double. The production TL composition root replaces the seam.
+export { composeRealInterviewerAgentStack, TEST_INTERVIEWER_DEFAULT_MODEL } from "./testing/real-interviewer-agent.js";
+export type {
+  RealInterviewerAgentStack,
+  RealInterviewerAgentStackOptions,
+} from "./testing/real-interviewer-agent.js";
 
 // ——— REAL participant-authority adapters + composition (STUDIO-006) ———
 // The adapters compose the REAL @mos/identity / @mos/rights repositories

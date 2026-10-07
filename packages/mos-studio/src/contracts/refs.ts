@@ -107,6 +107,9 @@ export type IntentRecordId = MosRef<string, "IntentRecordId">;
 /** Reference to one recorded answer inside an interview (§14, STUDIO-003). */
 export type AnswerRef = MosRef<string, "AnswerRef">;
 
+/** Reference to one adaptive interviewer session (§14, STUDIO-004). */
+export type InterviewerSessionId = MosRef<string, "InterviewerSessionId">;
+
 /**
  * Monetary amount; `amount` is a decimal string to avoid float drift.
  * Studio-local shape (canonical `MoneyAmount` in `@mos/contracts` uses a

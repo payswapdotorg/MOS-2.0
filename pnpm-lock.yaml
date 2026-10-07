@@ -914,6 +914,12 @@ importers:
 
   packages/mos-studio:
     dependencies:
+      '@mos/agent-runtime':
+        specifier: workspace:*
+        version: link:../mos-agent-runtime
+      '@mos/agents':
+        specifier: workspace:*
+        version: link:../mos-agents
       '@mos/contracts':
         specifier: workspace:*
         version: link:../mos-contracts

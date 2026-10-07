@@ -306,6 +306,15 @@ export class StudioRuntime {
     if (output.transcriptRefs !== undefined) {
       record.draft.transcriptRefs.push(...output.transcriptRefs);
     }
+    // STUDIO-011: processing may record the REAL conversation/edit graph refs
+    // the organization derived its output from; they flow into the packaged
+    // artifact package (synthesized placeholders otherwise, W1-C behavior).
+    if (output.conversationGraphRef !== undefined) {
+      record.draft.conversationGraphRef = output.conversationGraphRef;
+    }
+    if (output.editGraphRef !== undefined) {
+      record.draft.editGraphRef = output.editGraphRef;
+    }
     if (output.additionalCost !== undefined) {
       record.draft.costLines.push(output.additionalCost);
     }
