@@ -1,8 +1,13 @@
+import type { TenantScope } from '@mos/contracts';
 import type { Identity, IdentityKind } from '../domain/identity.js';
 import type { IdentityId, MembershipId, TenantId, WorkspaceId } from '../domain/ids.js';
 import type { Membership, MembershipRole } from '../domain/membership.js';
 import type { Tenant } from '../domain/tenant.js';
 import type { Workspace } from '../domain/workspace.js';
+
+// Re-exported so consumers importing the scope vocabulary from this package
+// keep resolving (W2-A / RECONCILE-A: @mos/contracts is the canonical home).
+export type { TenantScope };
 
 /**
  * Repository port for the MOS identity domain (CORE-002 groundwork).
@@ -71,11 +76,6 @@ export interface IdentityRepository {
    * `cross-tenant-reference` or `membership-already-revoked`.
    */
   revokeMembership(scope: TenantScope, id: MembershipId): Membership | IdentityRepositoryError;
-}
-
-/** Tenant scope: every mutable operation names its tenant explicitly. */
-export interface TenantScope {
-  readonly tenantId: TenantId;
 }
 
 /** Workspace scope: tenant + workspace, for membership listing. */

@@ -1,43 +1,43 @@
-import type { IdentityId, TenantId } from '@mos/identity';
+import type { IdentityId } from '@mos/identity';
+import type { ConsentRef, ProvenanceRef, RightsRef, TenantId } from '@mos/contracts';
 
 /**
  * Branded nominal identifier types for the MOS rights domain (CORE-003).
  *
- * Compile-time-only brands: at runtime every identifier is a plain string.
- * Branding keeps `RightsGrantId`, `ConsentRecordId` and `ProvenanceRecordId`
- * from being mixed up where a plain `string` would compile.
+ * RECONCILED (W2-A / RECONCILE-A): the stable opaque reference types
+ * `RightsRef`, `ProvenanceRef` and `ConsentRef` — the vocabulary carried by
+ * the frozen core contracts (`Artifact.rightsRef`, `Artifact.provenanceRef`,
+ * `HumanProductionTask.rightsConsent`, `RealExperimentBinding.rightsRef`) —
+ * are imported from `@mos/contracts` (CORE-001 canonical authority) and
+ * re-exported here.
  *
- * The `*Ref` types are the STABLE OPAQUE REFERENCES carried by other core
- * contracts (`Artifact.rightsRef`, `Artifact.provenanceRef`,
- * `HumanProductionTask.rightsConsent`, `RealExperimentBinding.rightsRef`,
- * `Transform.rightsRequirements` — `spec/contracts/core-contracts-v2.0.yaml`).
- * A ref is intentionally an alias of the corresponding record id: the stable
- * way to reference a grant/consent/provenance record IS its identifier, so an
- * `Artifact.rightsRef` resolves directly through `RightsRepository.getRights`.
+ * The locally-owned record identifiers (`RightsGrantId`,
+ * `ConsentRecordId`, `ProvenanceRecordId`) are now ALIASES of the
+ * corresponding contracts reference types: the stable way to reference a
+ * grant/consent/provenance record IS its identifier, so an
+ * `Artifact.rightsRef` value from any package resolves directly through
+ * `RightsRepository.getRights` with no adapter mapping. Compile-time-only
+ * brands: at runtime every identifier is a plain string.
  */
 
-declare const rightsGrantIdBrand: unique symbol;
-declare const consentRecordIdBrand: unique symbol;
-declare const provenanceRecordIdBrand: unique symbol;
-
 /** Unique identifier of a rights grant record (also its stable ref form). */
-export type RightsGrantId = string & { readonly [rightsGrantIdBrand]: true };
+export type RightsGrantId = RightsRef;
 
 /** Unique identifier of a consent record (also its stable ref form). */
-export type ConsentRecordId = string & { readonly [consentRecordIdBrand]: true };
+export type ConsentRecordId = ConsentRef;
 
 /** Unique identifier of a provenance record (also its stable ref form). */
-export type ProvenanceRecordId = string & { readonly [provenanceRecordIdBrand]: true };
+export type ProvenanceRecordId = ProvenanceRef;
 
 /**
  * Stable opaque reference to an explicit rights grant.
  *
  * Carried by `Artifact.rightsRef` (CORE-004), `Transform.rightsRequirements`,
- * `RealExperimentBinding.rightsRef` and `LabScenario`-adjacent contracts.
- * Resolving a `RightsRef` is the ONLY way any consumer may learn which rights
- * exist — see {@link evaluateRights} for the evaluation rule.
+ * `RealExperimentBinding.rightsRef` and Lab corpus contracts. Resolving a
+ * `RightsRef` is the ONLY way any consumer may learn which rights exist — see
+ * {@link ../evaluation/rights-evaluation.ts} for the evaluation rule.
  */
-export type RightsRef = RightsGrantId;
+export type { RightsRef };
 
 /**
  * Stable opaque reference to a provenance record.
@@ -45,7 +45,7 @@ export type RightsRef = RightsGrantId;
  * Carried by `Artifact.provenanceRef` (CORE-004): every artifact names the
  * provenance record that describes how it came to exist.
  */
-export type ProvenanceRef = ProvenanceRecordId;
+export type { ProvenanceRef };
 
 /**
  * Stable opaque reference to a consent record.
@@ -53,7 +53,7 @@ export type ProvenanceRef = ProvenanceRecordId;
  * Carried by `HumanProductionTask.rightsConsent` and referenced from
  * `RightsGrant.sourceRefs` when a grant is backed by participant consent.
  */
-export type ConsentRef = ConsentRecordId;
+export type { ConsentRef };
 
 /** Re-exported for convenience of downstream contract definitions. */
 export type { IdentityId, TenantId };

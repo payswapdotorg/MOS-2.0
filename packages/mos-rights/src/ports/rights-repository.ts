@@ -1,4 +1,5 @@
-import type { IdentityId, TenantScope } from '@mos/identity';
+import type { IdentityId } from '@mos/identity';
+import type { TenantScope } from '@mos/contracts';
 import type { ConsentRecord } from '../domain/consent.js';
 import type { ProvenanceActor, ProvenanceCreationMethod, ProvenanceRecord } from '../domain/provenance.js';
 import type { RightsAction, RightsGrant, RightsTerms } from '../domain/rights-grant.js';

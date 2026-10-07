@@ -1,7 +1,7 @@
 {
   "name": "@mos/lab",
   "version": "0.1.0",
-  "description": "MOS v2.0 Marketing Lab — LAB-001 SCAFFOLD ONLY (reference-first niche corpus contracts sketch; no runtime)",
+  "description": "MOS v2.0 Marketing Lab — LAB-001 reference-first niche corpus runtime, LAB-002 multimodal feature bundles, LAB-003 Idea Graph (tenant-scoped, rights-gated ingestion, derivation-mandatory ideas)",
   "private": true,
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -17,6 +17,7 @@
     "lint": "oxlint"
   },
   "dependencies": {
-    "@mos/content": "workspace:*"
+    "@mos/capabilities": "workspace:*",
+    "@mos/contracts": "workspace:*"
   }
 }

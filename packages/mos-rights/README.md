@@ -7,11 +7,12 @@ Module registry entry: `rights → packages/mos-rights`, owner `worker-a`, depen
 ## Status
 
 Wave-1 implementation of the rights authority: explicit grants, participant consent, immutable
-provenance records, and the pure rights evaluation rule. `@mos/contracts` (CORE-001, Worker B,
-same wave) is not in this branch base, so contract-shaped types are defined **locally** and aligned
-field-for-field to `spec/contracts/core-contracts-v2.0.yaml` (the frozen authority). Imports switch
-to `@mos/contracts` at TL reconciliation (Wave 2). `@mos/identity` is imported type-only
-(`TenantId`, `IdentityId`, `TenantScope`) — it exists on main per the module registry dependency.
+provenance records, and the pure rights evaluation rule. RECONCILED in Wave 2 (W2-A / RECONCILE-A):
+the shared reference vocabulary — `RightsRef`, `ProvenanceRef`, `ConsentRef`, `TenantId`,
+`TenantScope` — is imported (type-only) from `@mos/contracts` (CORE-001 canonical authority), and
+the record ids are ALIASES of those refs (a ref IS the id, so `Artifact.rightsRef` resolves
+directly through `RightsRepository.getRights`). `@mos/identity` is imported type-only
+(`IdentityId`) — it exists on main per the module registry dependency.
 
 ## What exists
 
@@ -77,7 +78,7 @@ Architecture policy `maxPublicMethods: 12`. This package exports:
   runtime code (tests use `node:test`/`node:assert`). Identifiers are caller-supplied; the clock is
   injectable on the adapter.
 
-## Contract alignment (CORE-001 reconciliation, pending Wave 2)
+## Contract alignment (CORE-001 reconciliation: DONE in W2-A)
 
 | Frozen YAML field (consumer) | This package |
 |---|---|
@@ -89,8 +90,8 @@ Architecture policy `maxPublicMethods: 12`. This package exports:
 | `LabScenario` rights context | `RightsRef` / `ConsentRef` |
 
 `RightsAction`, `ProvenanceCreationMethod` and the structured terms are provisional vocabularies
-defined here; they unify with `@mos/contracts` when CORE-001 is reconciled (adopt/re-export vs
-adapter mapping is a TL-owned decision).
+defined here (no `@mos/contracts` equivalent — the contracts YAML freezes only the field NAMES,
+not these value vocabularies); they stay package-specific per the W2-A reconciliation rule.
 
 ## Disclosed limitations
 

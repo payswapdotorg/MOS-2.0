@@ -23,6 +23,7 @@ export type {
   RightsRef,
   StorageRef,
   TenantId,
+  Version,
 } from './contracts/artifact.js';
 
 export type {
@@ -35,7 +36,7 @@ export type {
   RegisterArtifactVersionInput,
   RightsSource,
 } from './ports/artifact-repository.js';
-export type { TenantScope } from '@mos/identity';
+export type { TenantScope } from '@mos/contracts';
 
 export type {
   ArtifactStorage,

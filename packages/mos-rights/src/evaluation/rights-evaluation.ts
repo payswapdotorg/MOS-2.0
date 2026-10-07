@@ -1,4 +1,5 @@
-import type { IdentityId, TenantId } from '@mos/identity';
+import type { IdentityId } from '@mos/identity';
+import type { TenantId } from '@mos/contracts';
 import type { RightsAction, RightsGrant } from '../domain/rights-grant.js';
 import type { RightsRef } from '../domain/ids.js';
 

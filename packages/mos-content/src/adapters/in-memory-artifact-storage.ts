@@ -1,4 +1,4 @@
-import type { TenantScope } from '@mos/identity';
+import type { TenantScope } from '@mos/contracts';
 import type { ContentDigest, StorageRef } from '../contracts/artifact.js';
 import type {
   ArtifactStorage,

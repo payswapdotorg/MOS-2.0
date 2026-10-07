@@ -8,12 +8,15 @@ Module registry entry: `missions → packages/mos-missions`, owner `worker-a`, d
 ## Status
 
 Wave-1 implementation of the mission authority: structured objectives, mission-specific
-versioned reward specs, and the strict lifecycle. `@mos/contracts` (CORE-001, Worker B, same
-wave) is not in this branch base; the contracts YAML has no standalone `Mission` record —
-missions are referenced BY other contracts (`RealExperimentBinding.missionRef`, experiment and
-bridge flows) while the reward model is specified by architecture §21. Types are therefore
-defined locally against the architecture and switch to `@mos/contracts` at TL reconciliation
-(Wave 2). `@mos/identity` is imported type-only (`TenantId`, `TenantScope`).
+versioned reward specs, and the strict lifecycle. RECONCILED in Wave 2 (W2-A / RECONCILE-A):
+the shared vocabulary — `TenantId`, `TenantScope`, `StrategyRef` — is imported (type-only) from
+`@mos/contracts`, and `MissionId` is an ALIAS of the contracts `MissionRef` (a
+`RealExperimentBinding.missionRef` value from any package resolves directly through
+`MissionRepository.getMission` with no adapter mapping). The contracts YAML has no standalone
+`Mission` record — missions are referenced BY other contracts (`RealExperimentBinding.missionRef`,
+experiment and bridge flows) while the reward model is specified by architecture §21 — so the
+`Mission` record, objective and reward-spec types stay package-specific. The Wave-1
+`@mos/identity` dependency was retired in W2-A (all its uses switched to `@mos/contracts`).
 
 ## What exists
 
@@ -66,7 +69,7 @@ methods (7): `createMission`, `getMission`, `activateMission`, `completeMission`
 - **Zero runtime dependencies**: no `@zcode/*`, no external packages, no Node-builtin imports
   in runtime code. Identifiers are caller-supplied; the clock is injectable.
 
-## Contract alignment (CORE-001 reconciliation, pending Wave 2)
+## Contract alignment (CORE-001 reconciliation: DONE in W2-A)
 
 | Consumer | This package |
 |---|---|
@@ -85,5 +88,5 @@ methods (7): `createMission`, `getMission`, `activateMission`, `completeMission`
 - Objective editing after creation is not offered (create-time objective + draft-phase reward
   updates only); a general mission-editing surface can be added behind the same port when a
   caller needs it.
-- Strategy refs are opaque strings carried for association only — the strategy authority is a
-  separate module per the registry.
+- Strategy refs are the `@mos/contracts` `StrategyRef` type, carried for association only — the
+  strategy authority is a separate module per the registry.

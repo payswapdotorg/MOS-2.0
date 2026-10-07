@@ -1,9 +1,10 @@
-import type { TenantScope } from '@mos/identity';
+import type { TenantScope } from '@mos/contracts';
 import type { RightsRef } from '@mos/rights';
 import type {
   Artifact,
   ArtifactId,
   ArtifactRef,
+  Version,
 } from '../contracts/artifact.js';
 import type {
   ArtifactDraft,
@@ -207,7 +208,7 @@ export function createInMemoryArtifactRepository(
       }
       const record = freezeRecord({
         id: draft.id,
-        version: 1,
+        version: 1 as Version,
         tenantId: input.scope.tenantId,
         type: draft.type,
         digest: draft.digest,
@@ -253,7 +254,7 @@ export function createInMemoryArtifactRepository(
       const lineage: ArtifactRef[] = [toRef(current), ...input.additionalParents];
       const record = freezeRecord({
         id: input.id,
-        version: current.version + 1,
+        version: (current.version + 1) as Version,
         tenantId: input.scope.tenantId,
         type: input.type,
         digest: input.digest,
