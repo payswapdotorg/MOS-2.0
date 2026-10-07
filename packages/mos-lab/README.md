@@ -8,12 +8,13 @@ plus `LAB-004` (Social Simulator), `LAB-005` (User/Creator/Competition Dynamics)
 delivered in Wave 4 (W4-A), plus `LAB-010` (Agent Organization Search), delivered in Wave 5
 (W5-B), and `LAB-011` (Transform Definitions + Transform Graph), delivered in Wave 5 (W5-A),
 plus `LAB-012` (Transform Discovery — the §8 seven promotion gates) and `LAB-014` (Human
-Production Task Packages), delivered in Wave 6 (W6-A).
+Production Task Packages), delivered in Wave 6 (W6-A), plus `LAB-015` (Production Delay
+Economics — §18), delivered in Wave 7 (W7-A).
 
 Module registry entry: `lab → packages/mos-lab`, owner `worker-a`, dependencies
 `[contracts, content, production, agents, capabilities, engines, jobs]`.
 
-## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search / transform definitions + transform graph / transform discovery (seven §8 gates) / human production task packages (in-memory scaffolds)
+## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search / transform definitions + transform graph / transform discovery (seven §8 gates) / human production task packages / production delay economics (§18) (in-memory scaffolds)
 
 All shared vocabulary is imported from **`@mos/contracts`** (W2-A / RECONCILE-A). The package
 contains:
@@ -370,8 +371,70 @@ contains:
     + substitute + reason (on the abandonment record AND the event log); deadline expiry
     uses the injectable clock and fails closed before expiry (`not-overdue`).
 
-- `src/index.ts` — types + eighteen runtime factories (Wave-6 state: the Wave-5 union's
-  fifteen plus transform discovery, human production task and the Arena provider double).
+- **LAB-015 — Production Delay Economics (§18: the Expected Value of Delay is a first-class
+  production strategy variable; WAITING IS A DECISION VARIABLE)**
+  - `src/contracts/delay-economics.ts` — the §18 tracked dimensions as EXPLICIT TYPED
+    RECORDS on the `DelayDecisionModel`: expected incremental value (reward-spec-
+    denominated estimate + uncertainty interval + the §21 reward spec version it is
+    denominated in + derivation), estimated wait, delay cost (per-unit-time price + time
+    unit + DECLARED source), acquisition cost (`human-acquisition-cost` /
+    `engine-acquisition-cost` — the §21 vocabulary), probability of success, quality impact
+    (declared, signed, CARRIED never monetized) and alternative paths (ORDERED references
+    to the other option kinds — self-references, duplicates, non-ascending orders and
+    unknown kinds fail closed). **NEVER INVENTED PRECISION**: every estimate cites its
+    derivation (`ensemble-output` with ensemble id + EXACT version /
+    `historical-observation` / `declared-assumption`) — an estimate without provenance is a
+    typed `estimate-without-provenance` failure NAMING the dimension. The TEN option kinds
+    (the §18 nine plus the NO-OP baseline dimension already in the program space — §7 /
+    lock rule 5) and the BY-REFERENCE `DelayOptionTarget` vocabulary (engine id + version,
+    `CapabilityRequirement`, `ProviderId` + version, `AgentOrganizationId` + version,
+    `TransformId` + EXACT version, `HumanProductionTaskId`, a declared scope reduction, or
+    `none` for the targetless options) — nothing executes, nothing resolves, nothing
+    instantiates;
+  - `src/contracts/delay-policy.ts` — the EV-of-delay computation as **DECLARED VERSIONED
+    POLICY, never hidden math**: `DELAY_DECISION_POLICY_V1` (`ev-delay-1`) documents the
+    exact formula — `EV(option) = p × V − D − A` with `D` the total delay cost over the
+    estimated wait, uncertainty carried as `EV.lower/upper = p × V.interval.lower/upper −
+    D − A` (the §22 / LAB-007/008 interval discipline), ONE currency across all money
+    terms (a mismatch fails closed — no invented exchange rates), quality impact carried
+    not monetized, amounts quantized to 1e-10 — and declares the ranking policy
+    (uncertainty-aware deterministic: EV descending → interval half-width ascending →
+    option kind ascending, the W5-B discipline);
+  - `src/contracts/delay-decision.ts` + `delay-decision-port.ts` + `delay-abandonment.ts` —
+    `DelayDecisionPort` (SEVEN methods ≤ 12): `evaluateDelayDecision(state refs, decision
+    context)` → ONE immutable tenant-scoped `DelayDecisionAnalysis` with ALL TEN analysis
+    lines in §18 order (each: option kind, tracked dimensions, the EV computation with its
+    exact recorded terms — or the NAMED inapplicability reason), the RANKED comparison
+    (rank 1..n with interval-overlap-with-leader declarations — when an option's EV
+    interval overlaps the leader's that is DECLARED, never hidden) and the rank-1
+    RECOMMENDATION line carrying the §24 boundary statement (a recorded recommendation —
+    executing goes through the owning authorities); `canonicalBottleneckDecisionView` —
+    the derived CORE-001 `BottleneckDecision` projection (required-field-asserted in
+    tests; `substitute-capability-provider` maps to `substitute-capability` /
+    `substitute-provider` by its target kind; a NO-OP recommendation projects to `null` —
+    the frozen canonical action vocabulary cannot express the program-space baseline,
+    documented); and the AUDITABLE abandoned-path records —
+    `recordDelayAbandonment(what + why + the analysis that justified it, snapshotted
+    bit-for-bit)` + `recordDelayAbandonmentOutcome` (learning-relevant outcomes APPENDED
+    when later known, version + 1, prior versions bit-for-bit; outcomes carry the SAME
+    provenance discipline) — abandoned branches are learning data, the record SHAPE feeds
+    LAB-017/018, NO learning is implemented here (pinned by the `learningFeed` literal);
+  - `src/adapters/in-memory-delay-economics.ts` (composed with the INTERNAL
+    `delay-decision-validation.ts` + `delay-target-validation.ts` +
+    `delay-ev-computation.ts`) — the disclosed deterministic double implementing EXACTLY
+    the declared policy's documented formula (no other EV-of-delay math exists in the
+    package); the evaluation input PINS the declared policy version (a mismatch fails
+    closed — never a silent default) and records the seed; an OPTIONAL narrow LAB-007
+    ensemble view resolves `ensemble-output` derivations fail-closed at EXACT versions
+    (`ensemble-derivation-unresolved`), and when unwired ensemble derivations stay
+    STRUCTURAL declarations (the W6-A disclosed-seam discipline, pinned by test);
+  - `src/testing/w7a-delay-fixtures.ts` + `w7a-delay-declarations.ts` — INTERNAL test
+    fixtures; the numbers are chosen so the formula-pin tests assert EXACT equality
+    (EV(wait) = 550 USD over [390, 710]; a known full ten-option ranking with an EV tie
+    broken by interval half-width then option kind).
+
+- `src/index.ts` — types + NINETEEN runtime factories (Wave-7 state: the Wave-6 union's
+  eighteen plus the in-memory delay economics double).
 - `src/adapters/parametric-support.ts` — INTERNAL helpers (seeded PRNG, clamps, validation,
   deep-freeze + deep-clone ownership helpers) shared by the adapters; deliberately NOT exported
   from the index.
@@ -389,8 +452,8 @@ contains:
 - `src/adapters/human-task-field-validation.ts` + `human-task-store.ts` — INTERNAL
   twelve-field validation and append-only store primitives for LAB-014; deliberately NOT
   exported from the index.
-- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` + `src/testing/w6a-lab-fixtures.ts` — INTERNAL Wave-4/
-  Wave-5/Wave-6 test fixtures; NOT exported from the index.
+- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` + `src/testing/w6a-lab-fixtures.ts` + `src/testing/w7a-delay-fixtures.ts` + `src/testing/w7a-delay-declarations.ts` — INTERNAL Wave-4/
+  Wave-5/Wave-6/Wave-7 test fixtures; NOT exported from the index.
 
 ## Design rules encoded here
 
@@ -466,6 +529,15 @@ contains:
   (first-class §2/§18 outcome, always recorded with cause + reason); substitute switches
   are ordered and recorded (original + substitute + reason — never silent); human output
   returns as INTERMEDIATE artifact refs only (lock rule 15).
+- **The Expected Value of Delay is first-class and DECLARED (§18, lock rules 25/26)**: the
+  TEN options (nine §18 actions + the no-op baseline) are each evaluated with ALL SEVEN
+  tracked dimensions as explicit typed records; every estimate cites its derivation —
+  NEVER invented precision (a bare number without provenance is rejected naming its
+  dimension); the EV-of-delay computation is DECLARED VERSIONED POLICY (documented formula,
+  recorded terms, carried uncertainty — not hidden math), the ranking is deterministic
+  and uncertainty-aware, and ABANDONED BRANCHES stay auditable (what + why + the analysis
+  that justified it + learning-relevant outcomes appended when later known — the record
+  shape is the LAB-017/018 learning feed; no learning is implemented here).
 
 ## Lab rules honored (architecture policy `specialRules.lab`)
 
@@ -478,7 +550,10 @@ contains:
 - no auto-production from discovery (§24) — promotion makes a transform AVAILABLE to
   program search; the discovery surface has no deploy/publish method (test-pinned);
 - human work is explicit and economically bounded (§17/§18) — twelve-field task packages
-  with declared delay economics; waiting can be abandoned (first-class, recorded).
+  with declared delay economics; waiting can be abandoned (first-class, recorded);
+- the expected value of delay is part of production strategy search (§18, lock rule 25) —
+  the ten options evaluated under a DECLARED VERSIONED policy with provenance-carrying
+  estimates, deterministically ranked, abandonment auditable and immutable.
 
 ## Disclosed limitations
 
@@ -579,3 +654,21 @@ contains:
 - LAB-014 task deadlines are compared as ISO-8601 strings by the injectable clock
   (same-format UTC timestamps compare correctly); a durable adapter may normalize
   instant parsing without changing the port shape.
+- LAB-015 is a RECORDED-RECOMMENDATION surface, not an execution surface (§24): the
+  analysis recommends rank 1 under the declared policy — executing the selected option
+  (actually waiting, retrying, substituting, switching, reducing, proceeding or
+  abandoning) goes through the owning authorities (LAB-016 program search, the §17
+  human-task lifecycle, the engine/capability/organization/transform registries); the
+  state references and substitution targets are DECLARED BY REFERENCE — existence
+  resolution against the live registries is composition-root wiring (the same W6-A
+  structural-declaration discipline); the only resolved citation is the OPTIONAL LAB-007
+  ensemble view (`ensemble-output` derivations resolve fail-closed at exact versions when
+  wired, stay structural when not — pinned by test). The in-memory adapter is a DISCLOSED
+  DETERMINISTIC DOUBLE implementing exactly the declared `ev-delay-1` formula; durability
+  is TL-owned. The canonical CORE-001 `BottleneckDecision` projection bridges
+  `DelayDecisionAnalysisId` to the canonical `BottleneckDecisionId` brand at compile time
+  (the W2-C documented brand-bridge pattern — same string identity, distinct nominal
+  brands) and returns `null` for a no-op recommendation (the frozen canonical action
+  vocabulary has no no-op action — documented, the W6-A canonical-drop precedent). The
+  v1 formula is closed-form, so the recorded seed is unused (recorded for determinism
+  contract stability across future policy versions).

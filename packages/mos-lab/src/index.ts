@@ -1,13 +1,13 @@
 /**
  * Public surface of `@mos/lab` (MOS v2.0 LAB-001..003 + LAB-004..006 +
- * LAB-007..011 + LAB-012 + LAB-014).
+ * LAB-007..011 + LAB-012 + LAB-014 + LAB-015).
  *
  * Exports the corpus / feature-bundle / idea-graph / evidence-separation /
  * social-simulator / dynamics / Time Machine / world-model-ensemble /
  * off-policy-evaluation / strategy-learning / organization-search /
  * transform-definition / transform-graph / transform-discovery /
- * human-production-task / arena-provider-seam contract types plus eighteen
- * runtime factories (in-memory
+ * human-production-task / arena-provider-seam / delay-economics contract
+ * types plus nineteen runtime factories (in-memory
  * corpus store, static feature computation declaration carrier, in-memory
  * feature bundle registry, in-memory idea graph, in-memory social world
  * model store, in-memory simulator engine, in-memory dynamics model store,
@@ -15,8 +15,9 @@
  * ensemble, in-memory off-policy evaluator, in-memory strategy learner,
  * in-memory transform definition registry, in-memory transform graph,
  * in-memory organization search, in-memory transform discovery, in-memory
- * human production task, in-memory Arena provider double). No helper
- * constructors, error classes, or internals are exposed.
+ * human production task, in-memory Arena provider double, in-memory delay
+ * economics). No helper constructors, error classes, or internals are
+ * exposed.
  *
  * W3-A: LAB-004/005/006 add the TYPE-SEPARATED evidence layer — a
  * `SimulationPrediction` (counterfactual: true, disclosed synthetic) can
@@ -71,6 +72,18 @@
  * PORT SEAM (INTEG-001 vocabulary via `@mos/contracts` only — the lab never
  * imports `@mos/integrations`; the in-memory Arena adapter is a DISCLOSED
  * DOUBLE).
+ *
+ * W7-A: LAB-015 (§18 production delay economics) adds the delay decision
+ * surface — the §18 tracked dimensions as EXPLICIT typed records (every
+ * estimate cites its derivation: ensemble output / historical observation /
+ * declared assumption — NEVER invented precision), the TEN options (the §18
+ * nine plus the no-op baseline), the EV-of-delay computation as DECLARED
+ * VERSIONED policy (`ev-delay-1`, documented formula, deterministic
+ * uncertainty-aware ranking), the canonical CORE-001 `BottleneckDecision`
+ * projection and the AUDITABLE abandoned-path records (what / why / the
+ * analysis that justified it / learning-relevant outcomes appended when
+ * later known — the shape feeds LAB-017/018; no learning is implemented
+ * here).
  *
  * RECONCILED (W2-A / RECONCILE-A): all shared value types (TenantId,
  * TenantScope, Version, Timestamp, RightsRef, ProvenanceRef, ArtifactRef,
@@ -446,6 +459,42 @@ export type {
   ArenaTaskOfferRecord,
 } from './contracts/arena-provider-seam.js';
 
+// ---- LAB-015: Production Delay Economics — the §18 tracked dimensions ----
+export type {
+  DelayAcquisitionCost, DelayAlternativePathRef, DelayAlternativePaths,
+  DelayAbandonmentRecordId, DelayCostEstimate, DelayCostSource, DelayCostSourceKind,
+  DelayDecisionAnalysisId, DelayDecisionModel, DelayDimensionName,
+  DelayEstimateDerivation, DelayExpectedIncrementalValue, DelayEstimatedWait,
+  DelayOptionKind, DelayOptionTarget, DelayQualityImpact, DelayScopeReduction,
+  DelaySuccessProbability,
+} from './contracts/delay-economics.js';
+export { DELAY_OPTION_KINDS } from './contracts/delay-economics.js';
+
+// ---- LAB-015: Production Delay Economics — the declared versioned policy ----
+export type {
+  DelayDecisionPolicy, DelayEvComputation, DelayEvTerms, DelayRankingPolicy,
+} from './contracts/delay-policy.js';
+export { DELAY_DECISION_POLICY_V1 } from './contracts/delay-policy.js';
+
+// ---- LAB-015: Production Delay Economics — the decision analysis surface ----
+export type {
+  DelayDecisionAnalysis, DelayDecisionContext, DelayEvaluationInput,
+  DelayOptionAnalysisLine, DelayOptionDeclaration, DelayRankedOption,
+  DelayStateReferences,
+} from './contracts/delay-decision.js';
+export { canonicalBottleneckDecisionView } from './contracts/delay-decision.js';
+
+// ---- LAB-015: Production Delay Economics — the port + failure model ----
+export type {
+  DelayDecisionError, DelayDecisionErrorCode, DelayDecisionPort,
+  RecordDelayAbandonmentInput, RecordDelayAbandonmentOutcomeInput,
+} from './contracts/delay-decision-port.js';
+
+// ---- LAB-015: Production Delay Economics — auditable abandoned paths ----
+export type {
+  DelayAbandonedPath, DelayAbandonmentRecord, DelayLearningRelevantOutcome,
+} from './contracts/delay-abandonment.js';
+
 // ---- Runtime factories (in-memory scaffolds, disclosed) ----
 export type { InMemoryCorpusStoreOptions } from './adapters/in-memory-corpus-store.js';
 export type { InMemoryFeatureBundleRegistryOptions } from './adapters/in-memory-feature-bundle-registry.js';
@@ -483,3 +532,5 @@ export type { InMemoryHumanProductionTaskOptions } from './adapters/in-memory-hu
 export { createInMemoryHumanProductionTask } from './adapters/in-memory-human-production-task.js';
 export type { InMemoryArenaProviderOptions } from './adapters/in-memory-arena-provider.js';
 export { createInMemoryArenaProvider } from './adapters/in-memory-arena-provider.js';
+export type { DelayEnsembleView, InMemoryDelayEconomicsOptions } from './adapters/in-memory-delay-economics.js';
+export { createInMemoryDelayEconomics } from './adapters/in-memory-delay-economics.js';
