@@ -6,12 +6,14 @@ plus `LAB-004` (Social Simulator), `LAB-005` (User/Creator/Competition Dynamics)
 `LAB-006` (Time Machine), delivered in Wave 3 (W3-A), plus `LAB-007` (World Model Ensemble),
 `LAB-008` (Offline / Off-Policy Evaluation) and `LAB-009` (Sequential Strategy Learning),
 delivered in Wave 4 (W4-A), plus `LAB-010` (Agent Organization Search), delivered in Wave 5
-(W5-B), and `LAB-011` (Transform Definitions + Transform Graph), delivered in Wave 5 (W5-A).
+(W5-B), and `LAB-011` (Transform Definitions + Transform Graph), delivered in Wave 5 (W5-A),
+plus `LAB-012` (Transform Discovery — the §8 seven promotion gates) and `LAB-014` (Human
+Production Task Packages), delivered in Wave 6 (W6-A).
 
 Module registry entry: `lab → packages/mos-lab`, owner `worker-a`, dependencies
 `[contracts, content, production, agents, capabilities, engines, jobs]`.
 
-## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search / transform definitions + transform graph (in-memory scaffolds)
+## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search / transform definitions + transform graph / transform discovery (seven §8 gates) / human production task packages (in-memory scaffolds)
 
 All shared vocabulary is imported from **`@mos/contracts`** (W2-A / RECONCILE-A). The package
 contains:
@@ -218,7 +220,7 @@ contains:
     EXECUTION time, which is Lab runs / production programs / the ENG runner (LAB-012
     transform discovery and LAB-016 production program search own the execution seams).
 
-- `src/index.ts` — types + fourteen runtime factories.
+- `src/index.ts` — types + fourteen runtime factories (as merged from W5-A).
 - **LAB-010 — Agent Organization Search (§23)**
   - `src/contracts/organization-features.ts` — the **TWELVE §23 search dimensions** as a
     frozen vocabulary (`agent-count`, `roles`, `topology`, `delegation`, `communication`,
@@ -271,7 +273,105 @@ contains:
     (candidate tenant mismatch, ensemble invisibility and cross-tenant reads all fail
     closed with named codes).
 
-- `src/index.ts` — types + thirteen runtime factories.
+- **LAB-012 — Transform Discovery (§8; the KNOWN / COMPOSED / DISCOVERED surface + THE SEVEN PROMOTION GATES)**
+  - `src/contracts/transform-candidate.ts` — the VERSIONED, TENANT-SCOPED, APPEND-ONLY
+    `TransformCandidate` with the three §8 origins: **KNOWN** (cites a registered
+    `TransformDefinition` at an EXACT version — resolution over the W5-A registry),
+    **COMPOSED** (cites a multi-node `TransformGraph` version as a compositional TEMPLATE —
+    the member definitions are resolved at their exact cited versions and frozen onto the
+    candidate at proposal time, so the template is reproducible bit-for-bit even if the graph
+    later gains new versions) and **DISCOVERED** (a NEW candidate carrying its own
+    `ProposedTransformContract` — exactly the registry-shaped declaration minus scope/id —
+    plus its `TransformCandidateDerivation` provenance: idea nodes / feature bundles /
+    corpus snapshot / learned strategy candidates / organization search results, LAB-003
+    Idea Graph references the natural surface; an empty derivation is rejected and idea
+    references resolve against the wired Idea Graph view — candidates never float free of
+    evidence);
+  - `src/contracts/transform-promotion-gates.ts` — **THE SEVEN §8 GATES as explicit,
+    fail-closed, test-pinned evidence records** (evaluated in §8 order, the first failing
+    gate is the named failure): 1 contract validation (the SHARED structural rules — the
+    same validator the W5-A registry applies, `adapters/transform-contract-validation.ts`:
+    one validator, no drift between the surfaces), 2 capability feasibility (declarative:
+    every `CapabilityRequirement` resolves in the REAL `@mos/capabilities` vocabulary;
+    ZERO requirements is the valid declared no-op state), 3 rights/policy feasibility
+    (STRUCTURAL declarations that must cover EXACTLY the contract's declared requirements;
+    real rights/policy evaluation is composition-root wiring — the lab does not import the
+    rights/policy modules), 4 evaluator (the bound ref must be the contract's own evaluator
+    plus its declared input/output schema shape — evaluator EXECUTION is not this item),
+    5 bounded benchmark evidence (a COMPLETE frozen `EngineBenchmark` record ONLY — the
+    contracts package's required-field index names every missing field; incomplete records
+    never attach and a complete-but-failed benchmark fails promotion by name), 6 immutable
+    version (the freeze declaration cites the candidate's CURRENT version and the only legal
+    promotion path: the registry's append-only register/revise), 7 provenance (the full
+    derivation chain + citation re-resolution, snapshotted);
+  - `src/contracts/transform-discovery.ts` — `TransformDiscoveryPort` (8 methods): propose /
+    revise (append-only candidate versions, full re-validation, prior versions bit-for-bit
+    resolvable) / exact-version get / list-latest / record-gate-evidence (append-only log;
+    re-recording appends, latest-wins) / list-gate-evidence / **promote** (all seven gates
+    fail-closed in §8 order) / list-promotion-attempts (the append-only audit trail);
+  - **Promotion outcome**: a PROMOTED candidate is materialized as a NEW
+    `TransformDefinition` version through the W5-A registry's append-only register path (a
+    new target id) or revise path (an existing one — version + 1, prior versions
+    bit-for-bit) — discovery NEVER mutates a definition in place; a candidate rejected at
+    any gate STAYS RECORDED with the named gate failure in the attempt trail; gate evidence
+    recorded against earlier candidate versions goes STALE after a revision (fail-closed
+    staleness discipline); re-recording a gate APPENDS (never rewrites — latest wins, both
+    directions test-pinned); the audit trail records gate evaluations and registry-write
+    attempts only — `already-promoted` / unknown-candidate calls are caller errors and
+    append no attempt (pinned);
+  - **NO AUTO-PRODUCTION (§24)**: the port has no deploy/publish surface at all — promotion
+    only makes a transform AVAILABLE to program search (LAB-016 consumes this seam);
+    the no-op/repost candidate flows through discovery IDENTICALLY (first-class, zero
+    capability requirements pass gate 2 as the valid declared no-op state — pinned);
+  - `src/adapters/in-memory-transform-discovery.ts` (composed with the INTERNAL
+    `transform-contract-validation.ts` + `transform-discovery-gates.ts` +
+    `transform-discovery-writes.ts`) — disclosed scaffold; determinism via injectable
+    clocks (identical stacks → bit-identical candidates and promotions, test-pinned).
+
+- **LAB-014 — Human Production Task Packages (§17; fulfillment: project owner / authorized collaborator / Arena provider)**
+  - `src/contracts/human-task-fields.ts` — the **TWELVE §17 fields, each an explicit typed
+    record**: objective (statement + success criteria), source/reference (non-empty
+    `ArtifactRef`s — reference-first), script/questions (script beats OR interview
+    questions), capture instructions (brief + requirements), target modality
+    (`ReferenceModality`), required artifacts (artifact types + minimum counts), consent
+    (a `ConsentRef` record + what it covers), rights (non-empty `RightsRef`s), evaluator
+    (bound ref + declared input/output schema shape — execution is not this item), deadline
+    (ISO-8601), delay economics (the §2 delay-expectation FIRST-CLASS variable as DECLARED
+    expectations — expected wait, expected incremental value, delay cost, acquisition cost,
+    success probability, signed quality impact, all §18 dimensions, pinned
+    `declared-expectations` disclosure) and acceptable substitutes (an ORDERED preference
+    list of alternative fulfillment paths — strictly ascending); the §17 compound
+    "consent/rights" field resolves into the TWO records consent + rights, both from the
+    `@mos/contracts` vocabulary;
+  - `src/contracts/human-task-lifecycle.ts` — the lifecycle **created → offered →
+    accepted/in-progress → delivered → evaluated → completed | abandoned** (abandonment is
+    a FIRST-CLASS §2/§18 outcome: `deadline-expiry` / `substitute-switch` /
+    `caller-decision` causes, always with a reason, never silent) + the §19 verdict
+    vocabulary (accepted / rejected-quality / rejected-strategy / treatment-requested) +
+    the APPEND-ONLY `HumanTaskLifecycleEvent` audit log (every transition and every Arena
+    interaction recorded — switches and provider outcomes are never silent);
+  - `src/contracts/human-production-task.ts` — the VERSIONED, TENANT-SCOPED
+    `LabHumanProductionTask` (every lifecycle transition appends version + 1; human output
+    as INTERMEDIATE artifact refs, lock rule 15) + the `HumanProductionTaskPort` (10
+    methods) + `canonicalHumanProductionTaskView` (the derived CORE-001
+    `HumanProductionTask` projection — required-field-asserted in tests);
+  - `src/contracts/arena-provider-seam.ts` — **Arena is a PROVIDER through Integration**
+    (lock rule 27): the lab holds ONLY `ArenaProviderRef`s (INTEG-001 `ConnectorProvider`
+    vocabulary via `@mos/contracts` — the lab NEVER imports `@mos/integrations`) and reaches
+    the provider through the one-method `ArenaProviderPort` seam; the real adapter is
+    composition-root wiring;
+  - `src/adapters/in-memory-human-production-task.ts` (composed with the INTERNAL
+    `human-task-field-validation.ts` + `human-task-store.ts`) +
+    `in-memory-arena-provider.ts` — disclosed scaffolds; the Arena double is ZERO-I/O and
+    SELF-LABELS every interaction reference (`arena-double:` prefix — double output can
+    never masquerade as live provider evidence);
+  - **Substitute semantics**: when a task is abandoned or its deadline breached, the ordered
+    substitute list yields the next UNTRIED fulfillment path — the switch records original
+    + substitute + reason (on the abandonment record AND the event log); deadline expiry
+    uses the injectable clock and fails closed before expiry (`not-overdue`).
+
+- `src/index.ts` — types + eighteen runtime factories (Wave-6 state: the Wave-5 union's
+  fifteen plus transform discovery, human production task and the Arena provider double).
 - `src/adapters/parametric-support.ts` — INTERNAL helpers (seeded PRNG, clamps, validation,
   deep-freeze + deep-clone ownership helpers) shared by the adapters; deliberately NOT exported
   from the index.
@@ -280,8 +380,17 @@ contains:
 - `src/adapters/transform-graph-validation.ts` + `transform-graph-write-checks.ts` — INTERNAL
   pure logic for the transform graph (constraint validation + modality derivation; write-time
   structural invariants); deliberately NOT exported from the index.
-- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` — INTERNAL Wave-4/
-  Wave-5 test fixtures; NOT exported from the index.
+- `src/adapters/transform-contract-validation.ts` — INTERNAL SHARED structural validator for
+  transform contract declarations (used identically by the W5-A registry and LAB-012
+  discovery — one validator, no drift); deliberately NOT exported from the index.
+- `src/adapters/transform-discovery-gates.ts` + `transform-discovery-writes.ts` — INTERNAL
+  gate evidence construction / promotion re-checks and candidate write rules for LAB-012;
+  deliberately NOT exported from the index.
+- `src/adapters/human-task-field-validation.ts` + `human-task-store.ts` — INTERNAL
+  twelve-field validation and append-only store primitives for LAB-014; deliberately NOT
+  exported from the index.
+- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` + `src/testing/w6a-lab-fixtures.ts` — INTERNAL Wave-4/
+  Wave-5/Wave-6 test fixtures; NOT exported from the index.
 
 ## Design rules encoded here
 
@@ -343,13 +452,33 @@ contains:
   human participation; transform graphs are DECLARATIVE DAGs over artifact refs whose
   nodes cite definitions at EXACT versions — lineage is preserved across every declared
   transformation and nothing executes inside this layer.
+- **Discovered ≠ production-ready (§8, lock rule 7)**: a discovered transform is only a
+  CANDIDATE until ALL SEVEN promotion gates carry explicit evidence — contract validation,
+  capability feasibility, rights/policy feasibility, evaluator, bounded benchmark evidence,
+  immutable version, provenance — each fail-closed and named; promotion appends a new
+  definition version through the registry (never in place); rejected candidates stay
+  recorded with the named gate failure; NO AUTO-PRODUCTION (§24) — the discovery surface
+  has no deploy/publish method at all (test-pinned).
+- **Human production is explicit and economically bounded (§17, lock rule 24)**: every
+  human production task carries the TWELVE §17 fields as explicit typed records (a
+  missing or malformed field fails closed NAMING the field); delay economics are DECLARED
+  expectations (§2 first-class variable, never guarantees); waiting can be abandoned
+  (first-class §2/§18 outcome, always recorded with cause + reason); substitute switches
+  are ordered and recorded (original + substitute + reason — never silent); human output
+  returns as INTERMEDIATE artifact refs only (lock rule 15).
 
 ## Lab rules honored (architecture policy `specialRules.lab`)
 
 - no direct publication — nothing here publishes anywhere;
-- no direct provider calls — no provider SDK imports (boundary-check enforced);
+- no direct provider calls — no provider SDK imports (boundary-check enforced), and the
+  Arena provider is reached only through the `ArenaProviderPort` seam (INTEG-001
+  vocabulary refs — never `@mos/integrations`);
 - counterfactuals labeled — enforced by type separation + runtime label re-validation;
-- delayed-mode leakage prevention — enforced by the T−L cutoff + adversarial tests.
+- delayed-mode leakage prevention — enforced by the T−L cutoff + adversarial tests;
+- no auto-production from discovery (§24) — promotion makes a transform AVAILABLE to
+  program search; the discovery surface has no deploy/publish method (test-pinned);
+- human work is explicit and economically bounded (§17/§18) — twelve-field task packages
+  with declared delay economics; waiting can be abandoned (first-class, recorded).
 
 ## Disclosed limitations
 
@@ -420,3 +549,33 @@ contains:
   only); the production module's `TransformGraphRef` binding (contracts opaque ref) is
   composition-root wiring for a later wave — the lab-local `TransformGraphId` brand is the
   record identity here.
+- LAB-012 discovery is a CANDIDATE-management surface, not a benchmark producer: gate 5
+  accepts COMPLETE frozen `EngineBenchmark` records (the ENG-004 shape) as STRUCTURAL
+  evidence only — the lab does not execute benchmarks here (the ENG-004 golden-corpus
+  stack and the ENG-001 activation gate own real benchmark runs); gate 2 resolves
+  capability refs against the `@mos/capabilities` vocabulary (a DECLARATION, never an
+  engine or quality claim); gate 3's rights/policy feasibility is STRUCTURAL declarations
+  only — real rights/policy evaluation composes the `@mos/rights` / policy modules at the
+  composition root (not lab registry deps); gate 4 records the evaluator REFERENCE plus
+  its contract shape — evaluator EXECUTION is not this item. Promotion makes a transform
+  AVAILABLE to program search (LAB-016) — it never deploys, never publishes (§24).
+- LAB-012 derivation references: when NO Idea Graph view is wired, idea-node references in
+  a candidate's derivation are validated STRUCTURALLY only (the composition root wires
+  the real graph; disclosed on the port options and pinned by test). Organization-search
+  and learned-strategy derivation references are structural declarations this wave (their
+  registries are not lab-owned stores).
+- LAB-014 delay economics are DECLARED EXPECTATIONS — the §2/§18 first-class variable as
+  caller-supplied declarations; the lab does not compute expected value of waiting, delay
+  cost trade-offs or bottleneck decisions (LAB-015 production delay economics owns that
+  surface). The canonical CORE-001 projection drops owner/collaborator substitute entries
+  (the frozen `AcceptableSubstitution` vocabulary expresses §18 escape equivalents only —
+  arena-provider substitutes project as `provider`; documented, disclosed).
+- The Arena provider seam is exercised by a DISCLOSED IN-MEMORY DOUBLE (zero-I/O,
+  deterministic, self-labeled `arena-double:` interaction references) — the real adapter
+  over `@mos/integrations` (INTEG-001: provider resolution, rights/policy gates preceding
+  provider calls) is composition-root wiring; the lab never imports the integrations
+  module. Unresolved Arena offer attempts produce an `arena-offer-rejected` event but no
+  provider interaction record (disclosed).
+- LAB-014 task deadlines are compared as ISO-8601 strings by the injectable clock
+  (same-format UTC timestamps compare correctly); a durable adapter may normalize
+  instant parsing without changing the port shape.

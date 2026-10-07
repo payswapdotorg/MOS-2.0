@@ -1,20 +1,22 @@
 /**
  * Public surface of `@mos/lab` (MOS v2.0 LAB-001..003 + LAB-004..006 +
- * LAB-007..011).
+ * LAB-007..011 + LAB-012 + LAB-014).
  *
  * Exports the corpus / feature-bundle / idea-graph / evidence-separation /
  * social-simulator / dynamics / Time Machine / world-model-ensemble /
  * off-policy-evaluation / strategy-learning / organization-search /
- * transform-definition / transform-graph contract types plus sixteen runtime
- * factories (in-memory
+ * transform-definition / transform-graph / transform-discovery /
+ * human-production-task / arena-provider-seam contract types plus eighteen
+ * runtime factories (in-memory
  * corpus store, static feature computation declaration carrier, in-memory
  * feature bundle registry, in-memory idea graph, in-memory social world
  * model store, in-memory simulator engine, in-memory dynamics model store,
  * in-memory dynamics stepper, in-memory Time Machine, in-memory world model
  * ensemble, in-memory off-policy evaluator, in-memory strategy learner,
  * in-memory transform definition registry, in-memory transform graph,
- * in-memory organization search). No helper constructors, error classes,
- * or internals are exposed.
+ * in-memory organization search, in-memory transform discovery, in-memory
+ * human production task, in-memory Arena provider double). No helper
+ * constructors, error classes, or internals are exposed.
  *
  * W3-A: LAB-004/005/006 add the TYPE-SEPARATED evidence layer — a
  * `SimulationPrediction` (counterfactual: true, disclosed synthetic) can
@@ -52,6 +54,23 @@
  * single-agent baseline + hand-designed + generated) is structurally
  * required, and the result is counterfactual-labeled with the §24 lab-only
  * statement (never a deployment decision).
+ *
+ * W6-A: LAB-012 (§8 transform discovery) adds the KNOWN / COMPOSED /
+ * DISCOVERED candidate surface with THE SEVEN PROMOTION GATES as explicit
+ * fail-closed evidence records — a PROMOTED candidate becomes a new
+ * `TransformDefinition` version through the W5-A registry's append-only
+ * register/revise path (never in place), a candidate rejected at any gate
+ * stays recorded with the named gate failure, and NO AUTO-PRODUCTION (§24):
+ * promotion only makes a transform AVAILABLE to program search (LAB-016).
+ * W6-A: LAB-014 (§17 human production task packages) adds the TWELVE-field
+ * task structure (each field an explicit typed record; delay economics as
+ * DECLARED expectations), the created → offered → in-progress → delivered
+ * → evaluated → completed | abandoned lifecycle (abandonment FIRST-CLASS,
+ * substitute switches recorded — never silent), human output as
+ * INTERMEDIATE artifact refs (lock rule 15) and the Arena provider as a
+ * PORT SEAM (INTEG-001 vocabulary via `@mos/contracts` only — the lab never
+ * imports `@mos/integrations`; the in-memory Arena adapter is a DISCLOSED
+ * DOUBLE).
  *
  * RECONCILED (W2-A / RECONCILE-A): all shared value types (TenantId,
  * TenantScope, Version, Timestamp, RightsRef, ProvenanceRef, ArtifactRef,
@@ -268,6 +287,7 @@ export type {
 
 // ---- LAB-011: Transform Definitions ----
 export type {
+  ProposedTransformContract,
   TransformDefinition,
   TransformDefinitionError,
   TransformDefinitionErrorCode,
@@ -333,6 +353,99 @@ export type {
   RankedOrganizationCandidate,
 } from './contracts/organization-search.js';
 
+// ---- LAB-012: Transform Discovery — candidates ----
+export type {
+  ComposedTransformCitation,
+  ComposedTransformCitationInput,
+  KnownTransformCitation,
+  ProposeTransformCandidateInput,
+  ReviseTransformCandidateInput,
+  TransformCandidate,
+  TransformCandidateDerivation,
+  TransformCandidateId,
+  TransformCandidateOrigin,
+} from './contracts/transform-candidate.js';
+
+// ---- LAB-012: Transform Discovery — THE SEVEN §8 PROMOTION GATES ----
+export type {
+  BoundedBenchmarkEvidence,
+  CapabilityFeasibilityEvidence,
+  ContractValidationEvidence,
+  EvaluatorBindingEvidence,
+  ImmutableVersionEvidence,
+  ProvenanceEvidence,
+  RecordTransformGateEvidenceInput,
+  RightsPolicyFeasibilityEvidence,
+  TransformGateEvidence,
+  TransformGateEvidenceEntry,
+  TransformGateEvidenceInput,
+  TransformPromotionGateName,
+} from './contracts/transform-promotion-gates.js';
+
+// ---- LAB-012: Transform Discovery — the port ----
+export type {
+  TransformDiscoveryError,
+  TransformDiscoveryErrorCode,
+  TransformDiscoveryPort,
+  TransformGateOutcome,
+  TransformPromotion,
+  TransformPromotionAttempt,
+} from './contracts/transform-discovery.js';
+
+// ---- LAB-014: Human Production Task — the twelve §17 fields ----
+export type {
+  HumanProductionTaskFieldName,
+  HumanTaskAcceptableSubstitutes,
+  HumanTaskCaptureInstructions,
+  HumanTaskConsent,
+  HumanTaskDeadline,
+  HumanTaskDelayEconomics,
+  HumanTaskEvaluator,
+  HumanTaskObjective,
+  HumanTaskRequiredArtifact,
+  HumanTaskRequiredArtifacts,
+  HumanTaskRights,
+  HumanTaskScriptOrQuestions,
+  HumanTaskSourceReference,
+  HumanTaskTargetModality,
+} from './contracts/human-task-fields.js';
+
+// ---- LAB-014: Human Production Task — lifecycle ----
+export type {
+  AbandonHumanTaskInput,
+  DeliverHumanTaskInput,
+  EvaluateHumanTaskInput,
+  HumanFulfillmentPath,
+  HumanTaskAbandonment,
+  HumanTaskAbandonmentCause,
+  HumanTaskEvaluation,
+  HumanTaskEvaluationVerdict,
+  HumanTaskEventKind,
+  HumanTaskLifecycleEvent,
+  HumanTaskStatus,
+  HumanTaskSubstitute,
+} from './contracts/human-task-lifecycle.js';
+
+// ---- LAB-014: Human Production Task — the port + canonical projection ----
+export type {
+  CreateHumanProductionTaskInput,
+  HumanProductionTaskError,
+  HumanProductionTaskErrorCode,
+  HumanProductionTaskPort,
+  LabHumanProductionTask,
+} from './contracts/human-production-task.js';
+export { canonicalHumanProductionTaskView } from './contracts/human-production-task.js';
+
+// ---- LAB-014: the Arena provider port seam (INTEG-001 vocabulary, refs only) ----
+export type {
+  ArenaProviderPort,
+  ArenaProviderRef,
+  ArenaProviderSeamError,
+  ArenaProviderSeamErrorCode,
+  ArenaTaskOfferInput,
+  ArenaTaskOfferRecord,
+} from './contracts/arena-provider-seam.js';
+
 // ---- Runtime factories (in-memory scaffolds, disclosed) ----
 export type { InMemoryCorpusStoreOptions } from './adapters/in-memory-corpus-store.js';
 export type { InMemoryFeatureBundleRegistryOptions } from './adapters/in-memory-feature-bundle-registry.js';
@@ -364,3 +477,9 @@ export { createInMemoryStrategyLearner } from './adapters/in-memory-strategy-lea
 export { createInMemoryTransformDefinitionRegistry } from './adapters/in-memory-transform-definition-registry.js';
 export { createInMemoryTransformGraph } from './adapters/in-memory-transform-graph.js';
 export { createInMemoryOrganizationSearch } from './adapters/in-memory-organization-search.js';
+export type { InMemoryTransformDiscoveryOptions } from './adapters/in-memory-transform-discovery.js';
+export { createInMemoryTransformDiscovery } from './adapters/in-memory-transform-discovery.js';
+export type { InMemoryHumanProductionTaskOptions } from './adapters/in-memory-human-production-task.js';
+export { createInMemoryHumanProductionTask } from './adapters/in-memory-human-production-task.js';
+export type { InMemoryArenaProviderOptions } from './adapters/in-memory-arena-provider.js';
+export { createInMemoryArenaProvider } from './adapters/in-memory-arena-provider.js';

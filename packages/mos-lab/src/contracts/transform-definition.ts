@@ -146,6 +146,16 @@ export interface TransformDefinitionInput {
   readonly lineageRules: readonly string[];
 }
 
+/**
+ * The registry-shaped contract declaration a transform candidate proposes
+ * (LAB-012): exactly the {@link TransformDefinitionInput} fields minus the
+ * scope/id the promotion target supplies. Promotion materializes it as a
+ * definition version through the registry's append-only register/revise
+ * paths — so every candidate is validated by the SAME structural rules the
+ * registry applies (shared validator, adapters/transform-contract-validation).
+ */
+export type ProposedTransformContract = Omit<TransformDefinitionInput, 'scope' | 'id'>;
+
 /** Machine-readable failure codes for transform definition operations. */
 export type TransformDefinitionErrorCode =
   | 'invalid-input'
