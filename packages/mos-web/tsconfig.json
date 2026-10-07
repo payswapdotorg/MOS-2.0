@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Presentation-only browser package (registry: web → packages/mos-web,
+    // owner worker-c, authority presentation-only, dependencies [contracts]).
+    //
+    // MAIN project: compiles src/ only → dist/src/** (the package's built
+    // surface; package.json exports/types point there). The testing seam is
+    // compiled separately by tsconfig.testing.json (see its comment for the
+    // depth-matching rationale). The two `.jsx` mounting files (src/main.jsx,
+    // src/shell/error-boundary.jsx) are deliberately NOT in the tsc program:
+    // they import `react`/`react-dom/client` directly, which the frozen
+    // boundary harness forbids in every scanned managed extension — see the
+    // files' disclosure headers and the README's firewall section. Vite
+    // (esbuild) compiles them for the browser bundle.
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [{ "path": "../mos-contracts" }]
+}

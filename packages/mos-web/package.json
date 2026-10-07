@@ -1,0 +1,39 @@
+{
+  "name": "@mos/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MOS v2.0 browser shell (WEB-001 + UX-001) — presentation-only Vite React shell: Home narrates the §2 complete loop, Missions presents the mission catalog through view ports; no business authority, no Zcode coding-surface imports",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "build:web": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "tsc -b tsconfig.json tsconfig.testing.json && node --test 'out/**/*.test.js'",
+    "typecheck": "tsc -b tsconfig.json tsconfig.testing.json",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@mos/identity": "workspace:*",
+    "@mos/missions": "workspace:*",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "tailwindcss": "^4.2.2",
+    "vite": "^8.0.2"
+  }
+}
