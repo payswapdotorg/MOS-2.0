@@ -3,12 +3,14 @@
 MOS v2.0 **Marketing Lab** package — `LAB-001` (reference-first niche corpus runtime) +
 `LAB-002` (multimodal feature bundles) + `LAB-003` (Idea Graph), delivered in Wave 2 (W2-A),
 plus `LAB-004` (Social Simulator), `LAB-005` (User/Creator/Competition Dynamics) and
-`LAB-006` (Time Machine), delivered in Wave 3 (W3-A).
+`LAB-006` (Time Machine), delivered in Wave 3 (W3-A), plus `LAB-007` (World Model Ensemble),
+`LAB-008` (Offline / Off-Policy Evaluation) and `LAB-009` (Sequential Strategy Learning),
+delivered in Wave 4 (W4-A).
 
 Module registry entry: `lab → packages/mos-lab`, owner `worker-a`, dependencies
 `[contracts, content, production, agents, capabilities, engines, jobs]`.
 
-## Status: corpus / features / idea-graph + simulator / dynamics / Time Machine (in-memory scaffolds)
+## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning (in-memory scaffolds)
 
 All shared vocabulary is imported from **`@mos/contracts`** (W2-A / RECONCILE-A). The package
 contains:
@@ -88,9 +90,85 @@ contains:
     rejected);
   - `src/adapters/in-memory-time-machine.ts` (disclosed scaffold).
 
-- `src/index.ts` — types + nine runtime factories.
+- **LAB-007 — World Model Ensemble**
+  - `src/contracts/ensemble.ts` — versioned, tenant-scoped, **append-only** ensembles of
+    world-model version members (`EnsemblePort`, 8 methods ≤ 12 policy budget): registration
+    creates version 1, member addition appends the next version, freezing appends a `frozen`
+    version that blocks further additions; empty and single-member ensembles are structurally
+    rejected (no model disagreement is computable);
+  - `EnsembleWeightingPolicy` — EXPLICIT and versioned (`uniform` or
+    `declared-member-weights`); there is NO silent default weighting, and the aggregate
+    interval is forced to COVER the member expected-value spread so weighting can never hide
+    model disagreement (§22);
+  - `evaluateEnsemble` → `EnsemblePrediction` — a counterfactual `SimulationPrediction`
+    (never a `HistoricalObservation` — lock rule 29) carrying the full §22 uncertainty set
+    where computable: expected value, interval, **model disagreement** (per-metric member
+    spread), **OOD/novelty signal** vs member-DECLARED coverage (out-of-coverage inputs are
+    FLAGGED, never silently extrapolated; undeclared coverage is a disclosed partial state),
+    and the carried **calibration placeholder** (provenance-declared, never a number —
+    calibration is LAB-018 territory);
+  - `runSeedRobustnessSweep` — multi-seed robustness record (per-metric per-seed aggregates,
+    spread + relative spread; counterfactual-labeled diagnostic);
+  - `src/adapters/in-memory-ensemble{,-store,-evaluation}.ts` + `ensemble-aggregation.ts` —
+    the composed disclosed scaffold (documented aggregation math: weighted mean, spread =
+    max − min, interval widened to cover the spread).
+
+- **LAB-008/LAB-009 — mission-compatible reward vocabulary (`src/contracts/reward.ts`)**
+  - `LabRewardSpec` (versioned; the version is pinned against `LabScenario.rewardVersion`
+    by every consumer — mismatch fails closed) with `LabRewardTerm` mirroring the §21 metric
+    vocabulary EXACTLY as `@mos/missions` `RewardMetricId` (17 metrics; missions is not a
+    registry dependency of the lab, so the composition root binds a real mission reward spec
+    onto this structurally compatible local shape);
+  - every term MUST declare `metricSource` — the concrete predicted/observed metric id it
+    draws its value from; a source that resolves nowhere fails closed
+    (`reward-term-not-derivable`), one that resolves ambiguously (predicted AND observed)
+    fails closed (`reward-term-ambiguous`) — vanity metrics never silently replace the
+    declared objective (§21);
+  - `CandidateProgramDescriptor` — the candidate program (strategy knobs + horizon steps).
+
+- **LAB-008 — Offline / Off-Policy Evaluation**
+  - `src/contracts/off-policy-evaluation.ts` + `src/adapters/in-memory-off-policy-evaluation.ts`
+    — `OffPolicyEvaluationPort.evaluateCandidate` (single method): candidate program +
+    ensemble + Time Machine mode-2 history + reward spec → estimated reward with a
+    DOCUMENTED finite-sample uncertainty interval (per-term Hoeffding bound on the
+    observed-baseline means, summed conservatively, combined additively with the ensemble
+    disagreement and seed-robustness half-widths — formula `ope-hoeffding-additive-v1`,
+    fully derived in the adapter docblock) + per-term contribution provenance;
+  - **LAG DISCIPLINE (lock rule 30)**: the basis is pulled ONLY through
+    `replayDelayedInformation` with L = `scenario.informationLag` — records with
+    `observedAt > T − L` can never reach the estimate (adversarially pinned: beyond-lag rows
+    leave the score bit-identical; the replay query is spied to carry exactly the scenario
+    lag);
+  - insufficient history (empty or sub-minimum lagged basis) → the EXPLICIT
+    `insufficient-history` verdict — never a silent zero;
+  - **§24 validity disclosure** on every score: an off-policy estimate is a SIMULATED
+    estimate, never experimental proof; the real-experiment boundary remains the only path
+    to deployment-grade evidence.
+
+- **LAB-009 — Sequential Strategy Learning**
+  - `src/contracts/strategy-learning.ts` + `src/adapters/in-memory-strategy-learner.ts` —
+    `StrategyLearningPort.learnStrategy` (single method): learn from SIMULATION EXPERIENCE
+    ONLY (ensemble evaluation — the learner has NO Time Machine access), deterministic
+    coordinate search over the candidate knobs with a DECLARED stopping policy
+    (iteration cap / member-step budget / plateau window + tolerance);
+  - output: `LearnedStrategyCandidate` — counterfactual-labeled
+    (`counterfactual: true`, `disclosure: 'learned-in-simulation'`, lab-only §24 statement)
+    with the FULL learning trace (per-iteration reward estimates with uncertainty, evaluated
+    variants, chosen variant, cost dimensions) and FULL provenance (ensemble id/version,
+    member world-model versions, simulator version, reward spec version, seed, parent
+    strategy, stopping record);
+  - determinism: same (initial program, seed, ensemble version, reward spec, stopping
+    policy) → bit-identical learning trace (test-pinned incl. fresh stacks);
+  - the §2 delay-expectation variable appears only as the declared `simulatedSteps` cost
+    dimension of the trace (production delay economics is LAB-015's domain).
+
+- `src/index.ts` — types + twelve runtime factories.
 - `src/adapters/parametric-support.ts` — INTERNAL helpers (seeded PRNG, clamps, validation,
   deep-freeze) shared by the adapters; deliberately NOT exported from the index.
+- `src/adapters/reward-computation.ts` + `ensemble-aggregation.ts` — INTERNAL pure math
+  (reward term resolution, ensemble aggregation); deliberately NOT exported from the index.
+- `src/testing/w4a-lab-fixtures.ts` — INTERNAL Wave-4 test fixtures; NOT exported from the
+  index.
 
 ## Design rules encoded here
 
@@ -99,18 +177,30 @@ contains:
 - **Rights are structural, not incidental**: ingestion passes the injected
   `RightsCheckPort` and fails closed. URL/storageRef accessibility never implies rights.
 - **Append-only history**: corpus snapshots, feature bundle versions, idea revisions, world
-  model versions, dynamics model versions, the historical timeline and the branch registry
-  are versioned/append-only records; nothing is mutated in place and nothing is deleted.
+  model versions, dynamics model versions, the historical timeline, the branch registry and
+  world model ensemble versions are versioned/append-only records; nothing is mutated in
+  place and nothing is deleted (ensemble versions are immutable snapshots — freezing is an
+  append too).
 - **Historical vs counterfactual separation (lock rule 29)**: `HistoricalObservation`
   (`counterfactual: false`) and `SimulationPrediction`/`SocialSimulationResult`/
-  `DynamicsStepResult`/`CounterfactualBranchRecord` (`counterfactual: true`, disclosed
-  synthetic) are mutually non-assignable types; simulator outputs are never ground truth.
+  `DynamicsStepResult`/`CounterfactualBranchRecord`/`EnsemblePrediction`/
+  `SeedRobustnessSweep`/`OffPolicyEvaluationScore`/`LearnedStrategyCandidate`
+  (`counterfactual: true`, disclosed synthetic) are mutually non-assignable types;
+  simulator outputs are never ground truth. The OPE score references its historical basis
+  by observation IDS only — historical records are never embedded into estimates.
 - **Leakage prevention (lock rule 30)**: the Time Machine's delayed mode filters strictly on
   `observedAt ≤ T − L`; the invariant is pinned by adversarial tests (boundary probe 1 ms
-  past the cutoff, lag sweeps, shuffled append order, malformed-query fail-closed).
+  past the cutoff, lag sweeps, shuffled append order, malformed-query fail-closed), and the
+  LAB-008 evaluator pulls its basis ONLY through that delayed mode (beyond-lag rows leave
+  the estimate bit-identical — pinned).
 - **Determinism**: every simulator/dynamics step is a pure function of its inputs —
   same seed + same inputs → bit-identical results (test-pinned across fresh engines too);
-  seed robustness (positive variance across seeds) is asserted and reported.
+  seed robustness (positive variance across seeds) is asserted and reported; the same
+  determinism holds for ensemble evaluations, seed-robustness sweeps, off-policy scores and
+  whole learning traces.
+- **Explicit reward binding (§21)**: every reward term declares its concrete metric source;
+  non-derivable and ambiguous sources fail closed with typed errors — vanity metrics never
+  silently replace the declared objective.
 - **No-op is a first-class candidate (lock rule 5)**: `no-op` produces zero simulated
   activity; in the dynamics model inaction still decays audience and loses ground to
   competitors (inaction has modeled consequences).
@@ -134,8 +224,27 @@ contains:
 - The LAB-004 simulator and LAB-005 dynamics adapters are **deterministic synthetic response
   functions** — real generative computation, but NOT real platform models; every result
   carries the `synthetic-response-function` disclosure and a §22 uncertainty envelope.
-  Calibration against real outcomes (LAB-016) and the world model ensemble (LAB-007) build
-  on these seams in later waves.
+  The LAB-007 ensemble aggregates those disclosed functions (its disclosure says so
+  explicitly); calibration against real outcomes is LAB-018 (LAB-016 production program
+  search consumes this seam) — the ensemble carries a provenance-declared calibration
+  PLACEHOLDER, never a number.
+- The LAB-007 OOD signal is a **DECLARED-COVERAGE seam**: members self-declare their input
+  coverage boxes; the signal measures distance against those declarations (a declaration,
+  not a verified property) and flags out-of-coverage inputs rather than silently
+  extrapolating.
+- The LAB-008 finite-sample uncertainty is a **DOCUMENTED simple bound**
+  (`ope-hoeffding-additive-v1`): per-term Hoeffding bounds on the observed-baseline means
+  using observed-basis extremes as the per-term range (a conservative empirical envelope),
+  summed by union bound and combined additively with the ensemble-disagreement and
+  seed-robustness half-widths. No invented sophistication — the full derivation is in the
+  adapter docblock. The horizon is evaluated as K STATIONARY steps (cross-step world
+  evolution is not modeled this wave — same for LAB-009).
+- The LAB-009 learner is a deterministic coordinate search over the candidate's numeric
+  knobs (fixed moves, fixed tie-break) — a disclosed scaffold standing in for real
+  sequential simulator learning; strategy KIND transitions are LAB-016 program-search
+  territory.
+- Off-policy estimates are SIMULATED estimates, never experimental proof (§24); learned
+  candidates are lab-only candidates, never deployment decisions.
 - Time Machine availability semantics: an observation is "available by X" iff
   `observedAt ≤ X`; a durable adapter may tighten this with an ingestion ledger
   (append-time availability) without changing the port shape.

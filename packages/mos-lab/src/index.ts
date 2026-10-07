@@ -1,14 +1,17 @@
 /**
- * Public surface of `@mos/lab` (MOS v2.0 LAB-001..003 + LAB-004..006).
+ * Public surface of `@mos/lab` (MOS v2.0 LAB-001..003 + LAB-004..006 +
+ * LAB-007..009).
  *
  * Exports the corpus / feature-bundle / idea-graph / evidence-separation /
- * social-simulator / dynamics / Time Machine contract types plus nine
+ * social-simulator / dynamics / Time Machine / world-model-ensemble /
+ * off-policy-evaluation / strategy-learning contract types plus twelve
  * runtime factories (in-memory corpus store, static feature computation
  * declaration carrier, in-memory feature bundle registry, in-memory idea
  * graph, in-memory social world model store, in-memory simulator engine,
  * in-memory dynamics model store, in-memory dynamics stepper, in-memory
- * Time Machine). No helper constructors, error classes, or internals are
- * exposed.
+ * Time Machine, in-memory world model ensemble, in-memory off-policy
+ * evaluator, in-memory strategy learner). No helper constructors, error
+ * classes, or internals are exposed.
  *
  * W3-A: LAB-004/005/006 add the TYPE-SEPARATED evidence layer — a
  * `SimulationPrediction` (counterfactual: true, disclosed synthetic) can
@@ -17,6 +20,13 @@
  * lock rule 29, compile-time pinned in the contracts) — and the Time
  * Machine whose delayed-information mode never leaks future information
  * (lock rule 30).
+ *
+ * W4-A: LAB-007/008/009 extend the same separation through the ensemble /
+ * off-policy / learning surfaces — `EnsemblePrediction` extends
+ * `SimulationPrediction`, the OPE score and the learned candidate carry
+ * `counterfactual: true` literal pins, and every reward term binds its
+ * value source EXPLICITLY (§21: vanity metrics never silently replace the
+ * declared objective; a non-derivable or ambiguous source fails closed).
  *
  * RECONCILED (W2-A / RECONCILE-A): all shared value types (TenantId,
  * TenantScope, Version, Timestamp, RightsRef, ProvenanceRef, ArtifactRef,
@@ -29,6 +39,12 @@
  * rights gate (`RightsCheckPort`) is a lab-owned STRUCTURAL port — the
  * rights module is not among the lab module's registry dependencies; a real
  * adapter over `@mos/rights` is wired at the composition root.
+ *
+ * LAB-008/LAB-009 reward seam (W4-A design call, disclosed): the missions
+ * module is not a registry dependency of the lab, so the lab declares a
+ * STRUCTURALLY COMPATIBLE local reward spec (`LabRewardSpec`) whose metric
+ * vocabulary mirrors the missions `RewardMetricId` union exactly; the
+ * composition root binds a real `@mos/missions` reward spec onto it.
  */
 
 // ---- LAB-001: reference-first niche corpus ----
@@ -154,6 +170,76 @@ export type {
   TimeMachinePort,
 } from './contracts/time-machine.js';
 
+// ---- LAB-007: World Model Ensemble ----
+export type {
+  AddEnsembleMemberInput,
+  CalibrationPlaceholder,
+  EnsembleDisagreement,
+  EnsembleError,
+  EnsembleErrorCode,
+  EnsembleEvaluationInput,
+  EnsembleMember,
+  EnsembleOodSignal,
+  EnsemblePort,
+  EnsemblePrediction,
+  EnsembleWeightingPolicy,
+  MemberCoverage,
+  MemberOodVerdict,
+  MemberPrediction,
+  MetricDisagreement,
+  CoverageRange,
+  RegisterEnsembleInput,
+  SeedRobustnessMetricSweep,
+  SeedRobustnessSweep,
+  WorldModelEnsemble,
+  WorldModelEnsembleDraft,
+  WorldModelEnsembleId,
+} from './contracts/ensemble.js';
+
+// ---- LAB-008/LAB-009: mission-compatible reward vocabulary + program descriptors ----
+export type {
+  CandidateProgramDescriptor,
+  CandidateProgramStrategy,
+  LabRewardDirection,
+  LabRewardMetricId,
+  LabRewardSpec,
+  LabRewardTerm,
+} from './contracts/reward.js';
+
+// ---- LAB-008: Offline / Off-Policy Evaluation ----
+export type {
+  EvaluationBasis,
+  OffPolicyError,
+  OffPolicyErrorCode,
+  OffPolicyEvaluationId,
+  OffPolicyEvaluationInput,
+  OffPolicyEvaluationPort,
+  OffPolicyEvaluationResult,
+  OffPolicyEvaluationScore,
+  OffPolicyInsufficientHistory,
+  OffPolicyUncertaintyBreakdown,
+  OffPolicyValidityDisclosure,
+  ObservedMetricMean,
+  RewardTermContribution,
+} from './contracts/off-policy-evaluation.js';
+
+// ---- LAB-009: Sequential Strategy Learning ----
+export type {
+  IterationCostDimensions,
+  LearnedStrategyCandidate,
+  LearnedStrategyCandidateId,
+  LearningProvenance,
+  LearningStopReason,
+  LearningStoppingPolicy,
+  LearningTrace,
+  LearningTraceIteration,
+  StrategyLearningError,
+  StrategyLearningErrorCode,
+  StrategyLearningInput,
+  StrategyLearningPort,
+  VariantEvaluation,
+} from './contracts/strategy-learning.js';
+
 // ---- Runtime factories (in-memory scaffolds, disclosed) ----
 export type { InMemoryCorpusStoreOptions } from './adapters/in-memory-corpus-store.js';
 export type { InMemoryFeatureBundleRegistryOptions } from './adapters/in-memory-feature-bundle-registry.js';
@@ -163,6 +249,9 @@ export type { InMemorySimulatorEngineOptions } from './adapters/in-memory-social
 export type { InMemoryDynamicsModelStoreOptions } from './adapters/in-memory-dynamics.js';
 export type { InMemoryDynamicsStepperOptions } from './adapters/in-memory-dynamics.js';
 export type { InMemoryTimeMachineOptions } from './adapters/in-memory-time-machine.js';
+export type { InMemoryEnsembleOptions } from './adapters/in-memory-ensemble.js';
+export type { InMemoryOffPolicyEvaluatorOptions } from './adapters/in-memory-off-policy-evaluation.js';
+export type { InMemoryStrategyLearnerOptions } from './adapters/in-memory-strategy-learner.js';
 
 export { createInMemoryCorpusStore } from './adapters/in-memory-corpus-store.js';
 export { createStaticFeatureComputationPort } from './adapters/static-feature-computation.js';
@@ -173,3 +262,6 @@ export { createInMemorySimulatorEngine } from './adapters/in-memory-social-simul
 export { createInMemoryDynamicsModelStore } from './adapters/in-memory-dynamics.js';
 export { createInMemoryDynamicsStepper } from './adapters/in-memory-dynamics.js';
 export { createInMemoryTimeMachine } from './adapters/in-memory-time-machine.js';
+export { createInMemoryEnsemble } from './adapters/in-memory-ensemble.js';
+export { createInMemoryOffPolicyEvaluator } from './adapters/in-memory-off-policy-evaluation.js';
+export { createInMemoryStrategyLearner } from './adapters/in-memory-strategy-learner.js';
