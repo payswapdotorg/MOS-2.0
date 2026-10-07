@@ -13,9 +13,10 @@ Status: bootstrap architecture only; application implementation has not yet star
 
 ## MOS v2.0
 
-☐ BOOT-001 (in flight — Worker A, Wave 0)
+☑ BOOT-001 (TL-verified 2026-10-07: substrate inventory committed at cac7987 — verified fork baseline 29628c9 / ZCode 3.14.3; all nine inventory source paths confirmed present in fork; keep/adapt/legacy classification with substrate firewall rules; no MOS business authority assigned to ZCode service code. Residual note: packages/{formal-proof,model-option-map,provider,provider-node,zcode-cua,zcode-server-cli} are not individually enumerated — classified under existing adapt/contain rows; to be re-verified at BOOT-003 boundary-test time.)
 ☑ BOOT-002 (TL-verified 2026-10-07: all governance deliverables present and machine-readable in-repo — manifests/spec yaml+json parse clean; module registry + architecture policy + worker contract + acceptance gates + source-of-truth rules all committed at cac7987. Workers were dispatched with repository-only context and required no external/chat context, satisfying the BOOT-002 acceptance criterion.)
-☐ BOOT-003 (in flight — Worker B, Wave 0; STUDIO-001 interface spike + UX substrate audit in flight — Worker C)
+☐ BOOT-003 (re-dispatched 2026-10-07 — Worker B, Wave 0; prior in-flight dispatch lost to environment recycle, no repository evidence existed)
+☐ STUDIO-001 spike + UX substrate audit (re-dispatched 2026-10-07 — Worker C, Wave 0)
 
 ☐ CORE-001..005
 ☐ AGT-001..003
