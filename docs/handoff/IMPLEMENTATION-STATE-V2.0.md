@@ -2,7 +2,7 @@
 
 Repository: payswapdotorg/MOS-2.0
 Architecture: 2.0 FROZEN
-Status: bootstrap architecture only; application implementation has not yet started under MOS v2.0.
+Status: Phases 1–2 core packages verified on main (contracts/identity/rights/content/missions/capabilities/engines incl. ENG-003..005 replacement proof); Phase 3 Lab underway (LAB-001..006 done); Phase 4 Studio deep underway (STUDIO-001..007 + 010/011 done). 405 tests green across 12 MOS packages @ Wave 3 TL acceptance.
 
 ## Verified substrate baseline
 
@@ -29,21 +29,28 @@ Status: bootstrap architecture only; application implementation has not yet star
 ☑ CAP-001 (packages/mos-capabilities — registry port + in-memory adapter, version history preserved, fail-closed unknowns, §5 seed fixtures; 8/8 tests)
 ☑ ENG-001 (packages/mos-engines — fail-closed 9-item activation evidence gate, deterministic policy tie-break with one-dimension tests, tenant overrides, silent-replacement forbidden, historical resolvability + rollback)
 ☑ ENG-002 (EngineAdapter invoke contract EngineJob→EngineResult + disclosed test double)
-☐ ENG-003..005 (Wave 3 — runner sandbox, golden benchmark, replacement proof)
+☑ ENG-003 (TL-verified @ Wave 3 merge: EngineRunnerPort sandbox — resource quotas with 3 typed-failure tiers, wall-clock timeout with partial metrics, network denied-by-default fail-closed (manifest×grant conjunction, host-scoped seam + ambient-fetch guard), NO credential surface on the adapter context (compile-time + runtime pins), scoped-artifacts-only filesystem via job-scoped artifact store, seed policy per manifest, queued→running→succeeded|failed|timed_out lifecycle + §30 observability records via JobEventSinkPort durable-job seam; EngineAdapter.invoke now carries the sandbox context)
+☑ ENG-004 (TL-verified @ Wave 3 merge: versioned immutable BenchmarkCorpus records (artifact refs + metadata only); BenchmarkRunnerPort runs every corpus case as a REAL EngineJob through the ENG-003 sandbox; frozen canonical EngineBenchmark records; goldenCorpusEvidenceFromBenchmark wiring into the ENG-001 activation gate (incomplete/failed records rejected by name); determinism pinned)
+☑ ENG-005 (TL-verified @ Wave 3 merge: replacement/rollback proof as repeatable integration tests — domain-style caller written once asks for the CAPABILITY; candidate cannot activate before passing the golden corpus (pinned); silent swap refused; explicit a→b record; same caller code runs on B; historical runs retain engine A identity + model identity and re-execute bit-for-bit through retired A; rollback cross-id fail-closed + by-version; 93/93 mos-engines tests)
 
 ☑ LAB-001 (corpus runtime: rights-gated ingestion, append-only CorpusVersion snapshots, tenant-scoped queries; 29 tests in mos-lab)
 ☑ LAB-002 (FeatureBundle registry + FeatureComputationPort requirement declaration)
 ☑ LAB-003 (Idea Graph: derivation-mandatory nodes, typed weighted versioned edges, chain tracing)
-☐ LAB-004..018 (Wave 3: LAB-004..006)
+☑ LAB-004 (TL-verified @ Wave 3 merge: SocialWorldModelStore append-only versioned chains + SimulatorEnginePort deterministic seed-REQUIRED → counterfactual-labeled SocialSimulationResult with §22 UncertaintySummary + per-metric envelopes; synthetic-response-function disclosure on every result; in-memory adapter disclosed deterministic double)
+☑ LAB-005 (TL-verified @ Wave 3 merge: DynamicsModelStore versioned tenant-scoped population records + DynamicsStepPort — monotone fatigue, audience growth/decay, competitive displacement, signed novelty; no-op first-class)
+☑ LAB-006 (TL-verified @ Wave 3 merge: TimeMachinePort with the three §20 modes — historical replay ≤ T; delayed-information replay ≤ T−L with adversarial leakage-prevention pins (1ms boundary probe, shuffled append order); counterfactual branching with machine-assigned ids, auditable lineage, runtime counterfactual re-validation; append-only immutable deep-frozen history; HistoricalObservation vs SimulationPrediction type+label separation per lock rules 29/30 with compile-time pins; cross-tenant branch-record bleed defect found+fixed (keyed per tenant+branch, adversarial test); 66/66 mos-lab tests)
+☐ LAB-007..018 (next waves)
 
 ☑ STUDIO-001 (runtime: session lifecycle, multi-account consent gates, treatment version chains, no-publish asserted 4 ways; 32/32 tests incl. 002+005)
 ☑ STUDIO-002 (pluggable format framework + three initial format descriptors; reaction exposes §16 org decision points, no hard-coded layout)
 ☑ STUDIO-005 (capture ports + disclosed in-memory double)
 ☑ STUDIO-003 (intent → versioned script/question graphs with §14 synthetic provenance + deterministic adaptive sequencer + InterviewerAgentPort)
-☐ STUDIO-004 (Wave 3 — deps now all satisfied incl. AGT-003)
+☑ STUDIO-004 (TL-verified @ Wave 3 merge: InterviewerAgentBindingPort — interviewer is a REAL AgentInstance (body registered in @mos/agents) bound through the single model boundary (bind(scope, instanceId), 2 args, no preference) and EXECUTED via the REAL InstanceExecutorPort with audit traces; adaptive loop over declared branch graphs; §14 provenance labels end-to-end; mid-session representation switching preserves session+provenance; studio no-model-selection pinned 4 ways)
 ☑ STUDIO-006 (REAL @mos/identity + @mos/rights bindings behind studio ports; §15 multi-account, live consent re-resolution, credentials never merged)
 ☑ STUDIO-007 (versioned organization loader over frozen AgentOrganization descriptors, compatibility verdicts, no silent substitution)
-☐ STUDIO-008..014 (008 gated on LAB-013; Wave 3 targets 010/011)
+☑ STUDIO-010 (TL-verified @ Wave 3 merge: podcast format plugins v2 registered in FormatRegistry with full StudioFormat facets + §16-style organization edit decision points (podcast-edit-points, podcast-edit-pacing, participant-framing — no concrete choices encoded, pinned))
+☑ STUDIO-011 (TL-verified @ Wave 3 merge: audio-podcast end-to-end — createSession → loadOrganization → join through REAL §15 authorities → adaptive interview with one capture round per Q/A → transcripts via ArtifactFactoryPort → conversation graph (Q/A nodes w/ provenance + agent traces) → edit graph (org decisions recorded, undeclared points rejected) → packaged StudioArtifactPackage with REAL graph refs; one-person synthetic-labeled + multi-account consent gates + treatment → new immutable version; 70/70 mos-studio tests)
+☐ STUDIO-008..014 (008 gated on LAB-013; next: 008/012/013 + mos-web scaffolding)
 
 ☐ BRIDGE-001..003
 ☐ PROD-001..004
