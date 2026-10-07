@@ -159,11 +159,53 @@ export type FormatInputValidationResult =
   | { readonly ok: false; readonly reasons: readonly FormatInputRejectionReason[] };
 
 /**
+ * Canonical session-intake shape the runtime hands to
+ * {@link StudioFormatPlugin.validateSessionInput}. The parameter stays
+ * `unknown` on the plug-in contract (custom plug-ins may validate richer
+ * shapes); built-in descriptors narrow to this type.
+ *
+ * `participantCount` is optional: when the planned count is known at intake
+ * (ProductionRequest human tasks, standalone plan) it is validated
+ * immediately; otherwise the runtime enforces the model bounds at join
+ * (maximum) and processing start (minimum).
+ */
+export interface SessionIntakeForValidation {
+  readonly inputKind: StudioInputKind;
+  readonly sourceArtifacts: readonly {
+    readonly artifactId: string;
+    readonly rightsCleared: boolean;
+  }[];
+  readonly participantCount?: number;
+  /** Whether a script or question graph is already available (vs. intent-only). */
+  readonly hasScriptOrQuestionGraph: boolean;
+}
+
+/**
+ * An organization decision point exposed by a format (§16 reaction
+ * production: layout/timing choices are production-program variables decided
+ * by the loaded organization, NOT universal Studio hard-codes).
+ *
+ * A format descriptor exposes the decision POINTS it leaves open; it never
+ * encodes a concrete choice for them. `decidedBy` is fixed to
+ * `"organization"` — the Studio runtime has no authority over these values.
+ */
+export interface OrganizationDecisionPoint {
+  /** Stable id of the open decision (e.g. "reaction-layout", "reaction-timing"). */
+  readonly pointId: string;
+  /** What is being decided, phrased generically (no concrete layout/timing values). */
+  readonly description: string;
+  /** Authority marker: always "organization" (§16). */
+  readonly decidedBy: "organization";
+}
+
+/**
  * The format plug-in contract. One implementation per format id/version,
- * loaded by the single Studio runtime. A plug-in carries its declared
- * contract facets (id/version, input requirements, participant model,
- * capture requirements, interviewer requirements, output contract) and
- * validates session inputs; it must NOT import engines, providers, or
+ * loaded by the single Studio runtime. A plug-in carries EVERY required
+ * aspect of the {@link StudioFormat} contract (id/version, input
+ * requirements, participant model, capture requirements, interviewer
+ * requirements, organization compatibility, output contract, provenance
+ * requirements, evaluation hooks) so registry completeness validation ==
+ * StudioFormat completeness. It must NOT import engines, providers, or
  * workflow machinery directly (registry rule `studioToDirectProviderImports:
  * forbidden`; FINAL-TECH-LEAD-HANDOFF OSS path).
  */
@@ -174,7 +216,17 @@ export interface StudioFormatPlugin {
   readonly participantModel: FormatParticipantModel;
   readonly captureRequirements: FormatCaptureRequirements;
   readonly interviewerRequirements: InterviewerRequirements;
+  readonly organizationCompatibility: OrganizationCompatibility;
   readonly outputContract: FormatOutputContract;
+  readonly provenanceRequirements: FormatProvenanceRequirements;
+  readonly evaluationHooks: FormatEvaluationHooks;
+  /**
+   * Optional extension facet: organization decision points this format
+   * deliberately leaves open (§16). Present on formats whose outputs depend
+   * on production-program variables (e.g. reaction layout/timing). Absent on
+   * formats with no open organization decisions.
+   */
+  readonly organizationDecisionPoints?: readonly OrganizationDecisionPoint[];
   /**
    * Validate a session intake against this format. Validation is explicit:
    * every failure is enumerated; there are no silent fallbacks to another

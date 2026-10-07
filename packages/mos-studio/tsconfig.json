@@ -1,21 +1,21 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    // RPC-style managed package: composite project so future MOS packages can
+    // consume it via project references and the emitted declarations in dist/.
     "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "rootDir": "./src",
+    "lib": ["ES2022"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
-    "esModuleInterop": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "composite": true,
     "skipLibCheck": true,
-    "lib": ["ES2022"],
-    "noEmit": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedIndexedAccess": true
+    "types": ["node"]
   },
   "include": ["src/**/*.ts"]
 }

@@ -3,13 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "STUDIO-001 interface spike — TypeScript contracts only, no runtime implementation",
+  "description": "MOS v2.0 Content Studio — STUDIO-001 runtime + STUDIO-002 pluggable format framework + STUDIO-005 capture ports (contracts + in-memory disclosed test doubles; the Studio never publishes)",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
   },
   "scripts": {
-    "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "typecheck": "tsc -b",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix"
   }

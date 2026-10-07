@@ -27,6 +27,7 @@ import type {
   LabCandidateRef,
   StudioOrganizationId,
 } from "./refs.js";
+import type { OrganizationCompatibility } from "./studio-format.js";
 
 /**
  * Versioned reference to an Agent Organization. The version is mandatory:
@@ -55,10 +56,15 @@ export type OrganizationSupplier =
  * Request to load one exact organization version into a session context.
  * The Studio never guesses an organization: `organizationRef` always comes
  * from the caller (user selection or Lab decision).
+ *
+ * `formatCompatibility` carries the format's declared organization
+ * compatibility (required capabilities, minimum version) so the loader can
+ * return an explicit compatibility verdict (never a silent substitution).
  */
 export interface OrganizationLoadRequest {
   readonly organizationRef: StudioOrganizationRef;
   readonly suppliedBy: OrganizationSupplier;
+  readonly formatCompatibility: OrganizationCompatibility;
 }
 
 /** Explicit compatibility verdict after checking an organization against a format. */
