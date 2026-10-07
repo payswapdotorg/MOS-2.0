@@ -2,7 +2,7 @@
 
 Repository: payswapdotorg/MOS-2.0
 Architecture: 2.0 FROZEN
-Status: Phase 2 core+engines COMPLETE (ENG-001..005); Phase 3 Lab at LAB-001..009; Phase 4 Studio at STUDIO-001..007 + 010/011; durable jobs + mos-web presentation shell + UX-001 delivered. 629 tests green across 13 MOS packages + substrate @ Wave 4 TL acceptance.
+Status: Phase 2 core+engines COMPLETE (ENG-001..005); Phase 3 Lab at LAB-001..011; Phase 4 Studio at STUDIO-001..007 + 010/011; durable jobs + mos-web shell + UX-001 + provider integrations delivered. 786 tests green across 14 MOS packages + substrate @ Wave 5 TL acceptance. LAB-012 Transform Discovery is the next critical-path unlock (→ LAB-013 → STUDIO-008 → STUDIO-013 → BRIDGE-001 → PROD-004).
 
 ## Verified substrate baseline
 
@@ -42,7 +42,9 @@ Status: Phase 2 core+engines COMPLETE (ENG-001..005); Phase 3 Lab at LAB-001..00
 ☑ LAB-007 (TL-verified @ Wave 4 merge: EnsemblePort — versioned tenant-scoped append-only ensembles, empty/single structurally rejected, explicit versioned weighting with NO silent defaults, aggregate interval forced to cover member spread; full computable §22 set: expected value, interval, per-metric disagreement, OOD-vs-declared-coverage flag, multi-seed robustness, calibration placeholder provenance-declared to LAB-018; outputs counterfactual-labeled)
 ☑ LAB-008 (TL-verified @ Wave 4 merge: OffPolicyEvaluationPort — candidate + ensemble + Time Machine mode-2 history (≤ T−L lag spy-pinned) + versioned mission-compatible reward spec → estimated reward + documented finite-sample interval (ope-hoeffding-additive-v1) + §24 simulated-estimate disclosure; insufficient-history explicit verdict; reward version-mismatch fail-closed; mixed-spec defect found+fixed in member-level reward computation)
 ☑ LAB-009 (TL-verified @ Wave 4 merge: StrategyLearningPort — simulation-experience-only, declared stopping policy (budget floor/plateau window/iteration cap), full learning trace with cost dimensions, counterfactual-labeled candidates with complete version provenance, seed-required bit-identical determinism pinned incl. fresh stacks)
-☐ LAB-010..018 (next waves — LAB-010/011 ready)
+☑ LAB-010 (TL-verified @ Wave 5 merge: OrganizationSearchPort — §23 twelve dimensions as frozen vocabulary + per-candidate fingerprints, three non-structural dimensions REQUIRED declared features (no silent defaults), varied-dimensions provenance, THE three-way comparison mandate structurally enforced 3 ways (generalist baseline + hand-designed + generated), evaluation through the LAB-007 ensemble with seed-required simulator determinism, full §22 set per candidate, deterministic uncertainty-aware ranking, counterfactual + §24 lab-only labeling; 35 tests)
+☑ LAB-011 (TL-verified @ Wave 5 merge: the frozen §5 thirteen transform kinds as VERSIONED declarative TransformDefinitions (canonical CORE-001 Transform contract by construction, pinned; NO-OP/REPOST first-class with a real zero-capability definition, never special-cased) + TransformGraph — versioned tenant-scoped append-only DAG over artifact refs with write-time invariants (cycles rejected incl. batch, cross-tenant artifact refs fail closed, exact-version definition resolution) and on-demand validation with named constraint failures + lineage tracing + subgraph queries; DECLARATIVE ONLY — no engine resolution/execution/materialization; 53 tests)
+☐ LAB-012..018 (next waves — LAB-012 Transform Discovery now unblocked: LAB-010 ✓ + LAB-011 ✓ + LAB-009 ✓)
 
 ☑ STUDIO-001 (runtime: session lifecycle, multi-account consent gates, treatment version chains, no-publish asserted 4 ways; 32/32 tests incl. 002+005)
 ☑ STUDIO-002 (pluggable format framework + three initial format descriptors; reaction exposes §16 org decision points, no hard-coded layout)
@@ -53,11 +55,14 @@ Status: Phase 2 core+engines COMPLETE (ENG-001..005); Phase 3 Lab at LAB-001..00
 ☑ STUDIO-007 (versioned organization loader over frozen AgentOrganization descriptors, compatibility verdicts, no silent substitution)
 ☑ STUDIO-010 (TL-verified @ Wave 3 merge: podcast format plugins v2 registered in FormatRegistry with full StudioFormat facets + §16-style organization edit decision points (podcast-edit-points, podcast-edit-pacing, participant-framing — no concrete choices encoded, pinned))
 ☑ STUDIO-011 (TL-verified @ Wave 3 merge: audio-podcast end-to-end — createSession → loadOrganization → join through REAL §15 authorities → adaptive interview with one capture round per Q/A → transcripts via ArtifactFactoryPort → conversation graph (Q/A nodes w/ provenance + agent traces) → edit graph (org decisions recorded, undeclared points rejected) → packaged StudioArtifactPackage with REAL graph refs; one-person synthetic-labeled + multi-account consent gates + treatment → new immutable version; 70/70 mos-studio tests)
-☐ STUDIO-008..014 (008 gated on LAB-013 → LAB-012 → LAB-010/011; wave 5 targets LAB-010/011)
+☐ STUDIO-008..014 (008 gated on LAB-013 → LAB-012 — now unblocked next wave)
 
 ☑ WEB-001 (TL-verified @ Wave 4 merge: packages/mos-web — Vite React shell per BROWSER-SHELL-REPLACEMENT-PLAN (pre-paint theme seed, error boundary, bootstrap-error screen, /ws+/api dev proxy), zero @zcode/* imports, presentation-only authority (src imports @mos/contracts types + own view ports only; domain imports only in testing/composition seam outside src/); vite build + serve HTTP 200 verified at harvest; 126 mos-web tests incl. structural presentation-only pins + headless-browser evidence)
 ☑ UX-001 (TL-verified @ Wave 4 merge: MOS Home narrates the §2 complete loop (10 stages + 4 cooperating loops); Missions list/detail via MissionCatalogPort view port (lifecycle states, reward-spec versions, tenant context); create-mission INTENT through the port only — composition double records it; responsive, accessible, keyboard navigable; honest ReceiptUnavailablePanel for unresolvable receipts)
 ☐ UX-002..006 (gated: UX-002 on STUDIO-014, UX-003 on LAB-017, UX-004 on PROD-001)
+
+☑ INTEG-001 (TL-verified @ Wave 5 merge: packages/mos-integrations — the four-layer structure ProviderDefinition→ProviderImplementation→MerchantClientInstance→AvailabilityCapability, all versioned tenant-scoped append-only; UNKNOWN a preserved first-class status (own §30 failure code, never coerced); credentials NEVER in the control plane (CredentialRef handle only, compile-time keyset pins + runtime strict-shape + deep key-scan; secret-store seam rejects escrow of material); capability instances EXPLICIT (resolve EXACT versions in the REAL @mos/capabilities vocabulary; instance without capability record provides NOTHING — pinned); ProviderInteractionPort five-stage pipeline with rights gate fail-closed via the REAL evaluateRights (denial reasons verbatim) + immutable §30 records on every attributable attempt; authority discipline pinned both directions (no provider names in authority-facing surfaces; no mission/policy/experiment vocabulary); deps registry-exact [contracts, capabilities, rights]; 69 tests)
+☐ INTEGRATIONS follow-ups: SOCIAL-001..006, HEALTH-001, NOTIFY-001
 
 ☐ BRIDGE-001..003
 ☐ PROD-001..004
