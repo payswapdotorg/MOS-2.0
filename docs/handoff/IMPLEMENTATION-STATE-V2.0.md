@@ -13,9 +13,9 @@ Status: bootstrap architecture only; application implementation has not yet star
 
 ## MOS v2.0
 
-☐ BOOT-001
-☐ BOOT-002
-☐ BOOT-003
+☐ BOOT-001 (in flight — Worker A, Wave 0)
+☑ BOOT-002 (TL-verified 2026-10-07: all governance deliverables present and machine-readable in-repo — manifests/spec yaml+json parse clean; module registry + architecture policy + worker contract + acceptance gates + source-of-truth rules all committed at cac7987. Workers were dispatched with repository-only context and required no external/chat context, satisfying the BOOT-002 acceptance criterion.)
+☐ BOOT-003 (in flight — Worker B, Wave 0; STUDIO-001 interface spike + UX substrate audit in flight — Worker C)
 
 ☐ CORE-001..005
 ☐ AGT-001..003
