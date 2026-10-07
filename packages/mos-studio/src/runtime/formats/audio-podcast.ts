@@ -8,7 +8,7 @@
  * questions come from a declared question/branch graph.
  */
 
-import type { StudioFormatPlugin } from "../../contracts/studio-format.js";
+import type { StudioFormatId, StudioFormatPlugin } from "../../contracts/studio-format.js";
 import { capabilityId, capabilityIds, validateIntakeAsDeclared } from "./format-plugin-basics.js";
 
 /** Audio podcast format version (contract evolution counter). */
@@ -17,7 +17,7 @@ export const AUDIO_PODCAST_FORMAT_VERSION = 1;
 /** The audio-podcast format plugin descriptor. */
 export function createAudioPodcastFormatPlugin(): StudioFormatPlugin {
   const plugin: StudioFormatPlugin = {
-    id: "audio-podcast",
+    id: "audio-podcast" as StudioFormatId,
     version: AUDIO_PODCAST_FORMAT_VERSION,
     inputRequirements: {
       acceptedInputs: ["complete-script", "question-list", "intent", "intent-with-source-material"],

@@ -14,6 +14,7 @@ import type { StorageRef, StudioSessionId, TenantId } from "../../contracts/refs
 import type { StudioSessionRecord } from "../session-state.js";
 import type { OpenCaptureRequest } from "../intake-types.js";
 import type { StudioRuntimeError } from "../errors.js";
+import type { ParticipantConsentPort } from "../../ports/participant-consent.js";
 import { recordRawArtifact } from "../session-state.js";
 import { deriveCaptureRole, findDeviceRequirement, maxTakeFor } from "../intake-validation.js";
 import { findParticipant } from "../participant-intake.js";
@@ -24,7 +25,10 @@ import { createStudioCaptureSession, type StudioCaptureSession } from "./studio-
 /**
  * Open a capture bound to `record`'s session and the consented participant
  * named by `request`, using the runtime's capture source port and artifact
- * factory. Returns the live capture session or an explicit failure.
+ * factory. Consent is re-resolved LIVE through the rights authority port
+ * (STUDIO-006): a consent revoked mid-session blocks this capture even
+ * though the participant's join-time consent snapshot is frozen. Returns the
+ * live capture session or an explicit failure.
  */
 export async function openCaptureForSession(
   record: StudioSessionRecord,
@@ -32,6 +36,7 @@ export async function openCaptureForSession(
   ports: {
     readonly captureSourcePort: CaptureSourcePort;
     readonly artifactFactory: StudioArtifactFactoryPort;
+    readonly participantConsentPort: ParticipantConsentPort;
   },
 ): Promise<{ ok: true; capture: StudioCaptureSession } | { ok: false; error: StudioRuntimeError }> {
   const participantResult = findParticipant(record, request.participantId);
@@ -40,7 +45,14 @@ export async function openCaptureForSession(
   }
   const participant = participantResult.participant;
   if (record.formatPlugin.provenanceRequirements.requiresConsentRefsOnRawCapture) {
-    if (!participant.consent.coversCapture || participant.consent.consentRefs.length === 0) {
+    // LIVE authority check — never the frozen join-time snapshot.
+    const consent = await ports.participantConsentPort.resolveParticipantConsent({
+      tenantId: record.tenantId,
+      sessionId: record.sessionId,
+      participantIdentityRef: participant.identityRef,
+      consentRefs: participant.consent.consentRefs,
+    });
+    if (!consent.coversCapture || consent.activeSessionConsentCount === 0) {
       return { ok: false, error: { kind: "consent-required-for-capture", participantId: request.participantId } };
     }
   }

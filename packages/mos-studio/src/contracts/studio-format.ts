@@ -26,20 +26,20 @@
  * (reaction/podcast/audio/video formats) implement against these types.
  */
 
-import type { CapabilityId, ContractVersion, SessionParticipantRole } from "./refs.js";
+import type { CapabilityId, ContractVersion, SessionParticipantRole, StudioFormatId } from "./refs.js";
 import type { FormatCaptureRequirements } from "./capture.js";
 import type { InterviewerRequirements } from "./interviewer.js";
 import type { StudioArtifactType } from "./studio-artifact-package.js";
 
-/** Initial format ids (frozen manifest `studioFormats`). Literal union by design. */
-export type InitialStudioFormatId = "reaction" | "audio-podcast" | "video-podcast";
-
 /**
- * Any format id. Pluggability means new ids can appear beyond the initial
- * three; the string-extension keeps the literal union's autocomplete while
- * remaining open. Unknown ids must fail explicit validation — never guess.
+ * Initial format ids (frozen manifest `studioFormats`). Literal union by
+ * design. `StudioFormatId` itself is now the CANONICAL branded id imported
+ * from `@mos/contracts` via ./refs.js (RECONCILE-C) — the open literal union
+ * of the W0-C spike was a mirror; format ids constructed from literals use
+ * an explicit cast at their (few) definition sites.
  */
-export type StudioFormatId = InitialStudioFormatId | (string & Record<never, never>);
+export type { StudioFormatId };
+export type InitialStudioFormatId = "reaction" | "audio-podcast" | "video-podcast";
 
 /** Versioned format reference carried by sessions and production requests. */
 export interface StudioFormatVersion {

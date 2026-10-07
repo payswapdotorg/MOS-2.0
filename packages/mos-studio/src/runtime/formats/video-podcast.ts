@@ -8,7 +8,7 @@
  * rule of §16 — the Studio never hard-codes composition).
  */
 
-import type { StudioFormatPlugin } from "../../contracts/studio-format.js";
+import type { StudioFormatId, StudioFormatPlugin } from "../../contracts/studio-format.js";
 import { capabilityId, capabilityIds, validateIntakeAsDeclared } from "./format-plugin-basics.js";
 
 /** Video podcast format version (contract evolution counter). */
@@ -17,7 +17,7 @@ export const VIDEO_PODCAST_FORMAT_VERSION = 1;
 /** The video-podcast format plugin descriptor. */
 export function createVideoPodcastFormatPlugin(): StudioFormatPlugin {
   const plugin: StudioFormatPlugin = {
-    id: "video-podcast",
+    id: "video-podcast" as StudioFormatId,
     version: VIDEO_PODCAST_FORMAT_VERSION,
     inputRequirements: {
       acceptedInputs: ["complete-script", "question-list", "intent", "intent-with-source-material"],

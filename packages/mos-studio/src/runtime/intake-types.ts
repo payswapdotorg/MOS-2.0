@@ -91,7 +91,16 @@ export type CreateStudioSessionInput =
       readonly intent: StandaloneSessionIntent;
     };
 
-/** Request to join one participant to a session (§15 — every field separate). */
+/**
+ * Request to join one participant to a session (§15 — every field separate).
+ *
+ * STUDIO-006: consent coverage is NO LONGER caller-asserted. The caller
+ * supplies identity/consent REFERENCES only; the runtime resolves them
+ * through the REAL identity + rights authorities behind the studio ports
+ * (ParticipantIdentityPort / ParticipantConsentPort) and derives the coverage
+ * verdicts. No participant credentials are ever supplied or stored — the
+ * account boundary is referenced, never merged.
+ */
 export interface JoinParticipantRequest {
   readonly participantId: SessionParticipantId;
   readonly identityRef: IdentityRef;
@@ -99,10 +108,9 @@ export interface JoinParticipantRequest {
   readonly roles: readonly SessionParticipantRole[];
   readonly grantedActions: readonly string[];
   readonly grant: { readonly grantedBy: IdentityRef; readonly expiresAt?: Timestamp };
+  /** Consent record refs covering this participant's contribution (resolved live). */
   readonly consent: {
     readonly consentRefs: readonly ConsentRef[];
-    readonly coversCapture: boolean;
-    readonly coversProcessingIntoArtifacts: boolean;
   };
 }
 

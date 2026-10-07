@@ -1,56 +1,75 @@
 /**
- * Shared opaque reference primitives for the MOS Content Studio contracts.
+ * Shared reference primitives for the MOS Content Studio contracts.
  *
- * STUDIO-001 interface spike — TYPES ONLY. This module contains no runtime
- * code, no constants and no side effects.
+ * RECONCILE-C (Wave 2): this module is now a THIN RE-EXPORT LAYER over
+ * `@mos/contracts` (CORE-001, the canonical authority for the frozen
+ * core-contracts vocabulary). The W0-C spike mirrored these branded ids and
+ * opaque cross-authority references locally; the true duplicates are replaced
+ * by canonical imports so a `@mos/contracts` reference and a studio reference
+ * are the SAME compile-time type (nominal brands unify at the source).
  *
- * Rationale (spec/mos-architecture-v2.0.md §5, §32; AGENTS.md "MOS
- * boundaries"): the Studio references entities owned by other MOS
- * authorities (production requests, agent organizations, artifacts, rights,
- * consent, capabilities, engines). Each cross-authority reference is an
- * opaque branded string so that a session id can never be accidentally used
- * where an organization ref is required. The branding is purely type-level
- * (erased at compile time); it is not runtime data.
- *
- * These are studio-local mirror aliases. When `@mos/contracts` lands
- * (Wave 1), the canonical shared aliases are imported from there instead;
- * nothing in this package is a second business authority.
+ * Studio-SPECIFIC references that the canonical contracts do not define
+ * (capture devices, session participants, participation grants, studio-local
+ * graph ids, delay/return-contract refs) remain local below. Money stays a
+ * studio-local decimal-string shape (contracts' `MoneyAmount` uses a numeric
+ * `amount`; reconciling the cost-accounting story is a later-wave concern) —
+ * documented, deliberate, and test-pinned.
  */
+
+import type { AgentOrganization, Branded } from "@mos/contracts";
+
+// ---------------------------------------------------------------------------
+// Canonical shared vocabulary (TRUE duplicates of the W0-C mirror — imported)
+// ---------------------------------------------------------------------------
+
+export type {
+  // Record identifiers
+  ArtifactId,
+  CapabilityId,
+  EngineId,
+  ProductionRequestId,
+  StudioArtifactPackageId,
+  StudioFormatId,
+  StudioSessionId,
+  Version,
+  // Opaque cross-authority references
+  AccountRef,
+  AuthorizationRef,
+  ConsentRef,
+  ContentDigest,
+  EvaluatorRef,
+  IdentityRef,
+  LabCandidateRef,
+  ProvenanceRef,
+  RightsRef,
+  StorageRef,
+  StrategyRef,
+  TenantId,
+  Timestamp,
+  TransformGraphRef,
+  WorkspaceId,
+} from "@mos/contracts";
+
+// Canonical aliases under their studio names (same referent, canonical brand):
+// an AgentOrganization record id (indexed off the canonical contract record),
+// a HumanProductionTask record id, and an Engine record id. Studio monotonic
+// counters keep the plain-number `ContractVersion` below (documented studio
+// extension).
+export type StudioOrganizationId = AgentOrganization["id"];
+export type { HumanProductionTaskId as HumanProductionTaskRef } from "@mos/contracts";
+export type { EngineId as EngineRef } from "@mos/contracts";
+
+// ---------------------------------------------------------------------------
+// Studio-specific references (no canonical equivalent — stay local)
+// ---------------------------------------------------------------------------
 
 declare const mosRefBrand: unique symbol;
 
 /**
- * Branded opaque reference. `T` is the underlying scalar carried over the
- * wire; `B` is the reference kind used only by the type checker.
+ * Branded opaque reference (studio-local kinds only). `T` is the underlying
+ * scalar; `B` is the reference kind used only by the type checker.
  */
 export type MosRef<T, B extends string> = T & { readonly [mosRefBrand]: B };
-
-/** Reference to a {@link ./studio-session.ts!StudioSession StudioSession}. */
-export type StudioSessionId = MosRef<string, "StudioSessionId">;
-
-/** Reference to a {@link ./studio-artifact-package.ts!StudioArtifactPackage StudioArtifactPackage}. */
-export type StudioArtifactPackageId = MosRef<string, "StudioArtifactPackageId">;
-
-/** Reference to a versioned Agent Organization loaded into a Studio session. */
-export type StudioOrganizationId = MosRef<string, "StudioOrganizationId">;
-
-/** Reference to a ProductionRequest owned by the `production` module. */
-export type ProductionRequestId = MosRef<string, "ProductionRequestId">;
-
-/** Reference to a Production Strategy owned by the `production` module. */
-export type StrategyRef = MosRef<string, "StrategyRef">;
-
-/** Reference to a Transform Graph owned by the `production` module. */
-export type TransformGraphRef = MosRef<string, "TransformGraphRef">;
-
-/** Reference to an Artifact owned by the `content` module. */
-export type ArtifactId = MosRef<string, "ArtifactId">;
-
-/** Reference to a MOS identity owned by the `identity` module. */
-export type IdentityRef = MosRef<string, "IdentityRef">;
-
-/** Reference to a MOS account boundary (identity → account is 1:N, never merged). */
-export type AccountRef = MosRef<string, "AccountRef">;
 
 /** Reference to a capture device bound to one participant account boundary. */
 export type DeviceRef = MosRef<string, "DeviceRef">;
@@ -61,26 +80,8 @@ export type SessionParticipantId = MosRef<string, "SessionParticipantId">;
 /** Reference to a participation grant issued for one session participant. */
 export type ParticipationGrantId = MosRef<string, "ParticipationGrantId">;
 
-/** Reference to a consent record owned by the `rights` module. */
-export type ConsentRef = MosRef<string, "ConsentRef">;
-
-/** Reference to a provenance record owned by the `rights` module. */
-export type ProvenanceRef = MosRef<string, "ProvenanceRef">;
-
-/** Reference to a rights context owned by the `rights` module. */
-export type RightsRef = MosRef<string, "RightsRef">;
-
 /** Reference to a rights/policy violation record used by rejections. */
 export type RightsPolicyViolationRef = MosRef<string, "RightsPolicyViolationRef">;
-
-/** Reference to a capability requirement owned by the `capabilities` module. */
-export type CapabilityId = MosRef<string, "CapabilityId">;
-
-/** Reference to an engine registered in the `engines` module registry. */
-export type EngineRef = MosRef<string, "EngineRef">;
-
-/** Reference to a Human Production Task owned by the `production` module. */
-export type HumanProductionTaskRef = MosRef<string, "HumanProductionTaskRef">;
 
 /** Reference to acceptance criteria owned by the `production` module. */
 export type AcceptanceCriteriaRef = MosRef<string, "AcceptanceCriteriaRef">;
@@ -97,25 +98,20 @@ export type ConversationGraphId = MosRef<string, "ConversationGraphId">;
 /** Reference to an edit graph (editorial decisions/timeline) for a session. */
 export type EditGraphId = MosRef<string, "EditGraphId">;
 
-/** Reference to a Lab production candidate that selected an organization. */
-export type LabCandidateRef = MosRef<string, "LabCandidateRef">;
+/** Reference to a versioned script/question graph (§14, STUDIO-003). */
+export type ScriptGraphId = MosRef<string, "ScriptGraphId">;
 
-/** Reference into object/media storage. Per AGENTS.md ("Media") and §6 of the
- * architecture, large media never travels over control-plane RPC; only this
- * storage reference does.
+/** Reference to an immutable intent record (§14, STUDIO-003). */
+export type IntentRecordId = MosRef<string, "IntentRecordId">;
+
+/** Reference to one recorded answer inside an interview (§14, STUDIO-003). */
+export type AnswerRef = MosRef<string, "AnswerRef">;
+
+/**
+ * Monetary amount; `amount` is a decimal string to avoid float drift.
+ * Studio-local shape (canonical `MoneyAmount` in `@mos/contracts` uses a
+ * numeric amount) — reconciled when cost accounting leaves the studio seam.
  */
-export type StorageRef = MosRef<string, "StorageRef">;
-
-/** Content digest of a stored artifact (e.g. multihash string). */
-export type ContentDigest = MosRef<string, "ContentDigest">;
-
-/** Tenant/workspace scope required on every mutable MOS artifact (§31). */
-export type TenantId = MosRef<string, "TenantId">;
-
-/** ISO-8601 UTC timestamp. */
-export type Timestamp = string;
-
-/** Monetary amount; `amount` is a decimal string to avoid float drift. */
 export interface MoneyAmount {
   readonly currency: string;
   readonly amount: string;
@@ -124,7 +120,11 @@ export interface MoneyAmount {
 /** Duration in seconds. */
 export type DurationSeconds = number;
 
-/** Immutable, monotonic aggregate version counter. */
+/**
+ * Immutable, monotonic aggregate version counter (studio-local, plain number:
+ * the runtime bumps it with arithmetic). The canonical branded `Version` is
+ * imported where canonical descriptors require it.
+ */
 export type ContractVersion = number;
 
 /**
@@ -133,3 +133,6 @@ export type ContractVersion = number;
  * session and format contracts.
  */
 export type SessionParticipantRole = "interviewer" | "subject" | "operator" | "observer";
+
+/** Compile-time-only brand helper re-exported for studio-local kinds. */
+export type { Branded };
