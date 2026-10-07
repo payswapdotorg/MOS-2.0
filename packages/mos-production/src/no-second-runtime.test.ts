@@ -1,7 +1,7 @@
 /**
- * NO SECOND RUNTIME / NO MODEL ROUTER structural pins (LAB-013, §9 hard
- * rule — the W2-B single-model-boundary discipline applied to
- * packages/mos-production):
+ * NO SECOND RUNTIME / NO MODEL ROUTER structural pins (LAB-013 §9 hard rule
+ * + LAB-016 dimension-8 discipline — the W2-B single-model-boundary
+ * discipline applied to packages/mos-production):
  *
  * Architecture lock rule 9 ("no second model router is introduced; model
  * selection remains behind a single model-runtime boundary") and lock rule
@@ -47,11 +47,21 @@ import { fileURLToPath } from "node:url";
 
 import * as publicSurface from "./index.js";
 import { composePawnStack } from "./testing/compose-pawn-stack.js";
+import { composeProgramSearchStack } from "./testing/compose-program-search-stack.js";
 
 const SRC_ROOT = fileURLToPath(new URL("../src/", import.meta.url));
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 
-/** Files that are allowed to mention the `modelRef` token (pin set). */
+/**
+ * Files that are allowed to mention the `modelRef` token (pin set).
+ *
+ * W8-B additions (LAB-016): the program-search dimension-8 model-assignment
+ * surface — model refs are DECLARED DATA on candidate programs (never
+ * resolved, never routed; validation checks vocabulary membership only,
+ * mutations cycle declared refs, fingerprints signature them). Reviewed
+ * deliberately per the W7-B follow-up note; the ban on resolution
+ * vocabulary still applies to these files.
+ */
 const MODEL_REF_FILE_ALLOWLIST: readonly string[] = [
   "adapters/in-memory-agent-stack.ts",
   "adapters/pawn-execution-run.ts",
@@ -60,6 +70,11 @@ const MODEL_REF_FILE_ALLOWLIST: readonly string[] = [
   "domain/pawn-organization-compose.ts",
   "ports/agent-stack.ports.ts",
   "testing/compose-pawn-stack.ts",
+  // LAB-016 program-search dimension 8 (DATA refs, declared):
+  "contracts/program-candidate.ts",
+  "adapters/program-candidate-validation.ts",
+  "adapters/program-fingerprint.ts",
+  "adapters/program-mutations.ts",
 ];
 
 /** The frozen production module registry dependencies that EXIST. */
@@ -286,7 +301,9 @@ test("registry-exact imports only: every bare @mos/* import is a declared produc
 test("the exported runtime surface is exactly the pinned set", () => {
   const runtimeExports = Object.keys(publicSurface).sort();
   assert.deepEqual(runtimeExports, [
+    "NO_OP_PROGRAM_REFS",
     "PAWN_TRANSFORM_KINDS",
+    "PROGRAM_SEARCH_DIMENSIONS",
     "PawnExecutionError",
     "TRANSFORM_PAWN_BODIES",
     "TRANSFORM_PAWN_KINDS",
@@ -298,13 +315,21 @@ test("the exported runtime surface is exactly the pinned set", () => {
     "createInMemoryPawnModelRuntime",
     "createInMemoryPawnOrganizationRegistry",
     "createInMemoryPawnRightsGate",
+    "createInMemoryProgramEvaluation",
+    "createInMemoryProgramOrganizationSource",
+    "createInMemoryProgramSearch",
+    "createInMemoryProgramTransformCatalog",
     "createInMemoryTransformSource",
     "engineToolRef",
   ]);
   for (const name of runtimeExports) {
     assert.equal(
       typeof publicSurface[name as keyof typeof publicSurface],
-      name === "PAWN_TRANSFORM_KINDS" || name === "TRANSFORM_PAWN_BODIES" || name === "TRANSFORM_PAWN_KINDS"
+      name === "NO_OP_PROGRAM_REFS" ||
+        name === "PAWN_TRANSFORM_KINDS" ||
+        name === "PROGRAM_SEARCH_DIMENSIONS" ||
+        name === "TRANSFORM_PAWN_BODIES" ||
+        name === "TRANSFORM_PAWN_KINDS"
         ? "object"
         : "function",
       `${name} must be a runtime export`,
@@ -338,6 +363,24 @@ test("port method budgets: PawnExecutionPort 10, organization port 3, every seam
   assert.equal(Object.keys(stack.doubles.transforms).length, 3); // resolve + disclosed registration/list
   // The engine runner double: submit + submissions inspection.
   assert.ok(Object.keys(stack.doubles.engineRunner).length <= 12);
+});
+
+test("port method budgets: the LAB-016 program-search surfaces stay within ≤ 12", () => {
+  const programStack = composeProgramSearchStack();
+  // The search port: exactly ONE method (searchPrograms).
+  assert.deepEqual(Object.keys(programStack.search), ["searchPrograms"]);
+  // The evaluation seam: exactly ONE method (evaluateProgram).
+  assert.deepEqual(Object.keys(programStack.doubles.evaluation), [
+    "evaluateProgram",
+  ]);
+  // The organization source seam: exactly ONE method (listOrganizations).
+  assert.deepEqual(Object.keys(programStack.doubles.organizations).filter(
+    (name) => name !== "register",
+  ), ["listOrganizations"]);
+  // The catalog seam: exactly ONE method (listPromotedTransforms).
+  assert.deepEqual(Object.keys(programStack.doubles.catalog), [
+    "listPromotedTransforms",
+  ]);
 });
 
 test("lockfile discipline: the mos-production importer carries exactly the registry-exact dependencies", () => {
