@@ -903,6 +903,9 @@ importers:
 
   packages/mos-lab:
     dependencies:
+      '@mos/agents':
+        specifier: workspace:*
+        version: link:../mos-agents
       '@mos/capabilities':
         specifier: workspace:*
         version: link:../mos-capabilities

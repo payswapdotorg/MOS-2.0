@@ -5,12 +5,13 @@ MOS v2.0 **Marketing Lab** package — `LAB-001` (reference-first niche corpus r
 plus `LAB-004` (Social Simulator), `LAB-005` (User/Creator/Competition Dynamics) and
 `LAB-006` (Time Machine), delivered in Wave 3 (W3-A), plus `LAB-007` (World Model Ensemble),
 `LAB-008` (Offline / Off-Policy Evaluation) and `LAB-009` (Sequential Strategy Learning),
-delivered in Wave 4 (W4-A).
+delivered in Wave 4 (W4-A), plus `LAB-010` (Agent Organization Search), delivered in Wave 5
+(W5-B).
 
 Module registry entry: `lab → packages/mos-lab`, owner `worker-a`, dependencies
 `[contracts, content, production, agents, capabilities, engines, jobs]`.
 
-## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning (in-memory scaffolds)
+## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search (in-memory scaffolds)
 
 All shared vocabulary is imported from **`@mos/contracts`** (W2-A / RECONCILE-A). The package
 contains:
@@ -162,13 +163,65 @@ contains:
   - the §2 delay-expectation variable appears only as the declared `simulatedSteps` cost
     dimension of the trace (production delay economics is LAB-015's domain).
 
-- `src/index.ts` — types + twelve runtime factories.
+- **LAB-010 — Agent Organization Search (§23)**
+  - `src/contracts/organization-features.ts` — the **TWELVE §23 search dimensions** as a
+    frozen vocabulary (`agent-count`, `roles`, `topology`, `delegation`, `communication`,
+    `memory-sharing`, `critics`, `tool-allocation`, `model-assignment`, `budget`,
+    `execution-ordering`, `stopping-conditions` — compile-time pinned to exactly twelve),
+    the `SearchedOrganizationCandidate` descriptor (an `@mos/agents`
+    `AgentOrganizationRecord` passed **BY VALUE** — the agents module stays the
+    organization authority) plus the `DeclaredOrganizationFeatures` the frozen record
+    cannot express structurally (`criticNodeIds`, `toolAllocation`, `executionOrdering` —
+    ALL THREE REQUIRED, no silent defaults), and the per-dimension
+    `OrganizationFeatureFingerprint` (two candidates with equal fingerprints are the same
+    point in the twelve-dimension search space); edge kinds map one-to-one onto dimensions
+    (`delegates-to` → delegation, `communicates-with` → communication, `reports-to` →
+    topology), so every edge belongs to exactly one dimension;
+  - `src/contracts/organization-search.ts` — `OrganizationSearchPort` (SINGLE method
+    `searchOrganizations`): scope + `LabScenario` + ensemble id/version (the world-model
+    refs) + versioned reward spec + candidates + REQUIRED seed + declared policy →
+    `OrganizationSearchResult`; **THE COMPARISON MANDATE (lock rule 33) is structural**:
+    the input REQUIRES `baseline` (validated single-agent fail-closed —
+    `baseline-not-single-agent`) and `handDesigned` slots, and the result carries a
+    mandatory three-way `comparison` block (baseline + hand-designed + generated ≥ 1) —
+    a result with only generated candidates is unrepresentable, and a search that cannot
+    afford a generated evaluation fails closed (`budget-below-mandated-floor` /
+    `comparison-mandate-violated`); every candidate evaluation carries the §22 set
+    (expected reward, interval, ensemble disagreement, seed robustness, OOD aggregate,
+    calibration placeholder) and is COUNTERFACTUAL-labeled (lock rule 29); the result
+    carries the §24 lab-only statement — **NO deployment decision**;
+  - `src/adapters/in-memory-organization-search.ts` + the INTERNAL
+    `organization-{features,mutations,search-validation,search-estimation,simulation-mapping}`
+    modules — a **DISCLOSED deterministic hill-climb** over the twelve dimensions:
+    fixed-order mutation operators per dimension (every mutant re-validated fail-closed
+    and deduplicated by twelve-dimension fingerprint), a DECLARED budget in member steps
+    (with a fail-closed floor covering the comparison mandate), a DECLARED pruning rule
+    (`none` | `interval-dominance` — pruned entries stay RANKED, never hidden, never
+    generation parents), DECLARED stopping (budget → plateau → generation cap) and
+    deterministic uncertainty-aware ranking (expected reward desc → interval width asc →
+    candidate key asc → origin precedence → arrival order) with the interval overlap vs
+    the rank-1 candidate DECLARED on every other entry; evaluation maps each candidate's
+    twelve dimension features onto the LAB-004 simulator action knobs through a
+    **DOCUMENTED synthetic mapping** (full equations in
+    `organization-simulation-mapping.ts` — the same disclosure class as the LAB-004/007/009
+    parametric adapters) and rolls it out through the LAB-007 `EnsemblePort` (whose members
+    execute through the seed-required deterministic `SimulatorEnginePort`) over the
+    declared evaluation seeds, with the horizon capped by the candidate's own stopping
+    policy; provenance records which simulator/ensemble/member world-model/reward-spec
+    versions evaluated each candidate, the full twelve-dimension fingerprint, the
+    dimensions varied vs the parent, the generation index and the pruning verdict;
+  - caller-supplied candidates are CLONED into lab-owned copies (caller data is never
+    mutated or frozen in place — pinned by test); tenant scoping is fail-closed
+    (candidate tenant mismatch, ensemble invisibility and cross-tenant reads all fail
+    closed with named codes).
+
+- `src/index.ts` — types + thirteen runtime factories.
 - `src/adapters/parametric-support.ts` — INTERNAL helpers (seeded PRNG, clamps, validation,
   deep-freeze) shared by the adapters; deliberately NOT exported from the index.
 - `src/adapters/reward-computation.ts` + `ensemble-aggregation.ts` — INTERNAL pure math
   (reward term resolution, ensemble aggregation); deliberately NOT exported from the index.
-- `src/testing/w4a-lab-fixtures.ts` — INTERNAL Wave-4 test fixtures; NOT exported from the
-  index.
+- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` — INTERNAL Wave-4/
+  Wave-5 test fixtures; NOT exported from the index.
 
 ## Design rules encoded here
 
@@ -201,6 +254,18 @@ contains:
 - **Explicit reward binding (§21)**: every reward term declares its concrete metric source;
   non-derivable and ambiguous sources fail closed with typed errors — vanity metrics never
   silently replace the declared objective.
+- **The comparison mandate (lock rule 33 / §23)**: every organization search result carries
+  the generalist single-agent baseline, the caller's hand-designed organization AND
+  search-generated organizations — structurally required on the result type, validated
+  fail-closed on the input (missing slots → typed failure; multi-node baseline → typed
+  failure), and netted out by the fail-closed budget floor + comparison guard; a
+  generated-only result is unrepresentable.
+- **Twelve explicit search dimensions (§23)**: every organization candidate carries ALL
+  TWELVE dimension signatures in its provenance fingerprint (the three the frozen
+  `AgentOrganization` record cannot express are REQUIRED declared features — no silent
+  defaults); generated candidates record exactly the dimensions their generation step
+  varied (verified against the parent fingerprint), and deduplication happens on the
+  twelve-dimension fingerprint, never on organization identity.
 - **No-op is a first-class candidate (lock rule 5)**: `no-op` produces zero simulated
   activity; in the dynamics model inaction still decays audience and loses ground to
   competitors (inaction has modeled consequences).
@@ -243,8 +308,21 @@ contains:
   knobs (fixed moves, fixed tie-break) — a disclosed scaffold standing in for real
   sequential simulator learning; strategy KIND transitions are LAB-016 program-search
   territory.
+- The LAB-010 organization search is a **disclosed deterministic hill-climb** (fixed move
+  set per dimension, fixed tie-break, declared budget/pruning/stopping) standing in for
+  real organization search; its evaluation mapping from organization structure to the
+  simulator action knobs is a **DOCUMENTED SYNTHETIC MAPPING** (full equations in
+  `organization-simulation-mapping.ts`) — it is NOT a claim about real organizational
+  performance, and it rides on the disclosed LAB-007 ensemble-of-synthetic-functions
+  stack. Organization candidates are `@mos/agents` descriptors passed BY VALUE — the lab
+  never becomes the organization authority (no lab-side org registry, no body resolution:
+  body refs stay opaque to the lab and the structural validation deliberately omits them).
+  The horizon is evaluated as K STATIONARY steps capped by each organization's own stopping
+  policy (cross-step world evolution is not modeled — same as LAB-008/009).
 - Off-policy estimates are SIMULATED estimates, never experimental proof (§24); learned
-  candidates are lab-only candidates, never deployment decisions.
+  candidates and organization-search results are lab-only candidates, never deployment
+  decisions — the §24 real-experiment boundary (Lab candidate → Mission → …) is the only
+  path to deployment-grade evidence.
 - Time Machine availability semantics: an observation is "available by X" iff
   `observedAt ≤ X`; a durable adapter may tighten this with an ingestion ledger
   (append-time availability) without changing the port shape.

@@ -19,5 +19,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../mos-capabilities" }, { "path": "../mos-contracts" }]
+  "references": [{ "path": "../mos-agents" }, { "path": "../mos-capabilities" }, { "path": "../mos-contracts" }]
 }

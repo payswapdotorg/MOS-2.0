@@ -1,17 +1,18 @@
 /**
  * Public surface of `@mos/lab` (MOS v2.0 LAB-001..003 + LAB-004..006 +
- * LAB-007..009).
+ * LAB-007..009 + LAB-010).
  *
  * Exports the corpus / feature-bundle / idea-graph / evidence-separation /
  * social-simulator / dynamics / Time Machine / world-model-ensemble /
- * off-policy-evaluation / strategy-learning contract types plus twelve
- * runtime factories (in-memory corpus store, static feature computation
- * declaration carrier, in-memory feature bundle registry, in-memory idea
- * graph, in-memory social world model store, in-memory simulator engine,
- * in-memory dynamics model store, in-memory dynamics stepper, in-memory
- * Time Machine, in-memory world model ensemble, in-memory off-policy
- * evaluator, in-memory strategy learner). No helper constructors, error
- * classes, or internals are exposed.
+ * off-policy-evaluation / strategy-learning / organization-search contract
+ * types plus thirteen runtime factories (in-memory corpus store, static
+ * feature computation declaration carrier, in-memory feature bundle
+ * registry, in-memory idea graph, in-memory social world model store,
+ * in-memory simulator engine, in-memory dynamics model store, in-memory
+ * dynamics stepper, in-memory Time Machine, in-memory world model
+ * ensemble, in-memory off-policy evaluator, in-memory strategy learner,
+ * in-memory organization search). No helper constructors, error classes,
+ * or internals are exposed.
  *
  * W3-A: LAB-004/005/006 add the TYPE-SEPARATED evidence layer — a
  * `SimulationPrediction` (counterfactual: true, disclosed synthetic) can
@@ -27,6 +28,17 @@
  * `counterfactual: true` literal pins, and every reward term binds its
  * value source EXPLICITLY (§21: vanity metrics never silently replace the
  * declared objective; a non-derivable or ambiguous source fails closed).
+ *
+ * W5-B: LAB-010 (agent organization search, §23) keeps the same discipline
+ * — candidates are `@mos/agents` organization descriptors passed BY VALUE
+ * (the agents module stays the organization authority), every one of the
+ * twelve §23 dimensions is DECLARED (fingerprinted per candidate; the three
+ * the frozen record cannot express are explicit features — no silent
+ * defaults), evaluation runs through the LAB-007 ensemble (§22 uncertainty
+ * carried through ranking), the three-way comparison mandate (generalist
+ * single-agent baseline + hand-designed + generated) is structurally
+ * required, and the result is counterfactual-labeled with the §24 lab-only
+ * statement (never a deployment decision).
  *
  * RECONCILED (W2-A / RECONCILE-A): all shared value types (TenantId,
  * TenantScope, Version, Timestamp, RightsRef, ProvenanceRef, ArtifactRef,
@@ -240,6 +252,43 @@ export type {
   VariantEvaluation,
 } from './contracts/strategy-learning.js';
 
+// ---- LAB-010: the twelve §23 organization search dimensions + candidate descriptors ----
+export type {
+  DeclaredOrganizationFeatures,
+  ExecutionOrderingMode,
+  OrganizationCandidateOrigin,
+  OrganizationFeatureFingerprint,
+  OrganizationSearchDimension,
+  OrganizationToolAllocation,
+  OrganizationToolAllocationEntry,
+  SearchedOrganizationCandidate,
+} from './contracts/organization-features.js';
+export { ORGANIZATION_SEARCH_DIMENSIONS } from './contracts/organization-features.js';
+
+// ---- LAB-010: Agent Organization Search ----
+export type {
+  IntervalOverlapDeclaration,
+  OrganizationCandidateEvaluation,
+  OrganizationEvaluationReferences,
+  OrganizationOodSummary,
+  OrganizationPruningRule,
+  OrganizationSearchBudget,
+  OrganizationSearchCandidates,
+  OrganizationSearchComparison,
+  OrganizationSearchError,
+  OrganizationSearchErrorCode,
+  OrganizationSearchInput,
+  OrganizationSearchPolicy,
+  OrganizationSearchPort,
+  OrganizationSearchProvenance,
+  OrganizationSearchResult,
+  OrganizationSearchResultId,
+  OrganizationSearchStopReason,
+  OrganizationSearchStopping,
+  OrganizationSeedRobustness,
+  RankedOrganizationCandidate,
+} from './contracts/organization-search.js';
+
 // ---- Runtime factories (in-memory scaffolds, disclosed) ----
 export type { InMemoryCorpusStoreOptions } from './adapters/in-memory-corpus-store.js';
 export type { InMemoryFeatureBundleRegistryOptions } from './adapters/in-memory-feature-bundle-registry.js';
@@ -252,6 +301,7 @@ export type { InMemoryTimeMachineOptions } from './adapters/in-memory-time-machi
 export type { InMemoryEnsembleOptions } from './adapters/in-memory-ensemble.js';
 export type { InMemoryOffPolicyEvaluatorOptions } from './adapters/in-memory-off-policy-evaluation.js';
 export type { InMemoryStrategyLearnerOptions } from './adapters/in-memory-strategy-learner.js';
+export type { InMemoryOrganizationSearchOptions } from './adapters/in-memory-organization-search.js';
 
 export { createInMemoryCorpusStore } from './adapters/in-memory-corpus-store.js';
 export { createStaticFeatureComputationPort } from './adapters/static-feature-computation.js';
@@ -265,3 +315,4 @@ export { createInMemoryTimeMachine } from './adapters/in-memory-time-machine.js'
 export { createInMemoryEnsemble } from './adapters/in-memory-ensemble.js';
 export { createInMemoryOffPolicyEvaluator } from './adapters/in-memory-off-policy-evaluation.js';
 export { createInMemoryStrategyLearner } from './adapters/in-memory-strategy-learner.js';
+export { createInMemoryOrganizationSearch } from './adapters/in-memory-organization-search.js';

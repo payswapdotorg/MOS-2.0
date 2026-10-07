@@ -37,6 +37,12 @@ export const clamp = (value: number, lower: number, upper: number): number =>
 /** Clamp a number into [0, 1]. */
 export const clamp01 = (value: number): number => clamp(value, 0, 1);
 
+/**
+ * Quantize a derived numeric knob to 1e-10 so mapped values are stable
+ * under floating-point noise (identical inputs → bit-identical knobs).
+ */
+export const quantizeKnob = (value: number): number => Math.round(value * 1e10) / 1e10;
+
 /** `true` when the value is a finite number inside [0, 1]. */
 export const isUnitInterval = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
