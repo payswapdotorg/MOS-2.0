@@ -81,6 +81,38 @@ engines:
     activationStatus: research-candidate
     notes: "Keep as replaceable candidate until exact code/model licenses and operational compatibility are verified."
 
+  - id: mlt
+    capabilityFamilies: [media-render, editing]
+    role: alternate-render-backend
+    source: https://www.mltframework.org/
+    codeLicenseObserved: review-required
+    activationStatus: research-candidate
+    notes: "Evaluate as a replaceable render backend; exact dependency and distribution licenses must be verified before activation."
+
+  - id: remotion
+    capabilityFamilies: [programmatic-video-composition, render]
+    role: composition-engine
+    source: https://www.remotion.dev/
+    codeLicenseObserved: review-required
+    activationStatus: research-candidate
+    notes: "Learn from and evaluate behind an adapter; commercial/distribution terms must be verified for the intended deployment."
+
+  - id: open-sora-family
+    capabilityFamilies: [video-generation]
+    role: generative-video-engine
+    source: https://github.com/hpcaitech/Open-Sora
+    codeLicenseObserved: review-required
+    activationStatus: research-candidate
+    notes: "Model/code/data terms are reviewed separately. Never treat repository visibility as blanket commercial permission."
+
+  - id: comfyui
+    capabilityFamilies: [generative-media-graph, workflow-execution]
+    role: inspiration-only
+    source: https://github.com/comfyanonymous/ComfyUI
+    codeLicenseObserved: review-required
+    activationStatus: learn-from-only
+    notes: "Useful graph/execution ideas may inform MOS, but ComfyUI is not a MOS authority and is not required by the core architecture."
+
 replacementExamples:
   - capability: semantic-video-relevance
     candidates: [openclip, internvideo-family, vjepa-family]
