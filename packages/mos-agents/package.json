@@ -1,0 +1,27 @@
+{
+  "name": "@mos/agents",
+  "version": "0.1.0",
+  "description": "MOS v2.0 agent body + agent organization registries (AGT-001 + AGT-003) — AgentBody records per the frozen 14-field contract with immutable versioned bodies and capability-ref validation, plus tenant-scoped versioned AgentOrganization records with typed topology, budget policies and topology queries.",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}
