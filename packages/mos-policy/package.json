@@ -1,0 +1,28 @@
+{
+  "name": "@mos/policy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MOS v2.0 Policy authority (POLICY-001) — versioned, tenant-scoped, append-only policy rules over a CLOSED action-kind vocabulary aligned with the real boundary chain (production-request approval, distribution, experiment launch, transform application, engine invocation, human-task fulfillment), each carrying STRUCTURED TYPED constraint declarations (allowed/disallowed action kinds, budget ceilings, deadline floors, modality restrictions — data, never free-text), an effect (allow/deny/require-approval), a named rationale and provenance; PolicyEvaluationPort evaluate(policy refs, action descriptor) → immutable append-only PolicyEvaluationRecords with full context (rules consulted/matched, per-constraint outcomes, §30-style fields) whose verdicts are allowed | denied (naming the rule + constraint that denied) | approval-required (naming the approver role) | insufficient-policy (FAIL CLOSED — no applicable rule is never a silent allow); PolicyRegistryPort with the standard MOS registry discipline (tenant-scoped, no existence leaks, bit-for-bit immutable prior versions). Authority discipline is test-pinned: policy NEVER decides rights (§505 separation; a policy verdict is orthogonal to a rights verdict), never originates actions (it vets declared actions against declared rules), and imports ONLY @mos/contracts + @mos/identity (registry-exact). The W6-C distribution PolicyGatePort seam is satisfied by the disclosed composition-seam adapter (mirrored frozen shape, compat-pinned mutual-assignability against the real @mos/distribution port — zero drift documented; real composition-root wiring is TL-later).",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js' && tsc -b ../mos-contracts ../mos-identity ../mos-rights ../mos-content ../mos-capabilities ../mos-integrations ../mos-distribution && tsc -p tsconfig.compat.json && node --test compat/distribution-policy-gate.test.ts",
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*",
+    "@mos/identity": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}
