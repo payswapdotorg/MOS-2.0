@@ -1,0 +1,16 @@
+{
+  "name": "@mos/studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "STUDIO-001 interface spike — TypeScript contracts only, no runtime implementation",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
+  }
+}
