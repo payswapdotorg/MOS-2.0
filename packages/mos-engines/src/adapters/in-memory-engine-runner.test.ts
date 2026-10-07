@@ -97,6 +97,50 @@ test("lifecycle events: queued → running → succeeded, in order, for one job"
   assert.equal(harness.sink.completions.length, 1);
 });
 
+test("adapter-resolved typed failure → job-failed lifecycle (the durable-job seam sees the failure)", async () => {
+  // W4-B regression-sweep defect pin: an adapter that RESOLVES an
+  // EngineResult with failure !== null is a FAILED run per the frozen
+  // EngineResult contract. The completion event through the
+  // JobEventSinkPort seam must be job-failed with lifecycle "failed" and
+  // the typed failure preserved — the durable jobs consumer (mos-jobs)
+  // drives retries from exactly this record; a job-succeeded event here
+  // would materialize failed engine work as a successful durable job.
+  const harness = createRunnerHarness({
+    adapter: createSandboxAwareTestAdapter({
+      engineId: ENGINE_ID,
+      engineVersion: 1 as Version,
+      modelIdentity: "checkpoint:test/sandbox-alpha@1",
+      implementationTag: "alpha",
+      failure: {
+        code: "engine-invocation-error",
+        message: "adapter invocation failed: pinned typed failure",
+        retriable: true,
+      },
+    }),
+  });
+  const job = makeJob();
+  const result = await harness.runner.submit(job);
+
+  // The returned result is the adapter's honest typed failure, auditable.
+  assert.equal(result.failure?.code, "engine-invocation-error");
+  assert.equal(result.failure?.retriable, true);
+  assert.deepEqual(result.outputArtifactRefs, []);
+
+  // The lifecycle events report the run as failed, in order.
+  const events = harness.sink.eventsFor(job.id as string);
+  assert.deepEqual(
+    events.map((event) => event.type),
+    ["job-queued", "job-running", "job-failed"],
+  );
+  const completion = harness.sink.completions[0];
+  assert.notEqual(completion, undefined);
+  assert.equal(completion?.type, "job-failed");
+  assert.equal(completion?.record.lifecycle, "failed");
+  assert.equal(completion?.record.failure?.code, "engine-invocation-error");
+  assert.equal(completion?.record.failure?.retriable, true);
+  assert.equal(completion?.record.outputArtifactRefs.length, 0);
+});
+
 test("§30 observability record completeness on the completion event", async () => {
   const harness = createRunnerHarness();
   const job = makeJob();
