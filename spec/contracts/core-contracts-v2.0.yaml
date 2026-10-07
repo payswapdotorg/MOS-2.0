@@ -39,3 +39,17 @@ contracts:
     required: [id, capabilityVersion, engineVersion, benchmarkCorpusRef, evaluatorVersion, metrics, cost, latency, licenseStatus, result]
   RealExperimentBinding:
     required: [id, labCandidateRef, missionRef, productionRequestRef, policyRef, rightsRef, distributionRef, experimentRef, evidenceRef]
+  EngineJob:
+    required: [id, capabilityId, capabilityVersion, engineId, engineVersion, inputArtifactRefs, parameters, seed, resourceLimits, outputContract]
+  EngineResult:
+    required: [jobId, outputArtifactRefs, metrics, provenance, duration, resourceUsage, cost, warnings, failure]
+  ArtifactRef:
+    required: [artifactId, version, tenantId, digest, type, storageRef, rightsRef, provenanceRef]
+  StudioFormat:
+    required: [id, version, inputRequirements, participantModel, captureRequirements, interviewerRequirements, organizationCompatibility, outputContract, provenanceRequirements, evaluationHooks]
+  SocialAdapter:
+    required: [provider, version, capabilityMatrix, accountOperations, contentOperations, analyticsOperations, publishingOperations, restrictionObservations]
+  ConnectorProvider:
+    required: [providerId, version, capabilities, authentication, invocationContract, evidenceModel, errorModel, rateLimitObservation]
+  PlatformHealthObservation:
+    required: [id, accountRef, provider, observedAt, observableSignals, healthState, confidence, uncertainty, maneuvers]
