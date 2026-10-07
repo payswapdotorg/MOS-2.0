@@ -20,9 +20,30 @@ import type {
 
 import { EngineRegistryError } from "../domain/errors.js";
 import { createTestDoubleEngineAdapter } from "./disclosed-test-double-adapter.js";
+import type { EngineSandboxContext } from "../ports/engine-runner.port.js";
 import type { EngineAdapter } from "../ports/engine-adapter.port.js";
 
 const ENGINE_ID = "engine:test-double" as import("@mos/contracts").EngineId;
+
+/** Minimal well-formed sandbox context (the runner builds the real one). */
+function makeSandboxContext(
+  extraKeys?: Record<string, unknown>,
+): EngineSandboxContext {
+  const base: EngineSandboxContext = {
+    job: makeJob(),
+    network: {
+      policy: { access: "denied" },
+      request: () => Promise.reject(new Error("denied")),
+    },
+    artifacts: {
+      resolve: () => Promise.resolve(undefined),
+      persist: () => Promise.reject(new Error("not implemented")),
+    },
+    quotas: makeJob().resourceLimits,
+    seed: 42,
+  };
+  return extraKeys === undefined ? base : ({ ...base, ...extraKeys } as EngineSandboxContext);
+}
 
 function makeArtifactRef(n: number): ArtifactRef {
   return {
@@ -71,7 +92,7 @@ test("job in → result out round-trip: identity, echo outputs, provenance, full
     modelIdentity: "checkpoint:openclip/ViT-B-32@laion2b",
   });
   const job = makeJob();
-  const result = await adapter.invoke(job);
+  const result = await adapter.invoke(job, makeSandboxContext());
 
   // Full EngineResult contract surface present.
   assert.doesNotThrow(() => assertRequiredFields(result, "EngineResult"));
@@ -107,7 +128,7 @@ test("typed failure path: failures are carried in the result, shape intact", asy
     engineVersion: 1 as Version,
     failure,
   });
-  const result = await adapter.invoke(makeJob());
+  const result = await adapter.invoke(makeJob(), makeSandboxContext());
 
   assert.doesNotThrow(() => assertRequiredFields(result, "EngineResult"));
   assert.notEqual(result.failure, null);
@@ -127,7 +148,7 @@ test("warnings and cost are configurable and carried through", async () => {
     warnings: [{ code: "degraded-input", message: "input artifact 2 was low resolution" }],
     cost: { amount: 0.004, currency: "USD" },
   });
-  const result = await adapter.invoke(makeJob());
+  const result = await adapter.invoke(makeJob(), makeSandboxContext());
   assert.deepEqual(result.warnings, [
     { code: "degraded-input", message: "input artifact 2 was low resolution" },
   ]);
@@ -145,7 +166,7 @@ test("malformed jobs are rejected fail-closed (missing required fields named)", 
     // capabilityVersion, engineId, engineVersion, ... missing
   } as unknown as EngineJob;
   await assert.rejects(
-    () => adapter.invoke(broken),
+    () => adapter.invoke(broken, makeSandboxContext()),
     (error: unknown) =>
       !(error instanceof EngineRegistryError) &&
       error instanceof Error &&
@@ -160,8 +181,8 @@ test("the double is deterministic: identical jobs yield deeply equal results", a
     modelIdentity: "checkpoint:x@1",
   });
   const job = makeJob({ seed: 7 });
-  const first = await adapter.invoke(job);
-  const second = await adapter.invoke(job);
+  const first = await adapter.invoke(job, makeSandboxContext());
+  const second = await adapter.invoke(job, makeSandboxContext());
   assert.deepEqual(first, second);
 });
 
@@ -170,6 +191,22 @@ test("non-model engines record null model identity in provenance", async () => {
     engineId: ENGINE_ID,
     engineVersion: 1 as Version,
   });
-  const result = await adapter.invoke(makeJob());
+  const result = await adapter.invoke(makeJob(), makeSandboxContext());
   assert.equal(result.provenance.modelIdentity, null);
+});
+
+test("adapter-side defense: a credential-shaped context key fails the invocation closed", async () => {
+  const adapter = createTestDoubleEngineAdapter({
+    engineId: ENGINE_ID,
+    engineVersion: 1 as Version,
+  });
+  const smuggled = makeSandboxContext({
+    providerApiToken: "sk-live-should-not-exist",
+  });
+  await assert.rejects(
+    () => adapter.invoke(makeJob(), smuggled),
+    (error: unknown) =>
+      error instanceof Error &&
+      /credential-shaped fields/.test(error.message),
+  );
 });

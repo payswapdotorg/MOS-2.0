@@ -1,7 +1,7 @@
 {
   "name": "@mos/engines",
   "version": "0.1.0",
-  "description": "MOS v2.0 engine registry + engine adapter contract (ENG-001/ENG-002) — fail-closed activation evidence gate, deterministic capability resolution per spec/mos-engine-policy-v2.0.yaml, replacement/rollback with historical reproducibility, and the narrow EngineAdapter invoke surface.",
+  "description": "MOS v2.0 engine registry + adapter contract + runner sandbox + golden-corpus benchmark + replacement proof (ENG-001..ENG-005) — fail-closed activation evidence gate, deterministic capability resolution per spec/mos-engine-policy-v2.0.yaml, policy-faithful EngineRunner sandbox (quotas, timeout, fail-closed network, no credential surface, scoped artifacts, seed policy, §30 observability), versioned golden corpora + EngineBenchmark records wired into the activation gate, and the engine replacement/rollback proof with historical reproducibility.",
   "private": true,
   "type": "module",
   "types": "./src/index.ts",
