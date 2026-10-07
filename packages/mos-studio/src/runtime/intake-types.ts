@@ -43,7 +43,7 @@ import type {
   StudioProductionBudget,
   StudioProductionRequestView,
 } from "../contracts/studio-session.js";
-import type { StudioArtifactRef, TranscriptRef } from "../contracts/studio-artifact-package.js";
+import type { StudioArtifactRef, TranscriptRef, ConversationGraphRef, EditGraphRef } from "../contracts/studio-artifact-package.js";
 import type { StudioDecisionActor, StudioOutputReviewOutcome, StudioRejection } from "../contracts/treatment.js";
 
 /** Standalone entry intent (§13): user creates a session without a Lab request. */
@@ -133,6 +133,19 @@ export interface StudioProcessingOutput {
   readonly intermediateArtifacts: readonly StudioArtifactRef[];
   readonly finalArtifacts: readonly StudioArtifactRef[];
   readonly transcriptRefs?: readonly TranscriptRef[];
+  /**
+   * STUDIO-011: the REAL conversation graph the organization derived the
+   * processing from (question/answer nodes from the adaptive interview). When
+   * absent the packaged output synthesizes the session-scoped placeholder
+   * reference (W1-C behavior).
+   */
+  readonly conversationGraphRef?: ConversationGraphRef;
+  /**
+   * STUDIO-011: the REAL edit graph of recorded organization edit decisions.
+   * When absent the packaged output synthesizes the session-scoped placeholder
+   * reference (W1-C behavior).
+   */
+  readonly editGraphRef?: EditGraphRef;
   readonly additionalCost?: MoneyAmount;
   readonly processingSeconds?: number;
 }

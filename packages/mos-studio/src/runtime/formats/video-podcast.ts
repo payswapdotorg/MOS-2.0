@@ -1,18 +1,22 @@
 /**
- * "video-podcast" format descriptor (STUDIO-002 initial formats; §14).
+ * "video-podcast" format descriptor (STUDIO-002 + STUDIO-010; §14).
  *
  * Video podcast production: same interview model as audio-podcast, with
  * mandatory video capture (camera per participant) and a composition stage
  * in the loaded organization. Layout/camera arrangement choices remain
  * organization decisions (exposed as decision points, mirroring the reaction
  * rule of §16 — the Studio never hard-codes composition).
+ *
+ * STUDIO-010 (version 2): aligned with the audio-podcast descriptor — the
+ * same podcast edit decision points (§16-style) plus participant framing;
+ * the video capture/processing PATH is STUDIO-012 (structure only here).
  */
 
 import type { StudioFormatId, StudioFormatPlugin } from "../../contracts/studio-format.js";
 import { capabilityId, capabilityIds, validateIntakeAsDeclared } from "./format-plugin-basics.js";
 
 /** Video podcast format version (contract evolution counter). */
-export const VIDEO_PODCAST_FORMAT_VERSION = 1;
+export const VIDEO_PODCAST_FORMAT_VERSION = 2;
 
 /** The video-podcast format plugin descriptor. */
 export function createVideoPodcastFormatPlugin(): StudioFormatPlugin {
@@ -77,6 +81,18 @@ export function createVideoPodcastFormatPlugin(): StudioFormatPlugin {
         pointId: "participant-framing",
         description:
           "How each captured participant stream is framed and composed into the video output (spatial arrangement).",
+        decidedBy: "organization",
+      },
+      {
+        pointId: "podcast-edit-points",
+        description:
+          "Which conversation segments are kept, trimmed, cut or reordered in the edit graph (the organization decides; the studio records).",
+        decidedBy: "organization",
+      },
+      {
+        pointId: "podcast-edit-pacing",
+        description:
+          "Pacing of the edited conversation (segment ordering and emphasis) as production-program variables.",
         decidedBy: "organization",
       },
     ],

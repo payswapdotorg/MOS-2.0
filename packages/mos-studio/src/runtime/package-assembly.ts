@@ -101,16 +101,20 @@ export function assembleArtifactPackage(
     intermediateArtifacts: Object.freeze([...draft.intermediateArtifacts]),
     finalArtifacts: Object.freeze([...draft.finalArtifacts]),
     transcriptRefs: Object.freeze([...draft.transcriptRefs]),
-    conversationGraphRef: Object.freeze({
-      graphId: `mos-studio:conversation-graph:${record.sessionId}` as ConversationGraphId,
-      version: record.packages.length + 1,
-      derivedFrom: Object.freeze([...draft.transcriptRefs]),
-    }),
-    editGraphRef: Object.freeze({
-      graphId: `mos-studio:edit-graph:${record.sessionId}` as EditGraphId,
-      version: record.packages.length + 1,
-      otioInterchange: false,
-    }),
+    conversationGraphRef: Object.freeze(
+      draft.conversationGraphRef ?? {
+        graphId: `mos-studio:conversation-graph:${record.sessionId}` as ConversationGraphId,
+        version: record.packages.length + 1,
+        derivedFrom: Object.freeze([...draft.transcriptRefs]),
+      },
+    ),
+    editGraphRef: Object.freeze(
+      draft.editGraphRef ?? {
+        graphId: `mos-studio:edit-graph:${record.sessionId}` as EditGraphId,
+        version: record.packages.length + 1,
+        otioInterchange: false,
+      },
+    ),
     provenance: Object.freeze({
       provenanceRefs: Object.freeze(provenanceRefs),
       lineageComplete,

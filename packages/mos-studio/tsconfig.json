@@ -21,6 +21,8 @@
   "references": [
     { "path": "../mos-contracts" },
     { "path": "../mos-identity" },
-    { "path": "../mos-rights" }
+    { "path": "../mos-rights" },
+    { "path": "../mos-agents" },
+    { "path": "../mos-agent-runtime" }
   ]
 }

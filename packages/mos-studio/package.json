@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MOS v2.0 Content Studio — STUDIO-001 runtime + STUDIO-002 pluggable format framework + STUDIO-005 capture ports + STUDIO-003 script/question graphs + STUDIO-006 multi-account sessions (REAL identity/rights ports) + STUDIO-007 versioned organization loader (the Studio never publishes)",
+  "description": "MOS v2.0 Content Studio — STUDIO-001 runtime + STUDIO-002 pluggable format framework + STUDIO-005 capture ports + STUDIO-003 script/question graphs + STUDIO-006 multi-account sessions (REAL identity/rights ports) + STUDIO-007 versioned organization loader + STUDIO-004 adaptive interviewer (REAL @mos/agent-runtime agent-instance binding) + STUDIO-010 podcast formats + STUDIO-011 audio podcast flow (the Studio never publishes, never selects models)",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -21,6 +21,8 @@
   "dependencies": {
     "@mos/contracts": "workspace:*",
     "@mos/identity": "workspace:*",
-    "@mos/rights": "workspace:*"
+    "@mos/rights": "workspace:*",
+    "@mos/agents": "workspace:*",
+    "@mos/agent-runtime": "workspace:*"
   }
 }

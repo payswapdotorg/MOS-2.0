@@ -1,18 +1,24 @@
 /**
- * "audio-podcast" format descriptor (STUDIO-002 initial formats; §14).
+ * "audio-podcast" format descriptor (STUDIO-002 + STUDIO-010; §14).
  *
  * Audio podcast production: interviewer plus one or more human participants
  * recorded as audio only. The interviewer can be any of the six declared
  * representation kinds (voice, text, avatar, prerecorded, generated, hybrid)
  * with mandatory synthetic/generated provenance labeling; adaptive follow-up
- * questions come from a declared question/branch graph.
+ * questions come from a declared question/branch graph (STUDIO-003/004).
+ *
+ * STUDIO-010 (version 2): the descriptor now declares the PODCAST EDIT
+ * decision points the loaded organization owns (§16-style): edit
+ * points/pacing/segment inclusion are production-program variables decided
+ * by the organization and RECORDED by the studio into the edit graph
+ * (STUDIO-011) — the format never encodes concrete edit choices.
  */
 
 import type { StudioFormatId, StudioFormatPlugin } from "../../contracts/studio-format.js";
 import { capabilityId, capabilityIds, validateIntakeAsDeclared } from "./format-plugin-basics.js";
 
 /** Audio podcast format version (contract evolution counter). */
-export const AUDIO_PODCAST_FORMAT_VERSION = 1;
+export const AUDIO_PODCAST_FORMAT_VERSION = 2;
 
 /** The audio-podcast format plugin descriptor. */
 export function createAudioPodcastFormatPlugin(): StudioFormatPlugin {
@@ -69,6 +75,20 @@ export function createAudioPodcastFormatPlugin(): StudioFormatPlugin {
         { stage: "pre-package", evaluatorCapability: capabilityId("evaluate_content"), blocking: true },
       ],
     },
+    organizationDecisionPoints: [
+      {
+        pointId: "podcast-edit-points",
+        description:
+          "Which conversation segments are kept, trimmed, cut or reordered in the edit graph (the organization decides; the studio records).",
+        decidedBy: "organization",
+      },
+      {
+        pointId: "podcast-edit-pacing",
+        description:
+          "Pacing of the edited conversation (segment ordering and emphasis) as production-program variables.",
+        decidedBy: "organization",
+      },
+    ],
     validateSessionInput: (input: unknown) => validateIntakeAsDeclared(plugin, input),
   };
   return plugin;
