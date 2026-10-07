@@ -1,0 +1,29 @@
+{
+  "name": "@mos/integrations",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MOS v2.0 connector provider contract (INTEG-001) — the four-layer provider-integrations authority: versioned tenant-scoped ProviderDefinition (what a provider IS — kind, transport contract surface, declared capability surface; never credentials) → ProviderImplementation (concrete versioned implementation with status available|unavailable|degraded|unknown — UNKNOWN preserved first-class — and evidence refs) → MerchantClientInstance (tenant-scoped binding of an implementation to a merchant/client identity carrying a CredentialRef HANDLE ONLY — credential values never enter the control plane, they resolve at the declared substrate secret-store seam) → AvailabilityCapability (EXPLICIT capability instances at explicit versions with declared constraints, resolving through the @mos/capabilities vocabulary — an instance without a capability record provides NOTHING). ProviderInteractionPort is the single call surface: rights gate (RightsContextRef, fail-closed, @mos/rights vocabulary) precedes every call and every interaction records the §30 observability record. No real network — the transport seam is a declared port with a disclosed deterministic in-memory double. Provider specifics live in DATA, never in code: the package exports provider-neutral contracts only (test-pinned).",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mos/capabilities": "workspace:*",
+    "@mos/contracts": "workspace:*",
+    "@mos/rights": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}
