@@ -1,6 +1,6 @@
 {
   "name": "@mos/lab",
-  "description": "MOS v2.0 Marketing Lab — LAB-001 corpus, LAB-002 feature bundles, LAB-003 Idea Graph, LAB-004/005/006 simulator + dynamics + Time Machine, LAB-007 world model ensemble, LAB-008 off-policy evaluation, LAB-009 sequential strategy learning, LAB-010 agent organization search, LAB-011 transform definitions + transform graph (declarative contracts-not-engines; counterfactual-labeled, disclosed in-memory scaffolds)",
+  "description": "MOS v2.0 Marketing Lab — LAB-001 corpus, LAB-002 feature bundles, LAB-003 Idea Graph, LAB-004/005/006 simulator + dynamics + Time Machine, LAB-007 world model ensemble, LAB-008 off-policy evaluation, LAB-009 sequential strategy learning, LAB-010 agent organization search, LAB-011 transform definitions + transform graph, LAB-012 transform discovery with the §8 seven promotion gates, LAB-014 human production task packages with the Arena provider port seam (declarative contracts-not-engines; counterfactual-labeled, disclosed in-memory scaffolds)",
   "version": "0.1.0",
   "private": true,
   "type": "module",
