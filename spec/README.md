@@ -22,3 +22,5 @@ Status: FROZEN
 - `docs/handoff/*-V2.0.md`
 
 Architecture changes require a repository Architecture Change Record plus a manifest revision.
+
+- `architecture-change-records/0001-mos-v2-foundation.md` — initial fork/adoption architecture record.
