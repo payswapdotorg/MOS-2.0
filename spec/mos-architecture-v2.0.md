@@ -460,6 +460,8 @@ Human output returns to the Studio/organization as an intermediate artifact.
 
 ## 18. Production bottleneck economics
 
+The Expected Value of Delay is a first-class production strategy variable.
+
 Waiting is a decision variable.
 
 Track:
