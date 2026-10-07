@@ -1,0 +1,28 @@
+{
+  "name": "@mos/engines",
+  "version": "0.1.0",
+  "description": "MOS v2.0 engine registry + engine adapter contract (ENG-001/ENG-002) — fail-closed activation evidence gate, deterministic capability resolution per spec/mos-engine-policy-v2.0.yaml, replacement/rollback with historical reproducibility, and the narrow EngineAdapter invoke surface.",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mos/capabilities": "workspace:*",
+    "@mos/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}
