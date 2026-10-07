@@ -1,0 +1,4 @@
+@import "tailwindcss" source(".");
+@theme {
+  --color-mos-accent: oklch(0.72 0.15 250);
+}

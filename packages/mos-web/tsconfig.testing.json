@@ -1,0 +1,50 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // TESTING project: compiles the composition seam + tests (testing/) →
+    // out/*.js.
+    //
+    // WHY a separate project with rootDir "testing" and outDir "out"
+    // (disclosed — this is what makes the seam runnable BOTH ways):
+    // the seam lives OUTSIDE src/ per the assignment, and an emitted file
+    // must import the siblings' BUILT dist by RELATIVE path (their exports
+    // maps point the runtime condition at untranspiled src, which node
+    // cannot execute — the same disclosed pattern @mos/studio's seam uses).
+    // A relative specifier resolves identically from source and emitted
+    // output ONLY when both sit at the same package depth: testing/x.ts and
+    // out/x.js are both one level under the package, so '../../mos-identity/
+    // dist/index.js' resolves to the same file from either. Emitting into
+    // dist/testing (one level deeper) would silently break that — which is
+    // exactly the defect found in the recovered partial work.
+    //
+    // The seam/tests consume the PACKAGE's built surface ('../dist/src/…')
+    // for types and values: importing '../src/…' here would pull source
+    // files outside rootDir (TS6059), while '../dist/src/…' resolves to the
+    // built declarations (project reference "." guarantees freshness) and
+    // to the built modules at node runtime. Vite consumes the seam from
+    // SOURCE (src/main.jsx → testing/compose-in-memory-mos-web.ts), where
+    // the same relative sibling paths already resolve — type-only imports
+    // of the package surface are erased in both pipelines.
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./out",
+    "rootDir": "./testing",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": ["testing/**/*.ts", "testing/**/*.tsx"],
+  "references": [
+    { "path": "." },
+    { "path": "../mos-contracts" },
+    { "path": "../mos-missions" },
+    { "path": "../mos-identity" }
+  ]
+}

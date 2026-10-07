@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#020617" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="MOS — a marketing-engineering operating system: declared mission, complete loop."
+    />
+    <title>MOS</title>
+    <script>
+      // Pre-paint theme resolution (WEB-001) — the audited pattern from
+      // packages/web/index.html with MOS tokens: resolve the persisted
+      // `mos-theme` seed before the JS bundle executes so a dark-theme user
+      // never sees a white first frame. Mirrors src/platform/theme-seed.ts;
+      // that module is the canonical, tested version.
+      (() => {
+        const STORAGE_KEY = 'mos-theme';
+        const DEFAULT_THEME = 'dark';
+        const THEME_COLORS = { dark: '#020617', light: '#f8fafc' };
+        const syncThemeSurface = (theme) => {
+          const root = document.documentElement;
+          root.setAttribute('data-mos-theme', theme);
+          root.style.colorScheme = theme;
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', THEME_COLORS[theme]);
+        };
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          const seed =
+            saved === 'light' || saved === 'dark' || saved === 'system' ? saved : DEFAULT_THEME;
+          const resolved =
+            seed === 'system'
+              ? window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : seed;
+          syncThemeSurface(resolved);
+          if (resolved === 'dark') document.documentElement.classList.add('dark');
+        } catch {
+          syncThemeSurface('dark');
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <style>
+      html,
+      body,
+      #root {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        background: #020617;
+        color: #e2e8f0;
+        font-family:
+          Inter,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+      }
+
+      html[data-mos-theme='light'] body {
+        background: #f8fafc;
+        color: #334155;
+      }
+
+      /* Boot loading shell (pre-JS): stays visible from first paint until
+         the React bundle mounts the app — the loading state of the very
+         first route load, so there is no white gap. */
+      .mos-boot-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 100vh;
+        background: #020617;
+        color: #94a3b8;
+        font-size: 14px;
+      }
+
+      html[data-mos-theme='light'] .mos-boot-loading {
+        background: #f8fafc;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="mos-boot-loading" role="status" aria-live="polite" aria-busy="true">
+        Loading the MOS shell…
+      </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
