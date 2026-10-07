@@ -1,4 +1,4 @@
-import type { TenantScope, Timestamp, Version } from '@mos/contracts';
+import type { TenantId, TenantScope, Timestamp, Version } from '@mos/contracts';
 import type {
   AppendHistoricalObservationInput,
   BranchRecordId,
@@ -82,8 +82,11 @@ export function createInMemoryTimeMachine(
   /** Tenant branch registry: branch id → branch, plus creation order. */
   const branches = new Map<string, Map<TimeMachineBranchId, CounterfactualBranch>>();
   const branchOrder = new Map<string, TimeMachineBranchId[]>();
-  /** Branch records per branch id (tenant-checked through the branch). */
-  const branchRecords = new Map<TimeMachineBranchId, CounterfactualBranchRecord[]>();
+  /** Branch records per (tenant, branch id) — tenants never share records, even
+   *  when a custom branch-id factory mints the same id in two tenants. */
+  const branchRecords = new Map<string, CounterfactualBranchRecord[]>();
+  const recordsKey = (tenantId: TenantId, branchId: TimeMachineBranchId): string =>
+    `${tenantId}\u0000${branchId}`;
 
   const timelineOf = (scope: TenantScope): Map<HistoricalObservationId, HistoricalObservation> =>
     timelines.get(scope.tenantId) ?? new Map();
@@ -354,9 +357,9 @@ export function createInMemoryTimeMachine(
         recordedAt: now(),
         counterfactual: true,
       });
-      const records = branchRecords.get(input.branchId) ?? [];
+      const records = branchRecords.get(recordsKey(input.scope.tenantId, input.branchId)) ?? [];
       records.push(record);
-      branchRecords.set(input.branchId, records);
+      branchRecords.set(recordsKey(input.scope.tenantId, input.branchId), records);
       return record;
     },
 
@@ -370,7 +373,7 @@ export function createInMemoryTimeMachine(
           `branch ${branchId} does not resolve in this tenant scope`,
         );
       }
-      return [...(branchRecords.get(branchId) ?? [])];
+      return [...(branchRecords.get(recordsKey(scope.tenantId, branchId)) ?? [])];
     },
   };
 }
