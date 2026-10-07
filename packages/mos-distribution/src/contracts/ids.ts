@@ -54,3 +54,6 @@ export type SocialRateLimitObservationId = Branded<string, "SocialRateLimitObser
  * platform SAID).
  */
 export type PlatformPostRef = Branded<string, "PlatformPostRef">;
+
+/** Identifier of one recorded platform health observation (HEALTH-001). */
+export type HealthObservationId = Branded<string, "HealthObservationId">;

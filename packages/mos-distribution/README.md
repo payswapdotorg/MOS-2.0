@@ -1,4 +1,4 @@
-# @mos/distribution — MOS v2.0 social-distribution authority (SOCIAL-001 + SOCIAL-002..006)
+# @mos/distribution — MOS v2.0 social-distribution authority (SOCIAL-001 + SOCIAL-002..006 + HEALTH-001)
 
 The social adapter contract + capability matrix of
 spec/mos-effective-backlog-v2.0.md SOCIAL-001: *"Build provider-neutral
@@ -7,7 +7,8 @@ social adapter contract and capability matrix"* with the acceptance
 supported/unsupported/unknown capabilities; rights/policy gates precede
 provider calls."* W7-C adds the five provider adapters of SOCIAL-002..006
 (YouTube / Instagram / Facebook Pages / TikTok / X) as ISOLATED adapter
-subtrees behind the same contract (see below). Module authority:
+subtrees behind the same contract (see below). W8-C adds the HEALTH-001
+platform-health observation surface (see below). Module authority:
 `social-distribution` (spec/mos-module-registry-v2.0.yaml — owner
 worker-c, dependencies `[contracts, content, rights, integrations]`;
 the registry's `policy` dependency is a DECLARED SEAM only — the policy
@@ -213,13 +214,53 @@ log — ONE record per provider interaction (what a real adapter would
 have sent over the network); replays and pre-interaction refusals append
 none.
 
+## Platform health — `HealthSurfacePort` (5 methods; HEALTH-001, W8-C)
+
+OBSERVABLE-ONLY health (backlog acceptance: *"observable-only health;
+provider-confirmed restriction distinguished from
+suspected_distribution_anomaly; compliant maneuvers only"*). The surface
+RECORDS and QUERIES health observations; it carries NO maneuver
+authority — no pause/switch/throttle/remediation surface exists (source
+scanned + port methods pinned); compliant maneuvers are decided and
+executed by the OWNING authorities (policy, production, missions)
+consuming these records.
+
+Two TYPED observation kinds, never conflated (test-pinned):
+
+- **`provider-confirmed-restriction`** — what a platform CONFIRMED through
+  the W6-C `listRestrictions` surface: recorded verbatim with the exact
+  `SocialRestrictionRecord` citation (`restrictionRef`), the
+  platform-reported `observedAt` kept distinct from MOS's `recordedAt`,
+  and the honest source label. An observation of what the platform SAID —
+  never a rights grant, never a maneuver.
+- **`suspected-distribution-anomaly`** — a DERIVED suspicion, never
+  invented: `recordSuspectedAnomaly` accepts ONLY derivations citing one
+  of the two DECLARED, DOCUMENTED rules (`HEALTH_DERIVATION_RULES`:
+  `observation-absence` — no platform observations in a declared
+  look-back window; `metric-decline-window` — a platform-reported metric
+  declined monotonically across ≥2 consecutive observations) with the
+  rule's required inputs; the documented rule text rides verbatim on the
+  record. Undeclared rules and malformed inputs are typed rejections and
+  NOTHING is recorded. The pure derivation functions
+  (`deriveObservationAbsence`, `deriveMetricDecline`) compute the
+  derivation input from real observation logs and return `null` on the
+  honest negative.
+
+The distinction is QUERYABLE (`kind` filter) and counted SEPARATELY per
+provider (`summarizeHealth` — never one conflated "health score"). The
+canonical `PlatformHealthObservation` core-contract projection exists for
+the CONFIRMED restriction ONLY (`platformHealthProjectionOf`, pinned with
+`assertRequiredFields`, `healthState: "restricted"`, `maneuvers: []`): a
+SUSPECTED anomaly never projects onto the canonical observed-health
+record — the distinction holds through the canonical surface too.
+
 ## Registry semantics (all test-pinned)
 
 - **Versioned append-only** — record versions are REGISTRY-ASSIGNED:
   registering with a fresh id starts at version 1; registering with a
   known in-tenant id appends the next version. No delete/update/patch
-  API anywhere (publications, observations, restrictions, retractions
-  and §30 records are immutable appended records).
+  API anywhere (publications, observations, restrictions, retractions,
+  health observations and §30 records are immutable appended records).
 - **Tenant-scoped with no existence leaks (§31)** — every accessor takes
   the tenant scope; cross-tenant reads are indistinguishable from
   unknown; the same channel id in two tenants is two independent records
@@ -280,6 +321,12 @@ composition root.
   operations' outputs + the §30 audit log cover this wave's evidence;
   the retrieval surface grows with later SOCIAL items within the ≤12
   method budget.
+- The health observation log is the disclosed in-memory double (durable
+  health storage is composition-root work behind the same
+  `HealthSurfacePort`); the derivation rules compute SUSPICIONS from
+  recorded observation logs — the surface never fetches observations
+  itself (the composition root wires the adapter's observation log to
+  the pure derivation functions).
 
 ## Future seams (documented, not built here)
 
@@ -290,9 +337,6 @@ composition root.
   disclosed doubles; provider profiles then tighten from
   conservative/UNKNOWN declarations to OBSERVED postures.
 - The policy authority's real gate behind `SocialPolicyGatePort`.
-- HEALTH-001 (platform health / distribution anomaly) consumes the
-  restriction observations — observable-only, provider-confirmed vs
-  suspected separated.
 - ATTRIB-001 (social-to-commerce attribution) consumes the observation
   records as ITS input — the causal layer stays out of this package.
 - Durable registry/log stores behind the same ports; executing

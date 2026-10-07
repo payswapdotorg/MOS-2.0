@@ -23,7 +23,8 @@
  * - transport determinism: the double is a pure function of
  *   (request, routes) — bit-for-bit reproducible;
  * - port method budgets ≤ 12 and the runtime export budget of the public
- *   surface (the documented 9 functions + 8 constants + 1 error class);
+ *   surface (the documented 14 functions + 10 constants + 1 error class —
+ *   W8-C added the HEALTH-001 surface exports);
  * - the package claims the social-distribution authority ONLY: no other
  *   authority's vocabulary leaks into the exported surface.
  *
@@ -407,7 +408,7 @@ test("authority discipline: every port stays within the ≤12-method budget", ()
   }
 });
 
-test("authority discipline: the public-surface runtime export budget (9 functions + 8 constants + 1 error class)", () => {
+test("authority discipline: the public-surface runtime export budget (14 functions + 10 constants + 1 error class)", () => {
   const entries = Object.entries(publicSurface);
   const classes = entries.filter(
     ([, value]) => typeof value === "function" && value.prototype instanceof Error,
@@ -415,20 +416,23 @@ test("authority discipline: the public-surface runtime export budget (9 function
   const functions = entries.filter(
     ([, value]) => typeof value === "function" && !(value.prototype instanceof Error),
   );
-  // Constants: the 7 frozen vocabulary objects (operations, presentation
-  // kinds, rights-action mapping, operation shapes, artifact type
-  // families, auth flow kinds, rate-limit postures) + the transport-source
-  // label string (W7-C added the provider-profile/rate-limit vocabularies).
+  // Constants: the 7 frozen social vocabulary objects (operations,
+  // presentation kinds, rights-action mapping, operation shapes, artifact
+  // type families, auth flow kinds, rate-limit postures) + the
+  // transport-source label string (W7-C added the provider-profile/
+  // rate-limit vocabularies) + the 2 HEALTH-001 vocabularies (the closed
+  // observation-kind list + the DECLARED derivation-rule documentation
+  // record — W8-C).
   const constants = entries.filter(
     ([, value]) =>
       (typeof value === "object" && value !== null) ||
       (typeof value === "string" && /^[a-z0-9-]+$/.test(value)),
   );
-  assert.equal(functions.length, 9);
+  assert.equal(functions.length, 14);
   assert.equal(classes.length, 1);
-  assert.equal(constants.length, 8);
+  assert.equal(constants.length, 10);
   // Everything else is type-only (erased at runtime).
-  assert.equal(entries.length, 18);
+  assert.equal(entries.length, 25);
 });
 
 test("authority discipline: the composition seam composes REAL integrations + the REAL rights rule + disclosed doubles (wiring pinned)", () => {

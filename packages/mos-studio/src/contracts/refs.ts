@@ -110,6 +110,9 @@ export type AnswerRef = MosRef<string, "AnswerRef">;
 /** Reference to one adaptive interviewer session (§14, STUDIO-004). */
 export type InterviewerSessionId = MosRef<string, "InterviewerSessionId">;
 
+/** Reference to one editing/composition session (§12/§13, STUDIO-008). */
+export type EditingSessionId = MosRef<string, "EditingSessionId">;
+
 /**
  * Monetary amount; `amount` is a decimal string to avoid float drift.
  * Studio-local shape (canonical `MoneyAmount` in `@mos/contracts` uses a

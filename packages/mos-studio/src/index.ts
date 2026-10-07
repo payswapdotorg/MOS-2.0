@@ -276,3 +276,58 @@ export type {
   RealParticipantAuthorities,
   RealParticipantAuthoritiesOptions,
 } from "./testing/real-participant-authorities.js";
+
+// ——— AI editing / composition (STUDIO-008, §12/§13/§16/§19) ———
+// The editing session: packaged artifact (or intermediates) + organization
+// (whose Editor Pawn / §16-style edit decision points drive the choices —
+// the ORG decides, the studio records) → NEW IMMUTABLE package version with
+// a recorded edit graph. The W7-B Editor Pawn is composed through the
+// production package's surfaces (registry-listed studio dependency); engine
+// invocations run through the engines runner seam behind it (typed failures
+// pass through verbatim); edit graphs interoperate through the ONE declared
+// interchange format (§12).
+export type * from "./contracts/editing-composition.js";
+export type * from "./contracts/edit-graph-interop.js";
+export { EDIT_COMPOSITION_KINDS, EDIT_KIND_TRANSFORM_ALIGNMENT } from "./contracts/editing-composition.js";
+export {
+  EDIT_GRAPH_INTERCHANGE_FORMAT,
+  EDIT_GRAPH_INTERCHANGE_FORMAT_VERSION,
+} from "./contracts/edit-graph-interop.js";
+export type { EditingCompositionPort } from "./ports/editing-composition.port.js";
+export { createEditingCompositionRuntime } from "./runtime/editing/editing-composition-runtime.js";
+export type { EditingCompositionRuntimeOptions } from "./runtime/editing/editing-composition-runtime.js";
+export {
+  createEditorPawnBinding,
+  EDITOR_PAWN_KIND,
+  FINAL_ASSEMBLY_OPERATION_ID,
+  executionFailureDetailOf,
+  pawnOrganizationVersionOf,
+} from "./runtime/editing/editor-pawn-binding.js";
+export type {
+  EditorCompositionRequest,
+  EditorCompositionRun,
+  EditorPawnBindingOptions,
+} from "./runtime/editing/editor-pawn-binding.js";
+export {
+  validateEditChoices,
+  validateOperationInputs,
+} from "./runtime/editing/editing-validation.js";
+
+// ——— DISCLOSED editing composition seam (STUDIO-008 testing) ———
+// REAL agent-stack registries + the REAL engines runner + the REAL rights
+// rule behind production's W7-B pawn surfaces, with the studio's disclosed
+// in-memory artifact factory. NOT a production composition root.
+export { composeEditingStack } from "./testing/compose-editing-stack.js";
+export type {
+  ComposeEditingStackOptions,
+  EditingStack,
+} from "./testing/compose-editing-stack.js";
+export {
+  EDITING_TRANSFORM_APPLICATION,
+  EDITING_ORGANIZATION_REF,
+  EDITING_ENGINE_RESOURCE_LIMITS,
+  buildEditingSourcePackage,
+  editingChoice,
+  editingContributor,
+  editingSessionInputOverPackage,
+} from "./testing/editing-fixtures.js";
