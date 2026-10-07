@@ -2,7 +2,7 @@
 
 Repository: payswapdotorg/MOS-2.0
 Architecture: 2.0 FROZEN
-Status: Phases 1–2 core packages verified on main (contracts/identity/rights/content/missions/capabilities/engines incl. ENG-003..005 replacement proof); Phase 3 Lab underway (LAB-001..006 done); Phase 4 Studio deep underway (STUDIO-001..007 + 010/011 done). 405 tests green across 12 MOS packages @ Wave 3 TL acceptance.
+Status: Phase 2 core+engines COMPLETE (ENG-001..005); Phase 3 Lab at LAB-001..009; Phase 4 Studio at STUDIO-001..007 + 010/011; durable jobs + mos-web presentation shell + UX-001 delivered. 629 tests green across 13 MOS packages + substrate @ Wave 4 TL acceptance.
 
 ## Verified substrate baseline
 
@@ -39,7 +39,10 @@ Status: Phases 1–2 core packages verified on main (contracts/identity/rights/c
 ☑ LAB-004 (TL-verified @ Wave 3 merge: SocialWorldModelStore append-only versioned chains + SimulatorEnginePort deterministic seed-REQUIRED → counterfactual-labeled SocialSimulationResult with §22 UncertaintySummary + per-metric envelopes; synthetic-response-function disclosure on every result; in-memory adapter disclosed deterministic double)
 ☑ LAB-005 (TL-verified @ Wave 3 merge: DynamicsModelStore versioned tenant-scoped population records + DynamicsStepPort — monotone fatigue, audience growth/decay, competitive displacement, signed novelty; no-op first-class)
 ☑ LAB-006 (TL-verified @ Wave 3 merge: TimeMachinePort with the three §20 modes — historical replay ≤ T; delayed-information replay ≤ T−L with adversarial leakage-prevention pins (1ms boundary probe, shuffled append order); counterfactual branching with machine-assigned ids, auditable lineage, runtime counterfactual re-validation; append-only immutable deep-frozen history; HistoricalObservation vs SimulationPrediction type+label separation per lock rules 29/30 with compile-time pins; cross-tenant branch-record bleed defect found+fixed (keyed per tenant+branch, adversarial test); 66/66 mos-lab tests)
-☐ LAB-007..018 (next waves)
+☑ LAB-007 (TL-verified @ Wave 4 merge: EnsemblePort — versioned tenant-scoped append-only ensembles, empty/single structurally rejected, explicit versioned weighting with NO silent defaults, aggregate interval forced to cover member spread; full computable §22 set: expected value, interval, per-metric disagreement, OOD-vs-declared-coverage flag, multi-seed robustness, calibration placeholder provenance-declared to LAB-018; outputs counterfactual-labeled)
+☑ LAB-008 (TL-verified @ Wave 4 merge: OffPolicyEvaluationPort — candidate + ensemble + Time Machine mode-2 history (≤ T−L lag spy-pinned) + versioned mission-compatible reward spec → estimated reward + documented finite-sample interval (ope-hoeffding-additive-v1) + §24 simulated-estimate disclosure; insufficient-history explicit verdict; reward version-mismatch fail-closed; mixed-spec defect found+fixed in member-level reward computation)
+☑ LAB-009 (TL-verified @ Wave 4 merge: StrategyLearningPort — simulation-experience-only, declared stopping policy (budget floor/plateau window/iteration cap), full learning trace with cost dimensions, counterfactual-labeled candidates with complete version provenance, seed-required bit-identical determinism pinned incl. fresh stacks)
+☐ LAB-010..018 (next waves — LAB-010/011 ready)
 
 ☑ STUDIO-001 (runtime: session lifecycle, multi-account consent gates, treatment version chains, no-publish asserted 4 ways; 32/32 tests incl. 002+005)
 ☑ STUDIO-002 (pluggable format framework + three initial format descriptors; reaction exposes §16 org decision points, no hard-coded layout)
@@ -50,12 +53,16 @@ Status: Phases 1–2 core packages verified on main (contracts/identity/rights/c
 ☑ STUDIO-007 (versioned organization loader over frozen AgentOrganization descriptors, compatibility verdicts, no silent substitution)
 ☑ STUDIO-010 (TL-verified @ Wave 3 merge: podcast format plugins v2 registered in FormatRegistry with full StudioFormat facets + §16-style organization edit decision points (podcast-edit-points, podcast-edit-pacing, participant-framing — no concrete choices encoded, pinned))
 ☑ STUDIO-011 (TL-verified @ Wave 3 merge: audio-podcast end-to-end — createSession → loadOrganization → join through REAL §15 authorities → adaptive interview with one capture round per Q/A → transcripts via ArtifactFactoryPort → conversation graph (Q/A nodes w/ provenance + agent traces) → edit graph (org decisions recorded, undeclared points rejected) → packaged StudioArtifactPackage with REAL graph refs; one-person synthetic-labeled + multi-account consent gates + treatment → new immutable version; 70/70 mos-studio tests)
-☐ STUDIO-008..014 (008 gated on LAB-013; next: 008/012/013 + mos-web scaffolding)
+☐ STUDIO-008..014 (008 gated on LAB-013 → LAB-012 → LAB-010/011; wave 5 targets LAB-010/011)
+
+☑ WEB-001 (TL-verified @ Wave 4 merge: packages/mos-web — Vite React shell per BROWSER-SHELL-REPLACEMENT-PLAN (pre-paint theme seed, error boundary, bootstrap-error screen, /ws+/api dev proxy), zero @zcode/* imports, presentation-only authority (src imports @mos/contracts types + own view ports only; domain imports only in testing/composition seam outside src/); vite build + serve HTTP 200 verified at harvest; 126 mos-web tests incl. structural presentation-only pins + headless-browser evidence)
+☑ UX-001 (TL-verified @ Wave 4 merge: MOS Home narrates the §2 complete loop (10 stages + 4 cooperating loops); Missions list/detail via MissionCatalogPort view port (lifecycle states, reward-spec versions, tenant context); create-mission INTENT through the port only — composition double records it; responsive, accessible, keyboard navigable; honest ReceiptUnavailablePanel for unresolvable receipts)
+☐ UX-002..006 (gated: UX-002 on STUDIO-014, UX-003 on LAB-017, UX-004 on PROD-001)
 
 ☐ BRIDGE-001..003
 ☐ PROD-001..004
 
-☐ UX-001..006
+☑ JOBS-001 (TL-verified @ Wave 4 merge: packages/mos-jobs — DurableJobRecord per §26/§30/§31 (six §26 kinds, artifact-ref inputs, lifecycle queued→running→succeeded|failed|cancelled|timed_out→dead_lettered, injectable clocks); JobQueuePort 10 methods — idempotent enqueue by client job key, FIFO leased claims (two claimers one wins), heartbeat renew, typed complete/fail/cancel, retries FROM typed failures with declared backoff, dead-letter with full append-only history, no existence leaks; JobEventSinkPort bridge with §30 actor enrichment; no scheduling authority (claimNextRunnable only; poller disclosed double); zero-drift compat pin vs real @mos/engines incl. real-runner runtime round-trip; ENG-003 defect fixed: adapter-resolved typed failures no longer complete as succeeded — 52+2 mos-jobs tests)
 
 ## Source-of-truth rule
 
