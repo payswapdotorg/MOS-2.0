@@ -1,3 +1,11 @@
+# LEGACY ZCODE SUBSTRATE POLICY
+# This file remains for the inherited ZCode architecture checker.
+# It is NOT the MOS v2.0 topology authority.
+# MOS topology/ownership/forbidden directions are frozen in:
+#   spec/mos-architecture-policy-v2.0.yaml
+#   spec/mos-module-registry-v2.0.yaml
+# Workers MUST read AGENTS.md and the MOS v2.0 specification set before changing managed MOS code.
+#
 version: 1
 
 # 存量模块先标记为 legacy；新模块或完成迁移的模块设置 managed: true。
