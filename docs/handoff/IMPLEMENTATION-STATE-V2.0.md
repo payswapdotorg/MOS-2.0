@@ -18,14 +18,24 @@ Status: bootstrap architecture only; application implementation has not yet star
 ☑ BOOT-003 (TL-verified 2026-10-07 @ merge 173a87e: packages/zcode-substrate-adapters with six narrow ports + working object-storage adapter + rpc facade + disclosed AGT-001..003 skeletons; harness/mos-boundary-check.mjs enforces 4 rules — self-test 12/12 fixtures, real-tree scan clean across mos-identity/mos-studio/zcode-substrate-adapters; 30/30 node:test; tsc+oxlint green. Prerequisite: build @zcode/rpc dist once (gitignored) before typechecking the adapters package.)
 ☑ STUDIO-001 interface spike + UX substrate audit (TL-verified 2026-10-07 @ merge 173a87e: packages/mos-studio types-only spike matching core-contracts-v2.0.yaml required fields; docs/architecture/UX-SUBSTRATE-AUDIT-v1.md with cited file paths; tsc+oxlint green. STUDIO-001 full runtime remains ☐ in Wave 1.)
 
-☐ CORE-001..005 (CORE-002 groundwork delivered @ merge f3e8004: packages/mos-identity domain types + repository port + in-memory adapter, 25/25 tests, tenant isolation + append-only revocation verified; full CORE-002 completion pending CORE-001 contracts reconciliation in Wave 1)
-☐ AGT-001..003
-☐ CAP-001
-☐ ENG-001..005
+☑ CORE-001 (TL-verified 2026-10-07 @ merge 0868fa3: packages/mos-contracts — full TypeScript projection of all 25 frozen contracts, 3-layer validation: satisfies-keyof const + compile-time type tests + vendored YAML-derived JSON fixture cross-check; 9/9 tests)
+☑ CORE-002 (packages/mos-identity — domain types + repository port + in-memory adapter; 25/25 tests, tenant isolation + append-only revocation verified @ f3e8004; import reconciliation to @mos/contracts tracked in Wave 2 RECONCILE)
+☑ CORE-003 (packages/mos-rights — grants/consent/provenance, append-only revocation, URL-never-implies-rights test-pinned; 29/29 tests)
+☑ CORE-004 (packages/mos-content — immutable versioned artifacts + lineage graph + rights gate + in-package storage port; 22/22 tests)
+☑ CORE-005 (packages/mos-missions — structured objectives + versioned mission-specific reward specs + lifecycle; 8/8 tests)
+☐ AGT-001..003 (Wave 2 — Worker B)
+☑ CAP-001 (packages/mos-capabilities — registry port + in-memory adapter, version history preserved, fail-closed unknowns, §5 seed fixtures; 8/8 tests)
+☑ ENG-001 (packages/mos-engines — fail-closed 9-item activation evidence gate, deterministic policy tie-break with one-dimension tests, tenant overrides, silent-replacement forbidden, historical resolvability + rollback)
+☑ ENG-002 (EngineAdapter invoke contract EngineJob→EngineResult + disclosed test double)
+☐ ENG-003..005 (Wave 3 — runner sandbox, golden benchmark, replacement proof)
 
-☐ LAB-001..018
+☐ LAB-001 (scaffold delivered @ Wave 1: packages/mos-lab types-only corpus contracts, 4/4 tests; full corpus runtime = Wave 2 Worker A)
+☐ LAB-002..018
 
-☐ STUDIO-001..014
+☑ STUDIO-001 (runtime: session lifecycle, multi-account consent gates, treatment version chains, no-publish asserted 4 ways; 32/32 tests incl. 002+005)
+☑ STUDIO-002 (pluggable format framework + three initial format descriptors; reaction exposes §16 org decision points, no hard-coded layout)
+☑ STUDIO-005 (capture ports + disclosed in-memory double)
+☐ STUDIO-003..004, STUDIO-006..014 (Wave 2: 003/006/007; later waves: 004, 008+ — 008 gated on LAB-013)
 
 ☐ BRIDGE-001..003
 ☐ PROD-001..004
@@ -40,3 +50,6 @@ A green Work Item requires:
 source + tests + runtime + browser/deployment evidence as applicable.
 
 No chat transcript, worker report or screenshot can override a repository contradiction.
+
+## Reconciliation debt (tracked)
+- No MOS package imports @mos/contracts yet (all align to frozen YAML with local types, test-pinned field-for-field). Wave 2 RECONCILE items: A reconciles mos-identity/rights/content/missions/lab; B reconciles mos-capabilities/engines; C reconciles mos-studio.
