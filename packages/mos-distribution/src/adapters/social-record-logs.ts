@@ -25,6 +25,10 @@ import type {
 } from "../contracts/distribution-record.js";
 import type { SocialDistributionId } from "../contracts/ids.js";
 import type {
+  SocialRateLimitObservationFilter,
+  SocialRateLimitObservationRecord,
+} from "../contracts/social-rate-limit.js";
+import type {
   SocialObservationFilter,
   SocialObservationRecord,
   SocialPublicationFilter,
@@ -42,6 +46,8 @@ export interface SocialRecordLogStore {
   appendRetraction(record: SocialRetractionRecord): void;
   appendObservation(record: SocialObservationRecord): void;
   appendRestriction(record: SocialRestrictionRecord): void;
+  /** Appends one immutable transport-observed rate-limit posture record (SOCIAL-002..006). */
+  appendRateLimitObservation(record: SocialRateLimitObservationRecord): void;
   /** Appends one immutable §30 distribution record (every attributable attempt). */
   appendDistributionRecord(record: SocialDistributionRecord): void;
 
@@ -59,6 +65,11 @@ export interface SocialRecordLogStore {
     tenantId: TenantId,
     filter?: SocialDistributionRecordFilter,
   ): readonly SocialDistributionRecord[];
+  /** The tenant-scoped append-only rate-limit observation log (ascending record order). */
+  listRateLimitObservations(
+    tenantId: TenantId,
+    filter?: SocialRateLimitObservationFilter,
+  ): readonly SocialRateLimitObservationRecord[];
   /** One §30 record by id, or `undefined` when unknown IN THIS TENANT. */
   getDistributionRecord(
     tenantId: TenantId,
@@ -89,6 +100,7 @@ export function createSocialRecordLogStore(): SocialRecordLogStore {
   const retractions = new Map<string, SocialRetractionRecord[]>();
   const observations = new Map<string, SocialObservationRecord[]>();
   const restrictions = new Map<string, SocialRestrictionRecord[]>();
+  const rateLimitObservations = new Map<string, SocialRateLimitObservationRecord[]>();
   const auditLog = new Map<string, SocialDistributionRecord[]>();
 
   function append<T extends TenantScoped>(log: Map<string, T[]>, record: T): void {
@@ -104,6 +116,7 @@ export function createSocialRecordLogStore(): SocialRecordLogStore {
     appendRetraction: (record) => append(retractions, record),
     appendObservation: (record) => append(observations, record),
     appendRestriction: (record) => append(restrictions, record),
+    appendRateLimitObservation: (record) => append(rateLimitObservations, record),
     appendDistributionRecord: (record) => append(auditLog, record),
 
     listPublications(tenantId, filter = {}) {
@@ -130,6 +143,16 @@ export function createSocialRecordLogStore(): SocialRecordLogStore {
       const log = restrictions.get(tenantId as string) ?? [];
       const out = log.filter(
         (record) => filter.channelRef === undefined || (record.channelRef as string) === (filter.channelRef as string),
+      );
+      return applyLimit(out, filter.limit);
+    },
+
+    listRateLimitObservations(tenantId, filter = {}) {
+      const log = rateLimitObservations.get(tenantId as string) ?? [];
+      const out = log.filter(
+        (record) =>
+          (filter.channelRef === undefined || (record.channelRef as string) === (filter.channelRef as string)) &&
+          (filter.operation === undefined || record.operation === filter.operation),
       );
       return applyLimit(out, filter.limit);
     },

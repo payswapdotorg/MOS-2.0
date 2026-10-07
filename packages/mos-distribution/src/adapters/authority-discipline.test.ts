@@ -1,10 +1,16 @@
 /**
- * AUTHORITY DISCIPLINE (SOCIAL-001 / §3): social platforms are NEVER MOS
- * authorities — MOS records what platforms report, never invents it; the
- * distribution authority exposes PROVIDER-NEUTRAL contracts only and
- * provider specifics live in channel DATA, not code. Structural pins:
- * - no REAL provider/vendor name appears anywhere in the package source
- *   (not even in test data — fixtures use fictional providers:
+ * AUTHORITY DISCIPLINE (SOCIAL-001 / §3, extended per provider in W7-C —
+ * SOCIAL-002..006): social platforms are NEVER MOS authorities — MOS
+ * records what platforms report, never invents it; the distribution
+ * authority exposes PROVIDER-NEUTRAL contracts only and provider
+ * specifics live in DATA, not code. Structural pins:
+ * - the FIVE real provider names (W7-C adapter subtrees) appear ONLY
+ *   inside their own `src/adapters/providers/<provider>/` subtree — never
+ *   in the shared authority-facing surfaces (contracts/, ports/, shared
+ *   adapters, errors, index) and never in another provider's subtree
+ *   (cross-subtree isolation); each subtree names ONLY its own platform;
+ * - every OTHER real vendor name is forbidden EVERYWHERE in the package
+ *   source (not even in test data — fixtures use fictional providers:
  *   aurora-social / cinder-social / dune-social);
  * - the FICTIONAL fixture provider names appear ONLY in the disclosed
  *   data/composition seams (testing/**, *.test.ts) — never in the
@@ -17,7 +23,7 @@
  * - transport determinism: the double is a pure function of
  *   (request, routes) — bit-for-bit reproducible;
  * - port method budgets ≤ 12 and the runtime export budget of the public
- *   surface (the documented 8 functions + 4 constants + 1 error class);
+ *   surface (the documented 9 functions + 8 constants + 1 error class);
  * - the package claims the social-distribution authority ONLY: no other
  *   authority's vocabulary leaks into the exported surface.
  *
@@ -125,20 +131,90 @@ function stripCommentsAndStrings(source: string): string {
   return out;
 }
 
-test("authority discipline: no REAL provider/vendor name appears anywhere in the package source", () => {
+test("authority discipline: the FIVE real provider names appear ONLY inside their own adapter subtrees (W7-C)", () => {
   const sources = loadSources();
-  assert.ok(sources.length >= 25, `expected the full source tree, found ${sources.length}`);
-  // NOTE: this test file itself is EXCLUDED — the denylist below must name
-  // the names to forbid them; every OTHER file (authority-facing, data
-  // seam, and test) is scanned.
+  assert.ok(sources.length >= 40, `expected the full source tree, found ${sources.length}`);
+  // NOTE: this test file itself is EXCLUDED — the discipline's tokens are
+  // named here to forbid them elsewhere; every OTHER file (authority-
+  // facing, data seam, and test) is scanned.
   const scanned = sources.filter(
     (file) => !file.relative.endsWith("adapters/authority-discipline.test.ts"),
   );
-  const realProviderNames = [
-    "you" + "tube",
-    "insta" + "gram",
-    "face" + "book",
-    "tik" + "tok",
+  // The five W7-C adapter subtrees and the token that names each platform.
+  // Each provider's own name lives as DATA inside its subtree — provider
+  // composition happens there; every OTHER file must stay token-free.
+  const subtrees: ReadonlyArray<{ readonly subtree: string; readonly token: string }> = [
+    { subtree: "adapters/providers/youtube", token: "you" + "tube" },
+    { subtree: "adapters/providers/instagram", token: "insta" + "gram" },
+    { subtree: "adapters/providers/facebook-pages", token: "face" + "book" },
+    { subtree: "adapters/providers/tiktok", token: "tik" + "tok" },
+    { subtree: "adapters/providers/x", token: "provi" + "der:x" },
+  ];
+  for (const file of scanned) {
+    const lower = file.text.toLowerCase();
+    for (const { subtree, token } of subtrees) {
+      const ownSubtree = file.relative.startsWith(`${subtree}/`);
+      if (ownSubtree) {
+        // A provider's own token belongs in its own subtree.
+        continue;
+      }
+      const appears = token.includes(":")
+        ? lower.includes(token)
+        : new RegExp(`\\b${token}\\b`, "i").test(lower);
+      assert.equal(
+        appears,
+        false,
+        `${file.relative}: provider token "${token}" must not appear outside its adapter subtree — provider specifics never leak into authority-facing surfaces`,
+      );
+    }
+  }
+  // The scan is wired: every subtree exists, carries sources, and names
+  // its own platform (self-containment — the profiles are subtree DATA).
+  for (const { subtree, token } of subtrees) {
+    const subtreeFiles = scanned.filter((file) => file.relative.startsWith(`${subtree}/`));
+    assert.ok(subtreeFiles.length >= 4, `expected the ${subtree} subtree sources`);
+    assert.ok(
+      subtreeFiles.some((file) => file.text.toLowerCase().includes(token)),
+      `expected the ${subtree} subtree to name its own platform (scan wiring)`,
+    );
+  }
+});
+
+test("authority discipline: no provider subtree carries ANOTHER provider's token (cross-subtree isolation)", () => {
+  const sources = loadSources();
+  const subtrees: ReadonlyArray<{ readonly subtree: string; readonly token: string }> = [
+    { subtree: "adapters/providers/youtube", token: "you" + "tube" },
+    { subtree: "adapters/providers/instagram", token: "insta" + "gram" },
+    { subtree: "adapters/providers/facebook-pages", token: "face" + "book" },
+    { subtree: "adapters/providers/tiktok", token: "tik" + "tok" },
+    { subtree: "adapters/providers/x", token: "provi" + "der:x" },
+  ];
+  for (const { subtree } of subtrees) {
+    const subtreeFiles = sources.filter((file) => file.relative.startsWith(`${subtree}/`));
+    assert.ok(subtreeFiles.length >= 4, `expected the ${subtree} subtree sources`);
+    for (const file of subtreeFiles) {
+      const lower = file.text.toLowerCase();
+      const foreign = subtrees.filter(
+        (other) => other.subtree !== subtree && lower.includes(other.token),
+      );
+      assert.equal(
+        foreign.length,
+        0,
+        `${file.relative}: carries another provider's token (${foreign.map((entry) => entry.subtree).join(", ")}) — provider subtrees are isolated`,
+      );
+    }
+  }
+});
+
+test("authority discipline: no OTHER real vendor name appears anywhere in the package source", () => {
+  const sources = loadSources();
+  // Vendors OTHER than the five adapter-subtree platforms are forbidden
+  // EVERYWHERE — including inside the provider subtrees: each subtree may
+  // name ONLY its own platform (operator/vendor names included).
+  const scanned = sources.filter(
+    (file) => !file.relative.endsWith("adapters/authority-discipline.test.ts"),
+  );
+  const realVendorNames = [
     "twit" + "ter",
     "x" + ".com",
     "str" + "ipe",
@@ -156,12 +232,12 @@ test("authority discipline: no REAL provider/vendor name appears anywhere in the
   ];
   for (const file of scanned) {
     const lower = file.text.toLowerCase();
-    for (const name of realProviderNames) {
+    for (const name of realVendorNames) {
       const pattern = new RegExp(`\\b${name}\\b`, "i");
       assert.equal(
         pattern.test(lower),
         false,
-        `${file.relative}: real provider name "${name}" must not appear — provider specifics live in DATA, never in code`,
+        `${file.relative}: real vendor name "${name}" must not appear — provider specifics live in DATA, never in code`,
       );
     }
   }
@@ -331,7 +407,7 @@ test("authority discipline: every port stays within the ≤12-method budget", ()
   }
 });
 
-test("authority discipline: the public-surface runtime export budget (8 functions + 4 constants + 1 error class)", () => {
+test("authority discipline: the public-surface runtime export budget (9 functions + 8 constants + 1 error class)", () => {
   const entries = Object.entries(publicSurface);
   const classes = entries.filter(
     ([, value]) => typeof value === "function" && value.prototype instanceof Error,
@@ -339,17 +415,20 @@ test("authority discipline: the public-surface runtime export budget (8 function
   const functions = entries.filter(
     ([, value]) => typeof value === "function" && !(value.prototype instanceof Error),
   );
-  // Constants: the 3 frozen vocabulary objects + the transport-source label string.
+  // Constants: the 7 frozen vocabulary objects (operations, presentation
+  // kinds, rights-action mapping, operation shapes, artifact type
+  // families, auth flow kinds, rate-limit postures) + the transport-source
+  // label string (W7-C added the provider-profile/rate-limit vocabularies).
   const constants = entries.filter(
     ([, value]) =>
       (typeof value === "object" && value !== null) ||
       (typeof value === "string" && /^[a-z0-9-]+$/.test(value)),
   );
-  assert.equal(functions.length, 8);
+  assert.equal(functions.length, 9);
   assert.equal(classes.length, 1);
-  assert.equal(constants.length, 4);
+  assert.equal(constants.length, 8);
   // Everything else is type-only (erased at runtime).
-  assert.equal(entries.length, 13);
+  assert.equal(entries.length, 18);
 });
 
 test("authority discipline: the composition seam composes REAL integrations + the REAL rights rule + disclosed doubles (wiring pinned)", () => {

@@ -1,5 +1,6 @@
 /**
- * Public surface of `@mos/distribution` (MOS v2.0 SOCIAL-001).
+ * Public surface of `@mos/distribution` (MOS v2.0 SOCIAL-001 + the
+ * SOCIAL-002..006 provider-profile extension).
  *
  * The social-distribution authority: the provider-neutral social adapter
  * contract (SocialAdapterPort — publish/schedule/read-observations/
@@ -9,19 +10,31 @@
  * policy-gate seams that precede every provider call, the transport seam
  * (disclosed in-memory double), typed errors, and the platform-said
  * output records (publications, schedules, retractions, observations,
- * restrictions — §30-observable, tenant-scoped, source-attributed).
+ * restrictions, rate-limit postures — §30-observable, tenant-scoped,
+ * source-attributed).
+ *
+ * W7-C adds the PROVIDER-NEUTRAL profile/rate-limit contracts the five
+ * per-provider adapter subtrees (src/adapters/providers/* — subpath
+ * exports `@mos/distribution/providers/<provider>`) declare their
+ * platform DATA against: SocialProviderProfile (capability matrix + auth
+ * model KIND + coarse publicly-known operation shapes + evidence basis),
+ * the closed vocabularies it selects from, and the transport-observed
+ * rate-limit posture records.
  *
  * AUTHORITY DISCIPLINE (test-pinned): this surface is PROVIDER-NEUTRAL.
  * No provider name and no provider-specific type appears in any exported
  * contract, port, error or adapter — provider specifics live exclusively
- * in the DATA records tenants register at runtime. Test fixtures
- * (fictional providers) are deliberately NOT exported from this index:
- * provider data never becomes package surface.
+ * in the DATA profiles of the isolated adapter subtrees and in the DATA
+ * records tenants register at runtime. Test fixtures (fictional
+ * providers) are deliberately NOT exported from this index: provider
+ * data never becomes package surface.
  *
- * Export budget: 8 runtime functions (5 factories + the canonical
+ * Export budget: 9 runtime functions (5 factories + the canonical
  * capability-matrix projection helper + the two documented
- * rights-subject derivations) + 4 frozen constants + 1 error class —
- * pinned by test; the 12-public-method policy budget applies PER PORT.
+ * rights-subject derivations + the documented artifact-type-family
+ * derivation) + 8 frozen constants (the 7 closed vocabularies + the
+ * transport-source label) + 1 error class — pinned by test; the
+ * 12-public-method policy budget applies PER PORT.
  */
 
 // ---- Contracts: identifiers and handles ----
@@ -31,6 +44,7 @@ export type {
   SocialDistributionId,
   SocialObservationId,
   SocialPublicationId,
+  SocialRateLimitObservationId,
   SocialRetractionId,
   SocialRestrictionId,
   SocialScheduleId,
@@ -83,6 +97,30 @@ export type {
   SocialRetractionRecord,
   SocialScheduleRecord,
 } from "./contracts/social-record.js";
+
+// ---- Contracts: the provider-profile + rate-limit extension (SOCIAL-002..006) ----
+// Provider-NEUTRAL only: the five real-platform profiles live as DATA in
+// their isolated adapter subtrees (subpath exports), never here.
+export type {
+  SocialArtifactTypeFamily,
+  SocialAuthFlowKind,
+  SocialOperationShape,
+  SocialOperationShapeDeclaration,
+  SocialProviderAuthDeclaration,
+  SocialProviderProfile,
+} from "./contracts/provider-profile.js";
+export {
+  SOCIAL_ARTIFACT_TYPE_FAMILIES,
+  SOCIAL_AUTH_FLOW_KINDS,
+  SOCIAL_OPERATION_SHAPES,
+  socialArtifactTypeFamily,
+} from "./contracts/provider-profile.js";
+export type {
+  SocialRateLimitObservationFilter,
+  SocialRateLimitObservationRecord,
+  SocialRateLimitPosture,
+} from "./contracts/social-rate-limit.js";
+export { SOCIAL_RATE_LIMIT_POSTURES } from "./contracts/social-rate-limit.js";
 
 // ---- Ports ----
 export type { SocialAdapterPort } from "./ports/social-adapter.port.js";

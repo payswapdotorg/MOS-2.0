@@ -196,6 +196,24 @@ export const SECOND_ARTIFACT: ArtifactRef = Object.freeze({
   storageRef: "storage:fixture-video-2" as StorageRef,
 });
 
+/** An IMAGE artifact ref (provider-neutral — the image type family). */
+export const IMAGE_ARTIFACT: ArtifactRef = Object.freeze({
+  ...FIXTURE_ARTIFACT,
+  artifactId: "artifact-fixture-image-1" as ArtifactId,
+  digest: "sha256:fixture-digest-image-1" as ContentDigest,
+  type: "image/jpeg" as ArtifactType,
+  storageRef: "storage:fixture-image-1" as StorageRef,
+});
+
+/** A TEXT artifact ref (provider-neutral — the text type family). */
+export const TEXT_ARTIFACT: ArtifactRef = Object.freeze({
+  ...FIXTURE_ARTIFACT,
+  artifactId: "artifact-fixture-text-1" as ArtifactId,
+  digest: "sha256:fixture-digest-text-1" as ContentDigest,
+  type: "text/plain" as ArtifactType,
+  storageRef: "storage:fixture-text-1" as StorageRef,
+});
+
 // ---------------------------------------------------------------------------
 // Presentation + channel input builders (DATA)
 // ---------------------------------------------------------------------------

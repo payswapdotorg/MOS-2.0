@@ -53,16 +53,20 @@ import type {
   SocialRetractionRecord,
   SocialScheduleRecord,
 } from "../contracts/social-record.js";
+import type {
+  SocialRateLimitObservationFilter,
+  SocialRateLimitObservationRecord,
+} from "../contracts/social-rate-limit.js";
 import type { SocialDistributionId } from "../contracts/ids.js";
 
 /**
- * The social adapter call surface. 10 public methods (policy budget: 12):
- * the five operations + five tenant-scoped append-only log reads
- * (publications, observations, restriction observations, the §30 audit
- * log, and one §30 record by id). The schedule/retraction logs have no
- * dedicated read method yet — those operations' outputs + the §30 audit
- * log cover this wave's evidence, and the surface grows with
- * SOCIAL-002..006 within the budget.
+ * The social adapter call surface. 11 public methods (policy budget: 12):
+ * the five operations + six tenant-scoped append-only log reads
+ * (publications, observations, restriction observations, rate-limit
+ * observations, the §30 audit log, and one §30 record by id). The
+ * schedule/retraction logs have no dedicated read method yet — those
+ * operations' outputs + the §30 audit log cover this wave's evidence, and
+ * the surface grows with later SOCIAL items within the budget.
  */
 export interface SocialAdapterPort {
   /** Publishes one artifact ref with a declared presentation. */
@@ -86,6 +90,18 @@ export interface SocialAdapterPort {
   listRestrictions(
     request: ListSocialRestrictionsInput,
   ): SocialAdapterOutcome<readonly SocialRestrictionRecord[]>;
+
+  /**
+   * Reads the tenant-scoped append-only log of transport-observed
+   * RATE-LIMIT postures (SOCIAL-002..006): what the transport observed,
+   * verbatim, with observedAt + provider refs + the honest source label —
+   * never invented numbers, and DECLAREDLY simulated postures stay
+   * self-labeled.
+   */
+  listRateLimitObservations(
+    tenantId: TenantId,
+    filter?: SocialRateLimitObservationFilter,
+  ): readonly SocialRateLimitObservationRecord[];
 
   /** The tenant-scoped append-only publication log (ascending record order). */
   listPublications(tenantId: TenantId, filter?: SocialPublicationFilter): readonly SocialPublicationRecord[];

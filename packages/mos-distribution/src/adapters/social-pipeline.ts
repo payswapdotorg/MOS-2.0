@@ -45,15 +45,18 @@ import type {
   SocialAdapterOutcome,
   SocialDistributionFailure,
   SocialDistributionRecord,
+  SocialWarning,
 } from "../contracts/distribution-record.js";
 import type { SocialChannel } from "../contracts/social-channel.js";
 import type { SocialDistributionId } from "../contracts/ids.js";
+import type { SocialRateLimitObservationId } from "../contracts/ids.js";
 import type { ArtifactRef } from "@mos/content";
 import type { SocialChannelRegistryPort } from "../ports/social-channel-registry.port.js";
 import type { SocialPolicyGatePort } from "../ports/social-policy-gate.port.js";
 import type { SocialRightsGatePort } from "../ports/social-rights-gate.port.js";
 import type { SocialTransportPort } from "../ports/social-transport.port.js";
 import type { SocialRecordLogStore } from "./social-record-logs.js";
+import { parseRateLimitObservation } from "./platform-response.js";
 import type { PlatformRecordContext } from "./platform-response.js";
 import { assertVocabularyMember, deepFreeze, defaultNow } from "./registry-support.js";
 import { RIGHTS_ACTIONS } from "./social-request-validation.js";
@@ -91,6 +94,8 @@ export interface SocialPipelineDeps {
   readonly now: () => string;
   /** §30 request-id factory (deterministic tests inject their own). */
   readonly nextId: () => SocialDistributionId;
+  /** Rate-limit observation record-id factory (SOCIAL-002..006). */
+  readonly nextRateLimitId: () => SocialRateLimitObservationId;
 }
 
 /** The pipeline surface the adapter runtime drives. Internal helper. */
@@ -294,6 +299,8 @@ export function createSocialPipeline(deps: SocialPipelineDeps): SocialPipeline {
     };
     // The artifact travels as its REFERENCE inside the small
     // control-plane parameters (never media bytes — structurally pinned).
+    // The caller's optional IDEMPOTENCY KEY rides the seam request verbatim
+    // (the provider transport bindings' replay discipline — SOCIAL-002..006).
     const response = deps.transport.send({
       requestId: context.id,
       scope: context.channel.scope,
@@ -302,6 +309,7 @@ export function createSocialPipeline(deps: SocialPipelineDeps): SocialPipeline {
       instanceRef: context.channel.instanceRef,
       operation,
       parameters,
+      ...(request.idempotencyKey !== undefined ? { idempotencyKey: request.idempotencyKey } : {}),
     });
     if (!response.ok) {
       const record = buildRecord(
@@ -315,6 +323,32 @@ export function createSocialPipeline(deps: SocialPipelineDeps): SocialPipeline {
       deps.logs.appendDistributionRecord(record);
       return { outcome: "failed", record, failure: response.failure };
     }
+    // RATE-LIMIT OBSERVATION (SOCIAL-002..006): the transport reported a
+    // posture — record it VERBATIM as an immutable §30-style observation
+    // (never invented; self-labeled source). A malformed auxiliary posture
+    // is a WARNING — it can neither fail a completed platform interaction
+    // nor be silently dropped.
+    const rateLimitWarnings: SocialWarning[] = [];
+    const rateLimit = parseRateLimitObservation(
+      response.output,
+      {
+        scope: context.channel.scope,
+        channelRef: context.channel.id,
+        providerId: context.channel.providerId,
+        source: response.source,
+        recordedAt: now(),
+      },
+      operation,
+      deps.nextRateLimitId,
+    );
+    if (rateLimit.kind === "record") {
+      deps.logs.appendRateLimitObservation(rateLimit.record);
+    } else if (rateLimit.kind === "malformed") {
+      rateLimitWarnings.push({
+        code: "rate-limit-observation-untypable",
+        message: `transport-reported rate-limit posture could not be typed (${rateLimit.reason}) — surfaced, never invented`,
+      });
+    }
     const typed = typeOutput({ output: response.output, recordedAt: now(), source: response.source });
     if (!typed.ok) {
       const record = buildRecord(
@@ -322,14 +356,21 @@ export function createSocialPipeline(deps: SocialPipelineDeps): SocialPipeline {
         context.operationSupport,
         context.policyRef,
         typed.failure,
-        [...response.warnings],
+        [...response.warnings, ...rateLimitWarnings],
         response.source,
       );
       deps.logs.appendDistributionRecord(record);
       return { outcome: "failed", record, failure: typed.failure };
     }
     typed.append();
-    const record = buildRecord(recordBase, context.operationSupport, context.policyRef, null, [...response.warnings], response.source);
+    const record = buildRecord(
+      recordBase,
+      context.operationSupport,
+      context.policyRef,
+      null,
+      [...response.warnings, ...rateLimitWarnings],
+      response.source,
+    );
     deps.logs.appendDistributionRecord(record);
     return { outcome: "completed", record, output: typed.value };
   }

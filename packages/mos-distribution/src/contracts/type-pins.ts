@@ -1,5 +1,6 @@
 /**
- * Compile-time structural pins for the distribution contracts (SOCIAL-001).
+ * Compile-time structural pins for the distribution contracts (SOCIAL-001
+ * + the SOCIAL-002..006 provider-profile extension).
  *
  * TYPE-LEVEL assertions only — they emit no runtime code and fail `tsc`
  * (therefore every build and test run) the moment a contract drifts. The
@@ -22,8 +23,15 @@
  *    distinct from `unsupported`.
  * 5. The rights/policy gate precedence surface: every operation input
  *    extends SocialOperationRequest (carries the RightsContextRef).
+ * 6. W7-C provider-profile pins: SocialProviderProfile,
+ *    SocialProviderAuthDeclaration, SocialOperationShapeDeclaration and
+ *    SocialRateLimitObservationRecord have EXACTLY the pinned keysets —
+ *    the auth model is the canonical AuthenticationModel (a KIND
+ *    declaration; there is NO credential field on a profile), and the
+ *    rate-limit record is pure observed posture (no causal semantics).
  */
 
+import type { AuthenticationModel, JsonObject } from "@mos/contracts";
 import type { ArtifactRef } from "@mos/content";
 import type { CapabilitySupportLevel } from "@mos/integrations";
 
@@ -50,6 +58,12 @@ import type {
 } from "./ids.js";
 import type { SocialDistributionRecord } from "./distribution-record.js";
 import type { SocialTransportRequest } from "../ports/social-transport.port.js";
+import type {
+  SocialOperationShapeDeclaration,
+  SocialProviderAuthDeclaration,
+  SocialProviderProfile,
+} from "./provider-profile.js";
+import type { SocialRateLimitObservationRecord } from "./social-rate-limit.js";
 
 /** Compile-time assertion helper: the expression must resolve to `true`. */
 export type Expect<T extends true> = T;
@@ -68,35 +82,35 @@ export type ExactKeyset<T, K> = Equal<keyof T, K>;
 type _PublishInputKeyset = Expect<
   ExactKeyset<
     PublishSocialPostInput,
-    "scope" | "channelRef" | "actor" | "rightsContextRef" | "artifact" | "presentation"
+    "scope" | "channelRef" | "actor" | "rightsContextRef" | "idempotencyKey" | "artifact" | "presentation"
   >
 >;
 
 type _ScheduleInputKeyset = Expect<
   ExactKeyset<
     ScheduleSocialPostInput,
-    "scope" | "channelRef" | "actor" | "rightsContextRef" | "artifact" | "presentation" | "scheduledAt"
+    "scope" | "channelRef" | "actor" | "rightsContextRef" | "idempotencyKey" | "artifact" | "presentation" | "scheduledAt"
   >
 >;
 
 type _ReadObservationsInputKeyset = Expect<
   ExactKeyset<
     ReadSocialObservationsInput,
-    "scope" | "channelRef" | "actor" | "rightsContextRef" | "subjectRef"
+    "scope" | "channelRef" | "actor" | "rightsContextRef" | "idempotencyKey" | "subjectRef"
   >
 >;
 
 type _DeleteInputKeyset = Expect<
   ExactKeyset<
     DeleteSocialPostInput,
-    "scope" | "channelRef" | "actor" | "rightsContextRef" | "postRef"
+    "scope" | "channelRef" | "actor" | "rightsContextRef" | "idempotencyKey" | "postRef"
   >
 >;
 
 type _ListRestrictionsInputKeyset = Expect<
   ExactKeyset<
     ListSocialRestrictionsInput,
-    "scope" | "channelRef" | "actor" | "rightsContextRef"
+    "scope" | "channelRef" | "actor" | "rightsContextRef" | "idempotencyKey"
   >
 >;
 
@@ -195,6 +209,7 @@ type _TransportRequestKeyset = Expect<
     | "instanceRef"
     | "operation"
     | "parameters"
+    | "idempotencyKey"
   >
 >;
 
@@ -244,4 +259,54 @@ type _ListRestrictionsCarriesRightsFrame = Expect<
 // identity, not a structural twin — the W2-A reconciliation).
 type _ArtifactIsCanonical = Expect<
   Equal<PublishSocialPostInput["artifact"], ArtifactRef>
+>;
+
+// --- (6) W7-C provider-profile pins ------------------------------------------
+
+type _ProviderProfileKeyset = Expect<
+  ExactKeyset<
+    SocialProviderProfile,
+    "providerId" | "displayName" | "capabilityMatrix" | "auth" | "operationShapes" | "evidenceBasis"
+  >
+>;
+
+type _ProviderAuthDeclarationKeyset = Expect<
+  ExactKeyset<SocialProviderAuthDeclaration, "model" | "flows" | "basis">
+>;
+
+type _OperationShapeDeclarationKeyset = Expect<
+  ExactKeyset<
+    SocialOperationShapeDeclaration,
+    "operation" | "shapes" | "acceptedArtifactTypeFamilies" | "acceptedPresentationKinds" | "basis" | "note"
+  >
+>;
+
+// The profile's auth model IS the canonical AuthenticationModel (a KIND
+// declaration — and that canonical shape has NO credential-value field).
+type _ProfileAuthModelIsCanonical = Expect<
+  Equal<SocialProviderAuthDeclaration["model"], AuthenticationModel>
+>;
+type _AuthModelKeyset = Expect<ExactKeyset<AuthenticationModel, "kind" | "managedBy">>;
+
+type _RateLimitObservationRecordKeyset = Expect<
+  ExactKeyset<
+    SocialRateLimitObservationRecord,
+    | "id"
+    | "scope"
+    | "channelRef"
+    | "providerId"
+    | "operation"
+    | "posture"
+    | "observed"
+    | "observedAt"
+    | "providerRefs"
+    | "recordedAt"
+    | "source"
+  >
+>;
+
+// The rate-limit observation record's payload is the canonical JsonObject
+// (verbatim platform-said data, structurally pure of causal semantics).
+type _RateLimitObservedIsCanonicalJson = Expect<
+  Equal<SocialRateLimitObservationRecord["observed"], JsonObject>
 >;

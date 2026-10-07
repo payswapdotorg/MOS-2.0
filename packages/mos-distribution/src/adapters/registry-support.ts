@@ -19,6 +19,7 @@ import type { DistributionErrorCode } from "../errors.js";
 export type DistributionSurface =
   | "social-channel"
   | "social-request"
+  | "provider-profile"
   | "distribution-composition";
 
 /** The `invalid-*` error code of one surface. */
@@ -28,6 +29,8 @@ export function invalidCodeOf(surface: DistributionSurface): DistributionErrorCo
       return "invalid-social-channel";
     case "social-request":
       return "invalid-social-request";
+    case "provider-profile":
+      return "invalid-provider-profile";
     case "distribution-composition":
       return "invalid-distribution-composition";
   }

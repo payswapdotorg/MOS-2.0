@@ -34,7 +34,13 @@ import {
   assertVocabularyMember,
 } from "./registry-support.js";
 
-const BASE_REQUEST_FIELDS = ["scope", "channelRef", "actor", "rightsContextRef"] as const;
+const BASE_REQUEST_FIELDS = [
+  "scope",
+  "channelRef",
+  "actor",
+  "rightsContextRef",
+  "idempotencyKey",
+] as const;
 const PUBLISH_FIELDS = [...BASE_REQUEST_FIELDS, "artifact", "presentation"] as const;
 const SCHEDULE_FIELDS = [...PUBLISH_FIELDS, "scheduledAt"] as const;
 const READ_OBSERVATIONS_FIELDS = [...BASE_REQUEST_FIELDS, "subjectRef"] as const;
@@ -66,6 +72,9 @@ function validateBase(request: SocialOperationRequest, fields: readonly string[]
   assertNonBlankString(request.channelRef, "channelRef", "social-request");
   assertNonBlankString(request.actor, "actor", "social-request");
   assertNonBlankString(request.rightsContextRef, "rightsContextRef", "social-request");
+  if (request.idempotencyKey !== undefined) {
+    assertNonBlankString(request.idempotencyKey, "idempotencyKey", "social-request");
+  }
 }
 
 function validateArtifact(value: unknown): ArtifactRef {
