@@ -3,12 +3,32 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MOS v2.0 social adapter contract + capability matrix (SOCIAL-001) — the social-distribution authority: provider-neutral social surface (SocialAdapterPort: publish/schedule/read-observations/delete/list-restrictions — typed inputs carrying CONTENT ARTIFACT REFS, never inline media) over versioned tenant-scoped SocialChannel records whose SocialProviderCapability matrix declares every operation supported/unsupported/unknown via the INTEG-001 provider-contract vocabulary (parity is never assumed: undeclared → typed refusal; UNKNOWN is preserved first-class with its own typed outcome). Rights AND policy gates PRECEDE every provider call: every invocation requires a RightsContextRef evaluated by the REAL injected evaluateRights (@mos/rights, denial reasons verbatim), and the declared PolicyGatePort seam (frozen contract shape; disclosed in-memory fail-closed double — the policy package arrives in a later wave). SocialObservation records are §30-observable, tenant-scoped, source-attributed WHAT-THE-PLATFORM-SAID records — never invented, never transformed into causal claims (attribution/causality is ATTRIB-001's later domain). No real network: SocialTransportPort is a declared seam with a disclosed deterministic self-labelling in-memory double; §30 records cover every attributable attempt. Provider specifics live in DATA, never in code (test-pinned).",
+  "description": "MOS v2.0 social adapter contract + capability matrix (SOCIAL-001) + the five provider adapter subtrees (SOCIAL-002..006) — the social-distribution authority: provider-neutral social surface (SocialAdapterPort: publish/schedule/read-observations/delete/list-restrictions — typed inputs carrying CONTENT ARTIFACT REFS, never inline media) over versioned tenant-scoped SocialChannel records whose SocialProviderCapability matrix declares every operation supported/unsupported/unknown via the INTEG-001 provider-contract vocabulary (parity is never assumed: undeclared → typed refusal; UNKNOWN is preserved first-class with its own typed outcome). Rights AND policy gates PRECEDE every provider call: every invocation requires a RightsContextRef evaluated by the REAL injected evaluateRights (@mos/rights, denial reasons verbatim), and the declared PolicyGatePort seam (frozen contract shape; disclosed in-memory fail-closed double — the policy package arrives in a later wave). SocialObservation records are §30-observable, tenant-scoped, source-attributed WHAT-THE-PLATFORM-SAID records — never invented, never transformed into causal claims (attribution/causality is ATTRIB-001's later domain). No real network: SocialTransportPort is a declared seam with a disclosed deterministic self-labelling in-memory double; §30 records cover every attributable attempt. W7-C provider adapters (subpath exports ./providers/*): five isolated per-provider subtrees declare conservative public-knowledge provider profiles AS DATA on the SOCIAL-001 contract (per-operation capability matrix — UNKNOWN beats guessing; auth model KIND as data, NEVER credentials; coarse publicly-known operation shapes with the claim basis documented per subtree; NO fabricated provider internals — no invented endpoint URLs, rate-limit numbers or error taxonomies), enforce adapter-level fail-closed capability + operation-shape refusals BEFORE any provider interaction, and carry the idempotency/replay discipline (same logical operation retried → ONE provider operation recorded) plus transport-observed rate-limit posture records (DECLAREDLY simulated doubles, self-labeled). Provider specifics live in DATA inside the isolated subtrees, never in the shared authority-facing surface (test-pinned).",
   "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./providers/youtube": {
+      "types": "./src/adapters/providers/youtube/index.ts",
+      "default": "./dist/adapters/providers/youtube/index.js"
+    },
+    "./providers/instagram": {
+      "types": "./src/adapters/providers/instagram/index.ts",
+      "default": "./dist/adapters/providers/instagram/index.js"
+    },
+    "./providers/facebook-pages": {
+      "types": "./src/adapters/providers/facebook-pages/index.ts",
+      "default": "./dist/adapters/providers/facebook-pages/index.js"
+    },
+    "./providers/tiktok": {
+      "types": "./src/adapters/providers/tiktok/index.ts",
+      "default": "./dist/adapters/providers/tiktok/index.js"
+    },
+    "./providers/x": {
+      "types": "./src/adapters/providers/x/index.ts",
+      "default": "./dist/adapters/providers/x/index.js"
     }
   },
   "scripts": {

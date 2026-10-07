@@ -1,18 +1,21 @@
-# @mos/distribution — MOS v2.0 social-distribution authority (SOCIAL-001)
+# @mos/distribution — MOS v2.0 social-distribution authority (SOCIAL-001 + SOCIAL-002..006)
 
 The social adapter contract + capability matrix of
 spec/mos-effective-backlog-v2.0.md SOCIAL-001: *"Build provider-neutral
 social adapter contract and capability matrix"* with the acceptance
 *"capability parity is never assumed; every provider declares
 supported/unsupported/unknown capabilities; rights/policy gates precede
-provider calls."* Module authority: `social-distribution`
-(spec/mos-module-registry-v2.0.yaml — owner worker-c, dependencies
-`[contracts, content, rights, integrations]`; the registry's `policy`
-dependency is a DECLARED SEAM only — the policy package does not exist
-yet, TL topology decision documented in MOS2-WAVE5-HARVEST: the gate's
-contract shape is frozen here as `SocialPolicyGatePort`, the disclosed
-in-memory double stands in at testing/composition seams, and no policy
-rule is authored in this package).
+provider calls."* W7-C adds the five provider adapters of SOCIAL-002..006
+(YouTube / Instagram / Facebook Pages / TikTok / X) as ISOLATED adapter
+subtrees behind the same contract (see below). Module authority:
+`social-distribution` (spec/mos-module-registry-v2.0.yaml — owner
+worker-c, dependencies `[contracts, content, rights, integrations]`;
+the registry's `policy` dependency is a DECLARED SEAM only — the policy
+package does not exist yet, TL topology decision documented in
+MOS2-WAVE5-HARVEST: the gate's contract shape is frozen here as
+`SocialPolicyGatePort`, the disclosed in-memory double stands in at
+testing/composition seams, and no policy rule is authored in this
+package).
 
 Social platforms are NEVER MOS authorities (spec §3): this package owns
 the DISTRIBUTION RECORDS — the provider-neutral surface of what a social
@@ -23,7 +26,7 @@ records what platforms SAID, never invents it, and never transforms an
 observation into a causal claim (attribution/causality separation is
 ATTRIB-001's later domain — the observation record is structurally pure).
 
-## The provider-neutral social surface — `SocialAdapterPort` (10 methods; budget 12)
+## The provider-neutral social surface — `SocialAdapterPort` (11 methods; budget 12)
 
 Five operations, each typed with input contracts carrying CONTENT
 ARTIFACT REFS (never inline media bytes in the control plane — §6 /
@@ -45,9 +48,18 @@ posture (what the platform said, never what MOS wishes it had said):
   log);
 - **`listRestrictions`** — read the platform's observed restrictions.
 
-Plus five tenant-scoped append-only log reads: `listPublications`,
-`listObservations`, `listRestrictionRecords`, `listDistributionRecords`
-(the §30 audit log) and `getDistributionRecord`.
+Plus six tenant-scoped append-only log reads: `listPublications`,
+`listObservations`, `listRestrictionRecords`, `listRateLimitObservations`
+(the transport-observed rate-limit posture log — W7-C),
+`listDistributionRecords` (the §30 audit log) and `getDistributionRecord`.
+
+Every operation request may carry an optional **idempotency key** naming
+ONE logical provider operation (W7-C): the provider transport bindings
+replay the recorded provider answer for a retried logical operation (ONE
+provider operation recorded for any number of retries — replay-safe) and
+refuse the same key with changed parameters as a typed
+`idempotency-key-conflict`. Callers who omit the key get no replay safety
+(each call is a fresh provider operation — disclosed).
 
 ### The five-stage pipeline (each failure typed, §30-recorded where attributable, terminal)
 
@@ -127,6 +139,80 @@ operation mapping (`SOCIAL_OPERATION_RIGHTS_ACTIONS`: publishing
 operations exercise `distribute`; observation operations exercise
 `analyze`).
 
+## SOCIAL-002..006 — the five provider adapter subtrees (W7-C)
+
+`src/adapters/providers/{youtube,instagram,facebook-pages,tiktok,x}/` —
+five ISOLATED adapter subtrees, each declaring its real platform's
+publicly-known API surface **AS DATA** (a `SocialProviderProfile`) on the
+SOCIAL-001 contract and binding to the `SocialTransportPort` seam through
+the shared provider binding machinery
+(`adapters/provider-transport-binding.ts`). Subpath exports
+`@mos/distribution/providers/<provider>` are the composition surface —
+the provider-neutral package index deliberately carries NO provider
+specifics (test-pinned, extended per provider in W7-C).
+
+Each profile declares (validated fail-closed by
+`validateSocialProviderProfile`):
+
+- a **capability matrix** — EXACTLY one entry per closed-vocabulary
+  operation, `supported`/`unsupported`/`unknown`, declared CONSERVATIVELY
+  from public platform knowledge; where support is not confidently
+  known the profile declares `unknown` (observation-pending) — never a
+  guessed `supported`;
+- the **auth model KIND** — the canonical `AuthenticationModel`
+  (`oauth2`, `managedBy: "integrations"`) plus the publicly-known flow
+  kinds (`authorization-code` / `authorization-code-with-pkce` /
+  `device`): a KIND declaration as data, NEVER credentials (there is
+  structurally no credential field on a profile — compile-time pinned);
+- **operation shapes** — the coarse, publicly-known shapes of the
+  platform's publishing surface (video-upload vs image-post vs
+  image-carousel vs text-post vs link-preview-post), the artifact type
+  families they accept (coarse MIME families), and the presentation
+  kinds they accept — provider-specific parameters validated INSIDE the
+  subtree: a request outside the declared shapes is a typed
+  `operation-shape-unsupported` refusal BEFORE any provider interaction;
+- the **evidence basis** — where the declarations come from, what is
+  deliberately UNKNOWN, and that nothing is fabricated.
+
+**NO FABRICATED PROVIDER INTERNALS** (the frozen acceptance): no
+endpoint URLs, no rate-limit numbers, no error taxonomies are invented
+anywhere — those specifics are either publicly known and cited in the
+subtree README's claim basis, or deliberately absent
+(UNKNOWN/observation-pending). Each subtree README documents every
+claim's basis in full. The transport remains the disclosed in-memory
+double (real network transport is composition-root future work at the
+same seam).
+
+**Adapter-level fail-closed (defense in depth):** the binding enforces
+its OWN profile declaration before any provider interaction — an
+operation the profile declares `unsupported` is a typed refusal
+(`operation-unsupported-at-adapter`), `unknown` gets its OWN preserved
+typed outcome (`operation-support-unknown-at-adapter`), EVEN IF a
+channel registration declares otherwise. Composition isolation: a
+per-provider binding refuses to serve another provider's request
+(`provider-adapter-mismatch`).
+
+**Replay/idempotency + rate-limit observations are explicit:** the
+binding deduplicates provider operations on
+(tenant, channel, operation, idempotency-key) — a retried logical
+operation REPLAYS the recorded provider answer (ONE provider operation
+recorded for any number of retries, `idempotent-replay` warning on the
+§30 record); the same key with different parameters is a typed
+`idempotency-key-conflict` refusal. A DECLAREDLY simulated rate-limit
+posture (when configured with `simulatedRateLimit`) rides ok responses
+as the `rateLimit` observation the adapter runtime types into an
+immutable §30-style `SocialRateLimitObservationRecord` (observedAt +
+provider refs + the honest self-label — the double's own fictional
+numbers, never presented as the platform's real rate limits, which are
+never invented). A malformed transport-reported posture is a WARNING
+(`rate-limit-observation-untypable`) — never silently dropped, never
+fatal to the completed interaction.
+
+`providerOperations()` on each binding exposes the provider-operation
+log — ONE record per provider interaction (what a real adapter would
+have sent over the network); replays and pre-interaction refusals append
+none.
+
 ## Registry semantics (all test-pinned)
 
 - **Versioned append-only** — record versions are REGISTRY-ASSIGNED:
@@ -179,23 +265,30 @@ composition root.
 - **No real network.** The transport seam is a declared port; the
   shipped adapter performs zero I/O (pinned by a no-network structural
   test) and every response self-labels so double output can never
-  masquerade as live platform evidence.
-- Provider specifics live in DATA: no real provider/vendor name appears
-  anywhere in this package (fixtures are fictional — aurora-social,
-  cinder-social, dune-social), and the fictional names appear only in
-  the disclosed data/composition seams (test-pinned).
+  masquerade as live platform evidence. The five provider transport
+  bindings are disclosed doubles over the same seam (real network
+  transport is composition-root future work).
+- Provider specifics live in DATA: the five real platform names appear
+  ONLY inside their own `src/adapters/providers/<provider>/` subtrees
+  (never in the shared authority-facing surfaces, never in another
+  provider's subtree — test-pinned, extended per provider in W7-C);
+  every other real vendor name is forbidden everywhere in the package
+  source; fictional fixture providers (aurora-social, cinder-social,
+  dune-social, ember-social) appear only in the disclosed
+  data/composition seams (test-pinned).
 - The schedule/retraction logs have no dedicated read method yet — the
   operations' outputs + the §30 audit log cover this wave's evidence;
-  the retrieval surface grows with SOCIAL-002..006 within the ≤12
+  the retrieval surface grows with later SOCIAL items within the ≤12
   method budget.
 
 ## Future seams (documented, not built here)
 
-- Real social platform adapters (SOCIAL-002 YouTube, SOCIAL-003
-  Instagram, SOCIAL-004 Facebook Pages, SOCIAL-005 TikTok, SOCIAL-006 X)
-  behind `SocialTransportPort` — provider DATA route tables, replay/
-  idempotency and rate-limit observations explicit, unsupported
-  capabilities fail closed.
+- The REAL network transports of the five provider adapters (actual API
+  calls, OAuth2 token handling at the substrate boundary, real
+  rate-limit/error surfaces observed verbatim) behind
+  `SocialTransportPort` as composition-root replacements for the
+  disclosed doubles; provider profiles then tighten from
+  conservative/UNKNOWN declarations to OBSERVED postures.
 - The policy authority's real gate behind `SocialPolicyGatePort`.
 - HEALTH-001 (platform health / distribution anomaly) consumes the
   restriction observations — observable-only, provider-confirmed vs

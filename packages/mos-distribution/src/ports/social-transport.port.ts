@@ -7,12 +7,31 @@
  * in-memory double (adapters/in-memory-social-transport.ts) — zero I/O,
  * pure function of (request, routes), self-labelling every response so
  * double output can never masquerade as live platform evidence
- * (AGENTS.md Verification). Real platform adapters (SOCIAL-002..006)
- * land at this same seam as provider DATA-driven implementations.
+ * (AGENTS.md Verification). Real platform adapters (SOCIAL-002..006) land
+ * at this same seam as provider DATA-driven implementations — the five
+ * per-provider transport bindings (src/adapters/providers/) wrap this
+ * double with their declared provider profiles (capability matrix,
+ * operation shapes, idempotency/replay discipline, DECLAREDLY simulated
+ * rate-limit postures — all self-labeled doubles).
  *
  * MEDIA DISCIPLINE (§6/AGENTS.md "Media"): `parameters` is a JsonObject
  * of SMALL control-plane values — the artifact travels as its REFERENCE
  * (artifactId/version/storageRef/digest), never as media bytes.
+ *
+ * IDEMPOTENCY KEY (SOCIAL-002..006): the optional `idempotencyKey` names
+ * one LOGICAL provider operation — provider transport bindings deduplicate
+ * on (tenant, channel, operation, key): a retried logical operation is the
+ * REPLAY of the recorded provider answer (ONE provider operation recorded
+ * for any number of retries), and the same key with different parameters
+ * is a typed `idempotency-key-conflict` refusal.
+ *
+ * RATE-LIMIT OBSERVATIONS (SOCIAL-002..006): an ok response's `output`
+ * payload MAY carry a `rateLimit` object — WHAT THE TRANSPORT OBSERVED
+ * about the provider's rate-limit posture (posture + observedAt + observed
+ * payload + provider refs). The adapter runtime types it into an immutable
+ * §30-style observation record (never invented; the disclosed doubles
+ * DECLAREDLY simulate postures and self-label so simulated numbers can
+ * never masquerade as live platform evidence).
  *
  * The credential handle NEVER travels here: this seam carries the
  * integrations `instanceRef` — the real transport adapter resolves the
@@ -54,6 +73,11 @@ export interface SocialTransportRequest {
   readonly operation: SocialOperation;
   /** Small control-plane parameters (artifact REFS, presentation, subjects — never media). */
   readonly parameters: JsonObject;
+  /**
+   * Optional idempotency key naming one LOGICAL provider operation (the
+   * replay-safety discipline — see the port docblock; SOCIAL-002..006).
+   */
+  readonly idempotencyKey?: string;
 }
 
 /**

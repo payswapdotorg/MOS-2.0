@@ -49,11 +49,13 @@ import type {
 import type {
   SocialObservationId,
   SocialPublicationId,
+  SocialRateLimitObservationId,
   SocialRetractionId,
   SocialRestrictionId,
   SocialScheduleId,
   SocialDistributionId,
 } from "../contracts/ids.js";
+import type { SocialRateLimitObservationFilter } from "../contracts/social-rate-limit.js";
 import { DistributionError } from "../errors.js";
 import type { SocialAdapterPort } from "../ports/social-adapter.port.js";
 import type { SocialChannelRegistryPort } from "../ports/social-channel-registry.port.js";
@@ -126,6 +128,7 @@ export function createInMemorySocialAdapter(
   const nextRetractionId = () => `social-retraction-${++minted}` as SocialRetractionId;
   const nextObservationId = () => `social-observation-${++minted}` as SocialObservationId;
   const nextRestrictionId = () => `social-restriction-${++minted}` as SocialRestrictionId;
+  const nextRateLimitObservationId = () => `social-rate-limit-${++minted}` as SocialRateLimitObservationId;
 
   const pipeline: SocialPipeline = createSocialPipeline({
     channels,
@@ -135,6 +138,7 @@ export function createInMemorySocialAdapter(
     logs,
     now,
     nextId,
+    nextRateLimitId: nextRateLimitObservationId,
   });
 
   /** Publishes (or schedules) one artifact through the full pipeline. */
@@ -317,6 +321,10 @@ export function createInMemorySocialAdapter(
 
     listRestrictionRecords(tenantId: TenantId, filter?: SocialRestrictionFilter) {
       return logs.listRestrictionRecords(tenantId, filter);
+    },
+
+    listRateLimitObservations(tenantId: TenantId, filter?: SocialRateLimitObservationFilter) {
+      return logs.listRateLimitObservations(tenantId, filter);
     },
 
     listDistributionRecords(tenantId: TenantId, filter?: SocialDistributionRecordFilter) {

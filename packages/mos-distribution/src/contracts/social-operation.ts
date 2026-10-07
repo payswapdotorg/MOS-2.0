@@ -146,6 +146,17 @@ export interface SocialProviderCapability {
  * the rights gate resolves the handle and fails closed without an
  * adequate grant (backlog acceptance: "rights/policy gates precede
  * provider calls").
+ *
+ * IDEMPOTENCY KEY DISCIPLINE (SOCIAL-002..006): the optional
+ * {@link SocialOperationRequest.idempotencyKey} names ONE LOGICAL provider
+ * operation. A transport binding that sees the same key twice with the
+ * same logical parameters answers the REPLAY of the already-recorded
+ * provider operation — ONE provider operation is recorded for any number
+ * of retries (replay-safe); the same key with DIFFERENT parameters is a
+ * typed `idempotency-key-conflict` refusal, never a silent second
+ * operation. Callers who omit the key get no replay safety (each call is a
+ * fresh provider operation — disclosed; production compositions should
+ * always carry keys for mutating operations).
  */
 export interface SocialOperationRequest {
   /** Tenant/workspace scope (§31). */
@@ -160,6 +171,12 @@ export interface SocialOperationRequest {
    * verbatim). Reused INTEG-001 handle vocabulary (registry-allowed).
    */
   readonly rightsContextRef: RightsContextRef;
+  /**
+   * Optional idempotency key naming one LOGICAL provider operation (the
+   * replay-safety discipline — see the interface docblock). Non-blank when
+   * present (validated fail-closed).
+   */
+  readonly idempotencyKey?: string;
 }
 
 // ---------------------------------------------------------------------------

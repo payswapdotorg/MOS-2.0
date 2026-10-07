@@ -52,6 +52,18 @@ import type { SocialOperation } from "./social-operation.js";
  * matrix entry — parity never assumed), `operation-unsupported` (declared
  * unsupported) and `operation-support-unknown` (declared UNKNOWN — its own
  * preserved outcome, never coerced to unsupported).
+ *
+ * W7-C (SOCIAL-002..006) adds the provider-adapter codes: the two
+ * capability codes above are ALSO emitted by a provider transport binding
+ * enforcing its OWN profile declaration at the adapter level (defense in
+ * depth: both the channel's registered matrix and the adapter's declared
+ * profile must permit the operation); `operation-shape-unsupported` is the
+ * typed refusal for a request outside the profile's declared operation
+ * shapes (e.g. a text-only presentation against a video-only platform);
+ * `idempotency-key-conflict` is the replay-discipline refusal (a key
+ * already bound to a DIFFERENT logical operation); and
+ * `provider-adapter-mismatch` is the composition-isolation refusal (a
+ * binding asked to serve another provider's request).
  */
 export type SocialDistributionFailureCode =
   /** The channel does not exist IN THIS TENANT (cross-tenant ≡ unknown — §31). */
@@ -66,6 +78,16 @@ export type SocialDistributionFailureCode =
   | "operation-unsupported"
   /** The channel's capability matrix declares the operation UNKNOWN (preserved first-class). */
   | "operation-support-unknown"
+  /** The provider profile declares the operation UNSUPPORTED (adapter-level fail-closed). */
+  | "operation-unsupported-at-adapter"
+  /** The provider profile declares the operation UNKNOWN (adapter-level, preserved first-class). */
+  | "operation-support-unknown-at-adapter"
+  /** The request is outside the profile's declared operation shapes (typed refusal before any provider interaction). */
+  | "operation-shape-unsupported"
+  /** The idempotency key is already bound to a DIFFERENT logical operation (replay discipline). */
+  | "idempotency-key-conflict"
+  /** The transport binding was asked to serve ANOTHER provider's request (composition isolation). */
+  | "provider-adapter-mismatch"
   /** The transport seam reported a failure. */
   | "transport-failed"
   /** The transport responded, but its response carries no typable platform record (never invented). */

@@ -23,6 +23,7 @@ import type {
   SocialChannelId,
   SocialObservationId,
   SocialPublicationId,
+  SocialRateLimitObservationId,
   SocialRetractionId,
   SocialRestrictionId,
   SocialScheduleId,
@@ -31,6 +32,11 @@ import type {
   DeclaredSocialPresentation,
   SocialOperation,
 } from "../contracts/social-operation.js";
+import { SOCIAL_RATE_LIMIT_POSTURES } from "../contracts/social-rate-limit.js";
+import type {
+  SocialRateLimitObservationRecord,
+  SocialRateLimitPosture,
+} from "../contracts/social-rate-limit.js";
 import type {
   SocialObservationRecord,
   SocialPublicationRecord,
@@ -169,6 +175,68 @@ export function parseRetraction(
       postRef,
       retractedAt: retractedAt as SocialRetractionRecord["retractedAt"],
       recordedAt: context.recordedAt as SocialRetractionRecord["recordedAt"],
+      source: context.source,
+    }),
+  };
+}
+
+/**
+ * Parses the transport-observed RATE-LIMIT posture of one ok response into
+ * a rate-limit observation record (SOCIAL-002..006). Absent `rateLimit` =
+ * the transport reported no posture → no record (never invented). A
+ * PRESENT-but-malformed posture object is reported as `malformed` — the
+ * caller surfaces a WARNING (an untypable auxiliary posture can neither
+ * fail a completed platform interaction nor be silently dropped).
+ *
+ * The posture's payload is VERBATIM data the transport reported — the
+ * disclosed doubles DECLAREDLY simulate postures and self-label, so
+ * simulated numbers can never masquerade as live platform evidence.
+ */
+export function parseRateLimitObservation(
+  output: JsonObject,
+  context: PlatformRecordContext,
+  operation: SocialOperation,
+  mintId: () => SocialRateLimitObservationId,
+):
+  | { readonly kind: "absent" }
+  | { readonly kind: "record"; readonly record: SocialRateLimitObservationRecord }
+  | { readonly kind: "malformed"; readonly reason: string } {
+  const entry = (output as { rateLimit?: unknown }).rateLimit;
+  if (entry === undefined) {
+    return { kind: "absent" };
+  }
+  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+    return { kind: "malformed", reason: "rateLimit is not an object" };
+  }
+  const posture = (entry as { posture?: unknown }).posture;
+  const observed = (entry as { observed?: unknown }).observed;
+  const observedAt = (entry as { observedAt?: unknown }).observedAt;
+  const providerRefs = (entry as { providerRefs?: unknown }).providerRefs;
+  if (typeof posture !== "string" || !SOCIAL_RATE_LIMIT_POSTURES.includes(posture as SocialRateLimitPosture)) {
+    return { kind: "malformed", reason: "rateLimit carries no posture in the closed vocabulary" };
+  }
+  if (typeof observed !== "object" || observed === null || Array.isArray(observed)) {
+    return { kind: "malformed", reason: "rateLimit carries no observed payload object" };
+  }
+  if (!isIso(observedAt)) {
+    return { kind: "malformed", reason: "rateLimit carries no observedAt timestamp" };
+  }
+  if (providerRefs !== undefined && (!Array.isArray(providerRefs) || providerRefs.some((ref) => isBlank(ref)))) {
+    return { kind: "malformed", reason: "rateLimit providerRefs is not an array of strings" };
+  }
+  return {
+    kind: "record",
+    record: Object.freeze({
+      id: mintId(),
+      scope: context.scope,
+      channelRef: context.channelRef,
+      providerId: context.providerId,
+      operation,
+      posture: posture as SocialRateLimitPosture,
+      observed: observed as JsonObject,
+      observedAt: observedAt as SocialRateLimitObservationRecord["observedAt"],
+      providerRefs: Object.freeze([...((providerRefs as string[] | undefined) ?? [])]) as readonly string[],
+      recordedAt: context.recordedAt as SocialRateLimitObservationRecord["recordedAt"],
       source: context.source,
     }),
   };

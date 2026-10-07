@@ -23,6 +23,8 @@ export type DistributionErrorCode =
   | "unknown-social-channel"
   // Adapter call surface request validation
   | "invalid-social-request"
+  // Provider profile validation (SOCIAL-002..006)
+  | "invalid-provider-profile"
   // Composition
   | "invalid-distribution-composition";
 

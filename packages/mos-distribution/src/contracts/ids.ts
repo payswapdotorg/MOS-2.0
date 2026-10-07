@@ -39,6 +39,8 @@ export type SocialRetractionId = Branded<string, "SocialRetractionId">;
 export type SocialObservationId = Branded<string, "SocialObservationId">;
 /** Identifier of one recorded platform-reported restriction observation. */
 export type SocialRestrictionId = Branded<string, "SocialRestrictionId">;
+/** Identifier of one recorded transport-observed rate-limit posture observation. */
+export type SocialRateLimitObservationId = Branded<string, "SocialRateLimitObservationId">;
 
 // ---------------------------------------------------------------------------
 // Platform data references (opaque — what the platform said, never resolved)
