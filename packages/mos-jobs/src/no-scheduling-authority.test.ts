@@ -4,6 +4,10 @@
  * work-polling port (JobQueuePort.claimNextRunnable); the single
  * clock-driven consumer is the DISCLOSED in-memory poller double, and
  * timer usage outside that disclosed file fails this test.
+ *
+ * The exported-surface pin also covers the notification plane (NOTIFY-001):
+ * its factories/id-builders/error class follow the same naming discipline
+ * and the plane itself carries no scheduling machinery.
  */
 
 import { test } from "node:test";
@@ -70,7 +74,7 @@ test("the exported runtime surface contains no scheduling machinery", () => {
   const exported = Object.keys(mosJobs).sort();
   for (const name of exported) {
     const value = (mosJobs as Record<string, unknown>)[name];
-    if (/^(DURABLE_|TERMINAL_)/.test(name)) {
+    if (/^(DURABLE_|TERMINAL_|NOTIFICATION_)/.test(name)) {
       // Frozen vocabulary constants (arrays), pinned by the isolation tests.
       assert.ok(Array.isArray(value) && Object.isFrozen(value), name);
       continue;
@@ -78,12 +82,13 @@ test("the exported runtime surface contains no scheduling machinery", () => {
     assert.equal(typeof value, "function", `export '${name}' must be a factory/function`);
     assert.match(
       name,
-      /^(create|decide|retry|durableJobId|jobKey|leaseToken|JobQueueError$)/,
+      /^(create|decide|retry|durableJobId|jobKey|leaseToken|notificationId|notificationDedupKey|notificationReceiptId|deliveryAttemptId|providerAckRef|notificationRetryDelayMs|notificationSubmissionViolations|JobQueueError$|NotificationPlaneError$)/,
       name,
     );
   }
   assert.ok(exported.includes("createDurableJobQueue"));
   assert.ok(exported.includes("createJobPollerDouble"), "the poller is exported AS a disclosed double");
+  assert.ok(exported.includes("createNotificationDeliveryPlane"), "the notification plane is exported");
   assert.ok(!exported.some((name) => /cron|timer|schedule/i.test(name)));
 });
 
