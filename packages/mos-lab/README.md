@@ -5,12 +5,13 @@ MOS v2.0 **Marketing Lab** package — `LAB-001` (reference-first niche corpus r
 plus `LAB-004` (Social Simulator), `LAB-005` (User/Creator/Competition Dynamics) and
 `LAB-006` (Time Machine), delivered in Wave 3 (W3-A), plus `LAB-007` (World Model Ensemble),
 `LAB-008` (Offline / Off-Policy Evaluation) and `LAB-009` (Sequential Strategy Learning),
-delivered in Wave 4 (W4-A).
+delivered in Wave 4 (W4-A), plus `LAB-011` (Transform Definitions + Transform Graph),
+delivered in Wave 5 (W5-A).
 
 Module registry entry: `lab → packages/mos-lab`, owner `worker-a`, dependencies
 `[contracts, content, production, agents, capabilities, engines, jobs]`.
 
-## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning (in-memory scaffolds)
+## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / transform definitions + transform graph (in-memory scaffolds)
 
 All shared vocabulary is imported from **`@mos/contracts`** (W2-A / RECONCILE-A). The package
 contains:
@@ -162,13 +163,72 @@ contains:
   - the §2 delay-expectation variable appears only as the declared `simulatedSteps` cost
     dimension of the trace (production delay economics is LAB-015's domain).
 
-- `src/index.ts` — types + twelve runtime factories.
+- **LAB-011 — Transform Definitions + Transform Graph (§5, DECLARATIVE ONLY)**
+  - `src/contracts/transform-definition.ts` — `TransformKind` (the frozen thirteen §5 kinds:
+    no-op-repost, clip, crop-reframe, remix, compilation, reaction, podcast,
+    translation-dubbing, voiceover, stylization-anime, ai-generated, human-contribution,
+    hybrid) and the VERSIONED `TransformDefinition`: the canonical CORE-001 `Transform`
+    contract (id, version, inputTypes, outputTypes, parameters, capabilityRequirements,
+    evaluator, costModel, latencyModel, rightsRequirements, policyRequirements, lineageRules —
+    `inputTypes`/`outputTypes` DERIVED from the declared constraints so the canonical contract
+    is satisfied by construction, pinned by the contracts package's frozen required-field
+    assertion in tests) extended with the declared kind, ONE NAMED
+    `TransformInputConstraint` (accepted artifact types matched exactly against
+    `ArtifactRef.type` — the `@mos/content` artifact vocabulary via `@mos/contracts` —
+    accepted modalities, input cardinality bounds, and a `requiresRights` flag), the
+    `TransformOutputContract` (output types + count), and the human-participation flag
+    (`human-contribution` / `hybrid` kinds MUST declare it — typed failure otherwise);
+  - **NO-OP/REPOST IS FIRST-CLASS (lock rule 5)**: a real definition with real constraints
+    and ZERO capability requirements — zero requirements is a valid declared state for ANY
+    kind, and the registry has NO kind-conditional special-casing (the no-op seed definition
+    simply declares none; pinned by tests);
+  - `TransformDefinitionRegistry` port (4 methods): register (v1) / revise (append-only v+1,
+    prior versions bit-for-bit resolvable) / exact-version get (never a silent latest
+    fallback) / list-latest; `unknown-transform-kind` is the typed failure for anything
+    outside the frozen thirteen;
+  - `src/contracts/transform-graph.ts` — the VERSIONED, TENANT-SCOPED, APPEND-ONLY
+    `TransformGraph` DAG of transform applications over artifact refs: nodes =
+    `TransformApplicationNode` (definition ref pinned to an EXACT version + external input
+    artifact refs + declared parameterization), edges = `ArtifactFlowEdge` (artifact flow:
+    the output of one node feeds the next); composite transforms (remix / compilation /
+    hybrid) express naturally as multi-node graphs;
+  - `TransformGraphPort` (6 methods): create / append (nodes+edges atomically, version + 1) /
+    exact-version get / `validateTransformGraph` (structural + constraint) /
+    `traceArtifactLineage` (direct consumers + downstream cone in topological order with the
+    resolved definitions — which transforms produce which outputs) / `querySubgraph`
+    (the production cone around an artifact: downstream + transitive upstream ancestors);
+  - **Write-time invariants** (every stored version is a well-formed DAG over resolvable
+    definitions): unique node/edge ids, one artifact-flow edge per node pair, edge endpoints
+    exist, cycles rejected (`artifact-flow-cycle` — a production graph is a DAG), external
+    artifact refs belong to the tenant scope (`cross-tenant-reference`), and every node's
+    definition resolves at its EXACT cited version (`unknown-transform-definition` /
+    `transform-definition-version-mismatch`);
+  - **Constraint validation** (`validateTransformGraph`, on demand — graphs are built
+    incrementally): input cardinality (external + upstream), external input artifact types /
+    modalities / rights, and upstream output types, all against each node's definition at its
+    CITED version, every failure NAMED with the constraint name;
+  - `src/adapters/in-memory-transform-definition-registry.ts` +
+    `in-memory-transform-graph.ts` (composed with the INTERNAL
+    `transform-graph-write-checks.ts` + `transform-graph-validation.ts`) — disclosed
+    scaffolds, clone-then-freeze ownership semantics;
+  - **DECLARATIVE ONLY — the boundary**: a transform is a CONTRACT, not an engine (§5).
+    Nothing in this item resolves engines, selects models, binds agents, executes a
+    transform or materializes an output artifact. The capability requirements are declared
+    refs in the `@mos/contracts` vocabulary; the Engines Registry satisfies them at
+    EXECUTION time, which is Lab runs / production programs / the ENG runner (LAB-012
+    transform discovery and LAB-016 production program search own the execution seams).
+
+- `src/index.ts` — types + fourteen runtime factories.
 - `src/adapters/parametric-support.ts` — INTERNAL helpers (seeded PRNG, clamps, validation,
-  deep-freeze) shared by the adapters; deliberately NOT exported from the index.
+  deep-freeze + deep-clone ownership helpers) shared by the adapters; deliberately NOT exported
+  from the index.
 - `src/adapters/reward-computation.ts` + `ensemble-aggregation.ts` — INTERNAL pure math
   (reward term resolution, ensemble aggregation); deliberately NOT exported from the index.
-- `src/testing/w4a-lab-fixtures.ts` — INTERNAL Wave-4 test fixtures; NOT exported from the
-  index.
+- `src/adapters/transform-graph-validation.ts` + `transform-graph-write-checks.ts` — INTERNAL
+  pure logic for the transform graph (constraint validation + modality derivation; write-time
+  structural invariants); deliberately NOT exported from the index.
+- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` — INTERNAL Wave-4/
+  Wave-5 test fixtures; NOT exported from the index.
 
 ## Design rules encoded here
 
@@ -177,10 +237,10 @@ contains:
 - **Rights are structural, not incidental**: ingestion passes the injected
   `RightsCheckPort` and fails closed. URL/storageRef accessibility never implies rights.
 - **Append-only history**: corpus snapshots, feature bundle versions, idea revisions, world
-  model versions, dynamics model versions, the historical timeline, the branch registry and
-  world model ensemble versions are versioned/append-only records; nothing is mutated in
-  place and nothing is deleted (ensemble versions are immutable snapshots — freezing is an
-  append too).
+  model versions, dynamics model versions, the historical timeline, the branch registry,
+  world model ensemble versions, transform definition versions and transform graph versions
+  are versioned/append-only records; nothing is mutated in place and nothing is deleted
+  (ensemble versions are immutable snapshots — freezing is an append too).
 - **Historical vs counterfactual separation (lock rule 29)**: `HistoricalObservation`
   (`counterfactual: false`) and `SimulationPrediction`/`SocialSimulationResult`/
   `DynamicsStepResult`/`CounterfactualBranchRecord`/`EnsemblePrediction`/
@@ -203,12 +263,21 @@ contains:
   silently replace the declared objective.
 - **No-op is a first-class candidate (lock rule 5)**: `no-op` produces zero simulated
   activity; in the dynamics model inaction still decays audience and loses ground to
-  competitors (inaction has modeled consequences).
+  competitors (inaction has modeled consequences). In the transform layer the no-op/repost
+  KIND is a first-class `TransformDefinition` with real constraints and ZERO capability
+  requirements, validated by exactly the same machinery as every other kind — never
+  special-cased (lock rule 5/6: transforms are atomic, composed or discovered).
 - **Tenant scoping**: every record carries `tenantId`; every operation names its
   `TenantScope`; unknown and cross-tenant are indistinguishable on reads; version chains are
   per (tenant, id) — tenants never share or shift each other's version numbering.
-- **Capabilities, not engines**: feature computation requirements are DECLARED; the lab
+- **Capabilities, not engines**: feature computation requirements are DECLARED; transform
+  capability requirements are DECLARED refs in the `@mos/contracts` vocabulary; the lab
   never invokes engines or providers directly.
+- **A transform is a contract, not an engine (§5, lock rule 14 adjacency)**: transform
+  definitions declare input constraints / output contracts / capability requirements /
+  human participation; transform graphs are DECLARATIVE DAGs over artifact refs whose
+  nodes cite definitions at EXACT versions — lineage is preserved across every declared
+  transformation and nothing executes inside this layer.
 
 ## Lab rules honored (architecture policy `specialRules.lab`)
 
@@ -256,3 +325,20 @@ contains:
 - No idea/edge hard-delete by design (versioned corrections only).
 - Scenario `simulatorVersion` pinning: both synthetic engines implement version 1 and reject
   scenarios declared against a different simulator version (`simulator-version-mismatch`).
+- LAB-011 is DECLARATIVE ONLY: no engine resolution, no model selection, no agent binding, no
+  transform execution, no artifact materialization — execution is Lab runs / production
+  programs / the ENG runner (LAB-012 transform discovery and LAB-016 production program
+  search own those seams). Node parameterization is validated as a JSON OBJECT only;
+  satisfaction of the definition's parameter JSON SCHEMA is an execution-time concern (no
+  schema engine is bundled — deliberate).
+- Transform input MODALITY is derived from the artifact's DECLARED type by a documented
+  coarse mapping (`video/*`→video, `audio/*`→audio, `image/*`→image, `text/*`→text,
+  `multipart/*`/`mixed`→mixed, anything else→structured) — classification of a declared
+  type string, never inference from content or accessibility.
+- One artifact-flow edge per node pair: a single edge carries the upstream output; binding a
+  multi-output transform's additional outputs to specific downstream input positions is an
+  execution-time concern (declared, not encoded in the graph structure).
+- Transform graph stores take a narrow `definitions` registry view (get-by-exact-version
+  only); the production module's `TransformGraphRef` binding (contracts opaque ref) is
+  composition-root wiring for a later wave — the lab-local `TransformGraphId` brand is the
+  record identity here.

@@ -2,9 +2,11 @@ import type { UncertaintySummary } from '@mos/contracts';
 import type { StrategyActionCandidate } from '../contracts/simulator.js';
 
 /**
- * INTERNAL support helpers for the disclosed deterministic synthetic
- * parametric adapters (LAB-004 simulator + LAB-005 dynamics). NOT exported
- * from the package index — these are implementation details, not surface.
+ * INTERNAL support helpers for the lab's in-memory adapters — the disclosed
+ * deterministic synthetic parametric adapters (LAB-004 simulator + LAB-005
+ * dynamics) and the shared clone/freeze ownership helpers of the versioned
+ * stores (LAB-011+). NOT exported from the package index — these are
+ * implementation details, not surface.
  *
  * Everything here is pure and deterministic: the seeded PRNG is the ONLY
  * source of pseudo-randomness in the lab's synthetic response functions, so
@@ -44,6 +46,17 @@ export const isUnitInterval = (value: unknown): value is number =>
 /** `true` when the value is a finite non-negative number. */
 export const isFiniteNonNegative = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+/** `true` for a string that is empty or whitespace-only. */
+export const isBlankString = (value: string): boolean => value.trim().length === 0;
+
+/** `true` for a non-null, non-array object (the JSON-object shape guard). */
+export const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** `true` for an integer ≥ 1 (record versions, artifact versions). */
+export const isPositiveInteger = (value: unknown): boolean =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 1;
 
 /**
  * Derive the §22 uncertainty summary for one synthetic quantity from the
@@ -117,6 +130,27 @@ export const deepFreeze = <T>(value: T): T => {
       deepFreeze((value as Record<string, unknown>)[key]);
     }
     Object.freeze(value);
+  }
+  return value;
+};
+
+/**
+ * Recursively clone a JSON-shaped value (plain objects, arrays, primitives)
+ * into fresh structures. Used by the in-memory stores for CLONE-THEN-FREEZE
+ * ownership semantics: caller-supplied records are never frozen or retained
+ * in place, so a stored version can never mutate data the caller still owns
+ * (the W4-B mos-jobs ownership lesson, applied from the start here).
+ */
+export const cloneDeep = <T>(value: T): T => {
+  if (Array.isArray(value)) {
+    return value.map((entry) => cloneDeep(entry)) as unknown as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    const copy: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value)) {
+      copy[key] = cloneDeep(entry);
+    }
+    return copy as unknown as T;
   }
   return value;
 };
