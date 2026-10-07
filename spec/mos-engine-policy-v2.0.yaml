@@ -1,0 +1,44 @@
+version: 2
+status: FROZEN
+authority: spec/mos-architecture-v2.0.md
+
+engineSelection:
+  domainModulesRequestCapabilities: true
+  registrySelectsEngines: true
+  deterministicTieBreak: [contractCompatibility, licenseCompatibility, benchmarkScore, cost, latency, engineId]
+  tenantOverridesAllowed: true
+  silentEngineReplacementForbidden: true
+
+activation:
+  required:
+    - manifestValidation
+    - capabilityContractTests
+    - goldenCorpusBenchmark
+    - evaluatorResult
+    - securitySandboxReview
+    - codeLicenseReview
+    - modelLicenseReview
+    - sourceDataRightsReview
+    - provenanceRecord
+  forbidden:
+    - undocumented_model_weights
+    - implicit_network_access
+    - provider_credentials_inside_engine
+    - direct_domain_import
+    - unverified_quality_claim
+
+runner:
+  defaultNetwork: denied
+  databaseCredentials: none
+  providerCredentials: none
+  filesystem: scoped-artifacts-only
+  resourceQuotasRequired: true
+  timeoutRequired: true
+  seedRequiredWhenSupported: true
+
+replacement:
+  stableCapabilityContract: required
+  oldEngineMustRemainReproducibleForHistoricalRuns: true
+  modelIdentityRecordedPerRun: true
+  benchmarkBeforePromotion: true
+  rollbackByEngineVersion: true

@@ -1,0 +1,137 @@
+version: 2
+status: FROZEN
+authority: spec/mos-architecture-v2.0.md
+
+modules:
+  - id: contracts
+    root: packages/mos-contracts
+    owner: tech-lead
+    authority: shared-contracts
+    dependencies: [zcode-substrate-adapters]
+  - id: identity
+    root: packages/mos-identity
+    owner: worker-a
+    authority: identity
+    dependencies: [contracts]
+  - id: missions
+    root: packages/mos-missions
+    owner: worker-a
+    authority: mission
+    dependencies: [contracts, identity]
+  - id: policy
+    root: packages/mos-policy
+    owner: worker-a
+    authority: policy
+    dependencies: [contracts, identity]
+  - id: rights
+    root: packages/mos-rights
+    owner: worker-a
+    authority: rights-provenance
+    dependencies: [contracts, identity]
+  - id: content
+    root: packages/mos-content
+    owner: worker-a
+    authority: content-artifact
+    dependencies: [contracts, identity, rights]
+  - id: production
+    root: packages/mos-production
+    owner: worker-b
+    authority: production
+    dependencies: [contracts, content, rights, policy]
+  - id: agents
+    root: packages/mos-agents
+    owner: worker-b
+    authority: agent-body-organization
+    dependencies: [contracts, identity]
+  - id: agent-runtime
+    root: packages/mos-agent-runtime
+    owner: worker-b
+    authority: agent-execution
+    dependencies: [contracts, agents, zcode-substrate-adapters]
+  - id: capabilities
+    root: packages/mos-capabilities
+    owner: worker-b
+    authority: capability-contract
+    dependencies: [contracts]
+  - id: engines
+    root: packages/mos-engines
+    owner: worker-b
+    authority: engine-registry
+    dependencies: [contracts, capabilities, content]
+  - id: jobs
+    root: packages/mos-jobs
+    owner: worker-b
+    authority: durable-job
+    dependencies: [contracts]
+  - id: studio
+    root: packages/mos-studio
+    owner: worker-c
+    authority: studio-session-production-artifacts
+    dependencies: [contracts, content, production, agents, capabilities, engines, jobs, rights]
+  - id: lab
+    root: packages/mos-lab
+    owner: worker-a
+    authority: lab-simulation-search-calibration
+    dependencies: [contracts, content, production, agents, capabilities, engines, jobs]
+  - id: integrations
+    root: packages/mos-integrations
+    owner: worker-c
+    authority: provider-integrations
+    dependencies: [contracts, capabilities, rights]
+  - id: distribution
+    root: packages/mos-distribution
+    owner: worker-c
+    authority: social-distribution
+    dependencies: [contracts, content, policy, rights, integrations]
+  - id: experiments
+    root: packages/mos-experiments
+    owner: worker-c
+    authority: real-experiment-evidence-learning
+    dependencies: [contracts, missions, production, distribution, jobs]
+  - id: product-intelligence
+    root: packages/mos-product-intelligence
+    owner: worker-a
+    authority: product-source-intelligence
+    dependencies: [contracts, identity, rights]
+  - id: commerce
+    root: packages/mos-commerce
+    owner: worker-a
+    authority: commerce-discovery
+    dependencies: [contracts, missions, product-intelligence]
+  - id: web
+    root: packages/mos-web
+    owner: worker-c
+    authority: presentation-only
+    dependencies: [contracts]
+  - id: desktop
+    root: packages/mos-desktop
+    owner: worker-c
+    authority: presentation-only
+    dependencies: [contracts]
+
+substrate:
+  id: zcode-substrate-adapters
+  retained: true
+  managedBy: tech-lead
+  sourceRoots:
+    - packages/rpc/src
+    - packages/shared/src
+    - packages/client/src
+    - packages/ui/src
+    - packages/server/src
+    - packages/desktop/src
+    - packages/services/src
+    - apps/zcode-cli
+  directBusinessAuthority: false
+
+rules:
+  maxConcurrentWorkers: 3
+  onlyTechLeadMayModifyRegistry: true
+  onlyTechLeadMayResolveCentralComposition: true
+  onlyTechLeadMayPromoteArchitectureChanges: true
+  domainToConcreteEngineImports: forbidden
+  studioToDirectProviderImports: forbidden
+  labToDirectProviderImports: forbidden
+  secondWorkflowAuthority: forbidden
+  secondExperimentAuthority: forbidden
+  secondModelRouter: forbidden

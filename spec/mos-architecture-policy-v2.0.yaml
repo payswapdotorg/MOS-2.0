@@ -1,0 +1,82 @@
+version: 2
+status: FROZEN
+authority: spec/mos-architecture-v2.0.md
+
+global:
+  maxPublicMethods: 12
+  maxContractLines: 400
+  maxManagedFileLines: 500
+  forbidCycles: true
+  forbidDeepImports: true
+  forbidConcreteEngineImportsFromDomain: true
+  forbidProviderCallsOutsideIntegration: true
+  forbidMediaOverControlRpc: true
+  forbidSecondAuthorities: true
+  requireExplicitVersionedContracts: true
+  requireAppendOnlyHistoryWhereDeclared: true
+  requireTenantScopeOnMutableArtifacts: true
+
+managedModules:
+  - contracts
+  - identity
+  - missions
+  - policy
+  - rights
+  - content
+  - production
+  - agents
+  - agent-runtime
+  - capabilities
+  - engines
+  - jobs
+  - studio
+  - lab
+  - integrations
+  - distribution
+  - experiments
+  - product-intelligence
+  - commerce
+  - web
+  - desktop
+
+legacySubstrate:
+  id: zcode-substrate-adapters
+  allowedFor:
+    - rpc
+    - sessions
+    - events
+    - tools
+    - permissions
+    - UI
+    - desktop-shell
+    - web-shell
+    - background-execution
+    - MCP
+    - skills
+    - packaging
+  forbiddenAsMosAuthority:
+    - mission
+    - experiment
+    - evidence
+    - content-rights
+    - social-distribution
+    - engine-selection
+    - production-strategy
+
+specialRules:
+  engines:
+    adapterRequired: true
+    sandboxRequired: true
+    benchmarkRequired: true
+    licenseReviewRequired: true
+  studio:
+    formatsMustBePluggable: true
+    organizationMustBeVersioned: true
+    noDirectPublication: true
+  lab:
+    noDirectPublication: true
+    noDirectProviderCalls: true
+    counterfactualsLabeled: true
+    delayedModePreventsFutureLeakage: true
+  jobs:
+    durableForLongRunningWork: true

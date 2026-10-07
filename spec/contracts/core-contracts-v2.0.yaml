@@ -1,0 +1,55 @@
+version: 2.0
+status: FROZEN
+authority: spec/mos-architecture-v2.0.md
+
+contracts:
+  Capability:
+    required: [id, version, inputSchema, outputSchema, evaluator, costModel, latencyModel, provenance]
+  Engine:
+    required: [id, version, capabilityIds, adapterRef, inputContract, outputContract, resources, deterministic, license, security, provenance, benchmark]
+  Transform:
+    required: [id, version, inputTypes, outputTypes, parameters, capabilityRequirements, evaluator, costModel, latencyModel, rightsRequirements, policyRequirements, lineageRules]
+  Artifact:
+    required: [id, version, tenantId, type, digest, storageRef, provenanceRef, rightsRef, lineage, creationMethod]
+  ProductionGraph:
+    required: [id, version, inputs, nodes, edges, acceptanceCriteria, budget, stoppingPolicy]
+  AgentBody:
+    required: [id, version, roleContract, inputContract, outputContract, tools, permissions, memory, communication, actionInterface, capabilities, budget, latency, evaluator, safety]
+  AgentInstance:
+    required: [bodyVersion, modelRef, runtimeRef, toolRefs, capabilityRefs]
+  AgentOrganization:
+    required: [id, version, nodes, edges, modelAssignments, memoryPolicy, budgetPolicy, terminationPolicy, evaluator]
+  ProductionRequest:
+    required: [id, version, scope, objective, sourceArtifacts, strategyRef, transformGraphRef, organizationRef, studioFormat, capabilityRequirements, humanTasks, acceptanceCriteria, budget, deadline, delayPolicy, rightsContext, returnContract]
+  StudioSession:
+    required: [id, version, productionRequestRef, formatVersion, organizationRef, participants, lifecycle, artifactPackageRef]
+  StudioArtifactPackage:
+    required: [id, version, sessionRef, rawArtifacts, intermediateArtifacts, finalArtifacts, transcriptRefs, conversationGraphRef, editGraphRef, provenance, consent, evaluation, cost, duration]
+  HumanProductionTask:
+    required: [id, version, objective, sourceRefs, scriptOrQuestions, captureBrief, targetOutput, rightsConsent, evaluator, deadline, expectedValueOfWaiting, acceptableSubstitutions]
+  BottleneckDecision:
+    required: [id, version, dependency, expectedIncrementalValue, expectedWait, delayCost, acquisitionCost, successProbability, qualityImpact, selectedAction]
+  LabScenario:
+    required: [id, version, niche, platform, objective, context, budget, informationLag, corpusVersion, simulatorVersion, rewardVersion]
+  LabRun:
+    required: [id, version, scenarioRef, seed, cutoff, worldModelVersion, strategyCandidates, lifecycle, predictionSummary, uncertaintySummary]
+  CalibrationRecord:
+    required: [id, version, labRunRef, worldModelVersion, simulatedPrediction, uncertainty, observedOutcome, predictionError, regime, updateVersion]
+  EngineBenchmark:
+    required: [id, capabilityVersion, engineVersion, benchmarkCorpusRef, evaluatorVersion, metrics, cost, latency, licenseStatus, result]
+  RealExperimentBinding:
+    required: [id, labCandidateRef, missionRef, productionRequestRef, policyRef, rightsRef, distributionRef, experimentRef, evidenceRef]
+  EngineJob:
+    required: [id, capabilityId, capabilityVersion, engineId, engineVersion, inputArtifactRefs, parameters, seed, resourceLimits, outputContract]
+  EngineResult:
+    required: [jobId, outputArtifactRefs, metrics, provenance, duration, resourceUsage, cost, warnings, failure]
+  ArtifactRef:
+    required: [artifactId, version, tenantId, digest, type, storageRef, rightsRef, provenanceRef]
+  StudioFormat:
+    required: [id, version, inputRequirements, participantModel, captureRequirements, interviewerRequirements, organizationCompatibility, outputContract, provenanceRequirements, evaluationHooks]
+  SocialAdapter:
+    required: [provider, version, capabilityMatrix, accountOperations, contentOperations, analyticsOperations, publishingOperations, restrictionObservations]
+  ConnectorProvider:
+    required: [providerId, version, capabilities, authentication, invocationContract, evidenceModel, errorModel, rateLimitObservation]
+  PlatformHealthObservation:
+    required: [id, accountRef, provider, observedAt, observableSignals, healthState, confidence, uncertainty, maneuvers]

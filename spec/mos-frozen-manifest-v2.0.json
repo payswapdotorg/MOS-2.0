@@ -1,0 +1,121 @@
+{
+  "architectureVersion": "2.0",
+  "status": "FROZEN",
+  "substrate": {
+    "name": "ZCode",
+    "upstreamRepository": "zai-org/zcode",
+    "forkRepository": "payswapdotorg/MOS-2.0",
+    "verifiedForkBaselineCommit": "29628c9acdb81b703bbd4080c207a0e7ce5e276e",
+    "verifiedForkBaselineVersion": "3.14.3"
+  },
+  "principle": "ZCode is infrastructure; MOS is the authority.",
+  "authorities": [
+    "identity",
+    "missions",
+    "policy",
+    "rights",
+    "content",
+    "production",
+    "distribution",
+    "integrations",
+    "experiments",
+    "evidence",
+    "learning",
+    "lab",
+    "studio",
+    "agent-runtime",
+    "engine-registry",
+    "jobs"
+  ],
+  "coreAbstractions": [
+    "capability",
+    "engine",
+    "transform",
+    "production-graph",
+    "agent-body",
+    "agent-instance",
+    "agent-organization",
+    "artifact",
+    "artifact-graph",
+    "studio-session",
+    "lab-run"
+  ],
+  "studioFormats": [
+    "reaction",
+    "audio-podcast",
+    "video-podcast"
+  ],
+  "strategySpace": [
+    "no-op-repost",
+    "retrieve",
+    "retrieve-transform",
+    "retrieve-recombine",
+    "retrieve-mutate",
+    "generate",
+    "human-original",
+    "human-ai-hybrid"
+  ],
+  "newCapabilities": [
+    "replaceable-engine-registry",
+    "engine-sandbox-runner",
+    "production-program-search",
+    "transform-discovery",
+    "transform-pawn-agents",
+    "content-studio",
+    "adaptive-interviewer",
+    "multi-account-studio",
+    "studio-organization-loading",
+    "studio-output-treatment",
+    "human-production-task-packages",
+    "production-delay-economics",
+    "artifact-lineage",
+    "engine-benchmarking",
+    "oss-license-gating"
+  ],
+  "ossPolicy": {
+    "directDomainImportsForbidden": true,
+    "engineAdapterRequired": true,
+    "codeLicenseReview": true,
+    "modelLicenseReview": true,
+    "sourceDataRightsReview": true,
+    "benchmarkBeforeActivation": true,
+    "runtimeSandboxRequired": true
+  },
+  "runtimePolicy": {
+    "secondModelRouterForbidden": true,
+    "zcodeAgentRuntimeWrapped": true,
+    "largeMediaOverControlRpcForbidden": true,
+    "durableWorkersForLongRuns": true
+  },
+  "safetyPolicy": {
+    "fakeEngagementForbidden": true,
+    "inauthenticBehaviorForbidden": true,
+    "antiAbuseBypassForbidden": true,
+    "impersonationForbidden": true,
+    "fabricatedTestimonialsForbidden": true,
+    "rightsCircumventionForbidden": true
+  },
+  "excludedArchitecturalDependencies": [
+    "copilotkit",
+    "openmuse",
+    "code-oss"
+  ],
+  "revision": "2.0.0",
+  "architectureChangeRecord": "spec/architecture-change-records/0001-mos-v2-foundation.md",
+  "researchBasis": "docs/research/MOS-OSS-DESIGN-BASIS-v2.0.md",
+  "carriedForwardMOSCapabilities": {
+    "socialProviders": [
+      "youtube",
+      "instagram",
+      "facebook-pages",
+      "tiktok",
+      "x"
+    ],
+    "platformHealth": true,
+    "notifications": true,
+    "productMarketingPlanning": true,
+    "commerceDiscovery": true,
+    "socialCommerceAttribution": true,
+    "evidenceExperimentLearning": true
+  }
+}

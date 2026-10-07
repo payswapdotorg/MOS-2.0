@@ -1,0 +1,130 @@
+catalogVersion: 2.0
+status: CANDIDATE_CATALOG
+reviewDate: 2026-10-07
+note: "Candidate technology inventory. No entry is activated by this file alone. Verify exact source revision, component licenses, model/checkpoint licenses, data terms, security posture and benchmark before activation."
+
+engines:
+  - id: opentimelineio
+    capabilityFamilies: [editorial-interchange]
+    role: interchange
+    source: https://github.com/AcademySoftwareFoundation/OpenTimelineIO
+    codeLicenseObserved: Apache-2.0
+    activationStatus: candidate
+    notes: "Timeline/cut interchange and plugin ecosystem; not a media container and not MOS production authority."
+
+  - id: ffmpeg
+    capabilityFamilies: [media-render, cut, concat, scale, overlay, mux]
+    role: deterministic-media-renderer
+    source: https://ffmpeg.org/
+    codeLicenseObserved: "LGPL-2.1-or-later with optional GPL-2-or-later components"
+    activationStatus: conditional
+    notes: "Exact build configuration must be recorded because enabling GPL components changes licensing posture."
+
+  - id: pyscenedetect
+    capabilityFamilies: [scene-detection, shot-boundaries]
+    role: video-analysis
+    source: https://github.com/Breakthrough/PySceneDetect
+    codeLicenseObserved: BSD-3-Clause
+    activationStatus: candidate
+
+  - id: whisperx
+    capabilityFamilies: [asr, word-alignment, diarization]
+    role: speech-analysis
+    source: https://github.com/m-bain/whisperX
+    codeLicenseObserved: BSD-2-Clause
+    activationStatus: conditional
+    notes: "Repository code license does not by itself clear every bundled/default model; model-by-model license review is mandatory."
+
+  - id: openclip
+    capabilityFamilies: [multimodal-embedding, semantic-video-relevance, image-text-relevance]
+    role: semantic-ranking
+    source: https://github.com/mlfoundations/open_clip
+    codeLicenseObserved: MIT
+    activationStatus: conditional
+    notes: "Model/checkpoint and upstream-derived components require separate review."
+
+  - id: sam2
+    capabilityFamilies: [segmentation, video-object-segmentation]
+    role: segmentation
+    source: https://github.com/facebookresearch/sam2
+    codeLicenseObserved: Apache-2.0
+    activationStatus: candidate
+    notes: "Model checkpoints/code are described as Apache-2.0; verify bundled third-party assets for each distribution."
+
+  - id: livekit
+    capabilityFamilies: [realtime-room, participant-media]
+    role: realtime-provider
+    source: https://github.com/livekit/livekit
+    codeLicenseObserved: Apache-2.0
+    activationStatus: candidate
+
+  - id: mediasoup
+    capabilityFamilies: [realtime-room, participant-media]
+    role: realtime-provider
+    source: https://github.com/versatica/mediasoup
+    codeLicenseObserved: ISC
+    activationStatus: candidate
+
+  - id: internvideo-family
+    capabilityFamilies: [video-representation, semantic-video-analysis]
+    role: video-model-engine
+    source: https://github.com/OpenGVLab/InternVideo
+    codeLicenseObserved: review-required
+    activationStatus: research-candidate
+    notes: "Keep as a replaceable candidate until exact code/model licenses and operational compatibility are verified."
+
+  - id: vjepa-family
+    capabilityFamilies: [video-representation, temporal-understanding]
+    role: video-model-engine
+    source: https://github.com/facebookresearch/vjepa2
+    codeLicenseObserved: review-required
+    activationStatus: research-candidate
+    notes: "Keep as replaceable candidate until exact code/model licenses and operational compatibility are verified."
+
+  - id: mlt
+    capabilityFamilies: [media-render, editing]
+    role: alternate-render-backend
+    source: https://www.mltframework.org/
+    codeLicenseObserved: review-required
+    activationStatus: research-candidate
+    notes: "Evaluate as a replaceable render backend; exact dependency and distribution licenses must be verified before activation."
+
+  - id: remotion
+    capabilityFamilies: [programmatic-video-composition, render]
+    role: composition-engine
+    source: https://www.remotion.dev/
+    codeLicenseObserved: review-required
+    activationStatus: research-candidate
+    notes: "Learn from and evaluate behind an adapter; commercial/distribution terms must be verified for the intended deployment."
+
+  - id: open-sora-family
+    capabilityFamilies: [video-generation]
+    role: generative-video-engine
+    source: https://github.com/hpcaitech/Open-Sora
+    codeLicenseObserved: review-required
+    activationStatus: research-candidate
+    notes: "Model/code/data terms are reviewed separately. Never treat repository visibility as blanket commercial permission."
+
+  - id: comfyui
+    capabilityFamilies: [generative-media-graph, workflow-execution]
+    role: inspiration-only
+    source: https://github.com/comfyanonymous/ComfyUI
+    codeLicenseObserved: review-required
+    activationStatus: learn-from-only
+    notes: "Useful graph/execution ideas may inform MOS, but ComfyUI is not a MOS authority and is not required by the core architecture."
+
+replacementExamples:
+  - capability: semantic-video-relevance
+    candidates: [openclip, internvideo-family, vjepa-family]
+  - capability: scene-detection
+    candidates: [pyscenedetect]
+  - capability: asr-word-alignment
+    candidates: [whisperx]
+  - capability: segmentation
+    candidates: [sam2]
+  - capability: realtime-room
+    candidates: [livekit, mediasoup]
+  - capability: media-render
+    candidates: [ffmpeg]
+  - capability: editorial-interchange
+    candidates: [opentimelineio]
