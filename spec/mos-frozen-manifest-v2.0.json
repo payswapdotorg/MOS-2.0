@@ -102,5 +102,20 @@
   ],
   "revision": "2.0.0",
   "architectureChangeRecord": "spec/architecture-change-records/0001-mos-v2-foundation.md",
-  "researchBasis": "docs/research/MOS-OSS-DESIGN-BASIS-v2.0.md"
+  "researchBasis": "docs/research/MOS-OSS-DESIGN-BASIS-v2.0.md",
+  "carriedForwardMOSCapabilities": {
+    "socialProviders": [
+      "youtube",
+      "instagram",
+      "facebook-pages",
+      "tiktok",
+      "x"
+    ],
+    "platformHealth": true,
+    "notifications": true,
+    "productMarketingPlanning": true,
+    "commerceDiscovery": true,
+    "socialCommerceAttribution": true,
+    "evidenceExperimentLearning": true
+  }
 }
