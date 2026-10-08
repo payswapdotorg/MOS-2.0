@@ -25,9 +25,26 @@ export type { TenantScope };
  * Identifier allocation is caller-driven: every create/upsert/grant input
  * carries the caller-supplied branded identifier. The port therefore needs no
  * id generator, clock, or any other ambient service.
+ *
+ * TENANT-ID GRAMMAR (W11-B): `createTenant` — the single authority choke point
+ * for new tenant ids — fails closed with the typed `invalid-tenant-id` error
+ * when the id violates the proposed grammar
+ * `^[a-z0-9][a-z0-9-]{0,63}$` exported from `@mos/contracts`
+ * (docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md). The error is
+ * §30-attributable: a machine-readable code + a message naming the grammar,
+ * exactly the shape an observability consumer records (actor, action, reason).
+ * Enforcement gates CREATION only — reads and scoping semantics never validate
+ * ids, so pre-grammar (grandfathered) tenants keep resolving forever
+ * (append-only discipline: stored tenants are never rewritten to conform).
  */
 export interface IdentityRepository {
-  /** Create a tenant. Fails with `duplicate-tenant` if the id already exists. */
+  /**
+   * Create a tenant. Fails with `invalid-tenant-id` when the id violates the
+   * proposed tenant-id grammar (W11-B ACR; fail-closed, nothing recorded), or
+   * `duplicate-tenant` if a conforming id already exists. Existing
+   * (grandfathered) tenants are immutable — enforcement applies to new
+   * creation only.
+   */
   createTenant(input: CreateTenantInput): Tenant | IdentityRepositoryError;
 
   /** Fetch a tenant by id, or `null` when unknown. */
@@ -111,6 +128,7 @@ export interface GrantMembershipInput {
 /** Machine-readable failure codes returned by mutating operations. */
 export type IdentityRepositoryErrorCode =
   | 'invalid-input'
+  | 'invalid-tenant-id'
   | 'tenant-not-found'
   | 'duplicate-tenant'
   | 'duplicate-workspace'

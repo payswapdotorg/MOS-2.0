@@ -103,7 +103,7 @@ test('the mission list renders rows as detail links with lifecycle and reward su
   assert.equal(text.includes('active'), true);
   assert.equal(text.includes('2 reward terms · spec v2'), true);
   assert.equal(text.includes('record v2 · reward spec v2'), true);
-  assert.equal(text.includes('tenant_demo'), true);
+  assert.equal(text.includes('tenant-demo'), true);
   assert.equal(text.includes('2026-06-01T00:00:00.000Z'), true);
 });
 
@@ -277,7 +277,7 @@ test('the create-mission intent form declares intent — labels, options, submit
 test('the first reward-term row is required; later rows are optional', () => {
   const tree = (
     <MissionIntentForm
-      scope={{ tenantId: 'tenant_demo' as never }}
+      scope={{ tenantId: 'tenant-demo' as never }}
       metricVocabulary={[{ id: 'revenue', label: 'Revenue' }]}
       onDeclareMissionIntent={noopIntent}
     />

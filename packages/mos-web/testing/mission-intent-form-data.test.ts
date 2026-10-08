@@ -15,7 +15,7 @@ import {
   missionIntentDeclarationFromFormData,
 } from '../dist/src/views/mission-intent-form-data.js';
 
-const SCOPE: TenantScope = { tenantId: 'tenant_demo' as never, workspaceId: 'ws_demo' as never };
+const SCOPE: TenantScope = { tenantId: 'tenant-demo' as never, workspaceId: 'ws_demo' as never };
 
 const formData = (entries: readonly [string, string][]): FormData => {
   const form = new FormData();

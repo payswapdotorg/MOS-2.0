@@ -49,7 +49,7 @@ export const EDITING_ORGANIZATION_REF: StudioOrganizationRef = {
 };
 
 /** The tenant the disclosed editing composition seam registers its fixtures under. */
-export const EDITING_STACK_TENANT = "tenant:studio-editing" as TenantId;
+export const EDITING_STACK_TENANT = "tenant-studio-editing" as TenantId;
 
 /** The disclosed editing principal the seam provisions derived-work coverage for. */
 export const EDITING_PRINCIPAL = "identity:studio-editor";

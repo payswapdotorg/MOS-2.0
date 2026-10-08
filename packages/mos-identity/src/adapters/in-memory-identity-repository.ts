@@ -14,6 +14,7 @@ import type {
   WorkspaceScope,
 } from '../ports/identity-repository.js';
 import type { IdentityId, MembershipId, TenantId, WorkspaceId } from '../domain/ids.js';
+import { isValidTenantId } from '@mos/contracts';
 
 /**
  * Options for {@link createInMemoryIdentityRepository}.
@@ -21,9 +22,23 @@ import type { IdentityId, MembershipId, TenantId, WorkspaceId } from '../domain/
  * `now` is injectable so tests (and future golden fixtures) get deterministic
  * timestamps; it defaults to real wall-clock ISO-8601 strings. The default
  * uses only ECMAScript globals — no Node builtin imports in runtime code.
+ *
+ * `grandfatheredTenants` (W11-B) seeds tenants that predate the tenant-id
+ * grammar enforcement — they are stored VERBATIM, without grammar
+ * validation, exactly like durable rows that predate a new CHECK
+ * constraint: append-only discipline means stored tenants are never
+ * rewritten to conform, and reads never validate ids, so these tenants keep
+ * resolving forever. New `createTenant` calls enforce the grammar
+ * regardless (a re-create attempt with a legacy id fails grammar-first —
+ * the authority never re-admits an invalid id). This is a trusted
+ * repo-internal fixture affordance, not an attacker surface: it exists so
+ * the grandfathering contract is pinnable (see
+ * adapters/tenant-id-grammar.test.ts and
+ * docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md §5).
  */
 export interface InMemoryIdentityRepositoryOptions {
   readonly now?: () => string;
+  readonly grandfatheredTenants?: readonly CreateTenantInput[];
 }
 
 /**
@@ -49,6 +64,22 @@ export function createInMemoryIdentityRepository(
     error,
     message,
   });
+
+  // W11-B grandfathering: seed pre-grammar tenants VERBATIM (no grammar
+  // validation, no duplicate-tenant rejection — the fixture set is trusted
+  // repo-internal state modeling durable rows that predate the constraint).
+  // Stored tenants are immutable and never rewritten to conform.
+  for (const legacy of options.grandfatheredTenants ?? []) {
+    const timestamp = now();
+    const legacyTenant: Tenant = Object.freeze({
+      id: legacy.id,
+      version: 1,
+      name: legacy.name,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    tenants.set(legacyTenant.id, legacyTenant);
+  }
 
   const isBlank = (value: string): boolean => value.trim().length === 0;
 
@@ -82,6 +113,18 @@ export function createInMemoryIdentityRepository(
 
   return {
     createTenant(input: CreateTenantInput): Tenant | IdentityRepositoryError {
+      // W11-B tenant-id grammar (docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md):
+      // the single authority choke point for new tenant ids. Fail closed,
+      // nothing recorded, BEFORE the duplicate check — the authority never
+      // admits a new invalid id, not even one equal to a grandfathered row.
+      // Typed + §30-attributable: machine-readable code, message names the
+      // grammar and the ACR. Reads never validate (grandfathering).
+      if (!isValidTenantId(input.id)) {
+        return fail(
+          'invalid-tenant-id',
+          `tenant id violates the proposed grammar ^[a-z0-9][a-z0-9-]{0,63}$ (docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md): ${JSON.stringify(input.id)}`,
+        );
+      }
       if (isBlank(input.name)) {
         return fail('invalid-input', 'tenant name must not be blank');
       }
