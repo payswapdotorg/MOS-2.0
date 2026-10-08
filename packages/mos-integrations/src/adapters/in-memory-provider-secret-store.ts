@@ -80,7 +80,10 @@ export function createInMemoryProviderSecretStore(
       }
       const ref = `credential-${++minted}` as CredentialRef;
       handles.set(ref as string, {
-        scope: input.scope,
+        // W9-B ownership fix: the escrow handle owns a COPY of the caller's
+        // scope — the caller's live object can never rewrite which tenant a
+        // credential handle belongs to after the declaration.
+        scope: { ...input.scope },
         displayName: input.displayName,
         kind: input.kind,
         createdAt: now() as Timestamp,

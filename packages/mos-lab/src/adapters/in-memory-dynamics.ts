@@ -104,8 +104,10 @@ export function createInMemoryDynamicsModelStore(
   const now = options.now ?? nowDefault;
   /** Version chains keyed by (tenant, dynamics model id) — tenants never share a chain. */
   const chains = new Map<string, DynamicsModel[]>();
+  // W9-B: JSON array key — injective over the (tenant, id) tuple (the
+  // W3-A hostile-id-factory class is unaliasable by construction).
   const chainKey = (tenantId: TenantId, id: DynamicsModelId): string =>
-    `${tenantId}\u0000${id}`;
+    JSON.stringify([tenantId as string, id as string]);
 
   const scoped = (tenantId: TenantId, id: DynamicsModelId): readonly DynamicsModel[] =>
     chains.get(chainKey(tenantId, id)) ?? [];

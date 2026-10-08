@@ -34,8 +34,28 @@ export interface InMemoryAgentBodyRegistryOptions {
   readonly initial?: readonly AgentBody[];
 }
 
+/**
+ * Clone-then-deep-freeze (W9-B ownership discipline, the W4-B/W8-A
+ * pattern): the registry stores a PRIVATE structural copy of the declared
+ * body. Before this fix the stored record was only SHALLOW-frozen — the
+ * caller's nested objects (roleContract, inputContract, budget, latency,
+ * safety, …) were embedded by reference and stayed mutable, so mutating
+ * the caller's body AFTER registration rewrote the STORED record
+ * (bit-for-bit append-only violation — the W5-A/W6-A defect class) and
+ * nested fields of returned records were mutable in place.
+ */
 function freezeBody(body: AgentBody): AgentBody {
-  return Object.freeze({ ...body });
+  const clone = structuredClone(body);
+  const deepFreeze = (value: unknown): void => {
+    if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
+      for (const key of Object.keys(value as Record<string, unknown>)) {
+        deepFreeze((value as Record<string, unknown>)[key]);
+      }
+      Object.freeze(value);
+    }
+  };
+  deepFreeze(clone);
+  return clone;
 }
 
 /**

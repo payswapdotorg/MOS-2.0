@@ -174,7 +174,7 @@ export function createInMemorySocialChannelRegistry(
 
       const nextVersion = existingVersions === undefined ? 1 : Math.max(...existingVersions.keys()) + 1;
 
-      const record: SocialChannel = deepFreeze({
+      const record: SocialChannel = deepFreeze(structuredClone({
         id: idKey as SocialChannelId,
         version: nextVersion as Version,
         scope: input.scope,
@@ -185,7 +185,7 @@ export function createInMemorySocialChannelRegistry(
         capabilityMatrix,
         ...(input.externalAccount !== undefined ? { externalAccount: input.externalAccount } : {}),
         createdAt: now() as SocialChannel["createdAt"],
-      });
+      }));
 
       if (existingVersions === undefined) {
         channels.set(idKey, new Map<number, SocialChannel>([[nextVersion, record]]));

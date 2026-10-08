@@ -98,8 +98,11 @@ export function createInMemoryTransformDiscovery(
   /** Append-only promotion-attempt trails keyed per (tenant, candidate id). */
   const attempts = new Map<string, TransformPromotionAttempt[]>();
 
+  // W9-B: JSON array key — injective over the (tenant, candidate) tuple, so
+  // a hostile tenant id containing the old NUL delimiter can never alias
+  // another tenant's candidate chain (the W3-A hostile-id-factory class).
   const key = (tenantId: string, candidateId: TransformCandidateId): string =>
-    `${tenantId}\u0000${candidateId}`;
+    JSON.stringify([tenantId, candidateId as string]);
 
   const fail = (
     error: TransformDiscoveryError['error'],
@@ -277,12 +280,12 @@ export function createInMemoryTransformDiscovery(
 
     async listTransformCandidates(scope: TenantScope) {
       const latest: TransformCandidate[] = [];
-      for (const [compositeKey, chain] of chains) {
-        if (compositeKey.startsWith(`${scope.tenantId}\u0000`)) {
-          const record = chain[chain.length - 1];
-          if (record !== undefined) {
-            latest.push(record);
-          }
+      for (const [, chain] of chains) {
+        // W9-B: EXACT tenant equality on the stored record (never a prefix
+        // scan — a delimiter-laden tenant id must not widen the match).
+        const record = chain[chain.length - 1];
+        if (record !== undefined && (record.tenantId as string) === (scope.tenantId as string)) {
+          latest.push(record);
         }
       }
       return latest;

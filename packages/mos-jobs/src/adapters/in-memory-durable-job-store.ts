@@ -70,8 +70,14 @@ export function createInMemoryDurableJobStore(): DurableJobStorePort {
   /** Composite keys in insertion order for FIFO claim/list scans. */
   const insertion: string[] = [];
 
-  const jobKeyOf = (tenantId: string, id: string): string => `${tenantId}:${id}`;
-  const keyKeyOf = (tenantId: string, key: string): string => `${tenantId}:${key}`;
+  // W9-B: composite keys are JSON array keys (injective over string
+  // tuples). The old `${tenant}:${id}` concatenation was injectable — a
+  // hostile tenant id containing ":" aliased another tenant's records and
+  // could silently corrupt the (tenant, jobKey) IDEMPOTENCY INDEX (the
+  // W3-A hostile-id-factory class). JSON.stringify escapes/quots make
+  // component boundaries unambiguous, so no delimiter can blur.
+  const jobKeyOf = (tenantId: string, id: string): string => JSON.stringify([tenantId, id]);
+  const keyKeyOf = (tenantId: string, key: string): string => JSON.stringify([tenantId, key]);
 
   function storedEvent(
     tenantId: string,

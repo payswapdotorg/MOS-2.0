@@ -123,7 +123,13 @@ export function transformPawnBodyIssues(pawn: TransformPawnBody): string[] {
       .map((id) => id as string)
       .sort();
     const roleCapabilities = [...servedCapabilities].sort();
-    if (bodyCapabilities.join("\u0000") !== roleCapabilities.join("\u0000")) {
+    // W9-B: element-wise comparison (never a delimiter join — a capability
+    // id carrying the join delimiter could alias two DIFFERENT capability
+    // sets and slip a mismatched body past the agreement check).
+    const sameCapabilities =
+      bodyCapabilities.length === roleCapabilities.length &&
+      bodyCapabilities.every((id, index) => id === roleCapabilities[index]);
+    if (!sameCapabilities) {
       issues.push(
         "agentBody.capabilities must equal role.servedCapabilities (the body contract and the role contract describe one pawn)",
       );

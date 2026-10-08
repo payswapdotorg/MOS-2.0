@@ -162,7 +162,10 @@ export function createInMemoryHealthSurface(
       const observation: HealthObservation = Object.freeze({
         kind: "provider-confirmed-restriction",
         id: idFactory(),
-        scope,
+        // W9-B: the observation owns a frozen COPY of the caller's scope
+        // (the caller's live object must not be able to rewrite the
+        // stored record's tenant identity after the fact).
+        scope: Object.freeze({ ...scope }),
         providerId: restriction?.providerId,
         channelRef: restriction?.channelRef,
         restrictionRef: restriction?.id,
@@ -205,11 +208,11 @@ export function createInMemoryHealthSurface(
       const observation: HealthObservation = Object.freeze({
         kind: "suspected-distribution-anomaly",
         id: idFactory(),
-        scope,
+        scope: Object.freeze({ ...scope }),
         providerId: input.providerId,
         channelRef: derivationRecord.channelRef as SocialChannelId,
         derivation: Object.freeze({
-          ...(derivation as object),
+          ...(structuredClone(derivation as object)),
           documented: Object.freeze(documented),
         }) as SuspectedAnomalyDerivation & { readonly documented: string },
         suspectedAt,

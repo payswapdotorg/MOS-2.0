@@ -41,15 +41,29 @@ export interface InMemoryOrganizationRegistryOptions {
   readonly initial?: readonly AgentOrganizationRecord[];
 }
 
+/**
+ * Clone-then-deep-freeze (W9-B ownership discipline, the W4-B/W8-A
+ * pattern): the registry stores a PRIVATE structural copy. Before this
+ * fix, nodes/edges/modelAssignments were copied per-item but the nested
+ * POLICY objects (memoryPolicy, budgetPolicy with its organization/
+ * perNode budgets, terminationPolicy) were embedded by reference —
+ * mutating the caller's policy objects after registration rewrote the
+ * STORED organization record in place (the W5-A/W6-A nested-freeze
+ * defect class). The private clone also means the caller's objects are
+ * never frozen in place.
+ */
 function freezeOrganization(organization: AgentOrganizationRecord): AgentOrganizationRecord {
-  return Object.freeze({
-    ...organization,
-    nodes: Object.freeze([...organization.nodes].map((node) => Object.freeze({ ...node }))),
-    edges: Object.freeze([...organization.edges].map((edge) => Object.freeze({ ...edge }))),
-    modelAssignments: Object.freeze(
-      [...organization.modelAssignments].map((assignment) => Object.freeze({ ...assignment })),
-    ),
-  });
+  const clone = structuredClone(organization);
+  const deepFreeze = (value: unknown): void => {
+    if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
+      for (const key of Object.keys(value as Record<string, unknown>)) {
+        deepFreeze((value as Record<string, unknown>)[key]);
+      }
+      Object.freeze(value);
+    }
+  };
+  deepFreeze(clone);
+  return clone as AgentOrganizationRecord;
 }
 
 /**

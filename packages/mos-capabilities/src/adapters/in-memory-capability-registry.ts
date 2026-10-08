@@ -27,8 +27,28 @@ export interface InMemoryCapabilityRegistryOptions {
   readonly initial?: readonly Capability[];
 }
 
+/**
+ * Clone-then-deep-freeze (W9-B ownership discipline, the W4-B/W8-A
+ * pattern): the registry stores a PRIVATE structural copy. Before this
+ * fix the stored record was only SHALLOW-frozen — the caller's nested
+ * `inputSchema`/`outputSchema`/`costModel`/`latencyModel` objects were
+ * embedded by reference and stayed mutable, so mutating the caller's
+ * declaration AFTER registration rewrote the STORED record (the
+ * W5-A/W6-A/W8-A nested-freeze defect class). The private clone also
+ * means the caller's declaration is never frozen in place.
+ */
 function freezeCapability(capability: Capability): Capability {
-  return Object.freeze({ ...capability });
+  const clone = structuredClone(capability);
+  const deepFreeze = (value: unknown): void => {
+    if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
+      for (const key of Object.keys(value as Record<string, unknown>)) {
+        deepFreeze((value as Record<string, unknown>)[key]);
+      }
+      Object.freeze(value);
+    }
+  };
+  deepFreeze(clone);
+  return clone;
 }
 
 /**

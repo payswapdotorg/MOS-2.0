@@ -7,6 +7,11 @@
  * caller cannot corrupt the stored registry state through a returned
  * reference (the nested shallow-freeze defect class found and fixed in
  * W5-A/W6-A — pinned by the registration tests).
+ *
+ * W9-B ownership hardening: registrations now go through
+ * {@link cloneThenFreezeRecord} — a PRIVATE structural copy is frozen, so
+ * caller-retained declaration objects are never frozen in place and never
+ * aliased by stored records (the W4-B/W8-A clone-then-freeze discipline).
  */
 
 /**
@@ -23,4 +28,13 @@ export function deepFreezeRecord<T>(value: T): T {
     deepFreezeRecord((value as Record<string, unknown>)[key]);
   }
   return Object.freeze(value);
+}
+
+/**
+ * Clone-then-deep-freeze (W9-B): the stored record owns a PRIVATE copy of
+ * the caller's declaration — the caller's objects are never frozen in
+ * place and never aliased by the store.
+ */
+export function cloneThenFreezeRecord<T>(value: T): T {
+  return deepFreezeRecord(structuredClone(value));
 }

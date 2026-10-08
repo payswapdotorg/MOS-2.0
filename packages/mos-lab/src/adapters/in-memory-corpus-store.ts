@@ -63,7 +63,8 @@ export function createInMemoryCorpusStore(
   /** Reference documents by id (global id namespace; records carry tenantId). */
   const documents = new Map<ReferenceDocumentId, ReferenceDocument>();
 
-  /** Corpus version chains: `${tenantId}\u0000${corpusId}` → snapshots, oldest first. */
+  /** Corpus version chains: JSON array keys `[tenantId, corpusId]` →
+   * snapshots, oldest first (W9-B: injective over the tuple). */
   const versions = new Map<string, CorpusVersion[]>();
 
   const fail = (error: CorpusErrorCode, message: string): CorpusError => ({
@@ -154,8 +155,10 @@ export function createInMemoryCorpusStore(
     return true;
   };
 
+  // W9-B: JSON array key — injective over the (tenant, corpus) tuple (the
+  // W3-A hostile-id-factory class is unaliasable by construction).
   const versionKey = (scope: TenantScope, corpusId: string): string =>
-    `${scope.tenantId}\u0000${corpusId}`;
+    JSON.stringify([scope.tenantId as string, corpusId]);
 
   const resolveDocumentInScope = (
     scope: TenantScope,

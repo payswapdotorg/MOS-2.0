@@ -75,8 +75,10 @@ export function createInMemoryTransformGraph(
   /** Graph version chains keyed per (tenant, graph id): composite key → versions, oldest first. */
   const chains = new Map<string, TransformGraph[]>();
 
+  // W9-B: JSON array key — injective over the (tenant, graph) tuple (the
+  // W3-A hostile-id-factory class is unaliasable by construction).
   const key = (tenantId: string, graphId: TransformGraphId): string =>
-    `${tenantId}\u0000${graphId}`;
+    JSON.stringify([tenantId, graphId as string]);
 
   const fail = (
     error: TransformGraphError['error'],

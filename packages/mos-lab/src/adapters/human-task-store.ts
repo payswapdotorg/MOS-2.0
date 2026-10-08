@@ -54,8 +54,11 @@ export const createHumanTaskStore = (now: () => Timestamp): HumanTaskStore => {
   /** Append-only lifecycle event logs keyed per (tenant, task id). */
   const histories = new Map<string, HumanTaskLifecycleEvent[]>();
 
+  // W9-B: JSON array key — injective over the (tenant, task) tuple, so a
+  // hostile tenant id containing the old NUL delimiter can never alias
+  // another tenant's task chain (the W3-A hostile-id-factory class).
   const key = (tenantId: string, taskId: HumanProductionTaskId): string =>
-    `${tenantId}\u0000${taskId}`;
+    JSON.stringify([tenantId, taskId as string]);
 
   const appendEvent = (scope: TenantScope, taskId: HumanProductionTaskId, event: HumanTaskEventDraft): void => {
     const log = histories.get(key(scope.tenantId, taskId)) ?? [];
@@ -109,12 +112,12 @@ export const createHumanTaskStore = (now: () => Timestamp): HumanTaskStore => {
 
     listLatest: (scope) => {
       const latest: LabHumanProductionTask[] = [];
-      for (const [compositeKey, chain] of chains) {
-        if (compositeKey.startsWith(`${scope.tenantId}\u0000`)) {
-          const record = chain[chain.length - 1];
-          if (record !== undefined) {
-            latest.push(record);
-          }
+      for (const [, chain] of chains) {
+        // W9-B: EXACT tenant equality on the stored record (never a prefix
+        // scan — a delimiter-laden tenant id must not widen the match).
+        const record = chain[chain.length - 1];
+        if (record !== undefined && (record.tenantId as string) === (scope.tenantId as string)) {
+          latest.push(record);
         }
       }
       return latest;

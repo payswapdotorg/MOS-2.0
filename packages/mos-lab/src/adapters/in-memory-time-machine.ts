@@ -85,8 +85,11 @@ export function createInMemoryTimeMachine(
   /** Branch records per (tenant, branch id) — tenants never share records, even
    *  when a custom branch-id factory mints the same id in two tenants. */
   const branchRecords = new Map<string, CounterfactualBranchRecord[]>();
+  // W9-B: JSON array key — injective over the (tenant, branch) tuple, so
+  // hostile delimiter-laden tenant ids cannot alias another tenant's
+  // branch records (the W3-A hostile-id-factory class).
   const recordsKey = (tenantId: TenantId, branchId: TimeMachineBranchId): string =>
-    `${tenantId}\u0000${branchId}`;
+    JSON.stringify([tenantId as string, branchId as string]);
 
   const timelineOf = (scope: TenantScope): Map<HistoricalObservationId, HistoricalObservation> =>
     timelines.get(scope.tenantId) ?? new Map();

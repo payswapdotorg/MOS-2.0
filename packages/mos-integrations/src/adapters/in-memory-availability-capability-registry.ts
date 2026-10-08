@@ -73,8 +73,14 @@ export function createInMemoryAvailabilityCapabilityRegistry(
   const capabilities = options.capabilities;
   /** tenantKey → availabilityId → version → frozen record. */
   const byTenant = new Map<string, Map<string, Map<number, AvailabilityCapability>>>();
-  /** tenantKey → implementationId → insertion-ordered availability ids. */
+  /** JSON array keys `[tenantId, implementationId]` → insertion-ordered
+   * availability ids (W9-B: injective over the tuple — a hostile tenant id
+   * containing the old NUL delimiter can never alias another tenant's
+   * implementation listing; the W3-A hostile-id-factory class). */
   const byImplementation = new Map<string, AvailabilityCapabilityId[]>();
+
+  const implementationKeyOf = (tenantId: string, implementationId: string): string =>
+    JSON.stringify([tenantId, implementationId]);
   let minted = 0;
 
   function layer(tenantId: TenantId): Map<string, Map<number, AvailabilityCapability>> {
@@ -154,7 +160,7 @@ export function createInMemoryAvailabilityCapabilityRegistry(
       const versions = availabilities.get(idKey);
       const nextVersion = versions === undefined ? 1 : Math.max(...versions.keys()) + 1;
 
-      const record: AvailabilityCapability = deepFreeze({
+      const record: AvailabilityCapability = deepFreeze(structuredClone({
         id: idKey as AvailabilityCapabilityId,
         version: nextVersion as Version,
         scope: input.scope,
@@ -163,14 +169,14 @@ export function createInMemoryAvailabilityCapabilityRegistry(
         capabilityVersion: input.capabilityVersion,
         constraints: input.constraints,
         createdAt: now() as AvailabilityCapability["createdAt"],
-      });
+      }));
 
       if (versions === undefined) {
         availabilities.set(idKey, new Map<number, AvailabilityCapability>([[nextVersion, record]]));
-        const implKey = input.implementationId as string;
-        const ids = byImplementation.get(`${tenantKey}\u0000${implKey}`) ?? [];
+        const implKey = implementationKeyOf(tenantKey, input.implementationId as string);
+        const ids = byImplementation.get(implKey) ?? [];
         ids.push(record.id);
-        byImplementation.set(`${tenantKey}\u0000${implKey}`, ids);
+        byImplementation.set(implKey, ids);
       } else {
         versions.set(nextVersion, record);
       }
@@ -201,7 +207,9 @@ export function createInMemoryAvailabilityCapabilityRegistry(
       tenantId: TenantId,
       implementationId: ProviderImplementationId,
     ): readonly AvailabilityCapability[] {
-      const ids = byImplementation.get(`${tenantId as string}\u0000${implementationId as string}`) ?? [];
+      const ids = byImplementation.get(
+        implementationKeyOf(tenantId as string, implementationId as string),
+      ) ?? [];
       const out: AvailabilityCapability[] = [];
       for (const id of ids) {
         const latest = latestOf(tenantId, id);

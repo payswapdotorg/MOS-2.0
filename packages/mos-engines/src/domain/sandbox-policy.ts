@@ -153,6 +153,26 @@ export function manifestPostureViolations(
 }
 
 /**
+ * Post-flight reported-usage validity (W9-B): every usage dimension must be
+ * a finite non-negative number. `NaN` defeats the quota comparison below
+ * (`NaN > limit` is false), so a rogue adapter reporting NaN usage would
+ * sail through `usageQuotaViolations` — quota enforcement made impossible
+ * must fail closed, exactly like an actual over-quota run.
+ */
+export function invalidReportedUsage(
+  usage: ResourceUsage,
+): readonly string[] {
+  const invalid: string[] = [];
+  for (const dimension of ["cpuCoreSeconds", "gpuUnitSeconds", "memoryMbSeconds"] as const) {
+    const value = usage[dimension];
+    if (!Number.isFinite(value) || value < 0) {
+      invalid.push(dimension);
+    }
+  }
+  return invalid;
+}
+
+/**
  * Post-flight quota check: the adapter's REPORTED usage must fit inside
  * the granted limits over the measured wall-clock window (cpu/gpu
  * core-seconds ≤ granted units × wall seconds; memory MB·s ≤ granted MB ×

@@ -170,7 +170,7 @@ export function createInMemoryMerchantClientInstanceRegistry(
         }
       }
 
-      const record: MerchantClientInstance = deepFreeze({
+      const record: MerchantClientInstance = deepFreeze(structuredClone({
         id: idKey as MerchantClientInstanceId,
         version: nextVersion as Version,
         scope: input.scope,
@@ -181,7 +181,7 @@ export function createInMemoryMerchantClientInstanceRegistry(
         implementationVersion: input.implementationVersion,
         credentialRef: input.credentialRef,
         createdAt: now() as MerchantClientInstance["createdAt"],
-      });
+      }));
 
       if (versions === undefined) {
         instances.set(idKey, new Map<number, MerchantClientInstance>([[nextVersion, record]]));
@@ -246,13 +246,13 @@ export function createInMemoryMerchantClientInstanceRegistry(
       // APPEND-ONLY rebind: the prior binding stays resolvable — §30 records
       // issued before the rebind keep naming the implementation version that
       // actually served them.
-      const rebound: MerchantClientInstance = deepFreeze({
+      const rebound: MerchantClientInstance = deepFreeze(structuredClone({
         ...latest,
         version: nextVersion as Version,
         implementationId: input.implementationId,
         implementationVersion: input.implementationVersion,
         createdAt: now() as MerchantClientInstance["createdAt"],
-      });
+      }));
       versions.set(nextVersion, rebound);
       return rebound;
     },

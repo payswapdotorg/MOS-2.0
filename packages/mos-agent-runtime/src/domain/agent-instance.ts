@@ -172,10 +172,20 @@ export function resolveInstantiation(
   };
 }
 
-/** Freezes one instance record (records are immutable snapshots). */
+/**
+ * Freezes one instance record (records are immutable snapshots).
+ *
+ * W9-B ownership fix: `tenantScope` is CLONED before freezing — the caller
+ * keeps its scope object and the stored record owns a private copy. Before
+ * this fix the record embedded the caller's live scope object, so mutating
+ * it after `instantiate`/`bind` changed the STORED record's tenant identity
+ * in place (a post-hoc cross-tenant identity corruption — §31 fail). The
+ * clone-then-freeze discipline is the established W4-B/W8-A pattern.
+ */
 export function freezeInstance(record: AgentInstanceRecord): AgentInstanceRecord {
   return Object.freeze({
     ...record,
+    tenantScope: Object.freeze({ ...record.tenantScope }),
     toolRefs: Object.freeze([...record.toolRefs]),
     capabilityRefs: Object.freeze([...record.capabilityRefs]),
   });

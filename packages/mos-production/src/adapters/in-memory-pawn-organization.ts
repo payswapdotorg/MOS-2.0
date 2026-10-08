@@ -16,7 +16,7 @@
 import type { TenantScope, Version } from "@mos/contracts";
 
 import { PawnExecutionError } from "../domain/errors.js";
-import { deepFreezeRecord } from "./registry-support.js";
+import { cloneThenFreezeRecord } from "./registry-support.js";
 import {
   composeTransformPawnOrganization,
 } from "../domain/pawn-organization-compose.js";
@@ -38,14 +38,19 @@ export interface InMemoryPawnOrganizationRegistryOptions {
 export function createInMemoryPawnOrganizationRegistry(
   options: InMemoryPawnOrganizationRegistryOptions,
 ): TransformPawnOrganizationPort {
-  /** `${tenantId}\u0000${organizationId}` → versions ascending. */
+  /** JSON array keys `[tenantId, organizationId]` → versions ascending
+   * (W9-B: injective over the tuple — hostile delimiter-laden tenant ids
+   * cannot alias another tenant's organizations; the W3-A class). */
   const byKey = new Map<string, Map<number, TransformPawnOrganizationRecord>>();
+
+  const keyOf = (tenantId: string, organizationId: string): string =>
+    JSON.stringify([tenantId, organizationId]);
 
   function versionsOf(
     scope: TenantScope,
     organizationId: PawnAgentOrganizationId,
   ): Map<number, TransformPawnOrganizationRecord> | undefined {
-    return byKey.get(`${scope.tenantId as string}\u0000${organizationId as string}`);
+    return byKey.get(keyOf(scope.tenantId as string, organizationId as string));
   }
 
   return {
@@ -63,17 +68,18 @@ export function createInMemoryPawnOrganizationRegistry(
           reasons.map((reason) => `${reason.code}: ${reason.detail}`).join("; "),
         );
       }
-      const key = `${scope.tenantId as string}\u0000${input.organizationId as string}`;
+      const key = keyOf(scope.tenantId as string, input.organizationId as string);
       let versions = byKey.get(key);
       if (versions === undefined) {
         versions = new Map<number, TransformPawnOrganizationRecord>();
         byKey.set(key, versions);
       }
       const nextVersion = ([...versions.keys()].at(-1) ?? 0) + 1;
-      // DEEP-frozen snapshot: nested node/edge/assignment objects and the
-      // policies stay immutable through the returned record (pinned by the
-      // append-only registry tests).
-      const versioned = deepFreezeRecord({ ...record, version: nextVersion as Version });
+      // DEEP-frozen PRIVATE snapshot (W9-B clone-then-freeze): nested
+      // node/edge/assignment objects and the policies stay immutable through
+      // the returned record AND the caller's policy objects are never frozen
+      // in place (pinned by the append-only registry tests).
+      const versioned = cloneThenFreezeRecord({ ...record, version: nextVersion as Version });
       versions.set(nextVersion, versioned);
       return versioned;
     },
@@ -93,14 +99,16 @@ export function createInMemoryPawnOrganizationRegistry(
     },
 
     listPawnOrganizations(scope: TenantScope): readonly TransformPawnOrganizationRecord[] {
-      const prefix = `${scope.tenantId as string}\u0000`;
       const latest: TransformPawnOrganizationRecord[] = [];
-      for (const [key, versions] of byKey) {
-        if (!key.startsWith(prefix)) continue;
+      for (const [, versions] of byKey) {
+        // W9-B: EXACT tenant equality on the stored record (never a prefix
+        // scan — a delimiter-laden tenant id must not widen the match).
         const top = [...versions.keys()].at(-1);
-        if (top !== undefined) {
-          latest.push(versions.get(top) as TransformPawnOrganizationRecord);
-        }
+        if (top === undefined) continue;
+        const record = versions.get(top);
+        if (record === undefined) continue;
+        if ((record.tenantId as string) !== (scope.tenantId as string)) continue;
+        latest.push(record);
       }
       return latest;
     },
