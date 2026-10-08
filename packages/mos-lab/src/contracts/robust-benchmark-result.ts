@@ -8,6 +8,7 @@ import type { WorldModelEnsembleId } from './ensemble.js';
 import type { HistoricalObservation, PredictionInterval } from './evidence.js';
 import type {
   BenchmarkAggregationRule,
+  BenchmarkCalibrationCitation,
   BenchmarkCandidate,
   BenchmarkCandidateOrigin,
   BenchmarkCandidateSource,
@@ -310,6 +311,12 @@ export interface RobustBenchmarkResult {
   readonly labOnly:
     'robust benchmark output informs selection only — it is NOT deployment evidence; the real-experiment boundary (§24) is the only path to reality-grade proof';
   readonly calibration: BenchmarkCalibrationDeclaration;
+  /**
+   * W10-A (LAB-018 loop): the DECLARED calibration-context citation this
+   * run carried (normalized `null` when the run cited nothing — the first
+   * run of a loop). Provenance only; never a calibrated-output claim.
+   */
+  readonly citedCalibrationContext: BenchmarkCalibrationCitation | null;
 }
 
 // ---------------------------------------------------------------------------

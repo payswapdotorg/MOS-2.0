@@ -21,6 +21,8 @@ import type {
   RobustBenchmarkError,
   RobustBenchmarkId,
 } from '../contracts/robust-benchmark.js';
+import type { CalibrationContextRecord } from '../contracts/online-calibration-port.js';
+import { resolveBenchmarkCitation } from './calibration-support.js';
 import { validateRewardSpec } from './reward-computation.js';
 import { cloneDeep, deepFreeze } from './parametric-support.js';
 import {
@@ -87,6 +89,20 @@ export interface InMemoryMarketingBenchmarkOptions {
   >;
   /** Injectable clock for deterministic `benchmarkedAt`/`recordedAt` stamps. */
   readonly now?: () => Timestamp;
+  /**
+   * W10-A (LAB-018 loop): the calibration-context reader seam — the surface
+   * a DECLARED citation resolves against (structurally the
+   * `OnlineCalibrationPort.getCalibrationContext` method; the composition
+   * root wires the real calibration port here). REQUIRED when a run cites
+   * calibration context: a declared citation without this seam fails
+   * closed (`calibration-context-reader-required`) — an unresolvable
+   * citation must never be silently recorded as provenance.
+   */
+  readonly calibrationContexts?: {
+    readonly getCalibrationContext: (
+      scope: TenantScope, benchmarkId: RobustBenchmarkId, version: number,
+    ) => Promise<CalibrationContextRecord | null>;
+  };
 }
 
 const CALIBRATION_DECLARATION = deepFreeze({
@@ -290,6 +306,21 @@ export function createInMemoryMarketingBenchmark(
         );
       }
 
+      // ---- 1b. W10-A: the DECLARED calibration-context citation (LAB-018
+      //      loop) — validated fail-closed BEFORE any evaluation happens
+      //      (calibration-support.ts: invalid version → invalid-input;
+      //      declared without the wired reader seam →
+      //      calibration-context-reader-required; unresolvable exact version
+      //      → calibration-context-not-found). The citation is provenance —
+      //      it never alters the evaluation grid (the fairness pin below
+      //      is unchanged by citing). ----
+      const cited = await resolveBenchmarkCitation(
+        input.citedCalibrationContext, input.scope, input.benchmarkId, options.calibrationContexts,
+      );
+      if ('failure' in cited) {
+        return cited.failure;
+      }
+
       // ---- 2. world-model set resolution ----
       const resolved = await resolveWorlds(input);
       if ('error' in resolved) {
@@ -394,6 +425,7 @@ export function createInMemoryMarketingBenchmark(
         labOnly:
           'robust benchmark output informs selection only — it is NOT deployment evidence; the real-experiment boundary (§24) is the only path to reality-grade proof',
         calibration: CALIBRATION_DECLARATION,
+        citedCalibrationContext: cited.citation,
       };
 
       // ---- 5. append the frozen, digest-sealed record (the only write path) ----
