@@ -171,6 +171,18 @@ export function createProviderTransportBinding(
     return JSON.stringify({ operation: request.operation, parameters: request.parameters });
   }
 
+  // W9-B: the replay-ledger key is a JSON array key (injective over the
+  // string tuple). The old `|`-delimited concatenation was injectable —
+  // hostile tenant/channel/key ids containing `|` could alias ANOTHER
+  // tenant's ledger entry, replaying a foreign tenant's provider answer
+  // or evicting its idempotency binding (W3-A hostile-id class).
+  const ledgerKeyOf = (
+    tenantId: string,
+    channelRef: string,
+    operation: SocialOperation,
+    key: string,
+  ): string => JSON.stringify([tenantId, channelRef, operation, key]);
+
   const binding: ProviderTransportBinding = {
     source,
 
@@ -213,7 +225,7 @@ export function createProviderTransportBinding(
       // 4. IDEMPOTENCY/REPLAY: a carried key names ONE logical provider operation.
       const key = request.idempotencyKey ?? null;
       if (key !== null) {
-        const ledgerKey = `${request.scope.tenantId as string}|${request.channelRef as string}|${request.operation}|${key}`;
+        const ledgerKey = ledgerKeyOf(request.scope.tenantId as string, request.channelRef as string, request.operation, key);
         const prior = replayLedger.get(ledgerKey);
         if (prior !== undefined) {
           if (prior.digest !== digestOf(request)) {
@@ -273,17 +285,19 @@ export function createProviderTransportBinding(
       }
 
       operations.push(
-        deepFreeze({
+        // W9-B: clone-then-freeze — the caller's request.scope object is
+        // neither aliased by the stored record nor frozen in place.
+        deepFreeze(structuredClone({
           requestId: request.requestId,
           scope: request.scope,
           channelRef: request.channelRef,
           operation: request.operation,
           idempotencyKey: key,
           occurredAt: now() as Timestamp,
-        }),
+        })),
       );
       if (key !== null) {
-        const ledgerKey = `${request.scope.tenantId as string}|${request.channelRef as string}|${request.operation}|${key}`;
+        const ledgerKey = ledgerKeyOf(request.scope.tenantId as string, request.channelRef as string, request.operation, key);
         replayLedger.set(ledgerKey, { digest: digestOf(request), response });
       }
       return response;

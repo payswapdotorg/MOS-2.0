@@ -14,7 +14,7 @@
 
 import type { TenantId, TenantScope, Transform, TransformId, Version } from "@mos/contracts";
 
-import { deepFreezeRecord } from "./registry-support.js";
+import { cloneThenFreezeRecord } from "./registry-support.js";
 import type { PawnTransformKind } from "../contracts/pawn-role.js";
 import type {
   PawnTransformSourcePort,
@@ -45,21 +45,32 @@ export interface InMemoryTransformSourceDouble extends PawnTransformSourcePort {
 export function createInMemoryTransformSource(
   options: InMemoryTransformSourceOptions = {},
 ): InMemoryTransformSourceDouble {
-  /** `${tenantId}\u0000${definitionId}` → versions ascending. */
-  const byKey = new Map<string, Map<number, ResolvedPawnTransform>>();
+  /** The stored record: the resolved transform plus its owning tenant (the
+   * seed carries the tenant; the W9-B exact-equality listing reads it). */
+  type StoredTransform = ResolvedPawnTransform & { readonly tenantId: TenantId };
+
+  /** JSON array keys `[tenantId, definitionId]` → versions ascending (W9-B:
+   * injective over the tuple — hostile delimiter-laden tenant ids cannot
+   * alias another tenant's definitions; the W3-A hostile-id-factory class). */
+  const byKey = new Map<string, Map<number, StoredTransform>>();
+
+  const keyOf = (tenantId: string, definitionId: string): string =>
+    JSON.stringify([tenantId, definitionId]);
 
   const source: InMemoryTransformSourceDouble = {
     register(seed: PawnTransformDefinitionSeed): ResolvedPawnTransform {
-      const key = `${seed.tenantId as string}\u0000${seed.id as string}`;
+      const key = keyOf(seed.tenantId as string, seed.id as string);
       let versions = byKey.get(key);
       if (versions === undefined) {
-        versions = new Map<number, ResolvedPawnTransform>();
+        versions = new Map<number, StoredTransform>();
         byKey.set(key, versions);
       }
       const nextVersion = ([...versions.keys()].at(-1) ?? 0) + 1;
-      // DEEP-frozen snapshot (nested schemas/requirements stay immutable
-      // through the returned record — pinned by registration tests).
-      const record: ResolvedPawnTransform = deepFreezeRecord({
+      // DEEP-frozen PRIVATE snapshot (W9-B clone-then-freeze: nested schemas
+      // and requirement objects stay immutable through the returned record
+      // AND the caller's seed objects are never frozen in place — pinned by
+      // the registration tests).
+      const record: StoredTransform = cloneThenFreezeRecord({
         ...seed,
         version: nextVersion as Version,
       });
@@ -67,14 +78,16 @@ export function createInMemoryTransformSource(
       return record;
     },
     listLatest(scope: TenantScope): readonly ResolvedPawnTransform[] {
-      const prefix = `${scope.tenantId as string}\u0000`;
       const latest: ResolvedPawnTransform[] = [];
-      for (const [key, versions] of byKey) {
-        if (!key.startsWith(prefix)) continue;
+      for (const [, versions] of byKey) {
+        // W9-B: EXACT tenant equality on the stored record (never a prefix
+        // scan — a delimiter-laden tenant id must not widen the match).
         const top = [...versions.keys()].at(-1);
-        if (top !== undefined) {
-          latest.push(versions.get(top) as ResolvedPawnTransform);
-        }
+        if (top === undefined) continue;
+        const record = versions.get(top);
+        if (record === undefined) continue;
+        if ((record.tenantId as string) !== (scope.tenantId as string)) continue;
+        latest.push(record);
       }
       return latest;
     },
@@ -83,7 +96,7 @@ export function createInMemoryTransformSource(
       definitionId: TransformId,
       version?: Version,
     ): Promise<ResolvedPawnTransform | null> {
-      const versions = byKey.get(`${scope.tenantId as string}\u0000${definitionId as string}`);
+      const versions = byKey.get(keyOf(scope.tenantId as string, definitionId as string));
       if (versions === undefined) return null;
       if (version === undefined) {
         const top = [...versions.keys()].at(-1);

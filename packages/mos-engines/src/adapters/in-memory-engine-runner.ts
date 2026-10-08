@@ -88,6 +88,28 @@ export interface InMemoryEngineRunnerOptions {
   readonly fetchImpl?: (url: string) => Promise<Uint8Array>;
 }
 
+/**
+ * Clone-then-deep-freeze (W9-B ownership discipline, the W4-B/W8-A
+ * pattern): snapshots handed across the runner's seams — the §30
+ * observability record and the returned EngineResult — are PRIVATE frozen
+ * copies, so neither the caller (mutating the job's input array after
+ * submit) nor the adapter (mutating the result object it returned) can
+ * rewrite history after the fact.
+ */
+function freezeClone<T>(value: T): T {
+  const clone = structuredClone(value);
+  const deepFreeze = (item: unknown): void => {
+    if (typeof item === "object" && item !== null && !Object.isFrozen(item)) {
+      for (const key of Object.keys(item as Record<string, unknown>)) {
+        deepFreeze((item as Record<string, unknown>)[key]);
+      }
+      Object.freeze(item);
+    }
+  };
+  deepFreeze(clone);
+  return clone;
+}
+
 const NOOP_SINK: JobEventSinkPort = { onJobEvent: () => undefined };
 
 const ZERO_USAGE: ResourceUsage = {
@@ -138,7 +160,10 @@ export function createInMemoryEngineRunner(
     result: EngineResult,
     wallMs: Milliseconds,
   ): EngineResult {
-    const record: EngineRunObservabilityRecord = {
+    // W9-B: the §30 record is an owned deep-frozen snapshot (the caller's
+    // live job.inputArtifactRefs array and the adapter's live result fields
+    // must never be able to rewrite an emitted record after the fact).
+    const record: EngineRunObservabilityRecord = freezeClone({
       runId: job.id,
       capabilityId: job.capabilityId,
       capabilityVersion: job.capabilityVersion,
@@ -155,7 +180,7 @@ export function createInMemoryEngineRunner(
       provenance: result.provenance,
       lifecycle,
       recordedAt: clock(),
-    };
+    });
     emit({
       type:
         lifecycle === "succeeded"
@@ -166,7 +191,9 @@ export function createInMemoryEngineRunner(
       jobId: job.id,
       record,
     });
-    return result;
+    // W9-B: the returned result is likewise a private frozen snapshot
+    // (deep — nested adapter-owned fields too).
+    return freezeClone(result);
   }
 
   /** A failure result built from scratch (nothing ran / nothing trusted). */

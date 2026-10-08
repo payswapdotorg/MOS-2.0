@@ -67,8 +67,10 @@ export function createInMemorySocialWorldModelStore(
   const now = options.now ?? nowDefault;
   /** Version chains keyed by (tenant, world model id) — tenants never share a chain. */
   const chains = new Map<string, SocialWorldModel[]>();
+  // W9-B: JSON array key — injective over the (tenant, id) tuple (the
+  // W3-A hostile-id-factory class is unaliasable by construction).
   const chainKey = (scope: TenantScope, id: SocialWorldModelId): string =>
-    `${scope.tenantId}\u0000${id}`;
+    JSON.stringify([scope.tenantId as string, id as string]);
 
   const validateDraft = (
     draft: SocialWorldModelDraft,

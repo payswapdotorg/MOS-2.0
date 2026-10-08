@@ -141,8 +141,11 @@ export function createInMemoryEnsembleStore(
   const now = options.now ?? nowDefault;
   /** Version chains keyed by (tenant, ensemble id) — tenants never share a chain. */
   const chains = new Map<string, WorldModelEnsemble[]>();
+  // W9-B: JSON array key — injective over the (tenant, id) tuple, so a
+  // hostile tenant id containing the old NUL delimiter can never alias
+  // another tenant's chain (the W3-A hostile-id-factory class).
   const chainKey = (scope: TenantScope, id: WorldModelEnsembleId): string =>
-    `${scope.tenantId}\u0000${id}`;
+    JSON.stringify([scope.tenantId as string, id as string]);
 
   const scoped = (
     scope: TenantScope,

@@ -182,7 +182,12 @@ export function createInMemoryProviderInteractionPort(
   ): ProviderInteractionRecord {
     const completedAt = now();
     const durationMs = Math.max(0, Date.parse(completedAt) - Date.parse(base.startedAt));
-    return deepFreeze({
+    // W9-B clone-then-deep-freeze (the ownership discipline the sweep
+    // applied to the distribution §30 records, mirrored here): the §30
+    // interaction record owns a PRIVATE copy — the caller's live
+    // `request.scope` object is neither aliased by the stored record nor
+    // frozen in place by the authority.
+    return deepFreeze(structuredClone({
       id: base.id,
       scope: base.scope,
       instanceId: base.instance.id,
@@ -199,7 +204,7 @@ export function createInMemoryProviderInteractionPort(
       failure,
       warnings,
       transportSource,
-    });
+    }));
   }
 
   const runtime: ProviderInteractionPort = {

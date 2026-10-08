@@ -138,7 +138,7 @@ export function createInMemoryProviderDefinitionRegistry(): ProviderDefinitionRe
       const versions = definitions.get(idKey);
       const nextVersion = versions === undefined ? 1 : Math.max(...versions.keys()) + 1;
 
-      const record: ProviderDefinition = deepFreeze({
+      const record: ProviderDefinition = deepFreeze(structuredClone({
         id: idKey as ProviderDefinitionId,
         version: nextVersion as Version,
         scope: input.scope,
@@ -148,7 +148,7 @@ export function createInMemoryProviderDefinitionRegistry(): ProviderDefinitionRe
         transport,
         declaredCapabilities: input.declaredCapabilities,
         ...(input.externalAccount !== undefined ? { externalAccount: input.externalAccount } : {}),
-      });
+      }));
 
       if (versions === undefined) {
         definitions.set(idKey, new Map<number, ProviderDefinition>([[nextVersion, record]]));

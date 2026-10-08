@@ -20,7 +20,11 @@ import type {
 } from "@mos/contracts";
 
 import type { EngineArtifactStorePort } from "../ports/engine-runner.port.js";
-import { sandboxFailure, usageQuotaViolations } from "../domain/sandbox-policy.js";
+import {
+  invalidReportedUsage,
+  sandboxFailure,
+  usageQuotaViolations,
+} from "../domain/sandbox-policy.js";
 
 /** Outcome of the post-flight validation. */
 export type AdapterResultVerdict =
@@ -66,6 +70,20 @@ export async function validateAdapterResult(
           ? "result-job-id-mismatch"
           : "provenance-identity-mismatch",
         "the adapter's result does not echo the submitted job identity",
+      ),
+    };
+  }
+
+  // W9-B: NaN/negative reported usage defeats the quota comparison
+  // (`NaN > limit` is false) — enforcement made impossible fails closed.
+  const invalidUsage = invalidReportedUsage(adapterResult.resourceUsage);
+  if (invalidUsage.length > 0) {
+    return {
+      kind: "failed",
+      failure: sandboxFailure(
+        "invalid-resource-usage",
+        `reported resource usage is not a finite non-negative number (quota enforcement impossible): ${invalidUsage.join(", ")}`,
+        { invalid: invalidUsage },
       ),
     };
   }

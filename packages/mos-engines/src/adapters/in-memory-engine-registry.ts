@@ -75,10 +75,34 @@ interface EngineEntry {
 const DEFAULT_LANE = "default";
 const FIXED_NOW = () => new Date().toISOString() as Timestamp;
 
+/**
+ * W9-B collision-proof composite lane key. The old `"::"`-delimited
+ * concatenation was injectable: a hostile tenant id containing `"::"`
+ * aliased another tenant's assignment lane (the W3-A hostile-id-factory
+ * class). A JSON array key is injective over string tuples — components
+ * can never blur into each other.
+ */
 function laneKey(capabilityId: CapabilityId, tenantId?: TenantId): string {
-  return tenantId === undefined
-    ? `${DEFAULT_LANE}::${capabilityId as string}`
-    : `tenant::${tenantId as string}::${capabilityId as string}`;
+  return JSON.stringify([tenantId ?? DEFAULT_LANE, capabilityId as string]);
+}
+
+/**
+ * Clone-then-deep-freeze (the W4-B/W8-A ownership discipline): the
+ * registry stores a PRIVATE structural copy — caller-retained objects are
+ * never aliased by stored records and never frozen in place.
+ */
+function freezeClone<T>(value: T): T {
+  const clone = structuredClone(value);
+  const deepFreeze = (item: unknown): void => {
+    if (typeof item === "object" && item !== null && !Object.isFrozen(item)) {
+      for (const key of Object.keys(item as Record<string, unknown>)) {
+        deepFreeze((item as Record<string, unknown>)[key]);
+      }
+      Object.freeze(item);
+    }
+  };
+  deepFreeze(clone);
+  return clone;
 }
 
 /**
@@ -166,7 +190,7 @@ export function createInMemoryEngineRegistry(
         );
       }
       versions.set(versionKey, {
-        engine: Object.freeze({ ...manifest }),
+        engine: freezeClone(manifest),
         registeredAt: clock(),
         active: false,
       });
@@ -213,7 +237,7 @@ export function createInMemoryEngineRegistry(
       for (const other of engines.get(engineId as string)?.values() ?? []) {
         other.active = false;
       }
-      entry.evidence = full;
+      entry.evidence = freezeClone(full);
       entry.active = true;
       entry.activatedAt = clock();
       return Object.freeze({

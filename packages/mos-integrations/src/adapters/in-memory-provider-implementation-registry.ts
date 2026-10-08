@@ -175,7 +175,11 @@ export function createInMemoryProviderImplementationRegistry(
       const versions = implementations.get(idKey);
       const nextVersion = versions === undefined ? 1 : Math.max(...versions.keys()) + 1;
 
-      const record: ProviderImplementation = deepFreeze({
+      // W9-B clone-then-deep-freeze (the sweep's ownership discipline): the
+      // stored implementation owns a PRIVATE copy — the caller's scope,
+      // evidence/error models and rate-limit observation objects are
+      // neither aliased by the stored record nor frozen in place.
+      const record: ProviderImplementation = deepFreeze(structuredClone({
         id: idKey as ProviderImplementationId,
         version: nextVersion as Version,
         scope: input.scope,
@@ -191,7 +195,7 @@ export function createInMemoryProviderImplementationRegistry(
         evidenceModel: input.evidenceModel,
         errorModel: input.errorModel,
         rateLimitObservation: input.rateLimitObservation,
-      });
+      }));
 
       if (versions === undefined) {
         implementations.set(idKey, new Map<number, ProviderImplementation>([[nextVersion, record]]));
@@ -268,12 +272,17 @@ export function createInMemoryProviderImplementationRegistry(
       // APPEND-ONLY: the prior version (with its prior status — possibly
       // `unknown`) stays resolvable; the correction is a NEW immutable
       // snapshot. UNKNOWN is never rewritten in place.
+      // W9-B ownership (surgical): the correction preserves every prior
+      // field from the prior STORED record (already deep-frozen — the
+      // append-only pin's reference-equality discipline), and owns a FROZEN
+      // COPY of the caller's evidence refs — the caller's array is never
+      // frozen in place and never aliased by the stored record.
       const corrected: ProviderImplementation = deepFreeze({
         ...latest,
         version: nextVersion as Version,
         status: input.status,
         statusObservedAt: (input.statusObservedAt ?? now()) as ProviderImplementation["statusObservedAt"],
-        evidenceRefs: input.evidenceRefs,
+        evidenceRefs: Object.freeze([...input.evidenceRefs]),
       });
       versions.set(nextVersion, corrected);
       return corrected;

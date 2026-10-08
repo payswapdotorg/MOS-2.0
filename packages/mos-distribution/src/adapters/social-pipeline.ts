@@ -146,7 +146,10 @@ export function createSocialPipeline(deps: SocialPipelineDeps): SocialPipeline {
   ): SocialDistributionRecord {
     const completedAt = now();
     const durationMs = Math.max(0, Date.parse(completedAt) - Date.parse(base.startedAt));
-    return deepFreeze({
+    // W9-B: clone-then-freeze — the caller's live request.actor object is
+    // neither aliased by the stored record nor frozen in place (the W4-B
+    // clone-then-freeze ownership discipline).
+    return deepFreeze(structuredClone({
       id: base.id,
       scope: base.channel.scope,
       channelRef: base.channel.id,
@@ -161,7 +164,7 @@ export function createSocialPipeline(deps: SocialPipelineDeps): SocialPipeline {
       failure,
       warnings,
       transportSource,
-    });
+    }));
   }
 
   function pipeline<TOutput>(

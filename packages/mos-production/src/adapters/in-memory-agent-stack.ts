@@ -29,7 +29,7 @@ import type {
 } from "@mos/contracts";
 
 import { PawnExecutionError } from "../domain/errors.js";
-import { deepFreezeRecord } from "./registry-support.js";
+import { cloneThenFreezeRecord } from "./registry-support.js";
 import type {
   InstantiatePawnInstanceInput,
   PawnAgentExecutorEvent,
@@ -98,9 +98,14 @@ export function createInMemoryPawnBodyRegistry(
         `body ${id} version ${version} must append above latest ${latest} (monotonic versions)`,
       );
     }
-    // DEEP-frozen snapshot (nested roleContract/schemas/policies stay
-    // immutable through the returned record — pinned by registration tests).
-    versions.set(version, deepFreezeRecord({ ...body }));
+    // DEEP-frozen PRIVATE snapshot (W9-B clone-then-freeze, completing the
+    // sweep's ownership discipline): nested roleContract/schemas/policies
+    // stay immutable through the returned record AND the caller's body
+    // objects are never frozen in place — the pre-fix shallow spread
+    // embedded the caller's nested objects by reference and the recursive
+    // freeze froze them IN PLACE (the caller-ownership defect; pinned by
+    // the W9-B adversarial probes).
+    versions.set(version, cloneThenFreezeRecord(body));
   }
 
   for (const body of options.initial ?? []) {
@@ -235,6 +240,12 @@ export function createInMemoryPawnInstanceRegistry(
   function freeze(record: PawnInstanceRecord): PawnInstanceRecord {
     return Object.freeze({
       ...record,
+      // W9-B ownership fix (completing the sweep — the @mos/agent-runtime
+      // freezeInstance fix mirrored here): the record owns a FROZEN COPY of
+      // the caller's scope, so mutating the caller's object after
+      // instantiate/bind/release can never rewrite the STORED record's
+      // tenant identity (post-hoc cross-tenant corruption, §31).
+      tenantScope: Object.freeze({ ...record.tenantScope }),
       toolRefs: Object.freeze([...record.toolRefs]),
       capabilityRefs: Object.freeze([...record.capabilityRefs]),
     });

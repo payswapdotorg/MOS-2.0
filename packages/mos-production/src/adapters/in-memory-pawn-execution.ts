@@ -29,7 +29,7 @@ import type {
 
 import { PawnExecutionError } from "../domain/errors.js";
 import { assertValidTransformPawnBody } from "../domain/pawn-body-validation.js";
-import { deepFreezeRecord } from "./registry-support.js";
+import { cloneThenFreezeRecord } from "./registry-support.js";
 import type { TransformPawnBody } from "../contracts/pawn-body.js";
 import type { TransformPawnTask } from "../contracts/pawn-task.js";
 import type { PawnExecutionRecord } from "../contracts/pawn-execution.js";
@@ -133,10 +133,13 @@ export function createInMemoryPawnExecutionRuntime(
       // Registers the canonical agent body through the registry seam (typed
       // errors from the seam propagate).
       options.bodyRegistry.register(pawn.agentBody);
-      // The stored pawn body is a DEEP-FROZEN snapshot (nested role and body
-      // fields stay immutable — pinned by the registration tests).
-      versions.set(version, deepFreezeRecord(pawn));
-      byKind.set(pawn.role.pawnKind, pawn);
+      // The stored pawn body is a DEEP-FROZEN PRIVATE snapshot (W9-B
+      // clone-then-freeze): nested role and body fields stay immutable AND
+      // the caller's declaration objects are never frozen in place (pinned
+      // by the registration tests).
+      const stored = cloneThenFreezeRecord(pawn);
+      versions.set(version, stored);
+      byKind.set(pawn.role.pawnKind, stored);
     },
 
     listPawnBodies(): readonly TransformPawnBody[] {

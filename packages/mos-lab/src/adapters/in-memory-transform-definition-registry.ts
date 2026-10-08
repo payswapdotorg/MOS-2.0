@@ -53,7 +53,10 @@ export function createInMemoryTransformDefinitionRegistry(
   /** Definition version chains keyed per (tenant, id): composite key → versions, oldest first. */
   const chains = new Map<string, TransformDefinition[]>();
 
-  const key = (tenantId: string, id: TransformId): string => `${tenantId}\u0000${id}`;
+  // W9-B: JSON array key — injective over the (tenant, id) tuple, so a
+  // hostile tenant id containing the old NUL delimiter can never alias
+  // another tenant's definition chain (the W3-A hostile-id-factory class).
+  const key = (tenantId: string, id: TransformId): string => JSON.stringify([tenantId, id as string]);
 
   const fail = (error: TransformDefinitionError['error'], message: string): TransformDefinitionError => ({
     error,
@@ -169,12 +172,12 @@ export function createInMemoryTransformDefinitionRegistry(
 
     async listTransformDefinitions(scope: TenantScope): Promise<readonly TransformDefinition[]> {
       const latest: TransformDefinition[] = [];
-      for (const [compositeKey, chain] of chains) {
-        if (compositeKey.startsWith(`${scope.tenantId}\u0000`)) {
-          const record = chain[chain.length - 1];
-          if (record !== undefined) {
-            latest.push(record);
-          }
+      for (const [, chain] of chains) {
+        // W9-B: EXACT tenant equality on the stored record (never a prefix
+        // scan — a delimiter-laden tenant id must not widen the match).
+        const record = chain[chain.length - 1];
+        if (record !== undefined && (record.tenantId as string) === (scope.tenantId as string)) {
+          latest.push(record);
         }
       }
       return latest;

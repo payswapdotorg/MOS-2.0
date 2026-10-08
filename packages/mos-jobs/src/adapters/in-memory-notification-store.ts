@@ -66,10 +66,16 @@ export function createInMemoryNotificationStore(): NotificationStorePort {
   /** Composite keys in insertion order for listing scans. */
   const insertion: string[] = [];
 
-  const notificationKeyOf = (tenantId: string, id: string): string => `${tenantId}:${id}`;
-  const dedupKeyOf = (tenantId: string, key: string): string => `${tenantId}:${key}`;
+  // W9-B: composite keys are JSON array keys (injective over string
+  // tuples) — the old `:`-delimited concatenation was injectable by a
+  // hostile tenant id, which could alias another tenant's DEDUP INDEX
+  // and silently break notification idempotency (W3-A class).
+  const notificationKeyOf = (tenantId: string, id: string): string =>
+    JSON.stringify([tenantId, id]);
+  const dedupKeyOf = (tenantId: string, key: string): string =>
+    JSON.stringify([tenantId, key]);
   const suppressionKeyOf = (tenantId: string, recipient: string): string =>
-    `${tenantId}:${recipient}`;
+    JSON.stringify([tenantId, recipient]);
 
   function storedEvent(
     tenantId: string,
@@ -154,11 +160,11 @@ export function createInMemoryNotificationStore(): NotificationStorePort {
       const list = receipts.get(notificationKeyOf(tenantId, stored.notificationId as string)) ?? [];
       list.push(stored);
       receipts.set(notificationKeyOf(tenantId, stored.notificationId as string), list);
-      receiptsById.set(`${tenantId}:${stored.id as string}`, stored);
+      receiptsById.set(JSON.stringify([tenantId, stored.id as string]), stored);
     },
 
     findReceiptById(scope: TenantScope, receiptId: NotificationReceiptId) {
-      const receipt = receiptsById.get(`${scope.tenantId as string}:${receiptId as string}`);
+      const receipt = receiptsById.get(JSON.stringify([scope.tenantId as string, receiptId as string]));
       if (receipt === undefined || receipt.scope.workspaceId !== scope.workspaceId) {
         return undefined;
       }
