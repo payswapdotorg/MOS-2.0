@@ -77,7 +77,6 @@ import type {
 } from "@mos/contracts";
 import { createInMemoryRightsRepository, evaluateRights } from "../../../mos-rights/dist/index.js";
 import type { RightsRepository } from "@mos/rights";
-
 import { createInMemoryArtifactFactory } from "./in-memory-artifact-factory.js";
 import { createEditingCompositionRuntime } from "../runtime/editing/editing-composition-runtime.js";
 import type { EditingCompositionPort } from "../ports/editing-composition.port.js";
@@ -106,6 +105,13 @@ export interface ComposeEditingStackOptions {
   readonly now?: () => Timestamp;
   /** Configured typed failure for the disclosed timeline-renderer engine double. */
   readonly engineFailure?: { readonly code: string; readonly message: string; readonly retriable: boolean };
+  /**
+   * SHARED rights authority (W9-C): when provided, the stack binds this
+   * repository instead of creating its own — the studio runtime composed
+   * beside the editing surface then admits participants, gates captures and
+   * gates editing contributors through the ONE REAL rights authority.
+   */
+  readonly rightsRepository?: RightsRepository;
 }
 
 /** The composed editing stack (+ inspection handles for the tests). */
@@ -144,6 +150,15 @@ export interface EditingStack {
     readonly finalArtifacts: readonly StudioArtifactRef[];
     readonly consentRefs?: StudioArtifactPackage["consent"]["participantConsentRefs"];
   }): StudioArtifactPackage;
+  /**
+   * W9-C: registers one ADDITIONAL pawn organization under the stack tenant
+   * (an editor node) so format flows can cite the SAME organization the
+   * studio session loaded as the editing composition organization.
+   */
+  registerPawnOrganization(input: {
+    readonly organizationId: string;
+    readonly evaluator: string;
+  }): { readonly id: string; readonly version: number };
 }
 
 /** A complete engine manifest for the fictional-but-plausible timeline renderer. */
@@ -199,7 +214,7 @@ export function composeEditingStack(
   // (the repository + evaluation rule resolve through the W2-C relative-dist
   // import; the gate evaluator is bridged once at this documented seam —
   // the evaluation rule itself is the REAL @mos/rights rule, never doubled)
-  const rightsRepository = createInMemoryRightsRepository({ now: now as () => string });
+  const rightsRepository = options.rightsRepository ?? createInMemoryRightsRepository({ now: now as () => string });
   const participantConsentPort = createParticipantConsentPortFromRightsRepository(rightsRepository);
   const rightsGate = createInMemoryPawnRightsGate({
     evaluate: evaluateRights as unknown as PawnRightsEvaluator,
@@ -460,5 +475,14 @@ export function composeEditingStack(
     grantTransformRights,
     createSourceArtifact,
     buildSourcePackage: (input) => buildEditingSourcePackage(input, now),
+    registerPawnOrganization: (input) => {
+      const record = organizationRegistry.registerPawnOrganization(bridge<never>(scope), {
+        scope,
+        organizationId: bridge<never>(input.organizationId),
+        nodes: [{ nodeId: "editor-node", pawnKind: "editor" }],
+        evaluator: bridge<never>(input.evaluator),
+      } as never);
+      return { id: String(record.id), version: Number(record.version) };
+    },
   };
 }

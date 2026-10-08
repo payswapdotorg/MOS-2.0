@@ -9,7 +9,7 @@
 
 import type { Timestamp } from "../contracts/refs.js";
 import type { SessionParticipant, StudioSession } from "../contracts/studio-session.js";
-import type { StudioArtifactPackage } from "../contracts/studio-artifact-package.js";
+import type { StudioArtifactPackage, StudioArtifactRef } from "../contracts/studio-artifact-package.js";
 import type { OutputTreatmentResult, StudioOutputReview, StudioOutputTreatmentPort } from "../contracts/treatment.js";
 import type { StudioOrganizationLoader } from "../contracts/organization-loading.js";
 import type { StudioArtifactFactoryPort } from "../ports/artifact-factory.js";
@@ -60,6 +60,13 @@ export interface ReviewHandledValue {
   readonly review: StudioOutputReview;
   /** Present when the review accepted the output (assembled package version). */
   readonly package?: StudioArtifactPackage;
+}
+
+/** Successful importSourceArtifact outcome value (STUDIO-009). */
+export interface ImportedSourceValue {
+  readonly session: StudioSession;
+  /** The imported acquired-input artifact version (stage `raw`, §6). */
+  readonly source: StudioArtifactRef;
 }
 
 /** Successful applyTreatment outcome value. */

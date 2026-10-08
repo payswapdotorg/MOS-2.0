@@ -15,6 +15,14 @@
  * the audio-podcast end-to-end flow (conversation graph, edit graph, packaged
  * StudioArtifactPackage with full provenance).
  *
+ * Wave 9 (STUDIO-009/012): the reaction format flow (rights-gated source
+ * import as the §6 acquired-input stage, human reactor capture through the
+ * REAL §15 gates or synthetic-labeled personas, §16 entry intermediates and
+ * the org's reaction-composition decisions composed through the W8-C editing
+ * surface) and the video-podcast flow (the W3-C architecture with mandatory
+ * video capture rounds and the final video composed through the same editing
+ * surface).
+ *
  * THE STUDIO NEVER PUBLISHES (architecture policy studio.noDirectPublication):
  * there is no distribution/provider/publish surface in this package —
  * asserted by src/runtime/no-publish.test.ts. THE STUDIO NEVER SELECTS
@@ -144,6 +152,7 @@ export type { InMemoryCaptureSourceOptions } from "./runtime/capture/in-memory-c
 export { createStudioRuntime, StudioRuntime } from "./runtime/studio-runtime.js";
 export type {
   CreateStudioSessionInput,
+  ImportSourceArtifactRequest,
   JoinParticipantRequest,
   OpenCaptureRequest,
   StandaloneSessionIntent,
@@ -153,6 +162,7 @@ export type {
 } from "./runtime/intake-types.js";
 export type {
   CreatedSessionValue,
+  ImportedSourceValue,
   JoinedParticipantValue,
   LoadedOrganizationValue,
   ReviewHandledValue,
@@ -231,6 +241,41 @@ export { buildConversationGraph } from "./runtime/podcast/conversation-graph.js"
 export type { BuildConversationGraphInput } from "./runtime/podcast/conversation-graph.js";
 export { recordEditDecisions } from "./runtime/podcast/edit-graph.js";
 export type { RecordEditDecisionsInput } from "./runtime/podcast/edit-graph.js";
+
+// ——— Runtime: reaction flow (STUDIO-009, §16 reaction production) ———
+// Rights-cleared source/reference artifacts imported as acquired inputs,
+// human reactor capture through the REAL §15 gates (or synthetic-labeled
+// personas with the generating capability named), §16 entry intermediates,
+// and the organization's reaction-composition decisions composed through the
+// W8-C EditingCompositionPort into the packaged output.
+export { createReactionFlow } from "./runtime/reaction/reaction-flow.js";
+export type { ReactionFlowDeps } from "./runtime/reaction/reaction-flow.js";
+export type {
+  ReactionFlowError,
+  ReactionFlowOutcome,
+  ReactionFlowResult,
+  ReactionParticipantPlan,
+  ReactionProductionPlan,
+  ReactionSourcePlan,
+} from "./runtime/reaction/reaction-plan.js";
+
+// ——— Runtime: video-podcast flow (STUDIO-012, §14 + video capture) ———
+// The W3-C audio-podcast architecture with MANDATORY video capture rounds
+// (video + audio takes per round, the runtime's device gate enforcing the
+// format's declared camera requirements), the adaptive interviewer in a video
+// modality, transcripts + conversation graph, and the final video composed
+// through the W8-C EditingCompositionPort.
+export { createVideoPodcastFlow } from "./runtime/podcast/video-podcast-flow.js";
+export type {
+  VideoPodcastFlowDeps,
+  VideoPodcastFlowError,
+  VideoPodcastFlowOutcome,
+  VideoPodcastFlowResult,
+} from "./runtime/podcast/video-podcast-flow.js";
+export type {
+  VideoPodcastParticipantPlan,
+  VideoPodcastProductionPlan,
+} from "./runtime/podcast/video-podcast-plan.js";
 
 // ——— Disclosed in-memory test doubles (NOT production bindings) ———
 export { createInMemoryOrganizationSource, expandOrganizationSeed } from "./testing/in-memory-organization-source.js";
