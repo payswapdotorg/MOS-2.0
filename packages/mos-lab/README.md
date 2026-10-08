@@ -9,12 +9,13 @@ delivered in Wave 4 (W4-A), plus `LAB-010` (Agent Organization Search), delivere
 (W5-B), and `LAB-011` (Transform Definitions + Transform Graph), delivered in Wave 5 (W5-A),
 plus `LAB-012` (Transform Discovery — the §8 seven promotion gates) and `LAB-014` (Human
 Production Task Packages), delivered in Wave 6 (W6-A), plus `LAB-015` (Production Delay
-Economics — §18), delivered in Wave 7 (W7-A).
+Economics — §18), delivered in Wave 7 (W7-A), plus `LAB-017` (Robust Marketing Benchmark —
+the §22 uncertainty discipline as a benchmark), delivered in Wave 9 (W9-A).
 
 Module registry entry: `lab → packages/mos-lab`, owner `worker-a`, dependencies
 `[contracts, content, production, agents, capabilities, engines, jobs]`.
 
-## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search / transform definitions + transform graph / transform discovery (seven §8 gates) / human production task packages / production delay economics (§18) (in-memory scaffolds)
+## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search / transform definitions + transform graph / transform discovery (seven §8 gates) / human production task packages / production delay economics (§18) / robust marketing benchmark (§22 as a benchmark) (in-memory scaffolds)
 
 All shared vocabulary is imported from **`@mos/contracts`** (W2-A / RECONCILE-A). The package
 contains:
@@ -433,8 +434,66 @@ contains:
     (EV(wait) = 550 USD over [390, 710]; a known full ten-option ranking with an EV tie
     broken by interval half-width then option kind).
 
-- `src/index.ts` — types + NINETEEN runtime factories (Wave-7 state: the Wave-6 union's
-  eighteen plus the in-memory delay economics double).
+- **LAB-017 — Robust Marketing Benchmark (§22 as a benchmark, W9-A)**
+  - `src/contracts/robust-benchmark.ts` — the DECLARED candidate set + the DECLARED
+    VERSIONED **`RobustnessPolicy`** (seed budget ≥ 2, the world-model set — each entry
+    one ensemble pinned at an EXACT version with a unique label, the sweep dimensions
+    (`seed` MANDATORY — §22; `world-model` requires ≥ 2 worlds), the aggregation rule
+    (`pooled-mean` | `worst-world-mean` — the conservative floor under world-model
+    disagreement) and the FROZEN deterministic tie-break
+    `expected-desc-halfwidth-asc-key-asc`; every rule fails closed) +
+    `MarketingBenchmarkInput` (the fairness-pin seed input: exactly
+    `policy.seedBudget` distinct finite seeds applied to EVERY candidate identically —
+    per-candidate seed cherry-picking is not even expressible) + the typed failure
+    model. **PRODUCTION-SIDE CANDIDATES (declared seam)**: the benchmark candidate
+    carries the mapped LAB-004 `StrategyActionCandidate` knobs (production's
+    `ProgramSimulationAction` maps onto them — `isNoopRepost` → the FIRST-CLASS `no-op`
+    kind) plus producing-surface version pins; `compat/benchmark-production-compat.ts`
+    pins the seam compile-time against the real `@mos/production` types and
+    `compat/benchmark-real-stack.test.ts` runs the REAL production search output
+    through this benchmark (zero build-time dependency, zero lockfile delta);
+  - `src/contracts/robust-benchmark-result.ts` + `robust-benchmark-port.ts` (split for
+    the contract line budget, the delay-decision-port precedent) —
+    `BenchmarkCandidateEvaluation`: the FULL computable §22 set per candidate —
+    expected reward under the declared aggregation, the additive uncertainty interval
+    (`bench-additive-v1`: member disagreement + seed robustness + world-model spread
+    half-widths summed, every term separately disclosed), per-seed expected rewards
+    (the multi-seed sweep record), per-world expected rewards + cross-world spread
+    (the multi-world axis), PER-WORLD member disagreement (the member spread never
+    absorbed by cross-world differences; the worst world's half-spread reported),
+    the OOD/novelty signal vs the members' DECLARED coverage aggregated
+    worst-across-worlds, and the CALIBRATION DECLARATION (status `pending-reality`
+    + provenance + prediction surface — NEVER a number; LAB-018 later APPENDS
+    simulation-to-reality error records against (benchmark id, version, candidate
+    key); these frozen records are never rewritten — the LAB-018 seam);
+    `RankedBenchmarkCandidate` with the declared baseline comparison (§7: every entry
+    declares its delta + interval overlap + certainly-better-under-simulation vs the
+    ALWAYS-PRESENT no-op baseline) and the rank-1 overlap declarations;
+    `BenchmarkComparisonSet` — the no-op baseline is a REQUIRED field, never an array
+    slot (the W8-B pin); `BenchmarkFairnessPin` — the frozen statement + the pinned
+    seeds/worlds/policy/reward versions; `BenchmarkProvenance` — the simulator/corpus/
+    reward/policy/seeds/world-model versions that produced every number (per candidate
+    AND per record); `MarketingBenchmarkPort` (5 methods ≤ 12): `runBenchmark` (the
+    ONLY write path — it APPENDS the frozen, digest-sealed record) + the append-only
+    chain reads + `verifyBenchmarkRecordIntegrity` (recompute the deterministic
+    digest — bit-for-bit immutability);
+  - `src/adapters/in-memory-marketing-benchmark.ts` (composed with the INTERNAL
+    `benchmark-validation.ts` + `benchmark-support.ts`) — the disclosed deterministic
+    double: evaluation runs through the injected REAL LAB-007 `EnsemblePort` over the
+    SAME (world, seed, step) grid for every candidate (the fairness pin, test-spied);
+    the synthesized no-op baseline (zero-knob first-class no-op action, reserved
+    identity — caller claims on the key/origin/strategy-ref fail closed
+    `caller-claimed-noop-baseline`); every candidate DEEP-CLONED then the record
+    deep-frozen (clone-then-freeze ownership); versioned per (tenant, benchmark id),
+    append-only, digest-sealed, tenant-scoped with no cross-tenant existence leaks;
+    unresolvable ensemble refs / reward-version mismatches / non-derivable reward
+    terms / evaluation failures all fail closed with typed codes and append NO record;
+  - `src/testing/w9a-benchmark-fixtures.ts` — INTERNAL fixtures: the two-ensemble
+    world-model set (primary 12k/24k with member-b's narrow cadence coverage — the OOD
+    seam; alternative 30k/12k full coverage — the structural cross-world spread).
+
+- `src/index.ts` — types + TWENTY runtime factories (Wave-9 state: the Wave-7 union's
+  nineteen plus the in-memory robust marketing benchmark double).
 - `src/adapters/parametric-support.ts` — INTERNAL helpers (seeded PRNG, clamps, validation,
   deep-freeze + deep-clone ownership helpers) shared by the adapters; deliberately NOT exported
   from the index.
@@ -452,8 +511,8 @@ contains:
 - `src/adapters/human-task-field-validation.ts` + `human-task-store.ts` — INTERNAL
   twelve-field validation and append-only store primitives for LAB-014; deliberately NOT
   exported from the index.
-- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` + `src/testing/w6a-lab-fixtures.ts` + `src/testing/w7a-delay-fixtures.ts` + `src/testing/w7a-delay-declarations.ts` — INTERNAL Wave-4/
-  Wave-5/Wave-6/Wave-7 test fixtures; NOT exported from the index.
+- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` + `src/testing/w6a-lab-fixtures.ts` + `src/testing/w7a-delay-fixtures.ts` + `src/testing/w7a-delay-declarations.ts` + `src/testing/w9a-benchmark-fixtures.ts` — INTERNAL Wave-4/
+  Wave-5/Wave-6/Wave-7/Wave-9 test fixtures; NOT exported from the index.
 
 ## Design rules encoded here
 
@@ -538,6 +597,18 @@ contains:
   and uncertainty-aware, and ABANDONED BRANCHES stay auditable (what + why + the analysis
   that justified it + learning-relevant outcomes appended when later known — the record
   shape is the LAB-017/018 learning feed; no learning is implemented here).
+- **The §22 discipline AS A BENCHMARK (LAB-017, lock rule 32)**: every robust benchmark
+  runs under a DECLARED VERSIONED robustness policy (seed budget, world-model set, sweep
+  dimensions, aggregation rule, frozen tie-break — never hidden parameters); every
+  candidate — the declared set AND the benchmark's OWN synthesized no-op baseline — is
+  evaluated under the IDENTICAL (world, seed, step) grid (the fairness pin: same seeds,
+  same world-model set, same policy version, same reward spec version — test-spied);
+  the ranking is uncertainty-aware with the declared deterministic tie-break, the
+  no-op baseline is structurally present on every result with each candidate's
+  comparison against it declared, and every record is versioned/tenant-scoped/
+  append-only/digest-sealed with full version provenance; calibration is DECLARED
+  PENDING REALITY (never a number — the LAB-018 seam); the §24 boundary statement
+  rides on every record.
 
 ## Lab rules honored (architecture policy `specialRules.lab`)
 
@@ -553,7 +624,12 @@ contains:
   with declared delay economics; waiting can be abandoned (first-class, recorded);
 - the expected value of delay is part of production strategy search (§18, lock rule 25) —
   the ten options evaluated under a DECLARED VERSIONED policy with provenance-carrying
-  estimates, deterministically ranked, abandonment auditable and immutable.
+  estimates, deterministically ranked, abandonment auditable and immutable;
+- the robust marketing benchmark (LAB-017) is a SELECTION-INFORMING surface only (§24): it
+  ranks declared candidates under a declared versioned robustness policy over the
+  disclosed synthetic ensembles — it never deploys, never publishes, never records
+  deployment evidence, and never invents calibration numbers (the LAB-018 seam carries
+  them as DECLARED pending-reality).
 
 ## Disclosed limitations
 
@@ -672,3 +748,24 @@ contains:
   vocabulary has no no-op action — documented, the W6-A canonical-drop precedent). The
   v1 formula is closed-form, so the recorded seed is unused (recorded for determinism
   contract stability across future policy versions).
+- LAB-017 benchmark numbers are SIMULATED estimates over the disclosed LAB-007
+  synthetic-response-function ensembles (§22 — never ground truth) that inform SELECTION
+  only (§24 — never deployment evidence); the `bench-additive-v1` uncertainty is the
+  DOCUMENTED simple additive bound (member disagreement + seed robustness + world-model
+  spread half-widths — no invented sophistication; the full derivation is in
+  `benchmark-support.ts`); the OOD signal rides the LAB-007 declared-coverage seam (a
+  member declaration, never a verified property); reward terms resolve in the PREDICTED
+  metric/delta domains only (observed-domain terms are LAB-008 territory and fail closed
+  here); the record digest is a deterministic FNV-1a change detector, never a security
+  claim; the horizon is evaluated as K STATIONARY steps per world (cross-step world
+  evolution not modeled — same as LAB-008/009/010).
+- LAB-017 production-side candidates arrive through the DECLARED ACTION SEAM only: the
+  benchmark candidate carries the mapped LAB-004 knobs + producing-surface pins
+  (compat-pinned compile-time against `@mos/production`, runtime battery over the REAL
+  production search output; zero build-time dependency — `@mos/production` is not a
+  declared dependency of this package and no lockfile change is made). The search-side
+  candidate estimate in the compat battery uses the production package's OWN shipped
+  disclosed evaluation double (the REAL-lab-ensemble binding behind THAT seam is the
+  production package's own compat battery's subject); the benchmark side evaluates
+  through the REAL LAB-007 ensemble. Production's own no-op baseline is not re-supplied
+  as a caller candidate (the reserved-identity discipline).
