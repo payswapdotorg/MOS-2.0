@@ -8,7 +8,7 @@ import type {
   MarketingBenchmarkPort,
   RobustBenchmarkRecord,
 } from "../contracts/robust-benchmark-port.js";
-import type { MarketingBenchmarkInput, RobustnessPolicy } from "../contracts/robust-benchmark.js";
+import type { RobustnessPolicy } from "../contracts/robust-benchmark.js";
 import { createInMemoryMarketingBenchmark } from "./in-memory-marketing-benchmark.js";
 import {
   benchmarkCandidateAlpha,
