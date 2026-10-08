@@ -14,6 +14,7 @@ import {
   createSessionReadyForCapture,
   mustOk,
   participantJoin,
+  recordedEditGraphRefOf,
 } from "../testing/test-fixtures.js";
 import {
   composeFormatFlowScenario,
@@ -164,29 +165,75 @@ test("W10-B money probe: the video-podcast flow fails hostile declared costs TYP
   }
 });
 
-test("W10-B money probe: the audio-podcast flow (its own recorder) fails hostile declared costs TYPED before any session exists", async () => {
+test("W10-B money probe: the audio-podcast flow (the W8-C editing composition, STUDIO-013) fails hostile declared costs TYPED (negative, garbage, currency mismatch)", async () => {
   const scenario = composePodcastScenario();
-  for (const amount of ["-0.42", "0.5.5", "abc"]) {
-    const plan = await onePersonPlan(scenario, {
-      processingCost: { currency: "USD", amount },
+  // W10-RECONCILE: the flow's own recorder is DELETED (STUDIO-013) — the final
+  // audio composes through the W8-C EditingCompositionPort like every other
+  // format, so the probe mirrors the video-podcast probe's hostile-cases
+  // shape (shape faults fail BEFORE any session exists; the currency is only
+  // resolvable against the editing session's engine cost, so that case fails
+  // at the sum — with nothing packaged).
+  const cases: readonly { readonly amount: string; readonly currency: string; readonly beforeSession: boolean }[] = [
+    { amount: "-0.42", currency: "USD", beforeSession: true },
+    { amount: "0.5.5", currency: "USD", beforeSession: true },
+    { amount: "abc", currency: "USD", beforeSession: true },
+    { amount: "0.55", currency: "EUR", beforeSession: false },
+  ];
+  for (const [index, hostile] of cases.entries()) {
+    // A fresh scenario per case: the deterministic session id repeats.
+    const fresh = index === 0 ? scenario : composePodcastScenario();
+    const plan = await onePersonPlan(fresh, {
+      processingCost: { currency: hostile.currency, amount: hostile.amount },
     });
-    const result = await scenario.flow.run(plan);
-    assert.ok(!result.ok, `the hostile cost must fail the audio flow closed: "${amount}"`);
+    const result = await fresh.flow.run(plan);
+    assert.ok(!result.ok, `the hostile cost must fail the audio flow closed: ${JSON.stringify(hostile)}`);
     assert.equal(
       result.error.kind,
       "invalid-processing-cost",
-      `typed failure expected for "${amount}" (got: ${JSON.stringify(result.error)})`,
+      `typed failure expected for "${hostile.amount}" (got: ${JSON.stringify(result.error)})`,
     );
+    if (hostile.beforeSession) {
+      assert.equal(fresh.runtime.getSession(AUDIO_PREDICTED_SESSION_ID), undefined, "no session may exist");
+    } else {
+      assert.ok(
+        result.error.kind === "invalid-processing-cost" && result.error.reason.includes("currency"),
+        `the failure must name the currency mismatch: ${JSON.stringify(result.error)}`,
+      );
+      const view = fresh.runtime.getSession(AUDIO_PREDICTED_SESSION_ID);
+      assert.ok(view !== undefined);
+      assert.equal(view.packages.length, 0, "nothing may be packaged");
+    }
   }
-  assert.equal(scenario.runtime.getSession(AUDIO_PREDICTED_SESSION_ID), undefined, "no session may exist");
   // The declared cost still lands when it is honest (never dropped — the
-  // W9-C defect class re-pinned on the recorder path).
+  // W9-C defect class re-pinned on the migrated composition path).
+  // W10-RECONCILE honest arithmetic: the migrated flow sums the editing
+  // session's REAL engine cost with the declared cost through the shared
+  // sumStudioMoney — this scenario runs 4 composition operations + 1 final
+  // assembly = 5 engine jobs at the disclosed adapter's $0.02/job = a $0.10
+  // editing-session cost, so the packaged total is $0.10 + $0.42 = $0.52
+  // (the pre-migration probe expected the declared $0.42 alone because the
+  // old recorder ran NO engine jobs; the reaction and video flows always
+  // pinned this same declared-cost-lands-with-the-engine-cost discipline).
   const honest = await scenario.flow.run(
     await onePersonPlan(scenario, { processingCost: { currency: "USD", amount: "0.42" } }),
   );
   assert.ok(honest.ok, `the honest audio run must succeed: ${JSON.stringify(honest)}`);
-  assert.equal(honest.value.package.cost.total.amount, "0.42");
+  assert.equal(honest.value.package.cost.total.amount, "0.52");
   assert.equal(honest.value.package.cost.total.currency, "USD");
+  // §8.5(a) pin: the packaged total is EXACTLY the shared money sum of the
+  // editing session's engine cost + the declared cost — the money seam
+  // survived the recorder migration.
+  assert.deepEqual(
+    honest.value.package.cost.total,
+    sumStudioMoney(
+      {
+        currency: honest.value.editing.record.cost.currency,
+        amount: honest.value.editing.record.cost.amount.toFixed(2),
+      },
+      { currency: "USD", amount: "0.42" },
+    ),
+    "the packaged total must be the shared sum of the editing engine cost + the declared cost",
+  );
 });
 
 test("W10-B money probe: the runtime's completeProcessing intake rejects hostile additionalCost + processingSeconds TYPED (and stays unpoisoned)", async () => {
@@ -233,10 +280,16 @@ test("W10-B money probe: a second cost line in a FOREIGN currency is rejected TY
   const rawArtifact = await captureRawTake(runtime, sessionId, {});
   const { intermediate, finals } = await buildProcessingArtifacts(artifactFactory, [rawArtifact]);
   await mustOk(runtime.beginProcessing(sessionId), "beginProcessing");
+  // W10-RECONCILE: the STUDIO-013 packaging authority requires the recorded
+  // transcript refs + edit-graph ref on every packaged session — the first
+  // cost line's processing output wires them (the shape W10-C's own adapted
+  // runtime tests use) so the scenario reaches its currency-rejection pin.
   await mustOk(
     runtime.completeProcessing(sessionId, {
       intermediateArtifacts: intermediate,
       finalArtifacts: finals,
+      transcriptRefs: [{ artifact: intermediate[0] as StudioArtifactRef, language: "en-US", diarized: true }],
+      editGraphRef: recordedEditGraphRefOf(sessionId),
       additionalCost: { currency: "USD", amount: "1.00" },
     }),
     "first USD line",
@@ -287,10 +340,14 @@ test("W10-B ownership probe: the caller's additionalCost object is never aliased
   const rawArtifact = await captureRawTake(runtime, sessionId, {});
   const { intermediate, finals } = await buildProcessingArtifacts(artifactFactory, [rawArtifact]);
   await mustOk(runtime.beginProcessing(sessionId), "beginProcessing");
+  // W10-RECONCILE: same STUDIO-013 required-field wiring as the currency
+  // probe above (transcripts + the recorded edit-graph ref).
   const declaredCost: MoneyAmount = { currency: "USD", amount: "1.25" };
   const completed = await runtime.completeProcessing(sessionId, {
     intermediateArtifacts: intermediate,
     finalArtifacts: finals,
+    transcriptRefs: [{ artifact: intermediate[0] as StudioArtifactRef, language: "en-US", diarized: true }],
+    editGraphRef: recordedEditGraphRefOf(sessionId),
     additionalCost: declaredCost,
   });
   assert.ok(completed.ok);

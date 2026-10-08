@@ -86,6 +86,7 @@ import type { InterviewerAgentBindingPort } from "../../ports/interviewer-agent-
 import type { ScriptGraphStore } from "../script-graph/script-graph-store.js";
 import { createInterviewerSession, type InterviewerSession, type InterviewerSessionDeps } from "../interviewer/interviewer-session.js";
 import { buildConversationGraph } from "./conversation-graph.js";
+import { buildAudioTranscripts } from "./audio-podcast-transcripts.js";
 import { validateStudioMoneyAmount, sumStudioMoney } from "../money.js";
 import { cloneThenFreezeFormatPlugin } from "../ownership-support.js";
 
@@ -289,35 +290,6 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
     return sealed.take.artifact;
   }
 
-  async function buildTranscripts(
-    tenantId: TenantId,
-    sessionId: StudioSessionId,
-    rawArtifacts: readonly StudioArtifactRef[],
-    interview: InterviewerSessionSummary,
-  ): Promise<readonly TranscriptRef[]> {
-    const transcripts: TranscriptRef[] = [];
-    for (const raw of rawArtifacts) {
-      const created = await deps.artifactFactory.createArtifact({
-        tenantId,
-        type: "text",
-        stage: "intermediate",
-        creationMethod: "organization-transform",
-        storageRef: `mos-studio:transcript:${String(sessionId)}:${String(raw.artifactId)}` as never,
-        content: new TextEncoder().encode(
-          `transcript|${String(interview.sessionId)}|${interview.presentations.map((p) => p.questionText).join(" // ")}`,
-        ),
-        rightsRef: raw.rightsRef,
-        provenanceRef: raw.provenanceRef,
-        parents: [raw],
-      });
-      if (!created.ok) {
-        fail({ kind: "transcript-creation-failed", reason: JSON.stringify(created.error) });
-      }
-      transcripts.push(Object.freeze({ artifact: created.artifact, language: "en", diarized: true }));
-    }
-    return transcripts;
-  }
-
   async function runFlow(plan: AudioPodcastProductionPlan): Promise<AudioPodcastFlowResult> {
     if (formatPlugin.id !== "audio-podcast") {
       fail({ kind: "format-not-audio-podcast", formatId: String(formatPlugin.id) });
@@ -410,7 +382,17 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
     }
     const interviewSummary = completed.value;
     // ---- Transcripts + the conversation graph (§14 labels end-to-end). ----
-    const transcripts = await buildTranscripts(plan.tenantId, sessionId, rawTakes, interviewSummary);
+    const transcriptOutcome = await buildAudioTranscripts(
+      deps.artifactFactory,
+      plan.tenantId,
+      sessionId,
+      rawTakes,
+      interviewSummary,
+    );
+    if (!transcriptOutcome.ok) {
+      fail({ kind: "transcript-creation-failed", reason: transcriptOutcome.reason });
+    }
+    const transcripts = transcriptOutcome.transcripts;
     const conversationGraph = buildConversationGraph({
       interview: interviewSummary,
       derivedFrom: transcripts,
@@ -461,6 +443,22 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
       currency: editing.record.cost.currency,
       amount: editing.record.cost.amount.toFixed(2),
     };
+    // The plan's declared processing cost lands in the package cost together
+    // with the editing session's engine cost (never silently dropped — the
+    // W9-C fix; the same composition the reaction and video-podcast flows
+    // carry). W10-B/W10-RECONCILE: currency confusion fails closed TYPED here
+    // (costs never sum across currencies); the amount shape was validated up
+    // front. This gate is the §8.5(a) seam the W10-C recorder migration had
+    // to keep — without it a foreign-currency declared cost degrades into
+    // the flow-internal-error catch-all instead of the typed
+    // invalid-processing-cost the W10-B money battery pins on the sibling
+    // flows.
+    if (plan.processingCost !== undefined && plan.processingCost.currency !== editingCost.currency) {
+      fail({
+        kind: "invalid-processing-cost",
+        reason: `declared processing cost currency "${plan.processingCost.currency}" does not match the editing session cost currency "${editingCost.currency}" — costs never sum across currencies`,
+      });
+    }
     const totalCost = plan.processingCost === undefined ? editingCost : sumStudioMoney(editingCost, plan.processingCost);
     const begin = await deps.runtime.beginProcessing(sessionId);
     if (!begin.ok) {
