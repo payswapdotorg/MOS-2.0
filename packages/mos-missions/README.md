@@ -1,9 +1,11 @@
 # @mos/missions
 
-MOS v2.0 **Missions / Objectives** domain package — `CORE-005` (Wave 1, W1-A).
+MOS v2.0 **Missions / Objectives** domain package — `CORE-005` (Wave 1, W1-A) + the
+`MARKETING-001` product marketing mission planner (Wave 12, W12-A).
 
 Module registry entry: `missions → packages/mos-missions`, owner `worker-a`, dependencies
-`[contracts, identity]`.
+`[contracts, identity]` (UNCHANGED by MARKETING-001 — the planner's sibling seams are
+type-only; see below).
 
 ## Status
 
@@ -33,9 +35,12 @@ scoping, port method-set pinning.
 
 ## Public surface budget
 
-Architecture policy `maxPublicMethods: 12`. This package exports: `MissionRepository` port
-methods (7): `createMission`, `getMission`, `activateMission`, `completeMission`,
-`archiveMission`, `updateRewardSpec`, `listMissions`; plus 1 module-level factory — **8 total**.
+Architecture policy `maxPublicMethods: 12` (per port). `MissionRepository` port methods (7):
+`createMission`, `getMission`, `activateMission`, `completeMission`, `archiveMission`,
+`updateRewardSpec`, `listMissions`; `MarketingPlannerPort` methods (8): `composeMarketingPlan`,
+`reviseMarketingPlan`, `getMarketingPlan`, `listMarketingPlanVersions`,
+`listMarketingPlansForMission`, `listMarketingPlans`, `verifyMarketingPlanIntegrity`,
+`listMarketingPlanCompositionRecords`. Runtime exports: 2 factories + 1 frozen source label.
 
 ## Design rules honored
 
@@ -90,3 +95,77 @@ methods (7): `createMission`, `getMission`, `activateMission`, `completeMission`
   caller needs it.
 - Strategy refs are the `@mos/contracts` `StrategyRef` type, carried for association only — the
   strategy authority is a separate module per the registry.
+
+## MARKETING-001 — the product marketing mission planner (W12-A)
+
+Backlog acceptance: *"evidence-linked platform/metric/experiment plan; no second Mission
+authority."* The planner lives in this package (the registry-exact home — no new module, no
+registry entry, no registry dependency) and composes `MarketingPlanRecord`s:
+
+- **Mission linkage is a VERSIONED CITATION, not a mission copy** — every plan cites the exact
+  `(missionId, recordVersion)` pair through the mission authority. The planner port owns NO
+  mission lifecycle verb; it consumes missions through the injected READ view
+  `Pick<MissionRepository, 'getMission'>` (pinned: a view with only `getMission` suffices; a
+  hostile view whose other methods throw proves none is ever called; composing plans never
+  creates or mutates a mission in the REAL repository).
+- **Every plan element is evidence-linked** — platform choices, metric expectations and
+  experiment expectations all cite `ProductIntelligenceVersionRef`s resolved through the
+  product-intelligence authority's FAIL-CLOSED versioned-citation resolution (an unresolvable
+  citation is the typed `evidence-citation-unresolvable` carrying the authority's cause — never
+  a fabricated basis). Metric expectations carry the §25 basis union with TYPE-LEVEL literal
+  pins (`cited-evidence` ⇒ `counterfactual: false`; `counterfactual-forecast` ⇒
+  `counterfactual: true` + methodNote) re-validated at runtime, plus the coherence rule that a
+  cited-evidence expectation backed only by counterfactual-forecast records rejects
+  (`basis-evidence-mismatch`).
+- **Health-respect (HEALTH-001)** — a plan element whose platform is under a
+  provider-CONFIRMED restriction either acknowledges it (snapshotted BY VALUE from the ACTUAL
+  health observation) or the composition fails closed with the typed reason
+  (`platform-under-confirmed-restriction`, listing the unacknowledged restriction refs).
+  Acknowledging a non-confirmed observation (unknown id, foreign tenant, or a SUSPECTED
+  anomaly) rejects (`acknowledged-restriction-not-confirmed` — suspected is NEVER confirmed).
+  SUSPECTED anomalies snapshot advisory-only (`suspectedNeverConfirmed: true`) and never gate.
+  Revisions re-run the battery against CURRENT observations.
+- **Records** — versioned tenant-scoped append-only (compose = v1; revise appends
+  `supersedes.version + 1` with optimistic-concurrency conflict detection; prior versions stay
+  bit-for-bit immutable and retrievable), digest-sealed (canonical JSON + FNV-1a — the LAB-017
+  change-detector precedent, never a security claim) with an integrity read, and every
+  attributable attempt appends a §30 composition record (success AND typed rejection — there is
+  no unrecorded path; the adapter self-labels `in-memory-marketing-planner` so a disclosed
+  double can never masquerade as a production planner).
+- **Standard disciplines BY CONSTRUCTION** — fail-closed typed errors everywhere
+  (result-union, `'error' in result`); JSON-array composite chain keys (D1); exact-tenant
+  equality listings (D2); clone-then-deep-freeze with `__proto__`-safe cloning (D3/F1); frozen
+  `TenantScope` copies (D4); finite/integer guards on every numeric input (D5/F2);
+  element-wise acknowledgment-vs-confirmation id matching (the D6 posture).
+- **Port budget**: `MarketingPlannerPort` is 8 methods ≤ the 12-method policy budget —
+  compose, revise, get, listVersions, listForMission, listPlans, verifyIntegrity,
+  listCompositionRecords. The `listMarketingPlansForMission` / `listMarketingPlans` reads are
+  the seams COMMERCE-001 discovery extends from.
+
+### The cross-authority seams (type-only; zero runtime coupling)
+
+The planner consumes `@mos/product-intelligence` (citation resolution — §25) and
+`@mos/distribution` (health observations — HEALTH-001) through injected `Pick<...>` views:
+`MarketingPlannerMissionSource`, `MarketingPlannerIntelligenceSource`,
+`MarketingPlannerHealthSource`. Both sibling packages are imported **TYPE-ONLY**; they appear
+as devDependencies solely so the type-level seams resolve (a 7-line `pnpm-lock.yaml` importer
+delta — disclosed), and the emitted code contains ZERO imports of them (pinned by inspection
+of `dist/`). The real-stack compat battery runs the REAL in-memory authorities end-to-end
+through the testing seam's relative built-dist runtime imports (the `@mos/web` / `@mos/studio`
+precedent); the rights source inside the product-intelligence adapter remains its own
+disclosed structural double (the composition root wires the real one).
+
+| Path | Contents |
+|---|---|
+| `src/domain/marketing-plan.ts` | `MarketingPlanRecord` + `MissionCitation`, the expectation-basis union, health snapshots (by value, literal-pinned), the §30 composition record |
+| `src/ports/marketing-planner.port.ts` | `MarketingPlannerPort` (8 methods) + inputs + error codes + the three injected view types |
+| `src/adapters/marketing-plan-validation.ts` | structural validation (internal) |
+| `src/adapters/marketing-planner-battery.ts` | the shared fail-closed battery (internal) |
+| `src/adapters/marketing-planner-support.ts` | canonical JSON + FNV-1a digest + clone/freeze (internal, the per-package copy precedent) |
+| `src/adapters/in-memory-marketing-planner.ts` | in-memory adapter (`createInMemoryMarketingPlanner`) |
+| tests | functional battery + authority-discipline battery + adversarial (D1–D6/F1/F2) battery + real-stack compat battery — 49 new tests |
+
+Planner-verb vocabulary discipline: mission-lifecycle verbs (`createMission`,
+`activateMission`, `completeMission`, `archiveMission`, `updateRewardSpec`) are banned from
+the planner surface (test-pinned), and every record carries the verbatim no-second-authority
+boundary statement.
