@@ -10,12 +10,14 @@ delivered in Wave 4 (W4-A), plus `LAB-010` (Agent Organization Search), delivere
 plus `LAB-012` (Transform Discovery — the §8 seven promotion gates) and `LAB-014` (Human
 Production Task Packages), delivered in Wave 6 (W6-A), plus `LAB-015` (Production Delay
 Economics — §18), delivered in Wave 7 (W7-A), plus `LAB-017` (Robust Marketing Benchmark —
-the §22 uncertainty discipline as a benchmark), delivered in Wave 9 (W9-A).
+the §22 uncertainty discipline as a benchmark), delivered in Wave 9 (W9-A), plus `LAB-018`
+(Online Calibration — the simulation-to-reality prediction-error surface closing the §22 loop:
+measure → calibrate → next run), delivered in Wave 10 (W10-A).
 
 Module registry entry: `lab → packages/mos-lab`, owner `worker-a`, dependencies
 `[contracts, content, production, agents, capabilities, engines, jobs]`.
 
-## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search / transform definitions + transform graph / transform discovery (seven §8 gates) / human production task packages / production delay economics (§18) / robust marketing benchmark (§22 as a benchmark) (in-memory scaffolds)
+## Status: corpus / features / idea-graph / simulator / dynamics / Time Machine / ensemble / off-policy evaluation / strategy learning / organization search / transform definitions + transform graph / transform discovery (seven §8 gates) / human production task packages / production delay economics (§18) / robust marketing benchmark (§22 as a benchmark) / online calibration (LAB-018 — the closed loop) (in-memory scaffolds)
 
 All shared vocabulary is imported from **`@mos/contracts`** (W2-A / RECONCILE-A). The package
 contains:
@@ -492,8 +494,61 @@ contains:
     world-model set (primary 12k/24k with member-b's narrow cadence coverage — the OOD
     seam; alternative 30k/12k full coverage — the structural cross-world spread).
 
-- `src/index.ts` — types + TWENTY runtime factories (Wave-9 state: the Wave-7 union's
-  nineteen plus the in-memory robust marketing benchmark double).
+- **LAB-018 — Online Calibration (the closed loop, W10-A)**
+  - `src/contracts/online-calibration.ts` — the simulation-to-reality prediction-error
+    contracts: `CalibrationPredictionRef` (the DECLARED LAB-017 seam consumed — benchmark
+    id + EXACT frozen record version + candidate key; resolved through the injected
+    benchmark reader, never re-run or rewritten), `CalibrationPredictedStatement` (the
+    frozen prediction copied VERBATIM from the cited record's ranked entry: expected
+    reward + §22 interval + uncertainty summary + full version provenance),
+    `CalibrationObservationRef`/`CalibrationObservationCitation` (DECLARED reality
+    observation refs resolved through the `RealityObservationReaderPort` — the
+    boundary-chain surface; citations carry niche/platform/observedAt/sourceRefs/regime
+    provenance verbatim), the DECLARED VERSIONED error functional
+    (`calib-signed-error-v1` — signed reality-minus-prediction error with
+    absolute/relative decomposition and §22 interval containment, documented formulas),
+    `RecordCalibrationErrorInput` (the reward spec BOTH sides are valued under — its
+    version MUST equal the cited prediction's `rewardSpecVersion`), and
+    `OnlineCalibrationRecord` — the ANALYSIS ARTIFACT: append-only, versioned per
+    (tenant, calibration id), digest-sealed, §24 statement on every record, with
+    compile-time separation pins (a calibration record is never a
+    `HistoricalObservation`, never a `SimulationPrediction` — lock rules 29/32);
+    `canonicalCalibrationView` projects onto the CORE-001 `CalibrationRecord` shape;
+  - `src/contracts/online-calibration-port.ts` (split for the contract line budget) —
+    `CalibrationContextRecord` (the derived DECLARED versioned FEEDBACK artifact: the
+    summary over every error record citing one benchmark chain — mean signed error /
+    MAE / worst absolute / §22 interval coverage / calibrated versions / regimes — with
+    the EXACT folded record citations in deterministic order; append-only per
+    (tenant, benchmark id)) + `OnlineCalibrationPort` — ELEVEN methods ≤ 12:
+    `recordCalibrationError` (the ONLY error write path), the four error-chain reads,
+    error integrity verification, `deriveCalibrationContext` (the ONLY context write
+    path — `no-calibration-evidence` fails closed when the chain holds no error
+    records: an empty context would be a fabricated calibration basis), the three
+    context reads + context integrity verification. NO update or delete method on
+    either surface;
+  - `src/adapters/in-memory-online-calibration.ts` (composed with the INTERNAL
+    `calibration-support.ts` + `calibration-validation.ts`) — W9-B disciplines by
+    construction: JSON-array composite keys, clone-then-deep-freeze stored records,
+    exact stored-tenant equality on listings (never a prefix scan), finite guards on
+    every numeric field; the double-cast runtime guards re-validate
+    `counterfactual === true` on the cited benchmark record and
+    `counterfactual === false` on every resolved reality observation (lock rule 29);
+    a failed call appends NO record;
+  - `src/adapters/in-memory-reality-observation-reader.ts` — the DISCLOSED in-memory
+    `RealityObservationReaderPort` double (seeded frozen `HistoricalObservation`
+    records; clone-then-freeze ownership — caller-owned seed arrays are never frozen);
+  - `src/adapters/time-machine-reality-reader.ts` — the REAL-surface composition
+    adapter over the LAB-006 Time Machine mode-1 replay (an observation resolves only
+    when it is on the tenant's append-only timeline AND `observedAt ≤ asOf` — never a
+    future leak);
+  - `src/testing/w10a-calibration-fixtures.ts` — INTERNAL fixtures wiring the FULL
+    calibration loop (REAL LAB-017 benchmark + REAL LAB-018 calibration + disclosed
+    reality reader double, two-directional late-bound seams — the composition-root
+    shape).
+
+- `src/index.ts` — types + TWENTY-THREE runtime factories (Wave-10 state: the Wave-9 union's
+  twenty plus the in-memory online calibration double, the in-memory reality observation
+  reader double and the Time Machine reality reader composition).
 - `src/adapters/parametric-support.ts` — INTERNAL helpers (seeded PRNG, clamps, validation,
   deep-freeze + deep-clone ownership helpers) shared by the adapters; deliberately NOT exported
   from the index.
@@ -511,8 +566,8 @@ contains:
 - `src/adapters/human-task-field-validation.ts` + `human-task-store.ts` — INTERNAL
   twelve-field validation and append-only store primitives for LAB-014; deliberately NOT
   exported from the index.
-- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` + `src/testing/w6a-lab-fixtures.ts` + `src/testing/w7a-delay-fixtures.ts` + `src/testing/w7a-delay-declarations.ts` + `src/testing/w9a-benchmark-fixtures.ts` — INTERNAL Wave-4/
-  Wave-5/Wave-6/Wave-7/Wave-9 test fixtures; NOT exported from the index.
+- `src/testing/w4a-lab-fixtures.ts` + `src/testing/w5a-transform-fixtures.ts` + `src/testing/w5b-lab-fixtures.ts` + `src/testing/w6a-lab-fixtures.ts` + `src/testing/w7a-delay-fixtures.ts` + `src/testing/w7a-delay-declarations.ts` + `src/testing/w9a-benchmark-fixtures.ts` + `src/testing/w10a-calibration-fixtures.ts` — INTERNAL Wave-4/
+  Wave-5/Wave-6/Wave-7/Wave-9/Wave-10 test fixtures; NOT exported from the index.
 
 ## Design rules encoded here
 
@@ -629,7 +684,13 @@ contains:
   ranks declared candidates under a declared versioned robustness policy over the
   disclosed synthetic ensembles — it never deploys, never publishes, never records
   deployment evidence, and never invents calibration numbers (the LAB-018 seam carries
-  them as DECLARED pending-reality).
+  them as DECLARED pending-reality);
+- online calibration (LAB-018) is an ANALYSIS surface, never a second authority (§19/§20/
+  §24): it records simulation-to-reality prediction error over the frozen LAB-017
+  prediction and the boundary-chain reality observations — it never runs experiments,
+  never measures, never rewrites historical evidence, and feeds back ONLY as DECLARED
+  versioned context a later benchmark run MAY cite (the citation is fail-closed
+  provenance, never a calibrated-output claim).
 
 ## Disclosed limitations
 

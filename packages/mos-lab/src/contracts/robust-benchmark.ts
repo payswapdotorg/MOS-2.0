@@ -198,6 +198,45 @@ export interface RobustnessPolicy {
 // ---------------------------------------------------------------------------
 
 /**
+ * The DECLARED citation of LAB-018 calibration context on a benchmark
+ * run — the closed loop's feedback half (measure → calibrate → next run).
+ * The record carries this as the frozen full statement
+ * (`BenchmarkCalibrationCitation` on the result); the caller declares only
+ * the EXACT version.
+ */
+export interface BenchmarkCalibrationCitationRequest {
+  /** The EXACT calibration-context version cited (integer >= 1). */
+  readonly version: number;
+}
+
+/**
+ * The frozen citation statement carried on every citing benchmark record:
+ * the citation is PROVENANCE, never a calibrated-output claim — it never
+ * rewrites any calibration or benchmark record and never implies the
+ * run's numbers are calibrated (the §22 calibration surface on every
+ * record stays DECLARED pending-reality). Validation is fail-closed:
+ * structurally invalid versions are `invalid-input`; a declared citation
+ * without the wired context reader is `calibration-context-reader-required`;
+ * a citation whose version does not resolve in this tenant scope is
+ * `calibration-context-not-found`.
+ */
+export interface BenchmarkCalibrationCitation {
+  /** The EXACT calibration-context version cited. */
+  readonly version: number;
+  readonly statement:
+    'this benchmark run cites the DECLARED versioned LAB-018 calibration context derived from prior simulation-to-reality error records; the citation is provenance — it never rewrites any calibration or benchmark record and never implies calibrated output';
+}
+
+/** Normalize a declared citation request into the frozen record-side citation. */
+export const benchmarkCalibrationCitationOf = (
+  request: BenchmarkCalibrationCitationRequest,
+): BenchmarkCalibrationCitation => ({
+  version: request.version,
+  statement:
+    'this benchmark run cites the DECLARED versioned LAB-018 calibration context derived from prior simulation-to-reality error records; the citation is provenance — it never rewrites any calibration or benchmark record and never implies calibrated output',
+});
+
+/**
  * One robust marketing benchmark run request. `seeds` is the FAIRNESS PIN
  * input: exactly `policy.seedBudget` distinct finite seeds, applied to
  * EVERY candidate identically (no per-candidate seed cherry-picking is
@@ -206,6 +245,11 @@ export interface RobustnessPolicy {
  * and delta domains only — this is the simulation-side benchmark;
  * observed-domain terms fail closed (LAB-008 owns the historical-basis
  * estimate).
+ *
+ * W10-A (LAB-018 loop): `citedCalibrationContext` is the OPTIONAL DECLARED
+ * citation of a prior calibration context — the first run of a loop cites
+ * nothing; a later run MAY cite the context derived from the calibration
+ * of earlier runs. Absent citations normalize to `null` on the record.
  */
 export interface MarketingBenchmarkInput {
   readonly scope: TenantScope;
@@ -217,6 +261,8 @@ export interface MarketingBenchmarkInput {
   readonly rewardSpec: LabRewardSpec;
   readonly policy: RobustnessPolicy;
   readonly seeds: readonly number[];
+  /** OPTIONAL: the DECLARED LAB-018 calibration-context citation (the feedback loop). */
+  readonly citedCalibrationContext?: BenchmarkCalibrationCitationRequest;
 }
 
 // ---------------------------------------------------------------------------
@@ -236,7 +282,9 @@ export type RobustBenchmarkErrorCode =
   | 'reward-version-mismatch'
   | 'reward-term-not-derivable'
   | 'reward-term-ambiguous'
-  | 'ensemble-evaluation-failed';
+  | 'ensemble-evaluation-failed'
+  | 'calibration-context-reader-required'
+  | 'calibration-context-not-found';
 
 /** Typed failure value (result union, the MOS domain convention). */
 export interface RobustBenchmarkError {

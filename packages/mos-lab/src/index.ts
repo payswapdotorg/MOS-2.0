@@ -1,23 +1,26 @@
 /**
  * Public surface of `@mos/lab` (MOS v2.0 LAB-001..003 + LAB-004..012 +
- * LAB-014 + LAB-015 + LAB-017).
+ * LAB-014 + LAB-015 + LAB-017 + LAB-018).
  *
  * Exports the corpus / feature-bundle / idea-graph / evidence-separation /
  * social-simulator / dynamics / Time Machine / world-model-ensemble /
  * off-policy-evaluation / strategy-learning / organization-search /
  * transform-definition / transform-graph / transform-discovery /
  * human-production-task / arena-provider-seam / delay-economics /
- * robust-marketing-benchmark contract types plus twenty runtime factories (in-memory
- * corpus store, static feature computation declaration carrier, in-memory
- * feature bundle registry, in-memory idea graph, in-memory social world
- * model store, in-memory simulator engine, in-memory dynamics model store,
- * in-memory dynamics stepper, in-memory Time Machine, in-memory world model
- * ensemble, in-memory off-policy evaluator, in-memory strategy learner,
- * in-memory transform definition registry, in-memory transform graph,
- * in-memory organization search, in-memory transform discovery, in-memory
- * human production task, in-memory Arena provider double, in-memory delay
- * economics, in-memory robust marketing benchmark). No helper
- * constructors, error classes, or internals are exposed.
+ * robust-marketing-benchmark / online-calibration contract types plus
+ * twenty-three runtime factories (in-memory corpus store, static feature
+ * computation declaration carrier, in-memory feature bundle registry,
+ * in-memory idea graph, in-memory social world model store, in-memory
+ * simulator engine, in-memory dynamics model store, in-memory dynamics
+ * stepper, in-memory Time Machine, in-memory world model ensemble,
+ * in-memory off-policy evaluator, in-memory strategy learner, in-memory
+ * transform definition registry, in-memory transform graph, in-memory
+ * organization search, in-memory transform discovery, in-memory human
+ * production task, in-memory Arena provider double, in-memory delay
+ * economics, in-memory robust marketing benchmark, in-memory online
+ * calibration, in-memory reality observation reader double, Time Machine
+ * reality reader composition). No helper constructors, error classes, or
+ * internals are exposed.
  *
  * W3-A: LAB-004/005/006 add the TYPE-SEPARATED evidence layer — a
  * `SimulationPrediction` (counterfactual: true, disclosed synthetic) can
@@ -104,6 +107,29 @@
  * pins — compat-pinned against `@mos/production`, zero build-time
  * dependency).
  *
+ * W10-A: LAB-018 closes the §20-§22 loop with ONLINE CALIBRATION —
+ * `OnlineCalibrationPort` records the simulation-to-reality prediction
+ * error of a DECLARED frozen LAB-017 benchmark prediction (id + exact
+ * version + candidate key, resolved through the injected benchmark reader
+ * — the seam LAB-017 declared as pending-reality) against DECLARED
+ * boundary-chain reality observations (`HistoricalObservation` records
+ * only, re-validated `counterfactual === false` at runtime — lab-simulated
+ * data can never occupy the reality slot, lock rule 29), valued under the
+ * SAME declared reward spec version, joined by the DECLARED VERSIONED
+ * error functional (`calib-signed-error-v1`). Error records chain
+ * versioned per (tenant, calibration id), append-only and digest-sealed —
+ * a later calibration NEVER rewrites an earlier record, and the cited
+ * benchmark record and historical observations are only ever READ. The
+ * derived calibration CONTEXT (the summary over every error record citing
+ * one benchmark chain) is the DECLARED versioned feedback a later
+ * benchmark run MAY cite through `citedCalibrationContext` (measure →
+ * calibrate → next run) — the citation is provenance, fail-closed, and
+ * never implies calibrated output. Calibration records are ANALYSIS
+ * artifacts, not a second experiment/measurement authority (§19/§20), and
+ * every record carries the §24 statement. The in-memory reality reader is
+ * a DISCLOSED DOUBLE; the Time Machine reality reader is the real-surface
+ * composition adapter over the LAB-006 mode-1 replay.
+ *
  * RECONCILED (W2-A / RECONCILE-A): all shared value types (TenantId,
  * TenantScope, Version, Timestamp, RightsRef, ProvenanceRef, ArtifactRef,
  * …) come from `@mos/contracts`; the W1-A scaffold's `@mos/content`
@@ -126,177 +152,81 @@
 
 // ---- LAB-001: reference-first niche corpus ----
 export type {
-  CorpusError,
-  CorpusErrorCode,
-  CorpusId,
-  CorpusQuery,
-  CorpusStore,
-  CorpusVersion,
-  IngestReferenceDocumentInput,
-  ReferenceDocument,
-  ReferenceDocumentDraft,
-  ReferenceDocumentId,
-  ReferenceModality,
-  RightsCheckDenialReason,
-  RightsCheckInput,
-  RightsCheckPort,
-  RightsCheckVerdict,
-  SnapshotCorpusVersionInput,
+  CorpusError, CorpusErrorCode, CorpusId, CorpusQuery, CorpusStore, CorpusVersion,
+  IngestReferenceDocumentInput, ReferenceDocument, ReferenceDocumentDraft,
+  ReferenceDocumentId, ReferenceModality, RightsCheckDenialReason, RightsCheckInput,
+  RightsCheckPort, RightsCheckVerdict, SnapshotCorpusVersionInput,
 } from './contracts/corpus.js';
 
 // ---- LAB-002: multimodal feature bundles ----
 export type {
-  AttachFeatureBundleInput,
-  FeatureBundle,
-  FeatureBundleError,
-  FeatureBundleErrorCode,
-  FeatureBundleId,
-  FeatureBundleRegistry,
-  FeatureComputationPort,
-  FeatureDescriptor,
-  FeatureKind,
-  FeatureKindRequirement,
-  FeatureMetadata,
-  FeatureMetadataValue,
+  AttachFeatureBundleInput, FeatureBundle, FeatureBundleError, FeatureBundleErrorCode,
+  FeatureBundleId, FeatureBundleRegistry, FeatureComputationPort, FeatureDescriptor,
+  FeatureKind, FeatureKindRequirement, FeatureMetadata, FeatureMetadataValue,
   UpdateFeatureBundleInput,
 } from './contracts/feature-bundle.js';
 
 // ---- LAB-003: Idea Graph ----
 export type {
-  AddIdeaEdgeInput,
-  AddIdeaNodeInput,
-  DerivationStep,
-  IdeaDerivation,
-  IdeaEdge,
-  IdeaEdgeId,
-  IdeaEdgeKind,
-  IdeaGraph,
-  IdeaGraphError,
-  IdeaGraphErrorCode,
-  IdeaNeighborhood,
-  IdeaNeighborhoodQuery,
-  IdeaNode,
-  IdeaNodeId,
-  ReviseIdeaNodeInput,
-  UpdateIdeaEdgeInput,
+  AddIdeaEdgeInput, AddIdeaNodeInput, DerivationStep, IdeaDerivation, IdeaEdge,
+  IdeaEdgeId, IdeaEdgeKind, IdeaGraph, IdeaGraphError, IdeaGraphErrorCode,
+  IdeaNeighborhood, IdeaNeighborhoodQuery, IdeaNode, IdeaNodeId,
+  ReviseIdeaNodeInput, UpdateIdeaEdgeInput,
 } from './contracts/idea-graph.js';
 
 // ---- LAB-004+: historical evidence vs counterfactual predictions ----
 export type {
-  HistoricalObservation,
-  HistoricalObservationId,
-  ObservedMetric,
-  PredictedMetric,
-  PredictionInterval,
-  SimulationPrediction,
-  SimulationPredictionId,
+  HistoricalObservation, HistoricalObservationId, ObservedMetric, PredictedMetric,
+  PredictionInterval, SimulationPrediction, SimulationPredictionId,
 } from './contracts/evidence.js';
 
 // ---- LAB-004: Social Simulator ----
 export type {
-  RegisterWorldModelInput,
-  SimulatedMetricDelta,
-  SimulatorEnginePort,
-  SimulatorError,
-  SimulatorErrorCode,
-  SimulatorStepInput,
-  SocialSimulationResult,
-  SocialWorldModel,
-  SocialWorldModelDraft,
-  SocialWorldModelId,
-  SocialWorldModelState,
-  SocialWorldModelStore,
-  StrategyActionCandidate,
-  StrategyActionKind,
+  RegisterWorldModelInput, SimulatedMetricDelta, SimulatorEnginePort, SimulatorError,
+  SimulatorErrorCode, SimulatorStepInput, SocialSimulationResult, SocialWorldModel,
+  SocialWorldModelDraft, SocialWorldModelId, SocialWorldModelState, SocialWorldModelStore,
+  StrategyActionCandidate, StrategyActionKind,
 } from './contracts/simulator.js';
 
 // ---- LAB-005: user/creator/competition dynamics ----
 export type {
-  DynamicsError,
-  DynamicsErrorCode,
-  DynamicsModel,
-  DynamicsModelDraft,
-  DynamicsModelId,
-  DynamicsModelStore,
-  DynamicsPopulationKind,
-  DynamicsSegmentState,
-  DynamicsState,
-  DynamicsStepInput,
-  DynamicsStepPort,
-  DynamicsStepResult,
-  PopulationResponse,
-  PopulationSegment,
-  RegisterDynamicsModelInput,
+  DynamicsError, DynamicsErrorCode, DynamicsModel, DynamicsModelDraft, DynamicsModelId,
+  DynamicsModelStore, DynamicsPopulationKind, DynamicsSegmentState, DynamicsState,
+  DynamicsStepInput, DynamicsStepPort, DynamicsStepResult, PopulationResponse,
+  PopulationSegment, RegisterDynamicsModelInput,
 } from './contracts/dynamics.js';
 
 // ---- LAB-006: Time Machine ----
 export type {
-  AppendHistoricalObservationInput,
-  BranchRecordId,
-  CounterfactualBranch,
-  CounterfactualBranchRecord,
-  CreateBranchInput,
-  DelayedInformationQuery,
-  HistoricalObservationDraft,
-  HistoricalTimelineQuery,
-  RecordBranchPredictionInput,
-  TimeMachineBranchId,
-  TimeMachineError,
-  TimeMachineErrorCode,
-  TimeMachineIntervention,
+  AppendHistoricalObservationInput, BranchRecordId, CounterfactualBranch,
+  CounterfactualBranchRecord, CreateBranchInput, DelayedInformationQuery,
+  HistoricalObservationDraft, HistoricalTimelineQuery, RecordBranchPredictionInput,
+  TimeMachineBranchId, TimeMachineError, TimeMachineErrorCode, TimeMachineIntervention,
   TimeMachinePort,
 } from './contracts/time-machine.js';
 
 // ---- LAB-007: World Model Ensemble ----
 export type {
-  AddEnsembleMemberInput,
-  CalibrationPlaceholder,
-  EnsembleDisagreement,
-  EnsembleError,
-  EnsembleErrorCode,
-  EnsembleEvaluationInput,
-  EnsembleMember,
-  EnsembleOodSignal,
-  EnsemblePort,
-  EnsemblePrediction,
-  EnsembleWeightingPolicy,
-  MemberCoverage,
-  MemberOodVerdict,
-  MemberPrediction,
-  MetricDisagreement,
-  CoverageRange,
-  RegisterEnsembleInput,
-  SeedRobustnessMetricSweep,
-  SeedRobustnessSweep,
-  WorldModelEnsemble,
-  WorldModelEnsembleDraft,
-  WorldModelEnsembleId,
+  AddEnsembleMemberInput, CalibrationPlaceholder, CoverageRange, EnsembleDisagreement,
+  EnsembleError, EnsembleErrorCode, EnsembleEvaluationInput, EnsembleMember,
+  EnsembleOodSignal, EnsemblePort, EnsemblePrediction, EnsembleWeightingPolicy,
+  MemberCoverage, MemberOodVerdict, MemberPrediction, MetricDisagreement,
+  RegisterEnsembleInput, SeedRobustnessMetricSweep, SeedRobustnessSweep,
+  WorldModelEnsemble, WorldModelEnsembleDraft, WorldModelEnsembleId,
 } from './contracts/ensemble.js';
 
 // ---- LAB-008/LAB-009: mission-compatible reward vocabulary + program descriptors ----
 export type {
-  CandidateProgramDescriptor,
-  CandidateProgramStrategy,
-  LabRewardDirection,
-  LabRewardMetricId,
-  LabRewardSpec,
-  LabRewardTerm,
+  CandidateProgramDescriptor, CandidateProgramStrategy, LabRewardDirection,
+  LabRewardMetricId, LabRewardSpec, LabRewardTerm,
 } from './contracts/reward.js';
 
 // ---- LAB-008: Offline / Off-Policy Evaluation ----
 export type {
-  EvaluationBasis,
-  OffPolicyError,
-  OffPolicyErrorCode,
-  OffPolicyEvaluationId,
-  OffPolicyEvaluationInput,
-  OffPolicyEvaluationPort,
-  OffPolicyEvaluationResult,
-  OffPolicyEvaluationScore,
-  OffPolicyInsufficientHistory,
-  OffPolicyUncertaintyBreakdown,
-  OffPolicyValidityDisclosure,
-  ObservedMetricMean,
+  EvaluationBasis, OffPolicyError, OffPolicyErrorCode, OffPolicyEvaluationId,
+  OffPolicyEvaluationInput, OffPolicyEvaluationPort, OffPolicyEvaluationResult,
+  OffPolicyEvaluationScore, OffPolicyInsufficientHistory,
+  OffPolicyUncertaintyBreakdown, OffPolicyValidityDisclosure, ObservedMetricMean,
   RewardTermContribution,
 } from './contracts/off-policy-evaluation.js';
 
@@ -541,6 +471,29 @@ export type {
   BenchmarkIntegrityReport, MarketingBenchmarkPort, RobustBenchmarkRecord,
 } from './contracts/robust-benchmark-port.js';
 
+// ---- LAB-018: Online Calibration — the benchmark-citation seam on the run input ----
+export type {
+  BenchmarkCalibrationCitation, BenchmarkCalibrationCitationRequest,
+} from './contracts/robust-benchmark.js';
+export { benchmarkCalibrationCitationOf } from './contracts/robust-benchmark.js';
+
+// ---- LAB-018: Online Calibration — the error-record contracts ----
+export type {
+  CalibrationErrorFunctional, CalibrationObservationCitation, CalibrationObservationRef,
+  CalibrationPredictedStatement, CalibrationPredictionRef, LabCalibrationId,
+  OnlineCalibrationRecord, RecordCalibrationErrorInput, RealityObservationReaderPort,
+} from './contracts/online-calibration.js';
+export {
+  CALIBRATION_ERROR_FUNCTIONAL_V1, canonicalCalibrationView,
+} from './contracts/online-calibration.js';
+
+// ---- LAB-018: Online Calibration — contexts, integrity + the port ----
+export type {
+  CalibrationContextIntegrityReport, CalibrationContextRecord, CalibrationContextSummary,
+  CalibrationErrorRecordCitation, CalibrationIntegrityReport, DeriveCalibrationContextInput,
+  OnlineCalibrationError, OnlineCalibrationErrorCode, OnlineCalibrationPort,
+} from './contracts/online-calibration-port.js';
+
 // ---- Runtime factories (in-memory scaffolds, disclosed) ----
 export type { InMemoryCorpusStoreOptions } from './adapters/in-memory-corpus-store.js';
 export type { InMemoryFeatureBundleRegistryOptions } from './adapters/in-memory-feature-bundle-registry.js';
@@ -582,3 +535,11 @@ export type { DelayEnsembleView, InMemoryDelayEconomicsOptions } from './adapter
 export { createInMemoryDelayEconomics } from './adapters/in-memory-delay-economics.js';
 export type { InMemoryMarketingBenchmarkOptions } from './adapters/in-memory-marketing-benchmark.js';
 export { createInMemoryMarketingBenchmark } from './adapters/in-memory-marketing-benchmark.js';
+export type { InMemoryOnlineCalibrationOptions } from './adapters/in-memory-online-calibration.js';
+export { createInMemoryOnlineCalibration } from './adapters/in-memory-online-calibration.js';
+export type {
+  InMemoryRealityObservationReaderOptions, RealityObservationSeedInput,
+} from './adapters/in-memory-reality-observation-reader.js';
+export { createInMemoryRealityObservationReader } from './adapters/in-memory-reality-observation-reader.js';
+export type { TimeMachineRealityReaderOptions } from './adapters/time-machine-reality-reader.js';
+export { createTimeMachineRealityReader } from './adapters/time-machine-reality-reader.js';
