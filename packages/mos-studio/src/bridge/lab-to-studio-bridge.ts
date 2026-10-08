@@ -46,17 +46,10 @@ import type { StudioSession } from "../contracts/studio-session.js";
 import type { StudioSessionDirectory } from "../ports/session-directory.port.js";
 import type { StudioArtifactPackagingPort } from "../ports/artifact-packaging.port.js";
 import type {
-  AcceptanceCriteriaRef,
-  DelayPolicyRef,
-  LabCandidateRef,
-  ReturnContractRef,
-  RightsRef,
   StudioArtifactPackageId,
   StudioSessionId,
   Timestamp,
 } from "../contracts/refs.js";
-import type { StudioOrganizationRef } from "../contracts/organization-loading.js";
-import type { StudioProductionRequestView } from "../contracts/studio-session.js";
 import type { SessionIntakeForValidation } from "../contracts/studio-format.js";
 import type { CreateStudioSessionInput } from "../runtime/intake-types.js";
 
@@ -64,6 +57,7 @@ import type {
   LabToStudioAssetsGateRecord,
   LabToStudioEntryOutcome,
   LabToStudioEntryRequest,
+  LabToStudioFailureStage,
   LabToStudioMissionLinkage,
   LabToStudioPolicyGateRecord,
   LabToStudioProductionEntry,
@@ -76,8 +70,12 @@ import type {
   ProductionEntryPolicyGatePort,
   ProductionEntryRightsGatePort,
 } from "./contracts/bridge-authority-ports.js";
-import { validateLabToStudioEntry, type ValidatedLabToStudioEntry } from "./bridge-validation.js";
+import { validateLabToStudioEntry } from "./bridge-validation.js";
 import { createLabToStudioEntryStore, type LabToStudioEntryStore } from "./bridge-entry-store.js";
+import {
+  labCandidateRefOf,
+  projectStudioRequestView,
+} from "./studio-request-projection.js";
 
 // ---------------------------------------------------------------------------
 // The port + dependencies
@@ -134,73 +132,6 @@ export interface LabToStudioBridgeDeps {
   readonly nextEntryId?: () => string;
   /** Injectable store (defaults to the disclosed in-memory double). */
   readonly store?: LabToStudioEntryStore;
-}
-
-// ---------------------------------------------------------------------------
-// Documented coarse projections (canonical request → studio request view)
-// ---------------------------------------------------------------------------
-
-/**
- * Compile-time brand bridge (the W10-C disclosed pattern): the studio's
- * opaque cross-authority refs are branded strings; the canonical values are
- * JSON-encoded into them verbatim (no lossy projection — the full canonical
- * data rides the opaque ref).
- */
-const asOpaqueRef = <T>(value: string): T => value as T;
-
-/** The canonical numeric amount → the studio's decimal-string money form. */
-function canonicalAmountToStudioDecimal(amount: number): string {
-  const fixed = amount.toFixed(2);
-  return fixed.includes("e") || fixed.includes("E") ? String(amount) : fixed;
-}
-
-/** Project the canonical composed request into the studio's request view. */
-function projectStudioRequestView(
-  validated: ValidatedLabToStudioEntry,
-  formatVersion: number,
-): StudioProductionRequestView {
-  const request = validated.request;
-  const scopeTag = String(request.id);
-  return {
-    id: request.id,
-    version: request.version,
-    scope: String(request.scope.tenantId),
-    objective: request.objective,
-    sourceArtifacts: request.sourceArtifacts.map((source) => source.artifactId),
-    strategyRef: request.strategyRef,
-    transformGraphRef: request.transformGraphRef,
-    organizationRef: {
-      id: request.organizationRef as StudioOrganizationRef["id"],
-      version: validated.organizationCitation.organizationVersion,
-    },
-    studioFormat: { formatId: request.studioFormat, version: formatVersion },
-    capabilityRequirements: request.capabilityRequirements.map((requirement) => requirement.capabilityId),
-    humanTasks: [...request.humanTasks],
-    acceptanceCriteria: asOpaqueRef<AcceptanceCriteriaRef>(
-      `lab-entry:acceptance:${scopeTag}:${JSON.stringify(request.acceptanceCriteria)}`,
-    ),
-    budget: {
-      limit: {
-        currency: request.budget.maxCost.currency,
-        amount: canonicalAmountToStudioDecimal(request.budget.maxCost.amount),
-      },
-    },
-    deadline: request.deadline,
-    delayPolicy: asOpaqueRef<DelayPolicyRef>(
-      `lab-entry:delay-policy:${scopeTag}:${JSON.stringify(request.delayPolicy)}`,
-    ),
-    rightsContext: asOpaqueRef<RightsRef>(
-      `lab-entry:rights-context:${scopeTag}:${JSON.stringify(request.rightsContext)}`,
-    ),
-    returnContract: asOpaqueRef<ReturnContractRef>(
-      `lab-entry:return-contract:${scopeTag}:${JSON.stringify(request.returnContract)}`,
-    ),
-  };
-}
-
-/** The deterministic lab-candidate citation the studio session records. */
-function labCandidateRefOf(searchResultId: string, rank: number): LabCandidateRef {
-  return JSON.stringify(["lab-candidate", searchResultId, rank]) as LabCandidateRef;
 }
 
 // ---------------------------------------------------------------------------
@@ -272,11 +203,7 @@ export function createLabToStudioBridge(deps: LabToStudioBridgeDeps): LabToStudi
       studio: LabToStudioStudioEntry | null;
       expectations: LabToStudioProductionEntry["expectations"];
     },
-    stage: LabToStudioProductionEntry["denial"] extends infer D
-      ? D extends { stage: infer S }
-        ? S
-        : never
-      : never,
+    stage: LabToStudioFailureStage,
     status: "denied" | "studio-entry-failed",
     reason: string,
   ): LabToStudioProductionEntry =>

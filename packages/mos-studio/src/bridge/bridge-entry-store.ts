@@ -24,6 +24,7 @@
 
 import type { TenantScope } from "@mos/contracts";
 
+import type { StudioArtifactPackageId } from "../contracts/refs.js";
 import type { LabToStudioProductionEntry } from "./contracts/lab-to-studio-entry.js";
 
 // ---------------------------------------------------------------------------
@@ -129,7 +130,10 @@ export function createLabToStudioEntryStore(): LabToStudioEntryStore {
       const successor: LabToStudioProductionEntry = {
         ...structuredClone(latest),
         status: "packaged",
-        packageRef: { packageId: packageRef.packageId as never, version: packageRef.version },
+        // The single disclosed brand-bridge point: the cited package id is
+        // the packaging authority's own id riding the opaque branded ref
+        // (the resolve call above already proved it through that authority).
+        packageRef: { packageId: packageRef.packageId as StudioArtifactPackageId, version: packageRef.version },
         version: latest.version + 1,
         priorVersion: latest.version,
       };
