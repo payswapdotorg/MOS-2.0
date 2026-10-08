@@ -1,20 +1,26 @@
 /**
- * Review outcome application for the Studio runtime (STUDIO-001).
+ * Review outcome application for the Studio runtime (STUDIO-001; STUDIO-013
+ * routes the accept path through THE canonical packaging authority).
  *
- * §19 mapping: accept/accept-alternate → package assembly + packaged state;
- * request-treatment → processing (treatment branch); reject-quality /
+ * §19 mapping: accept/accept-alternate → package composition + packaged
+ * state; request-treatment → processing (treatment branch); reject-quality /
  * reject-strategy / reject-rights-policy → failed terminal with the typed
  * rejection recorded (quality vs rights/policy rejections stay distinct);
  * abandon → abandoned terminal. The outcome record itself was built by the
  * runtime before this pure application step.
+ *
+ * STUDIO-013: the accept path composes the next package version through the
+ * injected `StudioArtifactPackagingPort` (the ONE canonical packaging path).
+ * On a typed packaging failure the review is NOT recorded and the session
+ * stays in the review state — fail-closed, no partial application.
  */
 
 import type { StudioRuntimeError } from "./errors.js";
 import type { StudioSessionRecord } from "./session-state.js";
 import { applyLifecycleTransition, attachPackageVersion, snapshotSession } from "./session-state.js";
-import { assembleArtifactPackage } from "./package-assembly.js";
-import type { StudioArtifactPackageId } from "../contracts/refs.js";
-import type { Timestamp } from "../contracts/refs.js";
+import { composeSessionPackageFromRecord } from "./packaging/session-package-request.js";
+import type { StudioArtifactPackagingPort } from "../ports/artifact-packaging.port.js";
+import type { StudioArtifactPackageId, Timestamp } from "../contracts/refs.js";
 import type { StudioArtifactPackage } from "../contracts/studio-artifact-package.js";
 import type { StudioSession } from "../contracts/studio-session.js";
 import type { StudioOutputReview, StudioOutputReviewOutcome } from "../contracts/treatment.js";
@@ -37,24 +43,38 @@ export function applyReviewOutcome(
   deps: {
     readonly now: () => Timestamp;
     readonly nextPackageId: () => string;
+    /** STUDIO-013: the canonical packaging authority (required). */
+    readonly packaging: StudioArtifactPackagingPort;
   },
 ): { ok: true; value: AppliedReviewValue } | { ok: false; error: StudioRuntimeError } {
   const outcome: StudioOutputReviewOutcome = review.outcome;
   switch (outcome) {
     case "accept":
     case "accept-alternate": {
-      record.reviews.push(review);
-      const reviewRef = `mos-studio:review:${record.reviews.length}`;
-      let packageId: StudioArtifactPackageId = record.packageId as StudioArtifactPackageId;
-      if (record.packageId === null) {
-        packageId = deps.nextPackageId() as StudioArtifactPackageId;
-        record.packageId = packageId;
+      const reviewRef = `mos-studio:review:${record.reviews.length + 1}`;
+      const composed = composeSessionPackageFromRecord(
+        record,
+        {
+          packageId: record.packageId,
+          nextPackageId: deps.nextPackageId,
+          composedAt: deps.now(),
+          evaluation: {
+            status: "evaluated",
+            outcome: "accepted",
+            evaluationRef: reviewRef,
+          },
+        },
+        deps.packaging,
+      );
+      if (!composed.ok) {
+        return {
+          ok: false,
+          error: { kind: "package-composition-failed", sessionId: record.sessionId, failure: composed.failure },
+        };
       }
-      const pkg = assembleArtifactPackage(record, packageId, deps.now(), {
-        status: "evaluated",
-        outcome: "accepted",
-        evaluationRef: reviewRef,
-      });
+      const pkg = composed.package;
+      const packageId: StudioArtifactPackageId = composed.packageId;
+      record.reviews.push(review);
       record.packages.push(pkg);
       attachPackageVersion(record, packageId, pkg.version);
       applyLifecycleTransition(record, "packaged", deps.now(), `review:${outcome}`, "studio-runtime");

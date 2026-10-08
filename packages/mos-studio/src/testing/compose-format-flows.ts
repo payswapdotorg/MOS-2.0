@@ -47,6 +47,8 @@ import { createInMemoryCaptureSourcePort } from "../runtime/capture/in-memory-ca
 import { composeRealInterviewerAgentStack, type RealInterviewerAgentStack } from "./real-interviewer-agent.js";
 import { composeRealParticipantAuthorities, type RealParticipantAuthorities } from "./real-participant-authorities.js";
 import { composeEditingStack, type EditingStack } from "./compose-editing-stack.js";
+import { createStudioPackagingAuthority } from "../runtime/packaging/packaging-authority.js";
+import type { StudioArtifactPackagingPort } from "../ports/artifact-packaging.port.js";
 import {
   EDITING_ENGINE_RESOURCE_LIMITS,
   EDITING_PRINCIPAL,
@@ -89,6 +91,8 @@ export interface FormatFlowScenario {
   readonly runtime: StudioRuntime;
   /** The shared (wrapped) artifact factory — engine-store + derived-grant aware. */
   readonly editingStack: EditingStack;
+  /** STUDIO-013: the ONE packaging authority the runtime AND the editing stack share. */
+  readonly packaging: StudioArtifactPackagingPort;
   readonly authorities: RealParticipantAuthorities;
   readonly interviewerStack: RealInterviewerAgentStack;
   readonly reactionFlow: ReturnType<typeof createReactionFlow>;
@@ -102,8 +106,12 @@ export function composeFormatFlowScenario(): FormatFlowScenario {
   const tenantId = EDITING_STACK_TENANT;
   // The ONE REAL rights + identity authority pair behind every gate.
   const authorities = composeRealParticipantAuthorities({ now: clock });
-  // The W8-C editing stack over the SHARED rights repository.
-  const editingStack = composeEditingStack({ now: clock, rightsRepository: authorities.rightsRepository });
+  // STUDIO-013: the ONE packaging authority — the studio runtime's session
+  // packages and the editing stack's successor versions compose through the
+  // SAME canonical path (one append-only store per tenant).
+  const packaging = createStudioPackagingAuthority({ now: clock });
+  // The W8-C editing stack over the SHARED rights repository + authority.
+  const editingStack = composeEditingStack({ now: clock, rightsRepository: authorities.rightsRepository, packaging });
   // The session organization registered as an editor-node pawn organization.
   const pawnOrganization = editingStack.registerPawnOrganization({
     organizationId: FLOW_ORGANIZATION.id,
@@ -127,6 +135,7 @@ export function composeFormatFlowScenario(): FormatFlowScenario {
     captureSourcePort: createInMemoryCaptureSourcePort({ now: clock, fixedTakeSeconds: 42 }),
     participantIdentityPort: authorities.participantIdentityPort,
     participantConsentPort: authorities.participantConsentPort,
+    packaging,
     clock,
     idFactory: createDeterministicIdFactory("id"),
   });
@@ -168,6 +177,7 @@ export function composeFormatFlowScenario(): FormatFlowScenario {
     clock,
     runtime,
     editingStack,
+    packaging,
     authorities,
     interviewerStack,
     reactionFlow,

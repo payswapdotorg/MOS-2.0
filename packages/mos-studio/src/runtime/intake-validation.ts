@@ -85,7 +85,8 @@ export function validateProcessingOutput(
   ) {
     reasons.push("format allows a single final candidate only");
   }
-  // ---- W10-B money + duration integrity (fail closed, never silently summed). ----
+  // ---- W10-B money + duration integrity (fail closed, never silently summed;
+  // STUDIO-013 re-guards at packaging). ----
   if (output.additionalCost !== undefined) {
     const moneyFault = validateStudioMoneyAmount(output.additionalCost);
     if (moneyFault !== null) {
@@ -105,7 +106,9 @@ export function validateProcessingOutput(
       !Number.isFinite(output.processingSeconds) ||
       output.processingSeconds < 0)
   ) {
-    reasons.push("processingSeconds must be a finite number >= 0");
+    reasons.push(
+      `processingSeconds must be a finite non-negative number (got ${String(output.processingSeconds)})`,
+    );
   }
   return reasons;
 }

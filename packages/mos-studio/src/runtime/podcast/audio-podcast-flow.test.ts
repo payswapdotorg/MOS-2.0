@@ -12,9 +12,9 @@ import {
   SYNTHETIC_VOICE_INTERVIEWER,
   TENANT,
   composePodcastScenario,
-  editDecisionsAt,
   onePersonPlan,
   participantPlan,
+  podcastEditChoices,
   scriptGraphFor,
   seedParticipant,
   terminalRounds,
@@ -30,6 +30,8 @@ import type { Version } from "../../contracts/refs.js";
 // (single participant + SYNTHETIC interviewer, labeled end-to-end),
 // multi-account mode through the REAL §15 identity/rights consent gates, and
 // treatment on the packaged output creating a NEW immutable version (§19).
+// STUDIO-013: the final audio composition rides the W8-C editing session
+// (the ONE composition surface — the flow's own edit-graph recorder is gone).
 // Fail-closed paths live in audio-podcast-flow-failures.test.ts.
 // ---------------------------------------------------------------------------
 
@@ -100,19 +102,44 @@ test("STUDIO-011 e2e one-person: script → adaptive interview → capture → p
     ],
   );
 
-  // The edit graph: organization decisions RECORDED (keep/trim/reorder).
-  const editGraph = result.value.editGraph;
-  assert.equal(editGraph.decisions.length, 3);
+  // The W8-C editing session: the org's choices at the audio-podcast's
+  // DECLARED points, composed through the REAL Editor Pawn + engines runner
+  // (STUDIO-013 — ONE composition surface, ONE edit-graph record shape).
+  const editing = result.value.editing;
+  assert.equal(editing.record.lifecycle, "succeeded");
+  assert.equal(editing.record.formatId, "audio-podcast");
+  const editGraph = editing.editGraph;
   assert.deepEqual(
-    editGraph.decisions.map((d) => [d.decisionId, d.decisionPointId, d.decision.kind]),
+    editGraph.declaredPointIds,
+    ["podcast-edit-points", "podcast-edit-pacing"],
+    "the audio-podcast format's declared decision points",
+  );
+  assert.deepEqual(
+    editGraph.choices.map((choice) => [choice.choiceId, choice.decisionPointId, choice.selectedOption]),
     [
-      ["edit-keep-opening", "podcast-edit-points", "keep"],
-      ["edit-trim-core", "podcast-edit-points", "trim"],
-      ["edit-reorder-deepening", "podcast-edit-pacing", "reorder"],
+      ["choice-edit-points", "podcast-edit-points", "org-learned-edit-keep-tighten"],
+      ["choice-edit-pacing", "podcast-edit-pacing", "org-learned-pacing-front-load"],
     ],
   );
-  assert.equal(editGraph.decisions[0]?.decidedByOrganization.id, TEST_ORGANIZATION.id);
-  assert.equal(editGraph.decisions[0]?.decidedByOrganization.version, TEST_ORGANIZATION.version);
+  for (const choice of editGraph.choices) {
+    assert.equal(choice.decidedByOrganization.id, TEST_ORGANIZATION.id);
+    assert.equal(choice.decidedByOrganization.version, 1, "the pawn-organization citation drives the composition");
+  }
+  // Every composition operation executed through the Editor Pawn with REAL
+  // engine invocations (§30 summaries quote the runner's job identities).
+  assert.equal(editGraph.operations.length, 4);
+  for (const operation of editGraph.operations) {
+    assert.equal(operation.outputArtifactRefs.length, 1);
+    assert.ok(operation.inputArtifactRefs.length >= 1);
+    assert.ok(
+      operation.engineInvocations.length >= 1,
+      `operation ${operation.operationId} recorded engine invocations`,
+    );
+  }
+  assert.ok(
+    editing.record.engineInvocations.length >= editGraph.operations.length + 1,
+    "the final assembly also invoked the engine",
+  );
 
   // Transcripts exist as intermediate artifacts derived from the raw captures.
   assert.equal(result.value.transcriptRefs.length, 3);
@@ -123,20 +150,27 @@ test("STUDIO-011 e2e one-person: script → adaptive interview → capture → p
   }
 
   // The packaged StudioArtifactPackage: every required contract field present
-  // and the REAL conversation/edit graph refs flow into it (STUDIO-011).
+  // and the REAL conversation/edit graph refs flow into it (STUDIO-011),
+  // composed through THE canonical packaging authority (STUDIO-013).
   const pkg = result.value.package;
   assert.equal(pkg.sessionRef, result.value.sessionId);
   assert.equal(pkg.version, 1);
   assert.equal(pkg.rawArtifacts.length, 3, "one raw audio take per capture round");
-  assert.equal(pkg.intermediateArtifacts.length, 3, "transcripts as intermediates");
+  // intermediates = transcripts + the editing session's operation outputs.
+  assert.equal(
+    pkg.intermediateArtifacts.length,
+    result.value.transcriptRefs.length + editGraph.operations.length,
+  );
   assert.equal(pkg.finalArtifacts.length, 1);
   assert.deepEqual(pkg.transcriptRefs, result.value.transcriptRefs);
   assert.equal(pkg.conversationGraphRef.graphId, conversation.graphId);
   assert.equal(pkg.conversationGraphRef.version, conversation.version);
   assert.deepEqual(pkg.conversationGraphRef.derivedFrom, result.value.transcriptRefs);
-  assert.equal(pkg.editGraphRef.graphId, editGraph.graphId);
-  assert.equal(pkg.editGraphRef.version, editGraph.version);
-  assert.equal(pkg.editGraphRef.otioInterchange, false);
+  assert.deepEqual(pkg.editGraphRef, {
+    graphId: editGraph.graphId,
+    version: editGraph.version,
+    otioInterchange: editGraph.otioInterchange,
+  });
   // Provenance chain: closed lineage, consent coverage, synthetic disclosure.
   assert.equal(pkg.provenance.lineageComplete, true);
   assert.ok(
@@ -146,16 +180,27 @@ test("STUDIO-011 e2e one-person: script → adaptive interview → capture → p
   assert.equal(pkg.consent.allRawArtifactsCovered, true);
   assert.ok(pkg.consent.participantConsentRefs.length >= 2, "the participant's real consent records flow into the package");
   assert.equal(pkg.evaluation.outcome, "accepted");
-  assert.equal(pkg.cost.total.amount, "0.42");
+  // Cost = the editing session's engine cost + the plan's declared processing cost.
+  const expectedCost = (editing.record.cost.amount + 0.42).toFixed(2);
+  assert.equal(pkg.cost.total.amount, expectedCost);
   assert.equal(pkg.duration.captureSeconds, 42 * 3, "three sealed 42s takes");
   assert.equal(pkg.duration.processingSeconds, 30);
 
-  // The final audio artifact is a composition over transcripts + raw takes (§6).
-  const finalAudio = result.value.finalAudioArtifact;
+  // The composed final audio artifact (the editing session's final assembly,
+  // a composition over the editing outputs — §6).
+  const finalAudio = result.value.finalArtifact;
   assert.equal(finalAudio.type, "audio");
   assert.equal(finalAudio.stage, "final");
   assert.equal(finalAudio.creationMethod, "composition");
-  assert.equal(finalAudio.parentArtifactRefs.length, 6);
+  assert.ok(finalAudio.parentArtifactRefs.length >= 1);
+  // The editing session's NEW immutable package version is ALSO composed
+  // through the ONE authority (append-only, same tenant store).
+  assert.equal(editing.newPackage.version, 1);
+  assert.equal(editing.newPackage.id !== pkg.id, true, "the editing package id differs from the session package id");
+  assert.ok(
+    scenario.packaging.listPackageVersions({ tenantId: plan.tenantId }, editing.newPackage.id).length >= 1,
+    "the editing version is browsable through the ONE packaging authority",
+  );
 });
 
 test("STUDIO-011 multi-account: two real participants through §15 consent gates, contribution provenance preserved", async () => {
@@ -180,7 +225,7 @@ test("STUDIO-011 multi-account: two real participants through §15 consent gates
     },
     // Alternate the speakers across the adaptive rounds (multi-account capture).
     rounds: terminalRounds(["participant-1" as never, "participant-2" as never, "participant-1" as never]),
-    editDecisions: editDecisionsAt(scenario.clock),
+    editChoices: podcastEditChoices(),
     operator: OPERATOR,
   };
   const result = await scenario.flow.run(plan);
@@ -230,7 +275,7 @@ test("STUDIO-011 treatment on the packaged output creates a NEW immutable packag
 
   const treatmentRequest: OutputTreatmentRequest = {
     sessionId: result.value.sessionId,
-    targetArtifact: result.value.finalAudioArtifact,
+    targetArtifact: result.value.finalArtifact,
     treatment: "trim",
     parametersRef: "params-trim-podcast-1",
     requestedBy: OPERATOR,
@@ -252,9 +297,9 @@ test("STUDIO-011 treatment on the packaged output creates a NEW immutable packag
 
   // The successor artifact's lineage links to the treated final audio version.
   const successor = v2.finalArtifacts[v2.finalArtifacts.length - 1];
-  assert.ok(successor !== undefined && successor.artifactId !== result.value.finalAudioArtifact.artifactId);
+  assert.ok(successor !== undefined && successor.artifactId !== result.value.finalArtifact.artifactId);
   assert.ok(
-    successor.parentArtifactRefs.some((p) => p.artifactId === result.value.finalAudioArtifact.artifactId),
+    successor.parentArtifactRefs.some((p) => p.artifactId === result.value.finalArtifact.artifactId),
     "the treated version must be a parent of the successor",
   );
 

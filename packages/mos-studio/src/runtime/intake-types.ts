@@ -138,7 +138,9 @@ export interface OpenCaptureRequest {
  * `inputRequirements.requiresRightsClearedSources`): an uncleared source is
  * a TYPED failure, never silently admitted (§27 — public URL accessibility
  * never implies media rights). Consent refs cover the source's contribution
- * to the packaged output (§15/§27).
+ * to the packaged output (§15/§27) and the optional holder identity lets the
+ * §15 live re-resolution at operator actions (STUDIO-014) re-check the
+ * source holder's consent at the NEXT operator action after a revocation.
  */
 export interface ImportSourceArtifactRequest {
   /** The artifact id of the acquired input (must be non-blank). */
@@ -157,6 +159,13 @@ export interface ImportSourceArtifactRequest {
   readonly provenanceRef: ProvenanceRef;
   /** Consent records covering the source's contribution to the output (§15/§27). */
   readonly consentRefs?: readonly ConsentRef[];
+  /**
+   * STUDIO-014 (§15/§27): the identity of the source's consenting holder.
+   * Recorded with the raw coverage entry so operator actions re-resolve the
+   * source consent live (a revoked source consent surfaces at the next
+   * operator action, never silently passes).
+   */
+  readonly sourceHolderIdentityRef?: IdentityRef;
 }
 
 /** Processing output produced through the loaded organization (§6/§17). */
@@ -167,17 +176,24 @@ export interface StudioProcessingOutput {
   /**
    * STUDIO-011: the REAL conversation graph the organization derived the
    * processing from (question/answer nodes from the adaptive interview). When
-   * absent the packaged output synthesizes the session-scoped placeholder
-   * reference (W1-C behavior).
+   * absent the packaged output synthesizes the session-scoped reference
+   * (formats without an adaptive-interview conversation).
    */
   readonly conversationGraphRef?: ConversationGraphRef;
   /**
-   * STUDIO-011: the REAL edit graph of recorded organization edit decisions.
-   * When absent the packaged output synthesizes the session-scoped placeholder
-   * reference (W1-C behavior).
+   * STUDIO-013: the REAL recorded edit graph of the composition — REQUIRED
+   * for packaging (the authority fails closed with
+   * `edit-graph-ref-required` when a session packages without one; the W1-C
+   * synthesized placeholder is gone).
    */
   readonly editGraphRef?: EditGraphRef;
+  /**
+   * Declared processing cost (finite, non-negative, one currency — the
+   * W9-B D5 guard rejects NaN/Infinity/negative amounts at intake AND at
+   * packaging).
+   */
   readonly additionalCost?: MoneyAmount;
+  /** Declared processing seconds (finite, non-negative — W9-B D5 guard). */
   readonly processingSeconds?: number;
 }
 

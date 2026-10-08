@@ -394,7 +394,16 @@ export type EditingCompositionFailure =
       readonly failure: EditingExecutionFailureDetail | null;
     }
   | { readonly kind: "intermediate-versioning-failed"; readonly operationId: string; readonly reason: string }
-  | { readonly kind: "final-assembly-failed"; readonly reason: string };
+  | { readonly kind: "final-assembly-failed"; readonly reason: string }
+  | {
+      /**
+       * STUDIO-013: the canonical packaging authority refused to compose the
+       * new immutable version (fail-closed battery / append-only conflict).
+       * The composing started, so the §30 session record is a FAILED one.
+       */
+      readonly kind: "package-version-composition-failed";
+      readonly failure: import("./artifact-packaging.js").StudioPackagingFailure;
+    };
 
 // ---------------------------------------------------------------------------
 // The session result

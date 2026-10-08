@@ -60,7 +60,6 @@ import type {
 } from "../../contracts/editing-composition.js";
 import type { EditGraphImportOutcome } from "../../contracts/edit-graph-interop.js";
 import type {
-  ContractVersion,
   EditGraphId,
   EditingSessionId,
   StudioArtifactPackageId,
@@ -71,6 +70,7 @@ import type { StudioOrganizationRef } from "../../contracts/organization-loading
 import type { StudioArtifactFactoryPort } from "../../ports/artifact-factory.js";
 import type { ParticipantConsentPort } from "../../ports/participant-consent.js";
 import type { EditingCompositionPort } from "../../ports/editing-composition.port.js";
+import type { StudioArtifactPackagingPort } from "../../ports/artifact-packaging.port.js";
 import {
   createEditorPawnBinding,
   executionFailureDetailOf,
@@ -82,9 +82,6 @@ import {
   type EditingGraphStore,
 } from "./editing-graph-store.js";
 import { compareEditGraphVersions } from "./editing-graph-comparison.js";
-import {
-  assembleNewPackageVersion,
-} from "./editing-package-assembly.js";
 import {
   compositionManifestBytes,
   failedSessionRecord,
@@ -109,6 +106,12 @@ export interface EditingCompositionRuntimeOptions {
   readonly artifactFactory: StudioArtifactFactoryPort;
   /** The §15 consent gate port (REAL rights authority behind it at the composition seam). */
   readonly participantConsentPort: ParticipantConsentPort;
+  /**
+   * STUDIO-013: the canonical packaging authority — the new immutable
+   * treatment versions are composed through THE ONE packaging path (required;
+   * the authority's append-only store is also the version index).
+   */
+  readonly packaging: StudioArtifactPackagingPort;
   readonly now: () => Timestamp;
   /** Editing session id factory. */
   readonly editingSessionIdFactory: () => EditingSessionId;
@@ -134,8 +137,6 @@ export function createEditingCompositionRuntime(
   });
   /** tenantId → append-only editing session log. */
   const sessionsByTenant = new Map<string, EditingSessionRecord[]>();
-  /** tenantId → packageId → latest version assigned by an editing session. */
-  const packageVersionIndex = new Map<string, Map<string, ContractVersion>>();
 
   function sessionLog(scope: TenantScope): EditingSessionRecord[] {
     return sessionsByTenant.get(String(scope.tenantId)) ?? [];
@@ -146,30 +147,6 @@ export function createEditingCompositionRuntime(
     const log = sessionsByTenant.get(key) ?? [];
     log.push(record);
     sessionsByTenant.set(key, log);
-  }
-
-  function rememberPackageVersion(
-    scope: TenantScope,
-    packageId: StudioArtifactPackageId,
-    version: ContractVersion,
-  ): void {
-    const key = String(scope.tenantId);
-    let byTenant = packageVersionIndex.get(key);
-    if (byTenant === undefined) {
-      byTenant = new Map<string, ContractVersion>();
-      packageVersionIndex.set(key, byTenant);
-    }
-    const latest = byTenant.get(String(packageId)) ?? 0;
-    if (version > latest) {
-      byTenant.set(String(packageId), version);
-    }
-  }
-
-  function latestAssignedPackageVersion(
-    scope: TenantScope,
-    packageId: StudioArtifactPackageId,
-  ): ContractVersion {
-    return packageVersionIndex.get(String(scope.tenantId))?.get(String(packageId)) ?? 0;
   }
 
   async function runEditingSession(
@@ -384,24 +361,30 @@ export function createEditingCompositionRuntime(
       });
 
       // ---- Phase 6: the new immutable package version (treatment-versioned) ----
+      // STUDIO-013: composed through THE canonical packaging authority (the
+      // ONE packaging path; append-only versioning + the W9-B disciplines).
       const completedAt = options.now();
       const cost = sumCosts(engineInvocations.map((invocation) => invocation.cost));
       const sourcePackage = input.source.kind === "package" ? input.source.artifactPackage : null;
       const newPackageId = sourcePackage ? sourcePackage.id : options.packageIdFactory();
-      const newPackage = assembleNewPackageVersion({
+      const composed = options.packaging.composeSuccessorVersion(scope, {
         source: input.source,
-        scope,
         operationOutputs,
         finalArtifact,
         graph,
         newPackageId,
-        latestAssignedVersion: latestAssignedPackageVersion(scope, newPackageId),
         completedAt,
         startedAt,
         cost,
         contributors,
       });
-      rememberPackageVersion(scope, newPackage.id, newPackage.version);
+      if (!composed.ok) {
+        return failedAndRecord({
+          kind: "package-version-composition-failed",
+          failure: composed.failure,
+        });
+      }
+      const newPackage = composed.package;
 
       // ---- Phase 7: the §30 session record + pawn release ----
       const record: EditingSessionRecord = {

@@ -12,6 +12,7 @@ import {
   seedDefaultSubjectConsent,
   standaloneIntent,
   buildProcessingArtifacts,
+  recordedEditGraphRefOf,
 } from "../testing/test-fixtures.js";
 import type { OutputTreatmentRequest } from "../contracts/treatment.js";
 import type { Timestamp } from "../contracts/refs.js";
@@ -209,7 +210,14 @@ test("failed treatments: rights/policy rejection recorded distinctly; session st
   const { intermediate, finals } = await buildProcessingArtifacts(artifactFactory, [rawArtifact]);
   await mustOk(runtime.beginProcessing(created.session.id), "beginProcessing");
   await mustOk(
-    runtime.completeProcessing(created.session.id, { intermediateArtifacts: intermediate, finalArtifacts: finals }),
+    runtime.completeProcessing(created.session.id, {
+      intermediateArtifacts: intermediate,
+      finalArtifacts: finals,
+      transcriptRefs: [
+        { artifact: intermediate[0] as StudioArtifactRef, language: "en-US", diarized: true },
+      ],
+      editGraphRef: recordedEditGraphRefOf(created.session.id),
+    }),
     "completeProcessing",
   );
   await mustOk(
@@ -251,6 +259,10 @@ test("failed treatments: rights/policy rejection recorded distinctly; session st
     execRuntime.completeProcessing(execCreated.session.id, {
       intermediateArtifacts: execProcessed.intermediate,
       finalArtifacts: execProcessed.finals,
+      transcriptRefs: [
+        { artifact: execProcessed.intermediate[0] as StudioArtifactRef, language: "en-US", diarized: true },
+      ],
+      editGraphRef: recordedEditGraphRefOf(execCreated.session.id),
     }),
     "completeProcessing",
   );

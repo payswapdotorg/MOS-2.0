@@ -1,5 +1,6 @@
 /**
- * The audio-podcast session flow (STUDIO-010 + STUDIO-011).
+ * The audio-podcast session flow (STUDIO-010 + STUDIO-011; STUDIO-013
+ * migrated the final composition onto the W8-C editing surface).
  *
  * Full orchestration of one audio-podcast production inside the single
  * Studio runtime:
@@ -14,28 +15,31 @@
  *    (STUDIO-005 audio capture), the typed answer advances the declared
  *    branch graph until the interview reaches its terminal node;
  * 5. PROCESSING: transcript artifact refs through the studio-side
- *    ArtifactFactoryPort, the conversation graph (question/answer nodes from
- *    the adaptive loop), the edit graph (organization-driven edit decisions
- *    RECORDED as refs — the org decides, the studio records), the final
- *    audio artifact, then `beginProcessing`/`completeProcessing`;
- * 6. `submitReview` (accept) → the packaged StudioArtifactPackage with
- *    transcript refs + conversation-graph ref + edit-graph ref and the full
- *    provenance chain.
+ *    ArtifactFactoryPort and the conversation graph (question/answer nodes
+ *    from the adaptive loop, §14 labels end-to-end);
+ * 6. THE FINAL AUDIO COMPOSITION through the W8-C EditingCompositionPort
+ *    (STUDIO-013 — the flow's own edit-graph recorder is GONE; there is ONE
+ *    composition surface and ONE edit-graph record shape for every format):
+ *    the organization's edit choices at the audio-podcast's DECLARED decision
+ *    points (podcast-edit-points / podcast-edit-pacing) compose the raw
+ *    takes + transcripts through the W7-B Editor Pawn with engine invocations
+ *    through the REAL engines runner seam (the ORG decides, the studio
+ *    records; undeclared points are typed failures);
+ * 7. `completeProcessing` (the composed final + every intermediate + the
+ *    transcripts + the recorded edit-graph ref + the conversation-graph ref)
+ *    and `submitReview` (accept) → the packaged StudioArtifactPackage —
+ *    composed through the canonical packaging authority (STUDIO-013), so
+ *    every contract-required field is complete by construction.
  *
  * DISCLOSED stand-ins (same-wave dependency pattern): the capture runs on
- * the disclosed in-memory capture source double; the organization's real
- * transcription/mixing execution is STUDIO-008 — this flow derives the
- * transcripts and the final audio artifact through the studio-side artifact
- * factory port with closed lineage (§6), and the edit decisions arrive as
- * caller-supplied recorded data standing in for the organization's decision
- * output. The orchestration, gates, graphs and packaging are real studio
- * logic and survive the future bindings unchanged.
+ * the disclosed in-memory capture source double; the org's edit choices
+ * arrive as caller-supplied recorded data standing in for the organization's
+ * decision output (the W3-C/W8-C discipline — the recorder, validation,
+ * versioning and execution are real).
  */
 
 import type {
   AnswerRef,
-  ConversationGraphId,
-  EditGraphId,
   IdentityRef,
   MoneyAmount,
   ProvenanceRef,
@@ -52,7 +56,13 @@ import type {
   InterviewerSessionSummary,
 } from "../../contracts/interviewer-session.js";
 import type { InterviewerRepresentation } from "../../contracts/interviewer.js";
-import type { EditGraphError, PodcastEditGraph, RecordedEditDecision } from "../../contracts/podcast-graphs.js";
+import type {
+  EditingCompositionFailure,
+  EditingSessionInput,
+  EditingSessionRecord,
+  EditingSessionResult,
+  OrganizationEditChoice,
+} from "../../contracts/editing-composition.js";
 import type { PodcastConversationGraph } from "../../contracts/podcast-graphs.js";
 import type {
   StudioArtifactPackage,
@@ -66,14 +76,17 @@ import type { StudioRuntimeError } from "../errors.js";
 import type { StudioSessionView } from "../session-state.js";
 import type { JoinParticipantRequest } from "../intake-types.js";
 import type { StudioArtifactFactoryPort } from "../../ports/artifact-factory.js";
+import type { EditingCompositionPort } from "../../ports/editing-composition.port.js";
+import type { StudioOrganizationRef } from "../../contracts/organization-loading.js";
+import type { ResourceLimits } from "@mos/contracts";
+import type { PawnExecutionActor, TransformApplicationCitation } from "@mos/production";
 import type { AdaptiveSequencerPort } from "../../ports/adaptive-sequencer.js";
 import type { InterviewerAgentPort } from "../../ports/interviewer-agent.js";
 import type { InterviewerAgentBindingPort } from "../../ports/interviewer-agent-binding.js";
 import type { ScriptGraphStore } from "../script-graph/script-graph-store.js";
 import { createInterviewerSession, type InterviewerSession, type InterviewerSessionDeps } from "../interviewer/interviewer-session.js";
 import { buildConversationGraph } from "./conversation-graph.js";
-import { recordEditDecisions } from "./edit-graph.js";
-import { validateStudioMoneyAmount } from "../money.js";
+import { validateStudioMoneyAmount, sumStudioMoney } from "../money.js";
 import { cloneThenFreezeFormatPlugin } from "../ownership-support.js";
 
 /** One capture/interview round: the answer given after a presented question. */
@@ -113,8 +126,20 @@ export interface AudioPodcastProductionPlan {
   };
   /** The typed answers driving the adaptive loop, in interview order. */
   readonly rounds: readonly PodcastInterviewRound[];
-  /** Organization edit decisions to record (org decides; caller stands in — disclosed). */
-  readonly editDecisions: readonly Omit<RecordedEditDecision, "decidedByOrganization">[];
+  /**
+   * The organization's edit decisions at the audio-podcast's DECLARED points
+   * (podcast-edit-points / podcast-edit-pacing): the ORG decides; the caller
+   * stands in for the org's decision output (disclosed — the W3-C/W8-C
+   * discipline). Supplied as a BUILDER over the artifact universe the editing
+   * session will compose over: the flow invokes it once the capture rounds
+   * and transcripts exist, so every composition operation can cite exact
+   * artifact versions.
+   */
+  readonly editChoices: (inputs: {
+    /** Raw audio takes in capture order. */
+    readonly rawTakes: readonly StudioArtifactRef[];
+    readonly transcripts: readonly StudioArtifactRef[];
+  }) => readonly Omit<OrganizationEditChoice, "decidedAt">[];
   /** The review decision actor (accept). */
   readonly operator: StudioDecisionActor;
   readonly processingCost?: MoneyAmount;
@@ -127,9 +152,13 @@ export interface AudioPodcastFlowResult {
   readonly session: StudioSessionView;
   readonly interview: InterviewerSessionSummary;
   readonly conversationGraph: PodcastConversationGraph;
-  readonly editGraph: PodcastEditGraph;
+  /** The raw audio takes, in capture order. */
+  readonly rawTakes: readonly StudioArtifactRef[];
   readonly transcriptRefs: readonly TranscriptRef[];
-  readonly finalAudioArtifact: StudioArtifactRef;
+  /** The W8-C editing session: record + recorded edit graph + new package version. */
+  readonly editing: EditingSessionResult;
+  /** The composed final audio artifact (the editing session's final assembly). */
+  readonly finalArtifact: StudioArtifactRef;
   readonly package: StudioArtifactPackage;
 }
 
@@ -144,13 +173,17 @@ export type AudioPodcastFlowError =
   | { readonly kind: "interview-incomplete"; readonly remainingQuestionNodeId: string }
   | { readonly kind: "capture-failed"; readonly error: StudioRuntimeError | { readonly kind: string; readonly reason?: string } }
   | { readonly kind: "transcript-creation-failed"; readonly reason: string }
-  | { readonly kind: "final-artifact-creation-failed"; readonly reason: string }
-  | { readonly kind: "edit-graph-failed"; readonly error: EditGraphError }
   | {
       /** W10-B: the declared processing cost is malformed (never silently recorded). */
       readonly kind: "invalid-processing-cost";
       readonly reason: string;
     }
+  | {
+      readonly kind: "editing-session-failed";
+      readonly failure: EditingCompositionFailure;
+      readonly record: EditingSessionRecord | null;
+    }
+  | { readonly kind: "no-final-candidate" }
   | { readonly kind: "processing-failed"; readonly error: StudioRuntimeError }
   | { readonly kind: "review-failed"; readonly error: StudioRuntimeError }
   | { readonly kind: "flow-internal-error"; readonly reason: string };
@@ -164,16 +197,27 @@ export type AudioPodcastFlowOutcome =
 export interface AudioPodcastFlowDeps {
   readonly runtime: StudioRuntime;
   readonly artifactFactory: StudioArtifactFactoryPort;
+  /** The W8-C editing/composition surface the final audio composes through (STUDIO-013). */
+  readonly editing: EditingCompositionPort;
+  /** The audio-podcast format plugin the session runs under (decision points, version). */
+  readonly formatPlugin: StudioFormatPlugin;
+  /** The organization whose Editor Pawn composes the final audio. */
+  readonly editingOrganization: StudioOrganizationRef;
+  /** §30 actor of the editing session (also the rights grantee of the pawn executions). */
+  readonly editingActor: PawnExecutionActor;
+  /** The transform application the audio composition cites (exact version). */
+  readonly transformApplication: TransformApplicationCitation;
+  /** Explicit engine resource grant (§11: no implicit quotas). */
+  readonly engineResourceLimits: ResourceLimits;
+  /** Determinism seed of the deterministic composition operations. */
+  readonly seed: number;
   readonly store: ScriptGraphStore;
   readonly sequencer: AdaptiveSequencerPort;
   readonly agentBinding: InterviewerAgentBindingPort;
   readonly agent: InterviewerAgentPort;
-  /** The audio-podcast format plugin the session runs under (decision points, version). */
-  readonly formatPlugin: StudioFormatPlugin;
   readonly clock: () => Timestamp;
   readonly nextInterviewSessionId: () => string;
   readonly nextConversationGraphId: () => string;
-  readonly nextEditGraphId: () => string;
 }
 
 /** Internal control-flow carrier (caught by the flow runner, never escaped). */
@@ -247,6 +291,7 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
 
   async function buildTranscripts(
     tenantId: TenantId,
+    sessionId: StudioSessionId,
     rawArtifacts: readonly StudioArtifactRef[],
     interview: InterviewerSessionSummary,
   ): Promise<readonly TranscriptRef[]> {
@@ -257,7 +302,7 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
         type: "text",
         stage: "intermediate",
         creationMethod: "organization-transform",
-        storageRef: `mos-studio:transcript:${raw.artifactId}` as never,
+        storageRef: `mos-studio:transcript:${String(sessionId)}:${String(raw.artifactId)}` as never,
         content: new TextEncoder().encode(
           `transcript|${String(interview.sessionId)}|${interview.presentations.map((p) => p.questionText).join(" // ")}`,
         ),
@@ -271,34 +316,6 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
       transcripts.push(Object.freeze({ artifact: created.artifact, language: "en", diarized: true }));
     }
     return transcripts;
-  }
-
-  async function buildFinalAudioArtifact(
-    tenantId: TenantId,
-    transcripts: readonly TranscriptRef[],
-    rawArtifacts: readonly StudioArtifactRef[],
-    storageKey: string,
-  ): Promise<StudioArtifactRef> {
-    const parents = [...transcripts.map((t) => t.artifact), ...rawArtifacts];
-    const context = transcripts[0]?.artifact ?? rawArtifacts[0];
-    if (parents.length === 0 || context === undefined) {
-      fail({ kind: "final-artifact-creation-failed", reason: "no captured material to compose into the final audio artifact" });
-    }
-    const created = await deps.artifactFactory.createArtifact({
-      tenantId,
-      type: "audio",
-      stage: "final",
-      creationMethod: "composition",
-      storageRef: `mos-studio:final-audio:${storageKey}` as never,
-      content: new TextEncoder().encode(`final-audio|${parents.map((p) => p.artifactId).join("+")}`),
-      rightsRef: context.rightsRef,
-      provenanceRef: context.provenanceRef,
-      parents,
-    });
-    if (!created.ok) {
-      fail({ kind: "final-artifact-creation-failed", reason: JSON.stringify(created.error) });
-    }
-    return created.artifact;
   }
 
   async function runFlow(plan: AudioPodcastProductionPlan): Promise<AudioPodcastFlowResult> {
@@ -360,13 +377,13 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
       fail({ kind: "interview-setup-failed", error: interviewCreated.error });
     }
     const interview: InterviewerSession = interviewCreated.value;
-    const rawArtifacts: StudioArtifactRef[] = [];
+    const rawTakes: StudioArtifactRef[] = [];
     for (const round of plan.rounds) {
       const presented = await interview.presentCurrentQuestion();
       if (!presented.ok) {
         fail({ kind: "interview-round-failed", error: presented.error });
       }
-      rawArtifacts.push(await captureRound(sessionId, plan, round));
+      rawTakes.push(await captureRound(sessionId, plan, round));
       const answered = await interview.recordAnswer({
         answerRef: round.answerRef,
         answerText: round.answerText,
@@ -392,45 +409,66 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
       fail({ kind: "interview-round-failed", error: completed.error });
     }
     const interviewSummary = completed.value;
-    // Processing: transcripts → conversation graph → edit graph → final audio.
-    const transcripts = await buildTranscripts(plan.tenantId, rawArtifacts, interviewSummary);
-    const conversationGraphId = deps.nextConversationGraphId() as ConversationGraphId;
+    // ---- Transcripts + the conversation graph (§14 labels end-to-end). ----
+    const transcripts = await buildTranscripts(plan.tenantId, sessionId, rawTakes, interviewSummary);
     const conversationGraph = buildConversationGraph({
       interview: interviewSummary,
       derivedFrom: transcripts,
-      graphId: conversationGraphId,
+      graphId: deps.nextConversationGraphId() as PodcastConversationGraph["graphId"],
       version: 1,
       builtAt: deps.clock(),
     });
-    const sessionView = deps.runtime.getSession(sessionId);
-    if (sessionView === undefined || sessionView.organization === null) {
-      fail({ kind: "processing-failed", error: { kind: "organization-not-loaded", sessionId } });
-    }
-    const editRecorded = recordEditDecisions({
+    // ---- The final audio composition through the W8-C editing surface ----
+    // (STUDIO-013: ONE composition surface + ONE edit-graph record shape for
+    // every format — the flow's own recorder is gone).
+    const editingInput: EditingSessionInput = {
       formatPlugin,
-      conversationNodeIds: conversationGraph.nodes.map((node) => node.nodeId),
-      decidedByOrganization: sessionView.organization.organization,
-      decisions: plan.editDecisions,
-      graphId: deps.nextEditGraphId() as EditGraphId,
-      version: 1,
-      recordedAt: deps.clock(),
-    });
-    if (!editRecorded.ok) {
-      fail({ kind: "edit-graph-failed", error: editRecorded.error });
+      source: {
+        kind: "intermediates",
+        sessionRef: sessionId,
+        intermediates: [...rawTakes, ...transcripts.map((transcript) => transcript.artifact)],
+      },
+      organization: deps.editingOrganization,
+      choices: plan
+        .editChoices({
+          rawTakes: Object.freeze([...rawTakes]),
+          transcripts: Object.freeze(transcripts.map((transcript) => transcript.artifact)),
+        })
+        .map((choice) => ({ ...choice, decidedAt: deps.clock() })),
+      actor: deps.editingActor,
+      seed: deps.seed,
+      transformApplication: deps.transformApplication,
+      engineResourceLimits: deps.engineResourceLimits,
+      contributors: plan.participants.map((participant) => ({
+        participantIdentityRef: participant.join.identityRef,
+        consentRefs: [...participant.join.consent.consentRefs],
+      })),
+    };
+    const editingOutcome = await deps.editing.runEditingSession({ tenantId: plan.tenantId }, editingInput);
+    if (!editingOutcome.ok) {
+      fail({ kind: "editing-session-failed", failure: editingOutcome.failure, record: editingOutcome.record });
     }
-    const finalAudio = await buildFinalAudioArtifact(
-      plan.tenantId,
-      transcripts,
-      rawArtifacts,
-      String(conversationGraphId),
-    );
+    const editing = editingOutcome.result;
+    const finalArtifact = editing.newPackage.finalArtifacts[0];
+    if (finalArtifact === undefined) {
+      // A no-op editing session is honest — but a podcast package needs a
+      // final candidate; the flow fails closed instead of packaging nothing.
+      fail({ kind: "no-final-candidate" });
+    }
+    // ---- Processing + review + packaging through the studio session ----
+    const operationOutputs = editing.editGraph.operations.flatMap((operation) => [...operation.outputArtifactRefs]);
+    const editingCost: MoneyAmount = {
+      currency: editing.record.cost.currency,
+      amount: editing.record.cost.amount.toFixed(2),
+    };
+    const totalCost = plan.processingCost === undefined ? editingCost : sumStudioMoney(editingCost, plan.processingCost);
     const begin = await deps.runtime.beginProcessing(sessionId);
     if (!begin.ok) {
       fail({ kind: "processing-failed", error: begin.error });
     }
     const complete = await deps.runtime.completeProcessing(sessionId, {
-      intermediateArtifacts: transcripts.map((t) => t.artifact),
-      finalArtifacts: [finalAudio],
+      intermediateArtifacts: [...transcripts.map((transcript) => transcript.artifact), ...operationOutputs],
+      finalArtifacts: [finalArtifact],
       transcriptRefs: transcripts,
       conversationGraphRef: {
         graphId: conversationGraph.graphId,
@@ -438,18 +476,18 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
         derivedFrom: transcripts,
       },
       editGraphRef: {
-        graphId: editRecorded.graph.graphId,
-        version: editRecorded.graph.version,
-        otioInterchange: editRecorded.graph.otioInterchange,
+        graphId: editing.editGraph.graphId,
+        version: editing.editGraph.version,
+        otioInterchange: editing.editGraph.otioInterchange,
       },
-      additionalCost: plan.processingCost,
+      additionalCost: totalCost,
       processingSeconds: plan.processingSeconds,
     });
     if (!complete.ok) {
       fail({ kind: "processing-failed", error: complete.error });
     }
     const accepted = await deps.runtime.submitReview(sessionId, {
-      targetArtifactId: finalAudio.artifactId,
+      targetArtifactId: finalArtifact.artifactId,
       outcome: "accept",
       decidedBy: plan.operator,
     });
@@ -464,9 +502,10 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
       session: deps.runtime.getSession(sessionId) as StudioSessionView,
       interview: interviewSummary,
       conversationGraph,
-      editGraph: editRecorded.graph,
-      transcriptRefs: transcripts,
-      finalAudioArtifact: finalAudio,
+      rawTakes: Object.freeze([...rawTakes]),
+      transcriptRefs: Object.freeze([...transcripts]),
+      editing,
+      finalArtifact,
       package: accepted.value.package,
     };
   }

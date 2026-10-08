@@ -80,22 +80,22 @@ import type { RightsRepository } from "@mos/rights";
 import { createInMemoryArtifactFactory } from "./in-memory-artifact-factory.js";
 import { createEditingCompositionRuntime } from "../runtime/editing/editing-composition-runtime.js";
 import type { EditingCompositionPort } from "../ports/editing-composition.port.js";
+import { createStudioPackagingAuthority } from "../runtime/packaging/packaging-authority.js";
+import type { StudioArtifactPackagingPort } from "../ports/artifact-packaging.port.js";
 import { createParticipantConsentPortFromRightsRepository, bridge } from "./participant-authority-adapters.js";
 import { createDeterministicClock, createDeterministicIdFactory } from "./compose-runtime-for-tests.js";
 import type { StudioArtifactPackage, StudioArtifactRef } from "../contracts/studio-artifact-package.js";
 import type {
   EditGraphId,
   EditingSessionId,
-  ProvenanceRef,
-  RightsRef,
   StudioArtifactPackageId,
   TenantId,
   Timestamp,
 } from "../contracts/refs.js";
 import {
+  buildEditingSourceArtifact,
   buildEditingSourcePackage,
   EDITING_ORGANIZATION_REF,
-  EDITING_SOURCE_RIGHTS_REF,
   EDITING_STACK_TENANT,
   EDITING_TRANSFORM_APPLICATION,
 } from "./editing-fixtures.js";
@@ -112,6 +112,14 @@ export interface ComposeEditingStackOptions {
    * gates editing contributors through the ONE REAL rights authority.
    */
   readonly rightsRepository?: RightsRepository;
+  /**
+   * SHARED packaging authority (STUDIO-013): when provided, the stack binds
+   * this authority instead of creating its own — the studio runtime and the
+   * editing surface then compose package versions through the ONE canonical
+   * packaging path (the reaction/audio/video format flows rely on this at
+   * the format-flow scenario seam).
+   */
+  readonly packaging?: StudioArtifactPackagingPort;
 }
 
 /** The composed editing stack (+ inspection handles for the tests). */
@@ -119,6 +127,8 @@ export interface EditingStack {
   readonly editing: EditingCompositionPort;
   /** The tenant the stack registers its fixtures under (org/transform/grants). */
   readonly tenantId: TenantId;
+  /** STUDIO-013: the canonical packaging authority the stack composes through. */
+  readonly packaging: StudioArtifactPackagingPort;
   readonly pawnExecution: PawnExecutionPort;
   readonly artifactFactory: ReturnType<typeof createInMemoryArtifactFactory>;
   readonly jobEvents: InMemoryJobEventSink;
@@ -428,43 +438,34 @@ export function composeEditingStack(
   } as never);
 
   // ---- The studio editing runtime over the composed seams ----
+  // STUDIO-013: the editing sessions' new immutable package versions are
+  // composed through the canonical packaging authority (shared with the
+  // studio runtime when the caller provides one; the append-only store is
+  // the version index).
+  const packaging = options.packaging ?? createStudioPackagingAuthority({ now });
   const editingRuntime = createEditingCompositionRuntime({
     pawnExecution: pawnRuntime.execution,
     artifactFactory,
     participantConsentPort,
+    packaging,
     now,
     editingSessionIdFactory: createDeterministicIdFactory("edit-session") as () => EditingSessionId,
     packageIdFactory: createDeterministicIdFactory("edit-package") as () => StudioArtifactPackageId,
     graphIdFactory: createDeterministicIdFactory("edit-graph") as () => EditGraphId,
   });
 
-  const createSourceArtifact = async (input: {
+  const createSourceArtifact = (input: {
     readonly tenantId: TenantId;
     readonly type: StudioArtifactRef["type"];
     readonly stage: StudioArtifactRef["stage"];
     readonly content: string;
     readonly rightsRef?: string;
-  }): Promise<StudioArtifactRef> => {
-    const creation = await artifactFactory.createArtifact({
-      tenantId: input.tenantId,
-      type: input.type,
-      stage: input.stage,
-      creationMethod: "human-capture",
-      storageRef: `storage:studio-editing/${input.content}` as StudioArtifactRef["storageRef"],
-      content: new TextEncoder().encode(input.content),
-      rightsRef: (input.rightsRef ?? EDITING_SOURCE_RIGHTS_REF) as RightsRef,
-      provenanceRef: "provenance:studio-editing-source" as ProvenanceRef,
-      parents: [],
-    });
-    if (!creation.ok) {
-      throw new Error(`editing stack source artifact rejected: ${JSON.stringify(creation.error)}`);
-    }
-    return creation.artifact;
-  };
+  }): Promise<StudioArtifactRef> => buildEditingSourceArtifact(artifactFactory, input);
 
   return {
     editing: editingRuntime,
     tenantId,
+    packaging,
     pawnExecution: pawnRuntime.execution,
     artifactFactory,
     jobEvents,

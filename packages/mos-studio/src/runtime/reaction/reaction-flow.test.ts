@@ -127,9 +127,14 @@ test("STUDIO-009 round-trip: source + participant → org §16 decisions → edi
   const pkg = result.value.package;
   assert.equal(pkg.sessionRef, result.value.sessionId);
   assert.equal(pkg.version, 1);
-  // raw = the imported source + the four takes.
+  // raw = the imported source + the four takes. (Identity comparison is by
+  // artifact id: the authority stores clone-then-deep-frozen records — the
+  // caller's draft artifacts are never aliased into the store, W9-B D3.)
   assert.equal(pkg.rawArtifacts.length, 5);
-  assert.ok(pkg.rawArtifacts.includes(source), "the imported source is a raw artifact of the package");
+  assert.ok(
+    pkg.rawArtifacts.some((artifact) => artifact.artifactId === source.artifactId),
+    "the imported source is a raw artifact of the package",
+  );
   // intermediates = transcripts + §16 entries + the editing operation outputs.
   assert.equal(
     pkg.intermediateArtifacts.length,
