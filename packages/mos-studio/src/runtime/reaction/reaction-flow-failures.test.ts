@@ -11,6 +11,7 @@ import { createInMemoryOrganizationSource } from "../../testing/in-memory-organi
 import { createInMemoryArtifactFactory } from "../../testing/in-memory-artifact-factory.js";
 import { createInMemoryTreatmentExecutor } from "../../testing/in-memory-treatment-executor.js";
 import { createInMemoryCaptureSourcePort } from "../capture/in-memory-capture-source.js";
+import { createStudioPackagingAuthority } from "../packaging/packaging-authority.js";
 import { createDeterministicClock, createDeterministicIdFactory } from "../../testing/compose-runtime-for-tests.js";
 import {
   OPERATOR,
@@ -210,6 +211,7 @@ test("STUDIO-009 import gates: a format that forbids media import rejects the im
     captureSourcePort: createInMemoryCaptureSourcePort({ now: clock, fixedTakeSeconds: 42 }),
     participantIdentityPort: scenario.authorities.participantIdentityPort,
     participantConsentPort: scenario.authorities.participantConsentPort,
+    packaging: createStudioPackagingAuthority(),
     clock,
     idFactory: createDeterministicIdFactory("id"),
   });

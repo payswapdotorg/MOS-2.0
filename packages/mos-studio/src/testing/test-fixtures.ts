@@ -12,9 +12,10 @@ import type { StudioRuntimeOutcome } from "../runtime/errors.js";
 import { composeTestRuntime, TEST_ORGANIZATION } from "./compose-runtime-for-tests.js";
 import type { RealParticipantAuthorities } from "./real-participant-authorities.js";
 import type { StudioArtifactRef } from "../contracts/studio-artifact-package.js";
+import type { EditGraphRef } from "../contracts/studio-artifact-package.js";
 import type { StudioArtifactCreationResult } from "../ports/artifact-factory.js";
 import type { StudioCaptureTakeOutcome, StudioCaptureTakeResult } from "../runtime/capture/studio-capture-session.js";
-import type { ConsentRef, IdentityRef, StudioFormatId, StudioSessionId, TenantId } from "../contracts/refs.js";
+import type { ConsentRef, EditGraphId, IdentityRef, StudioFormatId, StudioSessionId, TenantId } from "../contracts/refs.js";
 
 // ——— Branded refs cast once; deterministic ids come from the test runtime ———
 
@@ -208,6 +209,21 @@ export async function buildProcessingArtifacts(
   return { intermediate, finals };
 }
 
+/**
+ * A REAL recorded edit-graph ref for the runtime-level scenario drivers
+ * (STUDIO-013): the org's composition decisions arrive as caller-supplied
+ * recorded data (the W3-C/W8-C disclosed discipline) — the runtime-level
+ * tests supply the recorded graph ref `completeProcessing` cites, exactly
+ * like the format flows cite the W8-C editing session's recorded graph.
+ */
+export function recordedEditGraphRefOf(sessionId: StudioSessionId, version = 1): EditGraphRef {
+  return Object.freeze({
+    graphId: `mos-studio:edit-graph:${String(sessionId)}` as EditGraphId,
+    version,
+    otioInterchange: false,
+  });
+}
+
 /** Drive a session to the review state: join → capture → process → complete. */
 export async function driveToReview() {
   const { runtime, artifactFactory, sessionId } = await createSessionReadyForCapture();
@@ -216,10 +232,21 @@ export async function driveToReview() {
   const { intermediate, finals } = await buildProcessingArtifacts(artifactFactory, [rawArtifact]);
   await mustOk(runtime.beginProcessing(sessionId), "beginProcessing");
   await mustOk(
-    runtime.completeProcessing(sessionId, { intermediateArtifacts: intermediate, finalArtifacts: finals }),
+    runtime.completeProcessing(sessionId, {
+      intermediateArtifacts: intermediate,
+      finalArtifacts: finals,
+      transcriptRefs: [
+        {
+          artifact: intermediate[0] as StudioArtifactRef,
+          language: "en-US",
+          diarized: true,
+        },
+      ],
+      editGraphRef: recordedEditGraphRefOf(sessionId),
+    }),
     "completeProcessing",
   );
-  return { runtime, artifactFactory, sessionId, rawArtifact, finals };
+  return { runtime, artifactFactory, sessionId, rawArtifact, intermediate, finals };
 }
 
 /** Drive a session to packaged (review accepted) and return the v1 package. */

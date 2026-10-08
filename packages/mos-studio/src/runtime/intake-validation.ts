@@ -24,6 +24,7 @@ import type {
 import type { StudioRuntimeError } from "./errors.js";
 import type { StudioProcessingOutput } from "./intake-types.js";
 import type { StudioSessionRecord } from "./session-state.js";
+import { studioMoneyIssues } from "./money.js";
 
 /**
  * Validate a processing output against the session state and the format's
@@ -79,6 +80,23 @@ export function validateProcessingOutput(
     record.draft.finalArtifacts.length + output.finalArtifacts.length > 1
   ) {
     reasons.push("format allows a single final candidate only");
+  }
+  // STUDIO-013 (W9-B D5 finite-number guards at intake): declared cost and
+  // processing seconds are validated BEFORE they can poison the packaged
+  // totals — NaN/Infinity/negative amounts fail closed here and again at
+  // packaging.
+  if (output.additionalCost !== undefined) {
+    for (const issue of studioMoneyIssues(output.additionalCost)) {
+      reasons.push(`additionalCost: ${issue}`);
+    }
+  }
+  if (
+    output.processingSeconds !== undefined &&
+    (typeof output.processingSeconds !== "number" || !Number.isFinite(output.processingSeconds) || output.processingSeconds < 0)
+  ) {
+    reasons.push(
+      `processingSeconds must be a finite non-negative number (got ${String(output.processingSeconds)})`,
+    );
   }
   return reasons;
 }

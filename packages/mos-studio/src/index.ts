@@ -23,6 +23,17 @@
  * video capture rounds and the final video composed through the same editing
  * surface).
  *
+ * Wave 10 (STUDIO-013/014): the canonical artifact-packaging authority
+ * (StudioArtifactPackagingPort — ONE packaging path for every format flow,
+ * contract-required fields complete by construction, fail-closed typed
+ * battery, immutable append-only versioned packages, truthful
+ * provenance/consent consolidation incl. imported sources) with the
+ * audio-podcast flow's final composition migrated onto the W8-C editing
+ * surface, and the standalone operator product surface seams (the
+ * session-directory observation port; package browsing/review/accept ride
+ * the runtime + the authority's own port surface — §15 live consent
+ * re-resolution at every operator action).
+ *
  * THE STUDIO NEVER PUBLISHES (architecture policy studio.noDirectPublication):
  * there is no distribution/provider/publish surface in this package —
  * asserted by src/runtime/no-publish.test.ts. THE STUDIO NEVER SELECTS
@@ -226,7 +237,10 @@ export type {
   AgentInstanceInterviewerBindingOptions,
 } from "./runtime/interviewer/agent-instance-interviewer.js";
 
-// ——— Runtime: audio-podcast flow + conversation/edit graphs (STUDIO-010/011) ———
+// ——— Runtime: audio-podcast flow + conversation graph (STUDIO-010/011) ———
+// STUDIO-013 migrated the flow's final audio composition onto the W8-C
+// EditingCompositionPort (ONE composition surface, ONE edit-graph record
+// shape for every format) — the flow-local edit-graph recorder is gone.
 export { createAudioPodcastFlow } from "./runtime/podcast/audio-podcast-flow.js";
 export type {
   AudioPodcastFlowDeps,
@@ -239,8 +253,7 @@ export type {
 } from "./runtime/podcast/audio-podcast-flow.js";
 export { buildConversationGraph } from "./runtime/podcast/conversation-graph.js";
 export type { BuildConversationGraphInput } from "./runtime/podcast/conversation-graph.js";
-export { recordEditDecisions } from "./runtime/podcast/edit-graph.js";
-export type { RecordEditDecisionsInput } from "./runtime/podcast/edit-graph.js";
+export type { PodcastConversationGraph } from "./contracts/podcast-graphs.js";
 
 // ——— Runtime: reaction flow (STUDIO-009, §16 reaction production) ———
 // Rights-cleared source/reference artifacts imported as acquired inputs,
@@ -287,6 +300,8 @@ export { createInMemoryArtifactFactory } from "./testing/in-memory-artifact-fact
 export type { InMemoryArtifactFactoryOptions } from "./testing/in-memory-artifact-factory.js";
 export { createInMemoryTreatmentExecutor } from "./testing/in-memory-treatment-executor.js";
 export type { InMemoryTreatmentExecutorOptions } from "./testing/in-memory-treatment-executor.js";
+export { createInMemorySessionDirectory } from "./testing/in-memory-session-directory.js";
+export type { InMemorySessionDirectoryOptions } from "./testing/in-memory-session-directory.js";
 export {
   ANSWER_CONCLUDE,
   ANSWER_ELABORATE,
@@ -376,3 +391,29 @@ export {
   editingContributor,
   editingSessionInputOverPackage,
 } from "./testing/editing-fixtures.js";
+
+// ——— Artifact packaging authority + operator product surface (STUDIO-013/014, §6/§12/§14/§15/§19/§27/§30) ———
+// THE canonical packaging path: every format flow (reaction, audio-podcast,
+// video-podcast) composes its StudioArtifactPackage through the ONE authority
+// behind StudioArtifactPackagingPort — contract-required fields complete BY
+// CONSTRUCTION, gaps are typed failures (fail-closed battery), packages are
+// immutable versioned append-only records (treatment → NEW version, historical
+// versions never rewritten), provenance/consent consolidated truthfully
+// (§14 labels, §15/§27 coverage of every raw artifact INCLUDING imported
+// sources, §6 lineage traceable root→final). The session directory is the
+// STUDIO-014 operator observation seam (session listing without a new runtime
+// method — the runtime is at the 12-method policy budget).
+export type * from "./contracts/artifact-packaging.js";
+export type {
+  StudioArtifactPackagingPort,
+  StudioPackageSummary,
+} from "./ports/artifact-packaging.port.js";
+export type {
+  StudioSessionDirectory,
+  StudioSessionSummaryRecord,
+} from "./ports/session-directory.port.js";
+export { createStudioPackagingAuthority } from "./runtime/packaging/packaging-authority.js";
+export type {
+  StudioPackagingAuthorityOptions,
+} from "./runtime/packaging/packaging-authority.js";
+

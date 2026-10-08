@@ -10,6 +10,7 @@ import { createStudioOrganizationLoader } from "./organization-loading/studio-or
 import { createInMemoryArtifactFactory } from "../testing/in-memory-artifact-factory.js";
 import { createInMemoryTreatmentExecutor } from "../testing/in-memory-treatment-executor.js";
 import { createInMemoryCaptureSourcePort } from "./capture/in-memory-capture-source.js";
+import { createStudioPackagingAuthority } from "./packaging/packaging-authority.js";
 import { composeRealParticipantAuthorities } from "../testing/real-participant-authorities.js";
 import type { OutputTreatmentRequest } from "../contracts/treatment.js";
 import type { StudioFormatId, Timestamp } from "../contracts/refs.js";
@@ -23,6 +24,7 @@ import {
   participantJoin,
   standaloneIntent,
   buildProcessingArtifacts,
+  recordedEditGraphRefOf,
 } from "../testing/test-fixtures.js";
 import type { SubmitReviewInput } from "./intake-types.js";
 
@@ -68,6 +70,7 @@ test("lifecycle happy path: standalone intent → requested → loading → capt
           diarized: true,
         },
       ],
+      editGraphRef: recordedEditGraphRefOf(sessionId),
       additionalCost: { currency: "USD", amount: "1.25" },
       processingSeconds: 30,
     }),
@@ -313,6 +316,7 @@ test("organization loading fails loudly: not-found, incompatible verdict, unavai
     captureSourcePort: createInMemoryCaptureSourcePort(),
     participantIdentityPort: authorities.participantIdentityPort,
     participantConsentPort: authorities.participantConsentPort,
+    packaging: createStudioPackagingAuthority(),
   });
   const unavailableSession = await mustOk(
     unavailable.createSession(standaloneIntent()),

@@ -23,6 +23,7 @@ import type { StudioOrganizationRef } from "../contracts/organization-loading.js
 import type {
   ConsentRef,
   IdentityRef,
+  ProvenanceRef,
   RightsRef,
   StudioSessionId,
   TenantId,
@@ -33,6 +34,7 @@ import type {
   StudioArtifactRef,
 } from "../contracts/studio-artifact-package.js";
 import type { StudioFormatPlugin } from "../contracts/studio-format.js";
+import type { StudioArtifactFactoryPort } from "../ports/artifact-factory.js";
 
 /** The editing transform citation the stack registers (the editor pawn serves `remix`). */
 export const EDITING_TRANSFORM_APPLICATION = {
@@ -197,4 +199,36 @@ export function recordEditingSessionConsent(
     throw new Error(`real rights repository rejected the seeded consent: ${JSON.stringify(recorded)}`);
   }
   return bridge<ConsentRef>(ref);
+}
+
+/**
+ * Convenience: creates one disclosed editing source artifact through the
+ * stack's shared factory (human-capture, root of the editing lineage) — the
+ * `createSourceArtifact` handle of compose-editing-stack delegates here.
+ */
+export async function buildEditingSourceArtifact(
+  artifactFactory: StudioArtifactFactoryPort,
+  input: {
+    readonly tenantId: TenantId;
+    readonly type: StudioArtifactRef["type"];
+    readonly stage: StudioArtifactRef["stage"];
+    readonly content: string;
+    readonly rightsRef?: string;
+  },
+): Promise<StudioArtifactRef> {
+  const creation = await artifactFactory.createArtifact({
+    tenantId: input.tenantId,
+    type: input.type,
+    stage: input.stage,
+    creationMethod: "human-capture",
+    storageRef: `storage:studio-editing/${input.content}` as StudioArtifactRef["storageRef"],
+    content: new TextEncoder().encode(input.content),
+    rightsRef: (input.rightsRef ?? EDITING_SOURCE_RIGHTS_REF) as RightsRef,
+    provenanceRef: "provenance:studio-editing-source" as ProvenanceRef,
+    parents: [],
+  });
+  if (!creation.ok) {
+    throw new Error(`editing stack source artifact rejected: ${JSON.stringify(creation.error)}`);
+  }
+  return creation.artifact;
 }

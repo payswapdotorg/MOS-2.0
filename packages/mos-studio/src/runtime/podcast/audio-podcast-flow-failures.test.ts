@@ -14,24 +14,30 @@ import {
   SYNTHETIC_VOICE_INTERVIEWER,
   TENANT,
   composePodcastScenario,
-  editDecisionsAt,
   onePersonPlan,
   participantPlan,
+  podcastEditChoices,
   scriptGraphFor,
   seedParticipant,
   terminalRounds,
 } from "../../testing/podcast-flow-fixtures.js";
 import { ANSWER_ELABORATE } from "../../testing/in-memory-script-graph-generator.js";
+import {
+  EDITING_ENGINE_RESOURCE_LIMITS,
+  EDITING_PRINCIPAL,
+  EDITING_TRANSFORM_APPLICATION,
+} from "../../testing/editing-fixtures.js";
 import type { AudioPodcastProductionPlan } from "./audio-podcast-flow.js";
-import type { RecordedEditDecision } from "../../contracts/podcast-graphs.js";
+import type { OrganizationEditChoice } from "../../contracts/editing-composition.js";
 import type { ConsentRef, Version } from "../../contracts/refs.js";
 
 // ---------------------------------------------------------------------------
 // STUDIO-011: the audio-podcast flow's fail-closed discipline — §15 consent
 // gates bite at join (revoked and never-granted consent alike), rounds that
-// do not reach the graph terminal are explicit failures, edit decisions
-// outside the format's declared organization points are rejected, and the
-// flow refuses a non-audio-podcast format plugin.
+// do not reach the graph terminal are explicit failures, edit choices
+// outside the format's declared organization points are rejected by the W8-C
+// editing session the flow composes through (STUDIO-013), and the flow
+// refuses a non-audio-podcast format plugin.
 // ---------------------------------------------------------------------------
 
 test("STUDIO-011 consent gates bite: a participant whose consent was revoked cannot join the podcast flow", async () => {
@@ -59,7 +65,7 @@ test("STUDIO-011 consent gates bite: a participant whose consent was revoked can
       agentBody: { bodyId: INTERVIEWER_AGENT_BODY_ID, bodyVersion: 1 as Version },
     },
     rounds: terminalRounds([]),
-    editDecisions: editDecisionsAt(scenario.clock),
+    editChoices: podcastEditChoices(),
     operator: OPERATOR,
   };
   const result = await scenario.flow.run(plan);
@@ -92,7 +98,7 @@ test("STUDIO-011 consent gates bite: a participant whose consent was revoked can
       agentBody: { bodyId: INTERVIEWER_AGENT_BODY_ID, bodyVersion: 1 as Version },
     },
     rounds: terminalRounds([]),
-    editDecisions: editDecisionsAt(scenario2.clock),
+    editChoices: podcastEditChoices(),
     operator: OPERATOR,
   };
   const result2 = await scenario2.flow.run(plan2);
@@ -118,42 +124,53 @@ test("STUDIO-011 fail-closed: rounds that do not reach the graph terminal are an
   assert.equal(view?.session.lifecycle.state, "capturing");
 });
 
-test("STUDIO-011 fail-closed: edit decisions outside the format's declared points are rejected", async () => {
+test("STUDIO-011 fail-closed: edit choices outside the format's declared points are rejected (STUDIO-013: by the W8-C editing session)", async () => {
   const scenario = composePodcastScenario();
-  const badDecisions: readonly Omit<RecordedEditDecision, "decidedByOrganization">[] = [
+  const badChoices: AudioPodcastProductionPlan["editChoices"] = () => [
     {
-      decisionId: "edit-rogue",
+      choiceId: "choice-rogue",
       decisionPointId: "not-a-declared-point",
-      decision: { kind: "cut", targetConversationNodeIds: ["q-0"] },
-      decidedAt: scenario.clock(),
-    },
+      selectedOption: "org-rogue-option",
+      operations: [
+        {
+          operationId: "audio-op-rogue",
+          kind: "cut",
+          inputArtifactRefs: [],
+          parameters: {},
+        },
+      ],
+    } satisfies Omit<OrganizationEditChoice, "decidedAt">,
   ];
-  const plan = await onePersonPlan(scenario, { editDecisions: badDecisions });
+  const plan = await onePersonPlan(scenario, { editChoices: badChoices });
   const result = await scenario.flow.run(plan);
-  assert.ok(!result.ok, "undeclared edit decisions must be rejected");
-  assert.equal(result.error.kind, "edit-graph-failed");
-  const error = (result.error as { error: { kind: string; decisionPointId?: string } }).error;
-  assert.equal(error.kind, "decision-point-not-declared");
-  assert.equal(error.decisionPointId, "not-a-declared-point");
+  assert.ok(!result.ok, "undeclared edit choices must be rejected");
+  assert.equal(result.error.kind, "editing-session-failed");
+  const failure = (result.error as { failure: { kind: string; decisionPointId?: string } }).failure;
+  assert.equal(failure.kind, "choice-point-not-declared");
+  assert.equal(failure.decisionPointId, "not-a-declared-point");
 });
 
 test("STUDIO-011 fail-closed: the flow refuses a non-audio-podcast format plugin", async () => {
   const scenario = composePodcastScenario();
   const wrongPlugin = createVideoPodcastFormatPlugin();
   let conversationGraphs = 0;
-  let editGraphs = 0;
   const flow = createAudioPodcastFlow({
     runtime: scenario.runtime,
-    artifactFactory: scenario.artifactFactory,
+    artifactFactory: scenario.editingStack.artifactFactory,
+    editing: scenario.editingStack.editing,
+    formatPlugin: wrongPlugin,
+    editingOrganization: { id: TEST_ORGANIZATION.id as never, version: 1 },
+    editingActor: { kind: "identity" as const, principalId: EDITING_PRINCIPAL },
+    transformApplication: EDITING_TRANSFORM_APPLICATION,
+    engineResourceLimits: { ...EDITING_ENGINE_RESOURCE_LIMITS },
+    seed: 7,
     store: scenario.store,
     sequencer: scenario.sequencer,
     agentBinding: scenario.stack.agentBinding,
     agent: scenario.stack.agent,
-    formatPlugin: wrongPlugin,
     clock: scenario.clock,
     nextInterviewSessionId: () => "ivs-x",
     nextConversationGraphId: () => `cgraph-x-${++conversationGraphs}`,
-    nextEditGraphId: () => `egraph-x-${++editGraphs}`,
   });
   const plan = await onePersonPlan(scenario);
   const result = await flow.run(plan);

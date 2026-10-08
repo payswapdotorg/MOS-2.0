@@ -14,6 +14,7 @@ import type {
   OrganizationLoadError,
   StudioOrganizationRef,
 } from "../contracts/organization-loading.js";
+import type { StudioPackagingFailure } from "../contracts/artifact-packaging.js";
 import type { ArtifactId, IdentityRef, SessionParticipantId, StudioSessionId } from "../contracts/refs.js";
 import type { StudioSessionLifecycleState } from "../contracts/studio-session.js";
 import type { OutputTreatmentRequest, RightsPolicyRejection } from "../contracts/treatment.js";
@@ -164,7 +165,35 @@ export type StudioRuntimeError =
         | { readonly kind: "execution-failure"; readonly reason: string }
         | { readonly kind: "rights-policy-rejection"; readonly rejection: RightsPolicyRejection };
     }
-  | { readonly kind: "package-not-assembled"; readonly sessionId: StudioSessionId };
+  | { readonly kind: "package-not-assembled"; readonly sessionId: StudioSessionId }
+  | {
+      /**
+       * STUDIO-014 (§15/§27 live consent re-resolution): the operator action
+       * (review accept / accept-alternate / request-treatment, or a treatment)
+       * re-resolved the consent behind the session's raw artifacts LIVE and a
+       * holder's consent no longer covers processing into artifacts — a
+       * revoked consent surfaced at the NEXT operator action, never silently
+       * passed. The action is refused; the session state is unchanged.
+       */
+      readonly kind: "consent-required-for-operator-action";
+      readonly sessionId: StudioSessionId;
+      /** The consenting holder whose coverage collapsed (§15 re-resolution subject). */
+      readonly subjectIdentityRef: IdentityRef;
+      /** Whether the subject is a joined participant or an imported-source holder. */
+      readonly subjectKind: "participant" | "imported-source";
+    }
+  | {
+      /**
+       * STUDIO-013: the canonical packaging authority refused to compose the
+       * session's next package version (fail-closed battery — missing
+       * transcripts/edit-graph ref/provenance/consent coverage, invalid
+       * cost/duration, version conflict). The failure is verbatim; the
+       * session state is unchanged.
+       */
+      readonly kind: "package-composition-failed";
+      readonly sessionId: StudioSessionId;
+      readonly failure: StudioPackagingFailure;
+    };
 
 /** Ok/failure pair used by every runtime method. */
 export type StudioRuntimeOutcome<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: StudioRuntimeError };

@@ -14,6 +14,7 @@
 
 import type {
   ConsentRef,
+  IdentityRef,
   MoneyAmount,
   ProvenanceRef,
   SessionParticipantId,
@@ -40,6 +41,8 @@ import type {
 } from "../contracts/studio-artifact-package.js";
 import type { OutputTreatmentResult, StudioOutputReview, RightsPolicyRejection } from "../contracts/treatment.js";
 import type { CapturedMediaReceipt } from "../contracts/capture.js";
+import type { RawArtifactConsentEntry } from "../contracts/artifact-packaging.js";
+import type { StudioSessionDirectory, StudioSessionSummaryRecord } from "../ports/session-directory.port.js";
 import { isLegalTransition } from "./lifecycle.js";
 
 /** Draft artifacts accumulated before packaging (§6 pipeline stages). */
@@ -52,8 +55,13 @@ export interface StudioSessionDraft {
   conversationGraphRef: ConversationGraphRef | undefined;
   /** STUDIO-011: the real edit graph ref (once processing recorded one). */
   editGraphRef: EditGraphRef | undefined;
-  /** Consent records covering each raw artifact (key: artifactId) — drives package consent summary. */
-  readonly rawArtifactConsent: Map<string, readonly ConsentRef[]>;
+  /**
+   * Consent coverage of each raw artifact (key: artifactId) — captures AND
+   * imported sources, each entry naming its consenting holder identity when
+   * known (§15 live re-resolution at operator actions, STUDIO-014). Drives
+   * the packaging authority's consent-coverage gate (STUDIO-013).
+   */
+  readonly rawArtifactConsent: Map<string, RawArtifactConsentEntry>;
   /** Cost lines accumulated from processing outputs and treatments. */
   readonly costLines: MoneyAmount[];
   captureSeconds: number;
@@ -90,6 +98,13 @@ export interface StudioSessionRecord {
   readonly treatments: OutputTreatmentResult[];
   readonly treatmentFailures: StudioTreatmentFailureEntry[];
   readonly createdAt: Timestamp;
+  /**
+   * STUDIO-014: the optional session-directory observation seam — the
+   * centralized mutators below publish the session summary on every state
+   * change so the operator product surface can list sessions WITHOUT a new
+   * runtime method (the runtime is at the 12-method policy budget).
+   */
+  readonly sessionDirectory?: StudioSessionDirectory;
 }
 
 /** Public read-only view of one session (§30 observability). */
@@ -106,6 +121,12 @@ export interface StudioSessionView {
   readonly reviews: readonly StudioOutputReview[];
   readonly treatments: readonly OutputTreatmentResult[];
   readonly treatmentFailures: readonly StudioTreatmentFailureEntry[];
+  /** Raw-artifact consent coverage projection (holder identities for §15 re-resolution). */
+  readonly rawArtifactConsentEntries: readonly {
+    readonly artifactId: string;
+    readonly consentRefs: readonly ConsentRef[];
+    readonly holderIdentityRef?: IdentityRef;
+  }[];
 }
 
 /** Initial draft for a new session. */
@@ -132,8 +153,10 @@ export function createSessionRecord(input: {
   requestView: StudioProductionRequestView;
   supplier: OrganizationSupplier;
   createdAt: Timestamp;
+  /** STUDIO-014: the session-directory observation seam (optional). */
+  sessionDirectory?: StudioSessionDirectory;
 }): StudioSessionRecord {
-  return {
+  const record: StudioSessionRecord = {
     sessionId: input.sessionId,
     tenantId: input.tenantId,
     formatPlugin: input.formatPlugin,
@@ -159,7 +182,34 @@ export function createSessionRecord(input: {
     treatments: [],
     treatmentFailures: [],
     createdAt: input.createdAt,
+    sessionDirectory: input.sessionDirectory,
   };
+  record.sessionDirectory?.recordSessionSummary(summaryOf(record));
+  return record;
+}
+
+/** The listing summary projection of one record (STUDIO-014 seam). */
+function summaryOf(record: StudioSessionRecord): StudioSessionSummaryRecord {
+  return Object.freeze({
+    sessionRef: record.sessionId,
+    tenantId: record.tenantId,
+    formatId: String(record.formatPlugin.id),
+    formatVersion: record.formatPlugin.version,
+    lifecycleState: record.session.lifecycle.state,
+    createdAt: record.createdAt,
+    participantCount: record.participants.size,
+    organizationRef: {
+      id: String(record.requestView.organizationRef.id),
+      version: record.requestView.organizationRef.version,
+    },
+    artifactPackageRef:
+      record.session.artifactPackageRef === null
+        ? null
+        : {
+            packageId: String(record.session.artifactPackageRef.packageId),
+            version: record.session.artifactPackageRef.version,
+          },
+  });
 }
 
 /** Rebuild the published session snapshot from the record (freezes it). */
@@ -205,6 +255,7 @@ export function applyLifecycleTransition(
     version: record.session.version + 1,
     lifecycle: Object.freeze({ state: to, transitions }),
   });
+  record.sessionDirectory?.recordSessionSummary(summaryOf(record));
   return record;
 }
 
@@ -219,6 +270,7 @@ export function appendParticipant(
     version: record.session.version + 1,
     participants: Object.freeze([...record.participants.values()].map((p) => Object.freeze(p))),
   });
+  record.sessionDirectory?.recordSessionSummary(summaryOf(record));
   return record;
 }
 
@@ -236,8 +288,12 @@ export function recordRawArtifact(
     readonly capturedByParticipantId: SessionParticipantId;
   },
 ): StudioSessionRecord {
+  const holder = record.participants.get(input.capturedByParticipantId)?.identityRef;
   record.draft.rawArtifacts.push(input.artifact);
-  record.draft.rawArtifactConsent.set(input.artifact.artifactId, input.consentRefs);
+  record.draft.rawArtifactConsent.set(String(input.artifact.artifactId), {
+    consentRefs: [...input.consentRefs],
+    holderIdentityRef: holder,
+  });
   record.draft.captureSeconds += input.receipt.durationSeconds;
   const participant = record.participants.get(input.capturedByParticipantId);
   if (participant !== undefined) {
@@ -260,18 +316,24 @@ export function recordRawArtifact(
 /**
  * Record one imported source/reference artifact (the §6 acquired-input stage,
  * STUDIO-009) into the draft: appends the raw artifact and its consent
- * coverage. Imported sources are parentless RAW acquisitions — the lineage
- * roots of everything the organization later composes over them.
+ * coverage (naming the source-holder identity when supplied — §15/§27 live
+ * re-resolution, STUDIO-014). Imported sources are parentless RAW
+ * acquisitions — the lineage roots of everything the organization later
+ * composes over them.
  */
 export function recordImportedSourceArtifact(
   record: StudioSessionRecord,
   input: {
     readonly artifact: StudioArtifactRef;
     readonly consentRefs: readonly ConsentRef[];
+    readonly sourceHolderIdentityRef?: IdentityRef;
   },
 ): StudioSessionRecord {
   record.draft.rawArtifacts.push(input.artifact);
-  record.draft.rawArtifactConsent.set(input.artifact.artifactId, input.consentRefs);
+  record.draft.rawArtifactConsent.set(String(input.artifact.artifactId), {
+    consentRefs: [...input.consentRefs],
+    holderIdentityRef: input.sourceHolderIdentityRef,
+  });
   record.session = Object.freeze({
     ...record.session,
     version: record.session.version + 1,
@@ -290,6 +352,7 @@ export function attachPackageVersion(
     version: record.session.version + 1,
     artifactPackageRef: Object.freeze({ packageId, version: packageVersion }),
   });
+  record.sessionDirectory?.recordSessionSummary(summaryOf(record));
   return record;
 }
 
@@ -308,5 +371,14 @@ export function buildSessionView(record: StudioSessionRecord): StudioSessionView
     reviews: Object.freeze([...record.reviews]),
     treatments: Object.freeze([...record.treatments]),
     treatmentFailures: Object.freeze([...record.treatmentFailures]),
+    rawArtifactConsentEntries: Object.freeze(
+      [...record.draft.rawArtifactConsent.entries()].map(([artifactId, entry]) =>
+        Object.freeze({
+          artifactId,
+          consentRefs: Object.freeze([...entry.consentRefs]),
+          holderIdentityRef: entry.holderIdentityRef,
+        }),
+      ),
+    ),
   });
 }

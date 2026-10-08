@@ -79,6 +79,7 @@ export async function importSourceArtifactForSession(
   recordImportedSourceArtifact(record, {
     artifact: created.artifact,
     consentRefs: [...(request.consentRefs ?? [])],
+    sourceHolderIdentityRef: request.sourceHolderIdentityRef,
   });
   return { ok: true, source: created.artifact };
 }

@@ -15,6 +15,8 @@ import type { StudioOrganizationLoader } from "../contracts/organization-loading
 import type { StudioArtifactFactoryPort } from "../ports/artifact-factory.js";
 import type { ParticipantConsentPort } from "../ports/participant-consent.js";
 import type { ParticipantIdentityPort } from "../ports/participant-identity.js";
+import type { StudioArtifactPackagingPort } from "../ports/artifact-packaging.port.js";
+import type { StudioSessionDirectory } from "../ports/session-directory.port.js";
 import type { FormatRegistry } from "./format-registry.js";
 import type { CaptureSourcePort } from "./capture/capture-source-port.js";
 
@@ -32,6 +34,19 @@ export interface StudioRuntimeDeps {
    */
   readonly participantIdentityPort: ParticipantIdentityPort;
   readonly participantConsentPort: ParticipantConsentPort;
+  /**
+   * STUDIO-013: the canonical packaging authority behind the runtime — the
+   * ONE composition path for session packages (review accept + treatment
+   * successor versions). Required, never defaulted: an authority is injected
+   * explicitly at the composition root.
+   */
+  readonly packaging: StudioArtifactPackagingPort;
+  /**
+   * STUDIO-014: the optional session-directory observation seam — when
+   * present, the runtime publishes session summaries on every state change
+   * (the operator product surface's listing source; NO new runtime method).
+   */
+  readonly sessionDirectory?: StudioSessionDirectory;
   /** Injectable clock (default: real UTC ISO timestamps). */
   readonly clock?: () => Timestamp;
   /** Injectable id source (default: crypto.randomUUID). */

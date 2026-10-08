@@ -1,14 +1,20 @@
 /**
- * Shared fixtures for the audio-podcast flow node:test suites (STUDIO-011).
- * Test-support code only — compiled with the package but never exported from
- * the package index (same pattern as test-fixtures.ts).
+ * Shared fixtures for the audio-podcast flow node:test suites (STUDIO-011;
+ * STUDIO-013 migrated the flow's final composition onto the W8-C editing
+ * surface — the scenario now composes the REAL editing stack, exactly like
+ * the reaction/video format-flow scenario). Test-support code only — compiled
+ * with the package but never exported from the package index (same pattern
+ * as test-fixtures.ts).
  *
  * The scenario composes: the deterministic Studio runtime (REAL identity +
  * rights authorities behind the ports, disclosed in-memory doubles for the
- * remaining seams), the versioned script-graph store + deterministic
- * generator double + REAL adaptive sequencer, the REAL interviewer agent
- * stack (@mos/agents + @mos/agent-runtime), and the audio-podcast flow over
- * the audio-podcast format plugin.
+ * remaining seams), the W8-C editing stack (REAL W7-B Editor Pawn through
+ * production's surfaces, REAL engines runner seam, REAL rights gate —
+ * SHARED rights repository + packaging authority with the studio runtime),
+ * the versioned script-graph store + deterministic generator double + REAL
+ * adaptive sequencer, the REAL interviewer agent stack (@mos/agents +
+ * @mos/agent-runtime), and the audio-podcast flow over the audio-podcast
+ * format plugin whose final audio composes through EditingCompositionPort.
  */
 
 import assert from "node:assert/strict";
@@ -23,25 +29,39 @@ import {
   intentRecordFixture,
 } from "./in-memory-script-graph-generator.js";
 import { composeRealInterviewerAgentStack } from "./real-interviewer-agent.js";
-import { composeTestRuntime, TEST_ORGANIZATION } from "./compose-runtime-for-tests.js";
+import {
+  composeTestRuntime,
+  createDeterministicClock,
+  TEST_ORGANIZATION,
+} from "./compose-runtime-for-tests.js";
+import { composeEditingStack } from "./compose-editing-stack.js";
+import { createStudioPackagingAuthority } from "../runtime/packaging/packaging-authority.js";
+import { composeRealParticipantAuthorities } from "./real-participant-authorities.js";
 import { createAudioPodcastFlow } from "../runtime/podcast/audio-podcast-flow.js";
 import { INTERVIEWER_AGENT_BODY_ID } from "../runtime/interviewer/interviewer-agent-body.js";
+import {
+  EDITING_ENGINE_RESOURCE_LIMITS,
+  EDITING_PRINCIPAL,
+  EDITING_STACK_TENANT,
+  EDITING_TRANSFORM_APPLICATION,
+} from "./editing-fixtures.js";
 import type { RealParticipantAuthorities } from "./real-participant-authorities.js";
 import type { JoinParticipantRequest } from "../runtime/intake-types.js";
 import type { IntentRecord, ScriptGraphVersionRef } from "../contracts/script-graph.js";
-import type { RecordedEditDecision } from "../contracts/podcast-graphs.js";
+import type {
+  CompositionOperationDeclaration,
+  OrganizationEditChoice,
+} from "../contracts/editing-composition.js";
 import type { AudioPodcastProductionPlan } from "../runtime/podcast/audio-podcast-flow.js";
 import type {
   ConsentRef,
   IdentityRef,
   SessionParticipantId,
   StudioSessionId,
-  TenantId,
-  Timestamp,
   Version,
 } from "../contracts/refs.js";
 
-export const TENANT = "tenant-001" as TenantId;
+export const TENANT = EDITING_STACK_TENANT;
 export const SUPPLIER = "identity-user-1" as IdentityRef;
 export const SPEAKER_A = "identity-participant-1" as IdentityRef;
 export const SPEAKER_B = "identity-participant-2" as IdentityRef;
@@ -66,9 +86,53 @@ export const SYNTHETIC_VOICE_INTERVIEWER = {
   },
 } as const;
 
-/** Compose the full audio-podcast scenario seam (runtime + REAL agent stack + graphs). */
+/** One composition operation declaration (the org's choice implementation). */
+function operation(
+  operationId: string,
+  kind: CompositionOperationDeclaration["kind"],
+  inputArtifactRefs: CompositionOperationDeclaration["inputArtifactRefs"],
+  parameters: Record<string, unknown>,
+): CompositionOperationDeclaration {
+  return { operationId, kind, inputArtifactRefs, parameters };
+}
+
+/**
+ * Compose the full audio-podcast scenario seam: the deterministic studio
+ * runtime + the REAL editing stack (STUDIO-013 — the final audio composes
+ * through EditingCompositionPort) + the REAL agent stack + the graphs, all
+ * sharing ONE rights repository, ONE packaging authority and ONE (wrapped,
+ * engine-store + derived-grant aware) artifact factory.
+ */
 export function composePodcastScenario() {
-  const composed = composeTestRuntime();
+  const clock = createDeterministicClock();
+  // The ONE REAL rights + identity authority pair behind every gate (the
+  // studio runtime's §15 ports AND the editing stack's contributor/pawn gates).
+  const authorities = composeRealParticipantAuthorities({ now: clock });
+  // STUDIO-013: the ONE packaging authority — the runtime's session packages
+  // and the editing session's successor versions compose through the SAME
+  // canonical path (one append-only store per tenant).
+  const packaging = createStudioPackagingAuthority({ now: clock });
+  // The W8-C editing stack over the SHARED rights repository + authority.
+  const editingStack = composeEditingStack({ now: clock, rightsRepository: authorities.rightsRepository, packaging });
+  // The session organization is registered as an editor-node pawn organization
+  // so the SAME organization id drives the session compatibility gate and the
+  // Editor Pawn composition (the W9-C format-flow discipline).
+  const pawnOrganization = editingStack.registerPawnOrganization({
+    organizationId: TEST_ORGANIZATION.id,
+    evaluator: "evaluator:studio-podcast-flow",
+  });
+  assert.ok(
+    pawnOrganization.id === TEST_ORGANIZATION.id && pawnOrganization.version === 1,
+    `podcast pawn organization registration mismatch: ${JSON.stringify(pawnOrganization)}`,
+  );
+  const composed = composeTestRuntime({
+    clock,
+    authorities,
+    packaging,
+    // The runtime's captures/treatments AND the flow's transcripts ride the
+    // editing stack's wrapped factory (engine-store + derived-work grants).
+    artifactFactory: editingStack.artifactFactory,
+  });
   const store = createScriptGraphStore({ clock: composed.clock });
   const generator = createInMemoryScriptGraphGenerator();
   const sequencer = createAdaptiveSequencer({ store });
@@ -76,21 +140,28 @@ export function composePodcastScenario() {
   const formatPlugin = createAudioPodcastFormatPlugin();
   let interviewSessions = 0;
   let conversationGraphs = 0;
-  let editGraphs = 0;
   const flow = createAudioPodcastFlow({
     runtime: composed.runtime,
-    artifactFactory: composed.artifactFactory,
+    artifactFactory: editingStack.artifactFactory,
+    editing: editingStack.editing,
+    formatPlugin,
+    editingOrganization: {
+      id: TEST_ORGANIZATION.id as never,
+      version: pawnOrganization.version,
+    },
+    editingActor: { kind: "identity" as const, principalId: EDITING_PRINCIPAL },
+    transformApplication: EDITING_TRANSFORM_APPLICATION,
+    engineResourceLimits: { ...EDITING_ENGINE_RESOURCE_LIMITS },
+    seed: 7,
     store,
     sequencer,
     agentBinding: stack.agentBinding,
     agent: stack.agent,
-    formatPlugin,
     clock: composed.clock,
     nextInterviewSessionId: () => `ivs-${++interviewSessions}`,
     nextConversationGraphId: () => `cgraph-${++conversationGraphs}`,
-    nextEditGraphId: () => `egraph-${++editGraphs}`,
   });
-  return { ...composed, store, generator, sequencer, stack, formatPlugin, flow };
+  return { ...composed, editingStack, store, generator, sequencer, stack, formatPlugin, flow };
 }
 
 export type Scenario = ReturnType<typeof composePodcastScenario>;
@@ -169,31 +240,44 @@ export function terminalRounds(participantIds: readonly SessionParticipantId[]):
   ];
 }
 
-/** Organization edit decisions to record (org decides; caller stands in — disclosed). */
-export function editDecisionsAt(now: () => Timestamp): readonly Omit<RecordedEditDecision, "decidedByOrganization">[] {
-  return [
-    {
-      decisionId: "edit-keep-opening",
-      decisionPointId: "podcast-edit-points",
-      decidedByNodeId: "editor-node",
-      decision: { kind: "keep", targetConversationNodeIds: ["q-0", "a-0"] },
-      decidedAt: now(),
-    },
-    {
-      decisionId: "edit-trim-core",
-      decisionPointId: "podcast-edit-points",
-      decidedByNodeId: "editor-node",
-      decision: { kind: "trim", targetConversationNodeIds: ["q-1", "a-1"] },
-      decidedAt: now(),
-    },
-    {
-      decisionId: "edit-reorder-deepening",
-      decisionPointId: "podcast-edit-pacing",
-      decidedByNodeId: "editor-node",
-      decision: { kind: "reorder", targetConversationNodeIds: ["q-2", "a-2"], reorderedTo: ["a-2", "q-2"] },
-      decidedAt: now(),
-    },
-  ];
+/**
+ * The organization's audio-podcast edit choices at the DECLARED points
+ * (podcast-edit-points / podcast-edit-pacing) — a BUILDER over the flow's
+ * artifact universe (the ORG decides; the caller stands in for the org's
+ * decision output — disclosed, the W3-C/W8-C discipline). STUDIO-013: the
+ * flow's own edit-graph recorder is gone — these choices compose through the
+ * W8-C EditingCompositionPort like every other format.
+ */
+export function podcastEditChoices(): AudioPodcastProductionPlan["editChoices"] {
+  return ({ rawTakes, transcripts }) => {
+    const takeA = rawTakes[0];
+    const takeB = rawTakes[1];
+    const transcriptA = transcripts[0];
+    assert.ok(
+      takeA !== undefined && takeB !== undefined && transcriptA !== undefined,
+      "podcastEditChoices requires at least two raw takes and one transcript",
+    );
+    return [
+      {
+        choiceId: "choice-edit-points",
+        decisionPointId: "podcast-edit-points",
+        selectedOption: "org-learned-edit-keep-tighten",
+        operations: [
+          operation("audio-op-keep", "trim", [takeA], { leadIn: 0 }),
+          operation("audio-op-tighten", "trim", [takeB], { leadIn: 0.5 }),
+        ],
+      },
+      {
+        choiceId: "choice-edit-pacing",
+        decisionPointId: "podcast-edit-pacing",
+        selectedOption: "org-learned-pacing-front-load",
+        operations: [
+          operation("audio-op-reorder", "reorder", [takeA, takeB], { order: ["tightened", "kept"] }),
+          operation("audio-op-caption", "caption", [transcriptA], { language: "en" }),
+        ],
+      },
+    ] satisfies Omit<OrganizationEditChoice, "decidedAt">[];
+  };
 }
 
 /** Build a one-person podcast production plan (single participant + synthetic interviewer). */
@@ -215,7 +299,7 @@ export async function onePersonPlan(
       agentBody: { bodyId: INTERVIEWER_AGENT_BODY_ID, bodyVersion: 1 as Version },
     },
     rounds: terminalRounds([]),
-    editDecisions: editDecisionsAt(scenario.clock),
+    editChoices: podcastEditChoices(),
     operator: OPERATOR,
     processingCost: { currency: "USD", amount: "0.42" },
     processingSeconds: 30,

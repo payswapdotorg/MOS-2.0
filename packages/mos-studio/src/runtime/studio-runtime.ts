@@ -31,19 +31,20 @@
 
 import { randomUUID } from "node:crypto";
 import type { OrganizationLoadRequest, StudioOrganizationLoader } from "../contracts/organization-loading.js";
-import type { StudioArtifactPackageId, StudioSessionId, TenantId, Timestamp } from "../contracts/refs.js";
+import type { StudioSessionId, TenantId, Timestamp } from "../contracts/refs.js";
 import type { StudioOutputReview, StudioOutputTreatmentPort, OutputTreatmentRequest } from "../contracts/treatment.js";
 import type { StudioArtifactFactoryPort } from "../ports/artifact-factory.js";
-import type { StudioArtifactRef } from "../contracts/studio-artifact-package.js";
+import type { StudioArtifactPackagingPort } from "../ports/artifact-packaging.port.js";
+import type { StudioSessionDirectory } from "../ports/session-directory.port.js";
 import type { FormatRegistry } from "./format-registry.js";
 import type { StudioRuntimeOutcome } from "./errors.js";
 import { notFound, stateError } from "./runtime-error-helpers.js";
 import { isLegalTransition } from "./lifecycle.js";
-import { assembleArtifactPackage } from "./package-assembly.js";
+import { operatorConsentFailure } from "./operator-consent.js";
+import { applyStudioTreatment } from "./treatment-application.js";
 import {
   applyLifecycleTransition,
   appendParticipant,
-  attachPackageVersion,
   buildSessionView,
   createSessionRecord,
   snapshotSession,
@@ -98,6 +99,10 @@ export class StudioRuntime {
   /** STUDIO-006: REAL identity + rights authorities behind studio ports. */
   private readonly participantIdentityPort: ParticipantIdentityPort;
   private readonly participantConsentPort: ParticipantConsentPort;
+  /** STUDIO-013: the canonical packaging authority (THE packaging path). */
+  private readonly packaging: StudioArtifactPackagingPort;
+  /** STUDIO-014: the optional session-directory observation seam. */
+  private readonly sessionDirectory: StudioSessionDirectory | undefined;
   private readonly clock: () => Timestamp;
   private readonly idFactory: () => string;
 
@@ -109,6 +114,8 @@ export class StudioRuntime {
     this.captureSourcePort = deps.captureSourcePort;
     this.participantIdentityPort = deps.participantIdentityPort;
     this.participantConsentPort = deps.participantConsentPort;
+    this.packaging = deps.packaging;
+    this.sessionDirectory = deps.sessionDirectory;
     this.clock = deps.clock ?? (() => new Date().toISOString() as Timestamp);
     this.idFactory = deps.idFactory ?? (() => randomUUID());
   }
@@ -156,6 +163,7 @@ export class StudioRuntime {
       requestView,
       supplier,
       createdAt: this.clock(),
+      sessionDirectory: this.sessionDirectory,
     });
     this.sessions.set(sessionId, record);
     return { ok: true, value: { session: snapshotSession(record) } };
@@ -354,7 +362,9 @@ export class StudioRuntime {
     return { ok: true, value: { session: snapshotSession(record) } };
   }
 
-  /** Submit a review decision (§19 outcomes; quality ≠ rights/policy rejection). */
+  /**
+   * Submit a review decision (§19 outcomes; quality ≠ rights/policy rejection).
+   */
   async submitReview(sessionId: StudioSessionId, input: SubmitReviewInput): Promise<StudioRuntimeOutcome<ReviewHandledValue>> {
     const record = this.sessions.get(sessionId);
     if (record === undefined) {
@@ -371,6 +381,23 @@ export class StudioRuntime {
     if (rejectionCheck !== undefined) {
       return { ok: false, error: rejectionCheck };
     }
+    // STUDIO-014: §15 live consent re-resolution at THE operator decision.
+    // The forward-moving outcomes (accept / accept-alternate /
+    // request-treatment) move the session's material onward — packaging or
+    // re-processing — so a revoked consent must surface here. The terminal
+    // rejections and abandon wind the session DOWN and move nothing forward;
+    // they stay decidable so the operator can always end a compromised
+    // session explicitly.
+    if (
+      input.outcome === "accept" ||
+      input.outcome === "accept-alternate" ||
+      input.outcome === "request-treatment"
+    ) {
+      const consentFailure = await operatorConsentFailure(record, this.participantConsentPort);
+      if (consentFailure !== null) {
+        return { ok: false, error: consentFailure };
+      }
+    }
     const review: StudioOutputReview = Object.freeze({
       sessionId,
       targetArtifact: target,
@@ -382,6 +409,7 @@ export class StudioRuntime {
     return applyReviewOutcome(record, review, {
       now: this.clock,
       nextPackageId: () => `pkg_${this.idFactory()}`,
+      packaging: this.packaging,
     });
   }
 
@@ -402,44 +430,23 @@ export class StudioRuntime {
     if (request.sessionId !== sessionId) {
       return { ok: false, error: { kind: "session-not-found", sessionId: request.sessionId } };
     }
-    const latestPackage = record.packages.length > 0 ? record.packages[record.packages.length - 1] : undefined;
-    const knownArtifacts: readonly StudioArtifactRef[] =
-      state === "packaged" && latestPackage !== undefined
-        ? [...latestPackage.rawArtifacts, ...latestPackage.intermediateArtifacts, ...latestPackage.finalArtifacts]
-        : [...record.draft.rawArtifacts, ...record.draft.intermediateArtifacts, ...record.draft.finalArtifacts];
-    const target = knownArtifacts.find((a) => a.artifactId === request.targetArtifact.artifactId);
-    if (target === undefined) {
-      return { ok: false, error: { kind: "treatment-target-not-found", artifactId: request.targetArtifact.artifactId } };
+    // STUDIO-014: a treatment is an operator action over the session's
+    // material — §15 live consent re-resolution applies (a revoked consent
+    // surfaces at the treatment, never silently passes into a successor
+    // version).
+    const consentFailure = await operatorConsentFailure(record, this.participantConsentPort);
+    if (consentFailure !== null) {
+      return { ok: false, error: consentFailure };
     }
-    const outcome = await this.treatmentExecutor.applyTreatment(request);
-    if (!outcome.ok) {
-      record.treatmentFailures.push({ request, failure: outcome.failure, failedAt: this.clock() });
-      return { ok: false, error: { kind: "treatment-failed", request, failure: outcome.failure } };
-    }
-    record.treatments.push(outcome.result);
-    for (const successor of outcome.result.successorArtifacts) {
-      if (successor.stage === "intermediate") {
-        record.draft.intermediateArtifacts.push(successor);
-      } else {
-        record.draft.finalArtifacts.push(successor);
-      }
-    }
-    if (state === "packaged") {
-      let packageId: StudioArtifactPackageId = record.packageId as StudioArtifactPackageId;
-      if (record.packageId === null) {
-        packageId = `pkg_${this.idFactory()}` as StudioArtifactPackageId;
-        record.packageId = packageId;
-      }
-      const pkg = assembleArtifactPackage(record, packageId, this.clock(), {
-        status: "pending",
-        outcome: "treatment-requested",
-      });
-      record.packages.push(pkg);
-      attachPackageVersion(record, packageId, pkg.version);
-      return { ok: true, value: { session: snapshotSession(record), result: outcome.result, package: pkg } };
-    }
-    applyLifecycleTransition(record, "review", this.clock(), "treatment-completed", "studio-runtime");
-    return { ok: true, value: { session: snapshotSession(record), result: outcome.result } };
+    // STUDIO-013: the packaged-state successor version is composed through
+    // THE canonical packaging authority (treatment-application.ts).
+    return applyStudioTreatment(record, request, {
+      treatmentExecutor: this.treatmentExecutor,
+      packaging: this.packaging,
+      packageId: record.packageId,
+      nextPackageId: () => `pkg_${this.idFactory()}`,
+      now: this.clock,
+    });
   }
 
   /** packaged → closed. */
