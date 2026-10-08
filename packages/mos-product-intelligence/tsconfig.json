@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Same composite-project shape as packages/mos-policy (the other recent
+    // worker-a authority): sibling MOS packages consume this package via
+    // project references and the emitted declarations in dist/.
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../mos-contracts" },
+    { "path": "../mos-identity" },
+    { "path": "../mos-rights" }
+  ]
+}
