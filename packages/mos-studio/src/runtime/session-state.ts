@@ -257,6 +257,28 @@ export function recordRawArtifact(
   return record;
 }
 
+/**
+ * Record one imported source/reference artifact (the §6 acquired-input stage,
+ * STUDIO-009) into the draft: appends the raw artifact and its consent
+ * coverage. Imported sources are parentless RAW acquisitions — the lineage
+ * roots of everything the organization later composes over them.
+ */
+export function recordImportedSourceArtifact(
+  record: StudioSessionRecord,
+  input: {
+    readonly artifact: StudioArtifactRef;
+    readonly consentRefs: readonly ConsentRef[];
+  },
+): StudioSessionRecord {
+  record.draft.rawArtifacts.push(input.artifact);
+  record.draft.rawArtifactConsent.set(input.artifact.artifactId, input.consentRefs);
+  record.session = Object.freeze({
+    ...record.session,
+    version: record.session.version + 1,
+  });
+  return record;
+}
+
 /** Point the session at a (new) package version and re-snapshot (version bump). */
 export function attachPackageVersion(
   record: StudioSessionRecord,

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MOS v2.0 Content Studio — STUDIO-001 runtime + STUDIO-002 pluggable format framework + STUDIO-005 capture ports + STUDIO-003 script/question graphs + STUDIO-006 multi-account sessions (REAL identity/rights ports) + STUDIO-007 versioned organization loader + STUDIO-004 adaptive interviewer (REAL @mos/agent-runtime agent-instance binding) + STUDIO-010 podcast formats + STUDIO-011 audio podcast flow + STUDIO-008 AI editing/composition (the W7-B Editor Pawn composed via @mos/production surfaces, closed-vocabulary edit kinds, §12 interoperable edit graphs, treatment-versioned packages — the Studio never publishes, never selects models)",
+  "description": "MOS v2.0 Content Studio — STUDIO-001 runtime + STUDIO-002 pluggable format framework + STUDIO-005 capture ports + STUDIO-003 script/question graphs + STUDIO-006 multi-account sessions (REAL identity/rights ports) + STUDIO-007 versioned organization loader + STUDIO-004 adaptive interviewer (REAL @mos/agent-runtime agent-instance binding) + STUDIO-010 podcast formats + STUDIO-011 audio podcast flow + STUDIO-008 AI editing/composition (the W7-B Editor Pawn composed via @mos/production surfaces, closed-vocabulary edit kinds, §12 interoperable edit graphs, treatment-versioned packages) + STUDIO-009 reaction format (§16: rights-gated source import, reactor capture, org reaction-composition decisions through the editing surface) + STUDIO-012 video podcast (mandatory video capture rounds, avatar-modality adaptive interviewer) — the Studio never publishes, never selects models",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {

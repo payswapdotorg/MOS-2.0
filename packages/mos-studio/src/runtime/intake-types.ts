@@ -128,6 +128,37 @@ export interface OpenCaptureRequest {
   readonly targetStorage?: StorageRef;
 }
 
+/**
+ * Request to import one source/reference artifact into a session as an
+ * ACQUIRED INPUT (STUDIO-009; §6 pipeline stage "reference → acquired input";
+ * §16 reaction production reacts to rights-cleared source material).
+ *
+ * The import is RIGHTS-GATED on the format's declarations
+ * (`captureRequirements.allowsMediaImport` +
+ * `inputRequirements.requiresRightsClearedSources`): an uncleared source is
+ * a TYPED failure, never silently admitted (§27 — public URL accessibility
+ * never implies media rights). Consent refs cover the source's contribution
+ * to the packaged output (§15/§27).
+ */
+export interface ImportSourceArtifactRequest {
+  /** The artifact id of the acquired input (must be non-blank). */
+  readonly artifactId: ArtifactId;
+  /** Media type of the source content (coarse studio classification). */
+  readonly type: "audio" | "video" | "image" | "text" | "timeline" | "graph";
+  /** Where the source bytes live (object/media storage ref — never inline). */
+  readonly storageRef: StorageRef;
+  /** Content bytes for digest computation (disclosed double seam). */
+  readonly content?: Uint8Array;
+  /** Whether the source's rights context clears it for this production (§27). */
+  readonly rightsCleared: boolean;
+  /** Rights context reference covering the source (explicit, never inferred). */
+  readonly rightsRef: RightsRef;
+  /** Provenance record reference labeling the source (§30). */
+  readonly provenanceRef: ProvenanceRef;
+  /** Consent records covering the source's contribution to the output (§15/§27). */
+  readonly consentRefs?: readonly ConsentRef[];
+}
+
 /** Processing output produced through the loaded organization (§6/§17). */
 export interface StudioProcessingOutput {
   readonly intermediateArtifacts: readonly StudioArtifactRef[];

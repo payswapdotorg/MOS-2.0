@@ -52,6 +52,7 @@ import {
 } from "./session-state.js";
 import type {
   CreateStudioSessionInput,
+  ImportSourceArtifactRequest,
   JoinParticipantRequest,
   OpenCaptureRequest,
   StudioProcessingOutput,
@@ -60,6 +61,7 @@ import type {
 import { materializeStandaloneRequest } from "./intake-types.js";
 import type {
   CreatedSessionValue,
+  ImportedSourceValue,
   JoinedParticipantValue,
   LoadedOrganizationValue,
   ReviewHandledValue,
@@ -73,6 +75,7 @@ import type { ParticipantConsentPort } from "../ports/participant-consent.js";
 import type { ParticipantIdentityPort } from "../ports/participant-identity.js";
 import { applyReviewOutcome } from "./review-handling.js";
 import { openCaptureForSession } from "./capture/open-capture.js";
+import { importSourceArtifactForSession } from "./source-import.js";
 import type { StudioCaptureSession } from "./capture/studio-capture-session.js";
 import type { CaptureSourcePort } from "./capture/capture-source-port.js";
 
@@ -80,10 +83,10 @@ import type { CaptureSourcePort } from "./capture/capture-source-port.js";
  * The Studio runtime. One instance manages many sessions; every method
  * returns an explicit ok/failure union (no thrown business errors).
  *
- * Public methods (11 ≤ policy maxPublicMethods 12): createSession,
- * loadOrganization, joinParticipant, openCapture, beginProcessing,
- * completeProcessing, submitReview, applyTreatment, closeSession,
- * abandonSession, getSession.
+ * Public methods (12 ≤ policy maxPublicMethods 12): createSession,
+ * loadOrganization, joinParticipant, importSourceArtifact, openCapture,
+ * beginProcessing, completeProcessing, submitReview, applyTreatment,
+ * closeSession, abandonSession, getSession.
  */
 export class StudioRuntime {
   private readonly sessions = new Map<string, StudioSessionRecord>();
@@ -228,6 +231,32 @@ export class StudioRuntime {
     );
     appendParticipant(record, participant);
     return { ok: true, value: { session: snapshotSession(record), participant } };
+  }
+
+  /**
+   * Import one source/reference artifact into the session as an ACQUIRED
+   * INPUT (STUDIO-009, §6/§16/§27): reaction production reacts to
+   * rights-cleared source material. Fail-closed on the format's import +
+   * rights declarations — an uncleared source is a typed failure, never a
+   * silent admission.
+   */
+  async importSourceArtifact(
+    sessionId: StudioSessionId,
+    request: ImportSourceArtifactRequest,
+  ): Promise<StudioRuntimeOutcome<ImportedSourceValue>> {
+    const record = this.sessions.get(sessionId);
+    if (record === undefined) {
+      return notFound(sessionId);
+    }
+    if (record.session.lifecycle.state !== "capturing") {
+      return stateError("importSourceArtifact", record);
+    }
+    const imported = await importSourceArtifactForSession(record, request, {
+      artifactFactory: this.artifactFactory,
+    });
+    return imported.ok
+      ? { ok: true, value: { session: snapshotSession(record), source: imported.source } }
+      : { ok: false, error: imported.error };
   }
 
   /** Open a capture bound to the session + a consented participant (STUDIO-005). */

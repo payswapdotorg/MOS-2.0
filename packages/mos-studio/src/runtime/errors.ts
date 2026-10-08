@@ -14,7 +14,7 @@ import type {
   OrganizationLoadError,
   StudioOrganizationRef,
 } from "../contracts/organization-loading.js";
-import type { IdentityRef, SessionParticipantId, StudioSessionId } from "../contracts/refs.js";
+import type { ArtifactId, IdentityRef, SessionParticipantId, StudioSessionId } from "../contracts/refs.js";
 import type { StudioSessionLifecycleState } from "../contracts/studio-session.js";
 import type { OutputTreatmentRequest, RightsPolicyRejection } from "../contracts/treatment.js";
 
@@ -115,6 +115,21 @@ export type StudioRuntimeError =
   | {
       readonly kind: "capture-source-not-found";
       readonly sourceId: string;
+    }
+  | {
+      /** STUDIO-009 (§6 acquired-input stage): the format forbids media import. */
+      readonly kind: "import-not-allowed-by-format";
+      readonly formatId: string;
+    }
+  | {
+      /** STUDIO-009 (§16/§27): the imported source declares uncleared rights — fail closed. */
+      readonly kind: "source-rights-not-cleared";
+      readonly sourceRef: ArtifactId;
+    }
+  | {
+      /** STUDIO-009 (§27/§30): an import must carry explicit rights + provenance refs. */
+      readonly kind: "missing-source-rights-or-provenance-ref";
+      readonly sourceRef: ArtifactId;
     }
   | {
       readonly kind: "capture-source-insufficient";
