@@ -114,3 +114,16 @@ Both are **test/testing fixtures**, not production surfaces; the frozen specs an
 4. **Reject** — the enforcement + pins on this branch revert cleanly; the adapter-layer defense (layer 2) is self-sufficient either way.
 
 Whatever the decision, the adapter-layer probes and JSON-array keys stay (they are not conditioned on this ACR).
+
+## 12. TL DECISION (2026-10-08, W11-B harvest — recorded by the Tech Lead)
+
+**ACCEPTED AS PROPOSED (option 1).** The grammar `^[a-z0-9][a-z0-9-]{0,63}$` is
+frozen — promoted into the frozen authority set via manifest revision 2.0.1
+(`spec/mos-frozen-manifest-v2.0.json`, lock rule 42). Enforcement stands at the
+`@mos/identity` `createTenant` choke point exactly as implemented on Wave 11;
+grandfathering is append-only per §5; the adapter-layer probes and JSON-array
+keys remain the standing second layer per §6. The `createTenant` rejection
+message's "proposed grammar" phrasing is grandfathered verbatim (test-pinned);
+it is historical wording, not a statement of proposal status. Trailing-hyphen
+tolerance is accepted (no attack shape; §2). Adjacent gaps (§10) remain
+TL-tracked, not part of this ACR.

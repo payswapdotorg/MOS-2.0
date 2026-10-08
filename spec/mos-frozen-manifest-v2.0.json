@@ -100,8 +100,23 @@
     "openmuse",
     "code-oss"
   ],
-  "revision": "2.0.0",
+  "revision": "2.0.1",
   "architectureChangeRecord": "spec/architecture-change-records/0001-mos-v2-foundation.md",
+  "architectureChangeRecords": [
+    "spec/architecture-change-records/0001-mos-v2-foundation.md",
+    "docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md"
+  ],
+  "revisionHistory": [
+    {
+      "revision": "2.0.0",
+      "note": "initial frozen manifest (foundation ACR 0001)"
+    },
+    {
+      "revision": "2.0.1",
+      "date": "2026-10-08",
+      "note": "TL decision (W11-B harvest): tenant-id grammar ACR ACCEPTED as proposed — ^[a-z0-9][a-z0-9-]{0,63}$ as frozen constant TENANT_ID_GRAMMAR + isValidTenantId in @mos/contracts, enforced fail-closed typed at the @mos/identity createTenant choke point; grandfathering append-only; adapter-layer probes remain the standing second layer. See docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md §12."
+    }
+  ],
   "researchBasis": "docs/research/MOS-OSS-DESIGN-BASIS-v2.0.md",
   "carriedForwardMOSCapabilities": {
     "socialProviders": [
