@@ -417,3 +417,80 @@ export type {
   StudioPackagingAuthorityOptions,
 } from "./runtime/packaging/packaging-authority.js";
 
+
+// ——— BRIDGE-001: the Lab → Studio bridge (the §24 boundary chain's
+// Lab→Mission→Policy/Rights/Assets→Production/Studio segment) ———
+// A SELECTED LAB-016 production program search candidate (a REAL
+// @mos/production RankedCandidateProgram of a ProductionProgramSearchResult,
+// identity-checked, versioned, provenance'd — never a raw caller-claimed
+// shape) becomes a studio-side production entry through the gate ladder
+// mission → policy → rights frame → assets coverage → the studio's OWN
+// runtime surfaces (createSession + loadOrganization; STUDIO-007/013/014
+// authorities never bypassed). Every attributable attempt appends ONE
+// versioned tenant-scoped append-only record (W9-B D1–D5 by construction)
+// carrying the authority verdicts VERBATIM and the BRIDGE-002 consumption
+// surface (the candidate's declared expectations + the studio
+// session/package refs). The mission/policy authority seams are studio-owned
+// DECLARED PORTS (registry-exact: @mos/policy + @mos/missions are not studio
+// registry dependencies) whose mirrors are compat-pinned against the REAL
+// authority shapes (compat/bridge-authority-compat.ts — type-only relative
+// imports, zero runtime edge; the REAL authorities run behind the ports in
+// compat/bridge-real-authorities.test.ts). The bridge NEVER publishes and
+// never calls providers: its output is a studio-side production entry (§24).
+export type * from "./bridge/contracts/lab-to-studio-entry.js";
+export { LAB_TO_STUDIO_BOUNDARY_STATEMENT } from "./bridge/contracts/lab-to-studio-entry.js";
+export type * from "./bridge/contracts/bridge-authority-ports.js";
+export { createLabToStudioBridge } from "./bridge/lab-to-studio-bridge.js";
+export type {
+  LabToStudioBridgeDeps,
+  LabToStudioBridgePort,
+  LabToStudioPackageRecordFailure,
+} from "./bridge/lab-to-studio-bridge.js";
+export { createLabToStudioEntryStore } from "./bridge/bridge-entry-store.js";
+export type { LabToStudioEntryStore } from "./bridge/bridge-entry-store.js";
+export { validateLabToStudioEntry } from "./bridge/bridge-validation.js";
+export type {
+  ValidatedEntryOutcome,
+  ValidatedLabToStudioEntry,
+} from "./bridge/bridge-validation.js";
+
+// ——— DISCLOSED in-memory bridge authority doubles (BRIDGE-001 testing) ———
+// Deterministic, self-labeling test seams for the mission/policy/rights gate
+// ports — every double records the requests it received so tests can assert
+// the EXACT frames the bridge emitted. NOT authorities: the REAL
+// @mos/policy / @mos/missions / @mos/rights authorities are wired behind the
+// same ports at the testing composition seam (real-bridge-authorities.ts +
+// compat/bridge-real-authorities.test.ts).
+export {
+  createInMemoryBridgeMissionPort,
+  createInMemoryProductionEntryPolicyGatePort,
+  createInMemoryRightsGatePort,
+} from "./bridge/adapters/in-memory-bridge-authorities.js";
+export type {
+  InMemoryBridgeMissionPortOptions,
+  InMemoryProductionEntryPolicyGatePortOptions,
+  InMemoryRightsGatePortOptions,
+} from "./bridge/adapters/in-memory-bridge-authorities.js";
+
+// ——— REAL authority adapters behind the bridge gate ports (BRIDGE-001
+// testing/composition seam — the W10-C real-participant-authorities
+// precedent) ———
+// The adapters TRANSLATE onto the REAL authorities (the policy evaluation
+// port, the mission repository read surface, the REAL evaluateRights cascade
+// over the REAL rights repository); they never invent rules, grants,
+// consents or verdicts. composeBridgeForTests is one deterministic
+// composition (REAL studio runtime + REAL rights + disclosed
+// mission/policy doubles).
+export {
+  composeBridgeForTests,
+  createRealBridgeMissionPort,
+  createRealBridgeRightsGate,
+  createRealProductionEntryPolicyGate,
+} from "./testing/real-bridge-authorities.js";
+export type {
+  ComposeBridgeForTestsOptions,
+  ComposedBridgeForTests,
+  RealBridgeMissionPortOptions,
+  RealBridgeRightsGateOptions,
+  RealProductionEntryPolicyGateOptions,
+} from "./testing/real-bridge-authorities.js";

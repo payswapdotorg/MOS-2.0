@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "test": "tsc -b && node --test 'dist/**/*.test.js' && tsc -b ../mos-contracts ../mos-identity ../mos-rights ../mos-agents ../mos-agent-runtime ../mos-production ../mos-engines ../mos-policy ../mos-missions && tsc -p tsconfig.compat.json && node --test compat/bridge-real-authorities.test.ts",
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix"
