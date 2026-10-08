@@ -37,7 +37,7 @@ export const SECTIONS: readonly ShellSectionView[] = [
 ];
 
 export const TENANT: TenantContextView = {
-  tenantId: 'tenant_demo' as never,
+  tenantId: 'tenant-demo' as never,
   tenantDisplayName: 'Acme Media',
   workspaceId: 'ws_demo' as never,
   workspaceDisplayName: 'Growth Studio',
@@ -57,7 +57,7 @@ export const MISSION_SUMMARY: MissionSummaryView = {
   recordVersion: 2,
   rewardSpecVersion: 2,
   rewardSpecSummary: '2 reward terms · spec v2',
-  tenantId: 'tenant_demo' as never,
+  tenantId: 'tenant-demo' as never,
   workspaceId: null,
   updatedAt: '2026-06-01T00:00:00.000Z',
 };
@@ -103,7 +103,7 @@ export const MISSION_DETAIL: MissionDetailView = {
 };
 
 export const missionsPage = (overrides: Partial<MissionsPageData> = {}): MissionsPageData => ({
-  scope: { tenantId: 'tenant_demo' as never, workspaceId: 'ws_demo' as never },
+  scope: { tenantId: 'tenant-demo' as never, workspaceId: 'ws_demo' as never },
   summaries: [MISSION_SUMMARY],
   metricVocabulary: [
     { id: 'qualified-reach', label: 'Qualified reach' },

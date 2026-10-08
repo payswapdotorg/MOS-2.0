@@ -5,11 +5,13 @@
  * (25 contracts), the shared value-type vocabulary, and the machine-readable
  * required-field index with its runtime guards.
  *
- * Export budget: 3 runtime functions (getRequiredFields,
- * hasRequiredFields, assertRequiredFields) + 3 frozen constants
- * (CONTRACT_REQUIRED_FIELDS, CONTRACT_NAMES, CONTRACT_MANIFEST_VERSION).
+ * Export budget: 4 runtime functions (getRequiredFields,
+ * hasRequiredFields, assertRequiredFields, isValidTenantId) + 4 frozen
+ * constants (CONTRACT_REQUIRED_FIELDS, CONTRACT_NAMES,
+ * CONTRACT_MANIFEST_VERSION, TENANT_ID_GRAMMAR / TENANT_ID_GRAMMAR_PATTERN_SOURCE).
  * Everything else is type-only. Well within the architecture policy budget
- * of 12 public functions.
+ * of 12 public functions. (W11-B: the tenant-id grammar pair backs the
+ * tenant-id-grammar ACR — docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md.)
  */
 
 // ---- Shared value types ----
@@ -170,6 +172,14 @@ export type {
   RestrictionObservation,
   SocialAdapter,
 } from "./integration.js";
+
+// ---- Tenant-id grammar (W11-B ACR; docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md) ----
+export type { TenantIdGrammar } from "./tenant-id-grammar.js";
+export {
+  TENANT_ID_GRAMMAR,
+  TENANT_ID_GRAMMAR_PATTERN_SOURCE,
+  isValidTenantId,
+} from "./tenant-id-grammar.js";
 
 // ---- Machine-readable required-field index + guards ----
 export type {

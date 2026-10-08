@@ -56,7 +56,7 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
   readonly scope: { readonly tenantId: string; readonly workspaceId: string | null };
 }
 
-const DEMO_TENANT_ID = 'tenant_demo';
+const DEMO_TENANT_ID = 'tenant-demo';
 const DEMO_WORKSPACE_ID = 'ws_demo';
 
 /**

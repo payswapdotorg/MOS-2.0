@@ -28,7 +28,7 @@ const SHELL_SECTIONS: readonly ShellSectionView[] = [
 const SHELL_VIEW: AppShellView = {
   sections: SHELL_SECTIONS,
   tenant: {
-    tenantId: 'tenant_demo' as never,
+    tenantId: 'tenant-demo' as never,
     tenantDisplayName: 'Demo Tenant',
     workspaceId: 'ws_demo' as never,
     workspaceDisplayName: 'Demo Workspace',
@@ -54,7 +54,7 @@ const missionsRoute = (query: {
 const seededComposition = (): ReturnType<typeof createInMemoryMosWebComposition> => {
   const composition = createInMemoryMosWebComposition({ now: () => '2026-06-01T00:00:00.000Z' });
   const created = composition.missionRepository.createMission({
-    scope: { tenantId: 'tenant_demo' as never },
+    scope: { tenantId: 'tenant-demo' as never },
     id: 'mission_demo_1' as never,
     objective: {
       statement: 'Run the MOS demo mission end to end.',
@@ -143,7 +143,7 @@ test('missions loads summaries and vocabulary in the tenant scope', async () => 
     assert.fail('expected the missions page model');
   }
   assert.deepEqual(routeView.data.scope, {
-    tenantId: 'tenant_demo' as never,
+    tenantId: 'tenant-demo' as never,
     workspaceId: 'ws_demo' as never,
   });
   assert.equal(routeView.data.summaries.length, 1);
@@ -257,7 +257,7 @@ test('a failing vocabulary load is secondary data — the page still loads', asy
 test('an intent id resolves its receipt into the page model', async () => {
   const composition = seededComposition();
   const receipt = await composition.missionCatalog.declareCreateMissionIntent({
-    scope: { tenantId: 'tenant_demo' as never, workspaceId: 'ws_demo' as never },
+    scope: { tenantId: 'tenant-demo' as never, workspaceId: 'ws_demo' as never },
     objectiveStatement: 'Declare the demo intent.',
     rewardTerms: [
       { metric: 'revenue', direction: 'maximize', weight: 1, definition: 'Revenue.' },

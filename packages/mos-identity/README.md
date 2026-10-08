@@ -23,12 +23,15 @@ principals only as the opaque `IdentityRef`.
 | `src/domain/identity.ts` | `Identity` record type (`kind: 'user' \| 'service'`) |
 | `src/domain/membership.ts` | `Membership` record type (carries `tenantId`; append-only revocation) |
 | `src/ports/identity-repository.ts` | `IdentityRepository` port + scope/input/error types |
-| `src/adapters/in-memory-identity-repository.ts` | In-memory adapter (`createInMemoryIdentityRepository`) |
+| `src/adapters/in-memory-identity-repository.ts` | In-memory adapter (`createInMemoryIdentityRepository`, `grandfatheredTenants` seeding) |
+| `src/adapters/tenant-id-grammar.test.ts` | W11-B tenant-id grammar enforcement battery (ACR pins) |
 | `src/index.ts` | Public surface: **types + the factory only** |
 
 Tests (`node:test`, zero test-framework dependencies): `src/domain/*.test.ts` +
-`src/adapters/in-memory-identity-repository.test.ts`, covering CRUD round-trips, tenant isolation,
-append-only membership revocation, and version bumps.
+`src/adapters/in-memory-identity-repository.test.ts` +
+`src/adapters/tenant-id-grammar.test.ts` (W11-B), covering CRUD round-trips, tenant isolation,
+append-only membership revocation, version bumps, and the tenant-id grammar enforcement /
+grandfathering battery.
 
 ## Public surface
 
@@ -59,9 +62,21 @@ Public method budget (architecture policy `maxPublicMethods: 12`): the port expo
 - **Failures are typed values, not thrown classes**: mutating methods return
   `Record | IdentityRepositoryError` (discriminate with `'error' in result`). This keeps the runtime
   public surface at exactly one export as required by the Wave-0 assignment.
+- **Tenant-id grammar at the authority choke point** (W11-B,
+  `docs/architecture/TENANT-ID-GRAMMAR-ACR-v1.md` — PROPOSED, TL decides):
+  `createTenant` fails closed with the typed `invalid-tenant-id` error when the
+  id violates the grammar `^[a-z0-9][a-z0-9-]{0,63}$` exported from
+  `@mos/contracts` (`TENANT_ID_GRAMMAR` / `isValidTenantId`) — nothing is
+  recorded, grammar precedes the duplicate check, and the message names the
+  grammar + ACR (§30-attributable). Enforcement gates CREATION only; reads
+  never validate ids, so pre-grammar tenants are grandfathered forever
+  (append-only discipline — stored tenants are never rewritten to conform;
+  the adapter's `grandfatheredTenants` option models durable rows that
+  predate the constraint).
 - **Zero runtime dependencies**: no `@zcode/*` imports, no external packages, no Node-builtin
-  imports in runtime code (tests use `node:test` / `node:assert` builtins). Identifiers are
-  caller-supplied; the clock is injectable.
+  imports in runtime code (tests use `node:test` / `node:assert` builtins; the single runtime
+  import is the grammar predicate from the registry-listed `@mos/contracts` dependency).
+  Identifiers are caller-supplied; the clock is injectable.
 
 ## CORE-001 reconciliation mapping (DONE, W2-A)
 

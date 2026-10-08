@@ -12,7 +12,7 @@ import { test } from 'node:test';
 import type { TenantScope } from '@mos/contracts';
 import { createInMemoryMosWebComposition } from './compose-in-memory-mos-web.js';
 
-const DEMO_SCOPE: TenantScope = { tenantId: 'tenant_demo' as never, workspaceId: 'ws_demo' as never };
+const DEMO_SCOPE: TenantScope = { tenantId: 'tenant-demo' as never, workspaceId: 'ws_demo' as never };
 
 test('the composition wires both declared view ports over real repositories', () => {
   const composition = createInMemoryMosWebComposition();
@@ -31,7 +31,7 @@ test('the demo tenant and workspace are seeded and presented by the shell chrome
     assert.fail(`unexpected app-shell failure: ${shellView.error}`);
   }
   assert.deepEqual(shellView.tenant, {
-    tenantId: 'tenant_demo' as never,
+    tenantId: 'tenant-demo' as never,
     tenantDisplayName: 'Demo Tenant',
     workspaceId: 'ws_demo' as never,
     workspaceDisplayName: 'Demo Workspace',
@@ -40,12 +40,12 @@ test('the demo tenant and workspace are seeded and presented by the shell chrome
 
 test('the composition exposes the tenant scope the Missions surface reads through', () => {
   const composition = createInMemoryMosWebComposition();
-  assert.deepEqual(composition.scope, { tenantId: 'tenant_demo', workspaceId: 'ws_demo' });
+  assert.deepEqual(composition.scope, { tenantId: 'tenant-demo', workspaceId: 'ws_demo' });
 });
 
 test('tenant/workspace are configurable (the composition decides, the shell renders)', async () => {
   const custom = createInMemoryMosWebComposition({
-    tenantId: 'tenant_custom',
+    tenantId: 'tenant-custom',
     workspaceId: null,
   });
   const shellView = await custom.appShell.loadAppShell();
@@ -53,15 +53,15 @@ test('tenant/workspace are configurable (the composition decides, the shell rend
     assert.fail('unexpected app-shell failure');
   }
   assert.deepEqual(shellView.tenant, {
-    tenantId: 'tenant_custom' as never,
+    tenantId: 'tenant-custom' as never,
     tenantDisplayName: 'Demo Tenant',
     workspaceId: null,
     workspaceDisplayName: null,
   });
-  assert.deepEqual(custom.scope, { tenantId: 'tenant_custom', workspaceId: null });
+  assert.deepEqual(custom.scope, { tenantId: 'tenant-custom', workspaceId: null });
 
   const summaries = await custom.missionCatalog.listMissionSummaries({
-    tenantId: 'tenant_custom' as never,
+    tenantId: 'tenant-custom' as never,
   });
   if ('error' in summaries) {
     assert.fail('unexpected catalog failure');
@@ -72,7 +72,7 @@ test('tenant/workspace are configurable (the composition decides, the shell rend
 test('missions seeded into the REAL repository surface through the catalog port', async () => {
   const composition = createInMemoryMosWebComposition();
   const created = composition.missionRepository.createMission({
-    scope: { tenantId: 'tenant_demo' as never },
+    scope: { tenantId: 'tenant-demo' as never },
     id: 'mission_demo_1' as never,
     objective: {
       statement: 'Run the MOS demo mission end to end.',
