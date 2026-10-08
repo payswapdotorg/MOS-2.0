@@ -73,6 +73,8 @@ import type { ScriptGraphStore } from "../script-graph/script-graph-store.js";
 import { createInterviewerSession, type InterviewerSession, type InterviewerSessionDeps } from "../interviewer/interviewer-session.js";
 import { buildConversationGraph } from "./conversation-graph.js";
 import { recordEditDecisions } from "./edit-graph.js";
+import { validateStudioMoneyAmount } from "../money.js";
+import { cloneThenFreezeFormatPlugin } from "../ownership-support.js";
 
 /** One capture/interview round: the answer given after a presented question. */
 export interface PodcastInterviewRound {
@@ -144,6 +146,11 @@ export type AudioPodcastFlowError =
   | { readonly kind: "transcript-creation-failed"; readonly reason: string }
   | { readonly kind: "final-artifact-creation-failed"; readonly reason: string }
   | { readonly kind: "edit-graph-failed"; readonly error: EditGraphError }
+  | {
+      /** W10-B: the declared processing cost is malformed (never silently recorded). */
+      readonly kind: "invalid-processing-cost";
+      readonly reason: string;
+    }
   | { readonly kind: "processing-failed"; readonly error: StudioRuntimeError }
   | { readonly kind: "review-failed"; readonly error: StudioRuntimeError }
   | { readonly kind: "flow-internal-error"; readonly reason: string };
@@ -182,6 +189,11 @@ function fail(error: AudioPodcastFlowError): never {
 
 /** Create the audio-podcast flow driver (one public method). */
 export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
+  // W10-B ownership: the flow reads a PRIVATE frozen copy of the format
+  // plugin — a caller mutating its retained plugin object after flow
+  // creation cannot rewrite the declared decision points the org's edits
+  // are validated against.
+  const formatPlugin = cloneThenFreezeFormatPlugin(deps.formatPlugin);
   const interviewerDeps: InterviewerSessionDeps = {
     store: deps.store,
     sequencer: deps.sequencer,
@@ -290,10 +302,19 @@ export function createAudioPodcastFlow(deps: AudioPodcastFlowDeps) {
   }
 
   async function runFlow(plan: AudioPodcastProductionPlan): Promise<AudioPodcastFlowResult> {
-    if (deps.formatPlugin.id !== "audio-podcast") {
-      fail({ kind: "format-not-audio-podcast", formatId: String(deps.formatPlugin.id) });
+    if (formatPlugin.id !== "audio-podcast") {
+      fail({ kind: "format-not-audio-podcast", formatId: String(formatPlugin.id) });
     }
-    const formatPlugin = deps.formatPlugin;
+    // ---- W10-B money integrity: the declared processing cost is validated
+    // fail-closed TYPED before ANY session exists (the audio flow carries the
+    // declared cost straight into the session's cost lines through its own
+    // recorder — a hostile cost never silently lands in the package total). ----
+    if (plan.processingCost !== undefined) {
+      const moneyFault = validateStudioMoneyAmount(plan.processingCost);
+      if (moneyFault !== null) {
+        fail({ kind: "invalid-processing-cost", reason: moneyFault });
+      }
+    }
     const created = await deps.runtime.createSession({
       kind: "standalone-intent",
       intent: {

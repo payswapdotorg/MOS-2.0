@@ -24,6 +24,7 @@ import type {
 import type { StudioRuntimeError } from "./errors.js";
 import type { StudioProcessingOutput } from "./intake-types.js";
 import type { StudioSessionRecord } from "./session-state.js";
+import { validateStudioMoneyAmount } from "./money.js";
 
 /**
  * Validate a processing output against the session state and the format's
@@ -31,7 +32,11 @@ import type { StudioSessionRecord } from "./session-state.js";
  * = valid). Checks: stage consistency, tenant scope (§31), closed lineage
  * (§6 — parents must be known artifacts; parentless intermediates/finals are
  * rejected because raw human output is never silently final §6/§16), final
- * artifact types, and the single-final-candidate constraint.
+ * artifact types, the single-final-candidate constraint, and (W10-B money
+ * integrity) the declared `additionalCost` + `processingSeconds` — hostile
+ * money (negative/garbage strings, currency confusion against already
+ * recorded lines) and non-finite/negative durations fail closed here,
+ * never silently summing into the packaged cost/duration.
  */
 export function validateProcessingOutput(
   record: StudioSessionRecord,
@@ -79,6 +84,28 @@ export function validateProcessingOutput(
     record.draft.finalArtifacts.length + output.finalArtifacts.length > 1
   ) {
     reasons.push("format allows a single final candidate only");
+  }
+  // ---- W10-B money + duration integrity (fail closed, never silently summed). ----
+  if (output.additionalCost !== undefined) {
+    const moneyFault = validateStudioMoneyAmount(output.additionalCost);
+    if (moneyFault !== null) {
+      reasons.push(`additionalCost: ${moneyFault}`);
+    } else if (record.draft.costLines.length > 0) {
+      const recordedCurrency = record.draft.costLines[0]?.currency;
+      if (output.additionalCost.currency !== recordedCurrency) {
+        reasons.push(
+          `additionalCost: currency "${output.additionalCost.currency}" does not match the session's recorded cost currency "${String(recordedCurrency)}" — costs never mix currencies`,
+        );
+      }
+    }
+  }
+  if (
+    output.processingSeconds !== undefined &&
+    (typeof output.processingSeconds !== "number" ||
+      !Number.isFinite(output.processingSeconds) ||
+      output.processingSeconds < 0)
+  ) {
+    reasons.push("processingSeconds must be a finite number >= 0");
   }
   return reasons;
 }

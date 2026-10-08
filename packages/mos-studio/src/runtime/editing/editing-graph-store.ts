@@ -29,6 +29,7 @@ import {
   EDIT_GRAPH_INTERCHANGE_FORMAT_VERSION,
 } from "../../contracts/edit-graph-interop.js";
 import type { TenantScope } from "@mos/contracts";
+import { cloneThenFreezeValue } from "../ownership-support.js";
 
 /** Options of {@link createEditingGraphStore}. */
 export interface EditingGraphStoreOptions {
@@ -208,13 +209,15 @@ export function createEditingGraphStore(options: EditingGraphStoreOptions): Edit
   return {
     recordSessionGraph(scope, graph) {
       const graphId = options.graphIdFactory();
-      const recorded: EditingCompositionGraph = Object.freeze({
+      // W10-B ownership (the W9-B D3 class over the W8-C store): the stored
+      // graph version owns a PRIVATE frozen copy — the caller's choice and
+      // operation objects are never aliased by the append-only chain (a
+      // post-record mutation cannot rewrite recorded org decisions) and
+      // never frozen in place.
+      const recorded: EditingCompositionGraph = cloneThenFreezeValue({
         ...graph,
         graphId,
         version: 1,
-        choices: Object.freeze([...graph.choices]),
-        operations: Object.freeze([...graph.operations]),
-        declaredPointIds: Object.freeze([...graph.declaredPointIds]),
       });
       append(scope, graphId, recorded);
       return recorded;
@@ -279,17 +282,28 @@ export function createEditingGraphStore(options: EditingGraphStoreOptions): Edit
       // The imported record is preserved VERBATIM except the version chain
       // assignment + the import origin annotation (explicit versioning, no
       // silent lossy conversion — everything else is carried unchanged).
-      const imported: EditingCompositionGraph = Object.freeze({
-        ...source,
-        version: assignedVersion,
-        origin: Object.freeze({
-          kind: "imported-interchange",
-          sourceVersion: source.version,
-        }),
-        choices: Object.freeze([...source.choices]),
-        operations: Object.freeze([...source.operations]),
-        declaredPointIds: Object.freeze([...source.declaredPointIds]),
-      });
+      // W10-B: the stored version owns a PRIVATE frozen copy (the caller's
+      // interchange object is never aliased by the append-only chain); a
+      // payload that is not pure data fails closed as a typed import error.
+      let imported: EditingCompositionGraph;
+      try {
+        imported = cloneThenFreezeValue({
+          ...source,
+          version: assignedVersion,
+          origin: {
+            kind: "imported-interchange",
+            sourceVersion: source.version,
+          },
+        });
+      } catch {
+        return {
+          ok: false,
+          error: {
+            kind: "edit-graph-import-invalid",
+            reasons: ["the interchange record carries non-cloneable values — edit graphs are pure data (§12)"],
+          },
+        };
+      }
       append(scope, graphId, imported);
       return { ok: true, graph: imported, importedAs: { graphId, version: assignedVersion } };
     },

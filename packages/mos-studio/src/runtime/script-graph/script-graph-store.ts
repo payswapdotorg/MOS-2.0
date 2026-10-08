@@ -24,6 +24,7 @@ import type {
   ScriptGraphVersionRef,
 } from "../../contracts/script-graph.js";
 import type { ScriptGraphId, Timestamp, Version } from "../../contracts/refs.js";
+import { cloneThenFreezeValue } from "../ownership-support.js";
 
 /** Registration/validation failure modes (typed, never thrown). */
 export type ScriptGraphStoreError =
@@ -57,17 +58,6 @@ export interface ScriptGraphStore {
   latest(graphId: ScriptGraphId): { readonly ref: ScriptGraphVersionRef; readonly graph: ScriptGraph } | null;
   /** All stored versions of one graph, ascending. */
   versions(graphId: ScriptGraphId): readonly Version[];
-}
-
-/** Deep-freeze stored graphs (runtime immutability; finite depth by construction). */
-function deepFreeze<T>(value: T): T {
-  if (value !== null && typeof value === "object") {
-    for (const key of Object.keys(value as Record<string, unknown>)) {
-      deepFreeze((value as Record<string, unknown>)[key]);
-    }
-    Object.freeze(value);
-  }
-  return value;
 }
 
 /** Structural validation of one draft (explicit, machine-readable reasons). */
@@ -127,7 +117,10 @@ export function createScriptGraphStore(options: ScriptGraphStoreOptions = {}): S
   const graphs = new Map<string, { readonly versions: Map<number, ScriptGraph> }>();
 
   const storeRevision = (graphId: ScriptGraphId, version: number, draft: ScriptGraphDraft): ScriptGraph => {
-    const graph: ScriptGraph = {
+    // W10-B ownership (the W9-B D3 class): the stored graph version owns a
+    // PRIVATE frozen copy — the caller's draft (nodes, edges, nested
+    // provenance) is never aliased by the store and never frozen in place.
+    return cloneThenFreezeValue<ScriptGraph>({
       graphId,
       version: version as Version,
       intentId: draft.intentId,
@@ -136,8 +129,7 @@ export function createScriptGraphStore(options: ScriptGraphStoreOptions = {}): S
       nodes: draft.nodes.map((node) => ({ ...node })),
       branchEdges: draft.branchEdges.map((edge) => ({ ...edge })),
       createdAt: clock(),
-    };
-    return deepFreeze(graph);
+    } as ScriptGraph);
   };
 
   const versionsOf = (graphId: ScriptGraphId): readonly Version[] => {

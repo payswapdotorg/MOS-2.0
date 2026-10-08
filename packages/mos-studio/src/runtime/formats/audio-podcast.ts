@@ -16,11 +16,16 @@
 
 import type { StudioFormatId, StudioFormatPlugin } from "../../contracts/studio-format.js";
 import { capabilityId, capabilityIds, validateIntakeAsDeclared } from "./format-plugin-basics.js";
+import { deepFreezeValue } from "../ownership-support.js";
 
 /** Audio podcast format version (contract evolution counter). */
 export const AUDIO_PODCAST_FORMAT_VERSION = 2;
 
-/** The audio-podcast format plugin descriptor. */
+/**
+ * The audio-podcast format plugin descriptor (W10-B: returned DEEPLY FROZEN —
+ * the validator closes over this same frozen object, so the declared
+ * aspects the runtime's gates read can never be mutated after the fact).
+ */
 export function createAudioPodcastFormatPlugin(): StudioFormatPlugin {
   const plugin: StudioFormatPlugin = {
     id: "audio-podcast" as StudioFormatId,
@@ -91,5 +96,5 @@ export function createAudioPodcastFormatPlugin(): StudioFormatPlugin {
     ],
     validateSessionInput: (input: unknown) => validateIntakeAsDeclared(plugin, input),
   };
-  return plugin;
+  return deepFreezeValue(plugin);
 }

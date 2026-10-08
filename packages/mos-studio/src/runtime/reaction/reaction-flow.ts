@@ -65,7 +65,8 @@ import type { EditingCompositionPort } from "../../ports/editing-composition.por
 import type { StudioOrganizationRef } from "../../contracts/organization-loading.js";
 import type { ResourceLimits } from "@mos/contracts";
 import type { PawnExecutionActor, TransformApplicationCitation } from "@mos/production";
-import { sumStudioMoney } from "../money.js";
+import { sumStudioMoney, validateStudioMoneyAmount } from "../money.js";
+import { cloneThenFreezeFormatPlugin } from "../ownership-support.js";
 
 // ---------------------------------------------------------------------------
 // The flow
@@ -109,6 +110,10 @@ function fail(error: ReactionFlowError): never {
 
 /** Create the reaction flow driver (one public method). */
 export function createReactionFlow(deps: ReactionFlowDeps) {
+  // W10-B ownership: the flow gates read a PRIVATE frozen copy of the
+  // format plugin — a caller mutating its retained plugin object after flow
+  // creation cannot weaken the declared requirements this flow enforces.
+  const formatPlugin = cloneThenFreezeFormatPlugin(deps.formatPlugin);
   return {
     /** Run the full reaction session flow for one production plan. */
     async run(plan: ReactionProductionPlan): Promise<ReactionFlowOutcome> {
@@ -229,8 +234,18 @@ export function createReactionFlow(deps: ReactionFlowDeps) {
   }
 
   async function runFlow(plan: ReactionProductionPlan): Promise<ReactionFlowResult> {
-    if (deps.formatPlugin.id !== "reaction") {
-      fail({ kind: "format-not-reaction", formatId: String(deps.formatPlugin.id) });
+    if (formatPlugin.id !== "reaction") {
+      fail({ kind: "format-not-reaction", formatId: String(formatPlugin.id) });
+    }
+    // ---- W10-B money integrity: the declared processing cost is validated
+    // fail-closed TYPED before ANY session exists (the same discipline as the
+    // source rights gate — a hostile cost never silently sums and never
+    // crashes the flow after capture/editing already ran). ----
+    if (plan.processingCost !== undefined) {
+      const moneyFault = validateStudioMoneyAmount(plan.processingCost);
+      if (moneyFault !== null) {
+        fail({ kind: "invalid-processing-cost", reason: moneyFault });
+      }
     }
     // ---- The source rights gate (§16/§27): fail closed BEFORE anything runs. ----
     if (plan.sources.length === 0) {
@@ -246,7 +261,7 @@ export function createReactionFlow(deps: ReactionFlowDeps) {
       intent: {
         supplier: { kind: "standalone-user", identityRef: plan.supplierIdentityRef },
         tenantId: plan.tenantId,
-        format: { formatId: deps.formatPlugin.id, version: deps.formatPlugin.version },
+        format: { formatId: formatPlugin.id, version: formatPlugin.version },
         inputKind: "intent-with-source-material",
         intent: plan.intent,
         sourceArtifacts: plan.sources.map((source) => ({
@@ -319,7 +334,7 @@ export function createReactionFlow(deps: ReactionFlowDeps) {
     const transcripts = await buildTranscripts(plan.tenantId, sessionId, audioTakes);
     // ---- The org's §16 decisions through the W8-C editing surface. ----
     const editingInput: EditingSessionInput = {
-      formatPlugin: deps.formatPlugin,
+      formatPlugin,
       source: {
         kind: "intermediates",
         sessionRef: sessionId,
@@ -359,6 +374,16 @@ export function createReactionFlow(deps: ReactionFlowDeps) {
       currency: editing.record.cost.currency,
       amount: editing.record.cost.amount.toFixed(2),
     };
+    // The plan's declared processing cost lands in the package cost together
+    // with the editing session's engine cost (never silently dropped — the
+    // W9-C fix). W10-B: currency confusion fails closed TYPED here (costs
+    // never sum across currencies); the amount shape was validated up front.
+    if (plan.processingCost !== undefined && plan.processingCost.currency !== editingCost.currency) {
+      fail({
+        kind: "invalid-processing-cost",
+        reason: `declared processing cost currency "${plan.processingCost.currency}" does not match the editing session cost currency "${editingCost.currency}" — costs never sum across currencies`,
+      });
+    }
     const totalCost = plan.processingCost === undefined ? editingCost : sumStudioMoney(editingCost, plan.processingCost);
     const begin = await deps.runtime.beginProcessing(sessionId);
     if (!begin.ok) {

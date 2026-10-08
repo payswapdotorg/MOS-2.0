@@ -131,6 +131,11 @@ export interface ReactionFlowResult {
 /** Every failure the reaction flow can return (explicit, never thrown). */
 export type ReactionFlowError =
   | { readonly kind: "format-not-reaction"; readonly formatId: string }
+  | {
+      /** W10-B: the declared processing cost is malformed (never silently summed). */
+      readonly kind: "invalid-processing-cost";
+      readonly reason: string;
+    }
   | { readonly kind: "source-rights-not-cleared"; readonly sourceRef: string }
   | { readonly kind: "sources-empty" }
   | { readonly kind: "session-create-failed"; readonly error: StudioRuntimeError }
