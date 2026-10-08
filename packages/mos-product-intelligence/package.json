@@ -1,0 +1,28 @@
+{
+  "name": "@mos/product-intelligence",
+  "version": "0.1.0",
+  "description": "MOS v2.0 Product Intelligence — the product-source-intelligence authority (deferred from W10-A): versioned tenant-scoped append-only evidence-linked product facts/metrics/observations with provenance, rights-respect (analyze-grant gate with cited-ref coverage) and explicit source attribution, plus the search/list/resolve ports a marketing-mission planner reads as versioned citations (§25: informs planning only — no mission authority; commerce truth stays external — records CITE external commerce observations with provenance, never author them; forecast records are explicitly counterfactual-labeled)",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js'",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*",
+    "@mos/identity": "workspace:*",
+    "@mos/rights": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}

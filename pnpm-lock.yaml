@@ -976,6 +976,25 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/mos-product-intelligence:
+    dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
+      '@mos/identity':
+        specifier: workspace:*
+        version: link:../mos-identity
+      '@mos/rights':
+        specifier: workspace:*
+        version: link:../mos-rights
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   packages/mos-production:
     dependencies:
       '@mos/content':
