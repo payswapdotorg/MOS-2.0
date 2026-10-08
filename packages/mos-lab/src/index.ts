@@ -1,13 +1,13 @@
 /**
- * Public surface of `@mos/lab` (MOS v2.0 LAB-001..003 + LAB-004..006 +
- * LAB-007..011 + LAB-012 + LAB-014 + LAB-015).
+ * Public surface of `@mos/lab` (MOS v2.0 LAB-001..003 + LAB-004..012 +
+ * LAB-014 + LAB-015 + LAB-017).
  *
  * Exports the corpus / feature-bundle / idea-graph / evidence-separation /
  * social-simulator / dynamics / Time Machine / world-model-ensemble /
  * off-policy-evaluation / strategy-learning / organization-search /
  * transform-definition / transform-graph / transform-discovery /
- * human-production-task / arena-provider-seam / delay-economics contract
- * types plus nineteen runtime factories (in-memory
+ * human-production-task / arena-provider-seam / delay-economics /
+ * robust-marketing-benchmark contract types plus twenty runtime factories (in-memory
  * corpus store, static feature computation declaration carrier, in-memory
  * feature bundle registry, in-memory idea graph, in-memory social world
  * model store, in-memory simulator engine, in-memory dynamics model store,
@@ -16,8 +16,8 @@
  * in-memory transform definition registry, in-memory transform graph,
  * in-memory organization search, in-memory transform discovery, in-memory
  * human production task, in-memory Arena provider double, in-memory delay
- * economics). No helper constructors, error classes, or internals are
- * exposed.
+ * economics, in-memory robust marketing benchmark). No helper
+ * constructors, error classes, or internals are exposed.
  *
  * W3-A: LAB-004/005/006 add the TYPE-SEPARATED evidence layer — a
  * `SimulationPrediction` (counterfactual: true, disclosed synthetic) can
@@ -84,6 +84,25 @@
  * analysis that justified it / learning-relevant outcomes appended when
  * later known — the shape feeds LAB-017/018; no learning is implemented
  * here).
+ *
+ * W9-A: LAB-017 (§22 as a benchmark) adds the ROBUST MARKETING BENCHMARK —
+ * `MarketingBenchmarkPort.run` evaluates a DECLARED candidate set under a
+ * DECLARED VERSIONED robustness policy (seed budget, world-model set, sweep
+ * dimensions, aggregation rule, frozen tie-break): multi-seed sweeps,
+ * multi-world-model evaluation with per-world member disagreement,
+ * expected value + additive uncertainty intervals per candidate, OOD
+ * signals vs declared coverage, the no-op baseline ALWAYS structurally
+ * present with every comparison declared against it, the cross-candidate
+ * fairness pin (same seeds/worlds/policy for every candidate), and the
+ * calibration surface carried as DECLARED PENDING REALITY (LAB-018 later
+ * appends simulation-to-reality error records; these frozen records are
+ * never rewritten). Benchmark records are versioned, tenant-scoped,
+ * append-only, digest-sealed (bit-for-bit immutable) with full provenance;
+ * every record carries the §24 statement (informs selection — NOT
+ * deployment evidence). Production-side program-search candidates arrive
+ * through the DECLARED ACTION SEAM (the LAB-004 knobs + producing-surface
+ * pins — compat-pinned against `@mos/production`, zero build-time
+ * dependency).
  *
  * RECONCILED (W2-A / RECONCILE-A): all shared value types (TenantId,
  * TenantScope, Version, Timestamp, RightsRef, ProvenanceRef, ArtifactRef,
@@ -495,6 +514,33 @@ export type {
   DelayAbandonedPath, DelayAbandonmentRecord, DelayLearningRelevantOutcome,
 } from './contracts/delay-abandonment.js';
 
+// ---- LAB-017: Robust Marketing Benchmark — candidates + robustness policy ----
+export type {
+  BenchmarkAggregationRule, BenchmarkCandidate, BenchmarkCandidateOrigin,
+  BenchmarkCandidateSource, BenchmarkProducerPin, BenchmarkSweepDimension,
+  BenchmarkWorldModelRef, MarketingBenchmarkInput, RobustBenchmarkError,
+  RobustBenchmarkErrorCode, RobustBenchmarkId, RobustnessPolicy,
+} from './contracts/robust-benchmark.js';
+export {
+  BENCHMARK_NOOP_STRATEGY_REF, BENCHMARK_SWEEP_DIMENSIONS,
+} from './contracts/robust-benchmark.js';
+
+// ---- LAB-017: Robust Marketing Benchmark — result + ranking + §22 pieces ----
+export type {
+  BenchmarkBaselineComparison, BenchmarkCalibrationDeclaration,
+  BenchmarkCandidateEvaluation, BenchmarkCandidateProvenance,
+  BenchmarkComparisonSet, BenchmarkDisagreement, BenchmarkFairnessPin,
+  BenchmarkIntervalOverlapDeclaration, BenchmarkOodSignal,
+  BenchmarkProvenance, BenchmarkSeedRobustness, BenchmarkUncertaintyBreakdown,
+  BenchmarkWorldModelEvaluation, BenchmarkWorldModelPin,
+  BenchmarkWorldRobustness, RankedBenchmarkCandidate, RobustBenchmarkResult,
+} from './contracts/robust-benchmark-result.js';
+
+// ---- LAB-017: Robust Marketing Benchmark — append-only records + the port ----
+export type {
+  BenchmarkIntegrityReport, MarketingBenchmarkPort, RobustBenchmarkRecord,
+} from './contracts/robust-benchmark-port.js';
+
 // ---- Runtime factories (in-memory scaffolds, disclosed) ----
 export type { InMemoryCorpusStoreOptions } from './adapters/in-memory-corpus-store.js';
 export type { InMemoryFeatureBundleRegistryOptions } from './adapters/in-memory-feature-bundle-registry.js';
@@ -534,3 +580,5 @@ export type { InMemoryArenaProviderOptions } from './adapters/in-memory-arena-pr
 export { createInMemoryArenaProvider } from './adapters/in-memory-arena-provider.js';
 export type { DelayEnsembleView, InMemoryDelayEconomicsOptions } from './adapters/in-memory-delay-economics.js';
 export { createInMemoryDelayEconomics } from './adapters/in-memory-delay-economics.js';
+export type { InMemoryMarketingBenchmarkOptions } from './adapters/in-memory-marketing-benchmark.js';
+export { createInMemoryMarketingBenchmark } from './adapters/in-memory-marketing-benchmark.js';
