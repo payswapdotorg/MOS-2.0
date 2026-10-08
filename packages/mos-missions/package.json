@@ -1,7 +1,7 @@
 {
   "name": "@mos/missions",
   "version": "0.1.0",
-  "description": "MOS v2.0 Missions / Objectives domain — CORE-005 (structured objectives, mission-specific versioned reward specs, draft→active→completed→archived lifecycle)",
+  "description": "MOS v2.0 Missions / Objectives domain — CORE-005 (structured objectives, mission-specific versioned reward specs, draft→active→completed→archived lifecycle) + MARKETING-001 (the product marketing mission planner: evidence-linked platform/metric/experiment plans composed THROUGH the mission authority via versioned mission citations — no second Mission authority; product-intelligence evidence through fail-closed versioned citations; distribution health respect with provider-CONFIRMED restrictions acknowledged and SUSPECTED anomalies advisory)",
   "private": true,
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -18,5 +18,9 @@
   },
   "dependencies": {
     "@mos/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@mos/distribution": "workspace:*",
+    "@mos/product-intelligence": "workspace:*"
   }
 }

@@ -959,6 +959,13 @@ importers:
       '@mos/contracts':
         specifier: workspace:*
         version: link:../mos-contracts
+    devDependencies:
+      '@mos/distribution':
+        specifier: workspace:*
+        version: link:../mos-distribution
+      '@mos/product-intelligence':
+        specifier: workspace:*
+        version: link:../mos-product-intelligence
 
   packages/mos-policy:
     dependencies:
