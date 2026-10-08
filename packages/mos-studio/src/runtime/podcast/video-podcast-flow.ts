@@ -68,7 +68,8 @@ import type { ResourceLimits } from "@mos/contracts";
 import type { PawnExecutionActor, TransformApplicationCitation } from "@mos/production";
 import type { VideoPodcastProductionPlan } from "./video-podcast-plan.js";
 import { captureVideoAudioRound, buildVideoTranscripts } from "./video-capture-rounds.js";
-import { sumStudioMoney } from "../money.js";
+import { sumStudioMoney, validateStudioMoneyAmount } from "../money.js";
+import { cloneThenFreezeFormatPlugin } from "../ownership-support.js";
 import type { AdaptiveSequencerPort } from "../../ports/adaptive-sequencer.js";
 import type { InterviewerAgentPort } from "../../ports/interviewer-agent.js";
 import type { InterviewerAgentBindingPort } from "../../ports/interviewer-agent-binding.js";
@@ -129,6 +130,11 @@ export type VideoPodcastFlowError =
       readonly record: EditingSessionRecord | null;
     }
   | { readonly kind: "no-final-candidate" }
+  | {
+      /** W10-B: the declared processing cost is malformed (never silently summed). */
+      readonly kind: "invalid-processing-cost";
+      readonly reason: string;
+    }
   | { readonly kind: "processing-failed"; readonly error: StudioRuntimeError }
   | { readonly kind: "review-failed"; readonly error: StudioRuntimeError }
   | { readonly kind: "flow-internal-error"; readonly reason: string };
@@ -178,6 +184,10 @@ function fail(error: VideoPodcastFlowError): never {
 
 /** Create the video-podcast flow driver (one public method). */
 export function createVideoPodcastFlow(deps: VideoPodcastFlowDeps) {
+  // W10-B ownership: the flow gates read a PRIVATE frozen copy of the
+  // format plugin — a caller mutating its retained plugin object after flow
+  // creation cannot weaken the declared requirements this flow enforces.
+  const formatPlugin = cloneThenFreezeFormatPlugin(deps.formatPlugin);
   const interviewerDeps: InterviewerSessionDeps = {
     store: deps.store,
     sequencer: deps.sequencer,
@@ -203,11 +213,20 @@ export function createVideoPodcastFlow(deps: VideoPodcastFlowDeps) {
 
   async function runFlow(plan: VideoPodcastProductionPlan): Promise<VideoPodcastFlowResult> {
     // ---- Format-plugin validation: video-podcast + mandatory video capture. ----
-    if (deps.formatPlugin.id !== "video-podcast") {
-      fail({ kind: "format-not-video-podcast", formatId: String(deps.formatPlugin.id) });
+    if (formatPlugin.id !== "video-podcast") {
+      fail({ kind: "format-not-video-podcast", formatId: String(formatPlugin.id) });
     }
-    if (deps.formatPlugin.captureRequirements.video.required !== true) {
-      fail({ kind: "format-does-not-require-video", formatId: String(deps.formatPlugin.id) });
+    if (formatPlugin.captureRequirements.video.required !== true) {
+      fail({ kind: "format-does-not-require-video", formatId: String(formatPlugin.id) });
+    }
+    // ---- W10-B money integrity: the declared processing cost is validated
+    // fail-closed TYPED before ANY session exists (a hostile cost never
+    // silently sums and never crashes the flow after capture already ran). ----
+    if (plan.processingCost !== undefined) {
+      const moneyFault = validateStudioMoneyAmount(plan.processingCost);
+      if (moneyFault !== null) {
+        fail({ kind: "invalid-processing-cost", reason: moneyFault });
+      }
     }
     // AUDIO-ONLY plans are rejected: every participant must declare video capture.
     for (const participant of plan.participants) {
@@ -216,7 +235,7 @@ export function createVideoPodcastFlow(deps: VideoPodcastFlowDeps) {
       }
     }
     // The interviewer representation must be one the format declares (§14).
-    const supportedRepresentations = deps.formatPlugin.interviewerRequirements.supportedRepresentations as readonly string[];
+    const supportedRepresentations = formatPlugin.interviewerRequirements.supportedRepresentations as readonly string[];
     if (!supportedRepresentations.includes(plan.interviewer.representation.representation)) {
       fail({
         kind: "interviewer-representation-not-supported",
@@ -229,7 +248,7 @@ export function createVideoPodcastFlow(deps: VideoPodcastFlowDeps) {
       intent: {
         supplier: { kind: "standalone-user", identityRef: plan.supplierIdentityRef },
         tenantId: plan.tenantId,
-        format: { formatId: deps.formatPlugin.id, version: deps.formatPlugin.version },
+        format: { formatId: formatPlugin.id, version: formatPlugin.version },
         inputKind: "question-list",
         intent: plan.intent,
         organizationRef: plan.organizationRef,
@@ -335,7 +354,7 @@ export function createVideoPodcastFlow(deps: VideoPodcastFlowDeps) {
     });
     // ---- Final video composition through the W8-C editing surface. ----
     const editingInput: EditingSessionInput = {
-      formatPlugin: deps.formatPlugin,
+      formatPlugin,
       source: {
         kind: "intermediates",
         sessionRef: sessionId,
@@ -373,7 +392,15 @@ export function createVideoPodcastFlow(deps: VideoPodcastFlowDeps) {
       amount: editing.record.cost.amount.toFixed(2),
     };
     // The plan's declared processing cost lands in the package cost together
-    // with the editing session's engine cost (never silently dropped).
+    // with the editing session's engine cost (never silently dropped — the
+    // W9-C fix). W10-B: currency confusion fails closed TYPED here (costs
+    // never sum across currencies); the amount shape was validated up front.
+    if (plan.processingCost !== undefined && plan.processingCost.currency !== editingCost.currency) {
+      fail({
+        kind: "invalid-processing-cost",
+        reason: `declared processing cost currency "${plan.processingCost.currency}" does not match the editing session cost currency "${editingCost.currency}" — costs never sum across currencies`,
+      });
+    }
     const totalCost = plan.processingCost === undefined ? editingCost : sumStudioMoney(editingCost, plan.processingCost);
     const begin = await deps.runtime.beginProcessing(sessionId);
     if (!begin.ok) {

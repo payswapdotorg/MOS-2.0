@@ -17,11 +17,17 @@
 
 import type { StudioFormatId, StudioFormatPlugin } from "../../contracts/studio-format.js";
 import { capabilityId, capabilityIds, validateIntakeAsDeclared } from "./format-plugin-basics.js";
+import { deepFreezeValue } from "../ownership-support.js";
 
 /** Reaction format version (contract evolution counter). */
 export const REACTION_FORMAT_VERSION = 1;
 
-/** The reaction format plugin descriptor. */
+/**
+ * The reaction format plugin descriptor (W10-B: returned DEEPLY FROZEN —
+ * the validator closes over this same frozen object, so the declared
+ * aspects the runtime's gates read can never be mutated after the fact;
+ * registries and flows store their own frozen clones regardless).
+ */
 export function createReactionFormatPlugin(): StudioFormatPlugin {
   const plugin: StudioFormatPlugin = {
     id: "reaction" as StudioFormatId,
@@ -105,5 +111,5 @@ export function createReactionFormatPlugin(): StudioFormatPlugin {
     ],
     validateSessionInput: (input: unknown) => validateIntakeAsDeclared(plugin, input),
   };
-  return plugin;
+  return deepFreezeValue(plugin);
 }

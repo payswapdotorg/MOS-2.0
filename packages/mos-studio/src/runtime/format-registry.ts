@@ -30,6 +30,7 @@ import type {
   StudioFormatPlugin,
 } from "../contracts/studio-format.js";
 import type { ContractVersion } from "../contracts/refs.js";
+import { cloneThenFreezeFormatPlugin } from "./ownership-support.js";
 
 const INPUT_KINDS = new Set([
   "complete-script",
@@ -312,11 +313,19 @@ export class FormatRegistry {
     if (this.byKey.has(key)) {
       return { ok: false, reasons: [`duplicate format version: ${key} is already registered`] };
     }
-    this.byKey.set(key, complete);
+    // W10-B ownership (the W9-B D3 class over the W2-C registry): the
+    // registry stores a PRIVATE frozen clone of the caller's plugin — a
+    // post-registration mutation of the caller's object cannot rewrite the
+    // declared requirements every future session runs under. The
+    // `validateSessionInput` hook is carried by reference (functions are not
+    // structurally clonable; built-in factories return already-frozen
+    // plugins whose validators close over their own frozen declarations).
+    const stored = cloneThenFreezeFormatPlugin(complete);
+    this.byKey.set(key, stored);
     const versions = this.byId.get(complete.id) ?? [];
-    versions.push(complete);
+    versions.push(stored);
     this.byId.set(complete.id, versions);
-    return { ok: true, plugin: complete };
+    return { ok: true, plugin: stored };
   }
 
   /**

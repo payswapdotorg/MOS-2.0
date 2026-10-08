@@ -345,7 +345,10 @@ export class StudioRuntime {
       record.draft.editGraphRef = output.editGraphRef;
     }
     if (output.additionalCost !== undefined) {
-      record.draft.costLines.push(output.additionalCost);
+      // W10-B ownership: the draft owns a FROZEN copy of the declared cost —
+      // the caller's MoneyAmount object is never aliased into stored session
+      // state (a post-submission mutation cannot rewrite the packaged cost).
+      record.draft.costLines.push(Object.freeze({ ...output.additionalCost }));
     }
     if (output.processingSeconds !== undefined) {
       record.draft.processingSeconds += output.processingSeconds;
