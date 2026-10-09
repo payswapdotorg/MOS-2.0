@@ -494,3 +494,59 @@ export type {
   RealBridgeRightsGateOptions,
   RealProductionEntryPolicyGateOptions,
 } from "./testing/real-bridge-authorities.js";
+
+// ——— BRIDGE-002: the §19 Studio-output evaluation/treatment authority ———
+// The Lab-side verdict over PRODUCED studio output, recorded through the
+// bridge with full attribution. THE TEN §19 DECISION KINDS as a closed,
+// typed vocabulary (accept; reject-quality; reject-strategy;
+// request-treatment; require-human-action; switch-organization;
+// switch-transform; switch-engine; accept-alternate-output; abandon —
+// rights/policy rejections are NOT kinds: §19 distinct classes, they belong
+// to the §24 gate chain). Quality rejection ≠ rights/policy rejection;
+// treatment creates a NEW IMMUTABLE LINKED version (a request-treatment or
+// switch-* decision reserves an append-only linkage over the prior package
+// version that `recordTreatmentSuccessor` completes by CITING the successor
+// the studio's own path composed through STUDIO-013 — the bridge NEVER
+// packages by itself, the recordStudioPackage citation discipline); the
+// evaluation cites the entry's declared expectations at exact version
+// (simulation-based, counterfactual-labeled, lock rule 29 — never
+// evidence); every decision appends exactly ONE §30-attributable immutable
+// tenant-scoped record; caller errors record NOTHING (W8-A); DECISIONS
+// DRIVE THE CHAIN, NEVER EXECUTE IT — the authority holds NO
+// runtime/engine/organization/provider surface (read-only citation seams:
+// the BRIDGE-001 entry chain, STUDIO-013 exact-version reads, STUDIO-014
+// session summaries); abandon is FIRST-CLASS (a recorded terminal verdict
+// with its justifying analysis snapshot, feeding LAB-017/018 BY REFERENCE —
+// never a deletion, never an exception).
+export type * from "./bridge/evaluation/contracts/studio-output-evaluation.js";
+export {
+  STUDIO_EVALUATION_BOUNDARY_STATEMENT,
+  STUDIO_EVALUATION_DECISION_KINDS,
+  STUDIO_EVALUATION_DECISION_KIND_SET,
+  TREATMENT_LINKED_DECISION_KINDS,
+} from "./bridge/evaluation/contracts/studio-output-evaluation.js";
+export { createStudioOutputEvaluator } from "./bridge/evaluation/studio-output-evaluator.js";
+export type {
+  StudioOutputEvaluatorDeps,
+  StudioOutputEvaluatorPort,
+} from "./bridge/evaluation/studio-output-evaluator.js";
+export { createStudioOutputEvaluationStore } from "./bridge/evaluation/evaluation-store.js";
+export type { StudioOutputEvaluationStore } from "./bridge/evaluation/evaluation-store.js";
+export { validateStudioOutputEvaluation } from "./bridge/evaluation/evaluation-validation.js";
+export type { ValidatedStudioOutputEvaluation } from "./bridge/evaluation/evaluation-validation.js";
+
+// ——— DISCLOSED in-memory evaluation read-seam doubles (BRIDGE-002 testing) ———
+// Scriptable READ doubles for the failure shapes the REAL surfaces cannot
+// produce from valid fixture data (a packaged entry with a NULL expectations
+// surface, a missing session summary) + call logs asserting the EXACT reads
+// the authority emitted. NOT authorities: the REAL BRIDGE-001 bridge port,
+// STUDIO-013 packaging authority and STUDIO-014 session directory run behind
+// the same seams in the fixtures and the compat battery.
+export {
+  createInMemoryBridgeReads,
+  createInMemoryPackagingReads,
+  createInMemorySessionDirectoryReads,
+} from "./bridge/evaluation/adapters/in-memory-evaluation-authorities.js";
+export type {
+  InMemoryPackagingReadsOptions,
+} from "./bridge/evaluation/adapters/in-memory-evaluation-authorities.js";
