@@ -50,16 +50,22 @@ test('available sections are links; later surfaces are aria-disabled with their 
   assert.equal(missions?.type, 'a');
   assert.equal(missions?.props.href, '/missions');
 
-  const studio = elementWithTestId(tree, 'nav-studio-unavailable');
-  assert.ok(studio, 'studio must render its unavailable verdict');
-  assert.equal(studio?.props['aria-disabled'], 'true');
-  assert.equal(
-    typeof studio?.props.title === 'string' && studio.props.title.includes('UX-002'),
-    true,
-    'the unavailable title names what it waits for',
-  );
+  // UX-002: the Studio section is ON — a real link to the studio surface.
+  const studio = elementWithTestId(tree, 'nav-studio');
+  assert.ok(studio, 'studio renders as an enabled section (UX-002 delivered)');
+  assert.equal(studio?.type, 'a');
+  assert.equal(studio?.props.href, '/studio');
+  assert.equal(studio?.props['aria-disabled'], undefined);
+
   for (const id of ['lab', 'connections']) {
-    assert.ok(elementWithTestId(tree, `nav-${id}-unavailable`), `${id} is explicitly unavailable`);
+    const unavailable = elementWithTestId(tree, `nav-${id}-unavailable`);
+    assert.ok(unavailable, `${id} is explicitly unavailable`);
+    assert.equal(unavailable?.props['aria-disabled'], 'true');
+    assert.equal(
+      typeof unavailable?.props.title === 'string' && unavailable.props.title.includes('UX-'),
+      true,
+      'the unavailable title names what it waits for',
+    );
   }
 });
 
@@ -89,6 +95,7 @@ test('every navigation affordance is a real link (keyboard reachable)', () => {
   const hrefs = linkHrefs(tree);
   assert.equal(hrefs.includes('/'), true);
   assert.equal(hrefs.includes('/missions'), true);
+  assert.equal(hrefs.includes('/studio'), true, 'the studio nav link is a real link');
   for (const anchor of elementsWithTag(tree, 'a')) {
     assert.equal(typeof anchor.props.href === 'string' && anchor.props.href.length > 0, true);
   }
@@ -199,5 +206,5 @@ test('the section table the shell renders matches the port readiness verdicts', 
     SECTIONS.map((section) => section.id),
     ['home', 'missions', 'studio', 'lab', 'connections'],
   );
-  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 2);
+  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 3);
 });

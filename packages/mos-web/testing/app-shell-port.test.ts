@@ -41,7 +41,7 @@ test('the shell loads its chrome as a view model (async port contract)', async (
   assert.equal(shellView.sections.length, 5);
 });
 
-test('Home and Missions come first and are the available sections', async () => {
+test('Home, Missions and Studio come first and are the available sections', async () => {
   const identity = createInMemoryIdentityRepository();
   identity.createTenant({ id: tenantId('tenant-a'), name: 'Acme Media' });
   const shellView = await expectShellView(
@@ -51,14 +51,21 @@ test('Home and Missions come first and are the available sections', async () => 
   assert.deepEqual(
     shellView.sections.map((section) => section.id),
     ['home', 'missions', 'studio', 'lab', 'connections'],
-    'Home and Missions are first (UX-001); the plan\'s section order follows',
+    'Home and Missions are first (UX-001), Studio third (UX-002); the plan\'s section order follows',
   );
   const home = shellView.sections[0];
   const missions = shellView.sections[1];
+  const studio = shellView.sections[2];
   assert.equal(home?.route, '/');
   assert.deepEqual(home?.availability, { kind: 'available' });
   assert.equal(missions?.route, '/missions');
   assert.deepEqual(missions?.availability, { kind: 'available' });
+  assert.equal(studio?.route, '/studio');
+  assert.deepEqual(
+    studio?.availability,
+    { kind: 'available' },
+    'UX-002 turned the Studio section on — STUDIO-014 is delivered',
+  );
 });
 
 test('later surfaces are explicit not-yet-available verdicts naming their dependency', async () => {
@@ -68,14 +75,12 @@ test('later surfaces are explicit not-yet-available verdicts naming their depend
     createInMemoryAppShellPort({ identityRepository: identity, tenantId: 'tenant-a', workspaceId: null }),
   );
 
-  for (const section of shellView.sections.slice(2)) {
+  for (const section of shellView.sections.slice(3)) {
     assert.equal(section?.availability.kind, 'not-yet-available');
     if (section?.availability.kind === 'not-yet-available') {
       assert.equal(section.availability.dependsOn.length > 0, true);
     }
   }
-  const studio = shellView.sections.find((section) => section.id === 'studio');
-  assert.equal(studio?.availability.kind === 'not-yet-available' && /UX-002/.test(studio.availability.dependsOn), true);
   const lab = shellView.sections.find((section) => section.id === 'lab');
   assert.equal(lab?.availability.kind === 'not-yet-available' && /UX-003/.test(lab.availability.dependsOn), true);
   const connections = shellView.sections.find((section) => section.id === 'connections');

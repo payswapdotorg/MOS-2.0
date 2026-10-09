@@ -1,11 +1,13 @@
 /**
- * Presentation-only HYGIENE pins (WEB-001 / UX-001, test-enforced):
+ * Presentation-only HYGIENE pins (WEB-001 / UX-001 / UX-002, test-enforced):
  *
  * 1. VOCABULARY pins — comment-and-string-stripped `src` code contains no
  *    business-logic identifiers (reward computation, lifecycle execution,
  *    mission validation, consent/rights/policy decisions, publishing,
- *    experiment execution). Narrative text may NAME authorities; the code
- *    may not BE them.
+ *    experiment execution, STUDIO OPERATOR ACTIONS — the studio surface is
+ *    read-only: reviews/treatments/captures/packaging live in the studio
+ *    authority). Narrative text may NAME authorities; the code may not BE
+ *    them.
  * 2. RETIRED-IDENTITY pins — the shell html/css carry no Zcode/Zai identity
  *    strings.
  * 3. NO-PUBLISH pin — private package, no publish surface.
@@ -79,6 +81,21 @@ test('src code carries no business-logic vocabulary (comments and strings stripp
     'distributeContent',
     'runExperiment',
     'executeExperiment',
+    // studio operator actions (the UX-002 surface is READ-ONLY: the studio
+    // authority owns every operator action behind its own ports)
+    'submitReview',
+    'applyTreatment',
+    'composeSessionPackage',
+    'composeSuccessorVersion',
+    'recordSessionSummary',
+    'closeSession',
+    'abandonSession',
+    'openCapture',
+    'beginProcessing',
+    'completeProcessing',
+    'joinParticipant',
+    'loadOrganization',
+    'importSourceArtifact',
   ];
   const offenders: string[] = [];
   for (const [file, source] of new Map<string, string>([...srcTsSources, ...srcJsxSources])) {
@@ -133,6 +150,14 @@ test('the port surface stays within the ≤12-method budget', async () => {
     join(packageRoot, 'src', 'ports', 'mission-catalog.ts'),
     'utf8',
   );
+  const studioDirectory = await readFile(
+    join(packageRoot, 'src', 'ports', 'studio-directory.ts'),
+    'utf8',
+  );
+  const studioPackages = await readFile(
+    join(packageRoot, 'src', 'ports', 'studio-packages.ts'),
+    'utf8',
+  );
   const countMethods = (source: string, portName: string): number => {
     const port = source.slice(source.indexOf(`interface ${portName}`));
     const body = port.slice(0, port.indexOf('\n}'));
@@ -140,4 +165,6 @@ test('the port surface stays within the ≤12-method budget', async () => {
   };
   assert.equal(countMethods(appShell, 'AppShellPort'), 1);
   assert.equal(countMethods(missionCatalog, 'MissionCatalogPort'), 5);
+  assert.equal(countMethods(studioDirectory, 'StudioDirectoryPort'), 2);
+  assert.equal(countMethods(studioPackages, 'StudioPackageLibraryPort'), 2);
 });

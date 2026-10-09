@@ -44,14 +44,18 @@ test('every stage has a title, description and a named owning authority', () => 
 test('stages link only to shell sections that exist in this build', () => {
   for (const stage of MOS_COMPLETE_LOOP_STAGES) {
     assert.equal(
-      stage.section === null || stage.section === 'missions',
+      stage.section === null || stage.section === 'missions' || stage.section === 'studio',
       true,
-      `${stage.id} may only link to an available section (missions)`,
+      `${stage.id} may only link to an available section (missions, studio)`,
     );
   }
   assert.equal(MOS_COMPLETE_LOOP_STAGES[0]?.section, 'missions');
+  assert.equal(MOS_COMPLETE_LOOP_STAGES[3]?.section, 'studio', 'the studio stage links the UX-002 surface');
   assert.equal(MOS_COMPLETE_LOOP_STAGES[9]?.section, 'missions', 'the loop closes back into Missions');
   for (const stage of MOS_COMPLETE_LOOP_STAGES.slice(1, 9)) {
+    if (stage.id === 'studio') {
+      continue;
+    }
     assert.equal(stage.section, null, `${stage.id} has no surface in this build`);
   }
 });

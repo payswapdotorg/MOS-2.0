@@ -1,5 +1,5 @@
 /**
- * Presentation-only IMPORT pins (WEB-001 / UX-001, test-enforced).
+ * Presentation-only IMPORT pins (WEB-001 / UX-001 / UX-002, test-enforced).
  *
  * The web module's registry authority is PRESENTATION-ONLY (deps
  * `[contracts]`): the package renders what view ports provide and declares
@@ -10,14 +10,18 @@
  *    mounting shims add exactly `react` and `react-dom/client`;
  *    `vite.config.cts` adds exactly the build tooling; the `testing`
  *    composition seam adds exactly `@mos/identity` + `@mos/missions` (the
- *    UX-001 dependency set) and node builtins. No `@zcode` package and no
- *    engine/provider SDK anywhere in the package.
+ *    UX-001 runtime dependency set) and `@mos/studio` — TYPE-ONLY outside
+ *    the node-only compat battery (the studio runtime is node-side; a value
+ *    import of it would break the browser bundle) — plus node builtins. No
+ *    `@zcode` package and no engine/provider SDK anywhere in the package.
  *
  * Vocabulary, retired-identity, no-publish and port-budget pins live in
  * `presentation-only-hygiene.test.ts` (same scan substrate, `pin-scan.ts`).
  */
 
 import assert from 'node:assert/strict';
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { test } from 'node:test';
 
 import {
@@ -28,6 +32,7 @@ import {
   importRoot,
   isNodeBuiltin,
   isRelative,
+  packageRoot,
   seamSources,
   srcFiles,
   srcJsxFiles,
@@ -128,8 +133,8 @@ test('no engine/provider SDK import anywhere in the package source', () => {
   assert.deepEqual(offenders, []);
 });
 
-test('the composition seam imports only the UX-001 dependency set + builtins', () => {
-  const allowed = new Set(['@mos/contracts', '@mos/identity', '@mos/missions']);
+test('the composition seam imports only the UX-001/UX-002 dependency set + builtins', () => {
+  const allowed = new Set(['@mos/contracts', '@mos/identity', '@mos/missions', '@mos/studio']);
   const offenders: string[] = [];
   for (const [file, source] of seamSources) {
     for (const specifier of extractImportSpecifiers(source)) {
@@ -145,7 +150,34 @@ test('the composition seam imports only the UX-001 dependency set + builtins', (
   assert.deepEqual(
     offenders,
     [],
-    'testing/ is the disclosed seam over @mos/identity + @mos/missions — no other domain package',
+    'testing/ is the disclosed seam over @mos/identity + @mos/missions (runtime) + @mos/studio (shapes) — no other domain package',
+  );
+});
+
+test('@mos/studio is TYPE-ONLY in the seam outside the node-only compat battery', () => {
+  // The REAL studio runtime imports node:crypto, so it can never run in the
+  // browser bundle the seam boots. Every seam file EXCEPT the compat battery
+  // may reference the studio package only in erased `import type` position
+  // (package name OR relative dist path); the compat battery is the disclosed
+  // node-side runtime consumer.
+  const offenders: string[] = [];
+  for (const [file, source] of seamSources) {
+    if (file.endsWith('.test.ts') || file.endsWith('.test.tsx')) {
+      continue;
+    }
+    // Strip erased `import type …;` blocks (multiline-safe), then look for
+    // any REMAINING module specifier that reaches the studio package.
+    const withoutTypeImports = source.replace(/import\s+type\s+[^;]*;/gs, '');
+    for (const specifier of extractImportSpecifiers(withoutTypeImports)) {
+      if (specifier === '@mos/studio' || specifier.startsWith('../../mos-studio/')) {
+        offenders.push(`${file}: "${specifier}"`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'the studio package appears in the seam only as erased type imports (browser-bundle safety)',
   );
 });
 
@@ -159,4 +191,39 @@ test('no domain package appears anywhere in src (registry: web deps [contracts])
     }
   }
   assert.deepEqual(offenders, []);
+});
+
+test('the browser-smoke script imports only node builtins and playwright-core', async () => {
+  // The smoke script is the DISCLOSED `.cjs` extension exception (the frozen
+  // boundary harness does not manage `.cjs`; the script must require the
+  // workspace-provided playwright-core to drive the headless browser). This
+  // pin keeps the exception exactly as narrow as disclosed: scripts/ may
+  // import node builtins + playwright-core, nothing else.
+  const scriptsDir = join(packageRoot, 'scripts');
+  const allowed = new Set(['node:child_process', 'node:fs', 'node:path', 'node:http', 'playwright-core']);
+  const offenders: string[] = [];
+  let scriptCount = 0;
+  try {
+    for (const name of await readdir(scriptsDir)) {
+      if (!name.endsWith('.cjs')) {
+        offenders.push(`scripts/${name}: non-.cjs file in the disclosed scripts folder`);
+        continue;
+      }
+      scriptCount += 1;
+      const source = await readFile(join(scriptsDir, name), 'utf8');
+      for (const specifier of extractImportSpecifiers(source)) {
+        if (!allowed.has(specifier)) {
+          offenders.push(`scripts/${name}: "${specifier}"`);
+        }
+      }
+    }
+  } catch {
+    // no scripts folder — nothing to pin
+  }
+  assert.equal(scriptCount >= 1, true, 'the UX-002 browser smoke script exists');
+  assert.deepEqual(
+    offenders,
+    [],
+    'scripts/ is the disclosed browser-evidence exception: node builtins + playwright-core only',
+  );
 });

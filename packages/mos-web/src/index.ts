@@ -51,16 +51,44 @@ export type {
 } from './ports/mission-catalog.js';
 export type { MosWebComposition } from './ports/composition.js';
 export type { MosServiceConnection, MosServiceTransport } from './services/mos-services.js';
+export type {
+  StudioConsentRequirementView,
+  StudioConsentStateView,
+  StudioDecisionActorView,
+  StudioDirectoryFailure,
+  StudioDirectoryPort,
+  StudioParticipantView,
+  StudioReviewRecordView,
+  StudioSessionDetailView,
+  StudioSessionLifecycleStateView,
+  StudioSessionSummaryView,
+  StudioSessionTransitionView,
+} from './ports/studio-directory.js';
+export type {
+  StudioArtifactLabelView,
+  StudioArtifactStageView,
+  StudioPackageConsentView,
+  StudioPackageEvaluationView,
+  StudioPackageLibraryFailure,
+  StudioPackageLibraryPort,
+  StudioPackageProvenanceView,
+  StudioPackageSummaryView,
+  StudioPackageVersionView,
+  StudioVersionChainView,
+} from './ports/studio-packages.js';
 
 // ---- Route model + page-model loading ----
-export type { MissionsPageData, MosRouteView } from './routes/route-loading.js';
+export type { MissionsPageData, MosRouteView, StudioPageData } from './routes/route-loading.js';
 export { loadMosRouteView } from './routes/route-loading.js';
-export type { MissionsRoute, MosRoute } from './routes/route.js';
+export type { MissionsRoute, MosRoute, StudioRoute } from './routes/route.js';
 export { mosRouteTitle, parseMosRoute } from './routes/route.js';
 export {
   MissionScope,
+  StudioScope,
   missionRefFromQueryValue,
   missionScopeFromTenantContext,
+  studioPackageRefFromQueryValue,
+  studioSessionRefFromQueryValue,
 } from './routes/route-scope.js';
 
 // ---- Create-mission intent declaration (port-routed, no business logic) ----
@@ -82,6 +110,22 @@ export {
   MOS_PRODUCT_THESIS,
 } from './views/home-loop.js';
 export type { CompleteLoopStageView, CooperatingLoopView } from './views/home-loop.js';
+
+// ---- Studio presentation data (UX-002 — §14 labels, lifecycle badges, hand-off) ----
+export {
+  STUDIO_CONSENT_STATE_PRESENTATION,
+  STUDIO_FORMAT_LABELS,
+  STUDIO_HANDOFF_NOTE,
+  STUDIO_LIFECYCLE_BADGE_CLASSES,
+  STUDIO_LIFECYCLE_DESCRIPTIONS,
+  STUDIO_LOOP_NARRATION,
+  STUDIO_SESSION_LIFECYCLE_STATES,
+  isSyntheticCreationMethod,
+  studioCreationMethodLabel,
+  studioDecisionActorLabel,
+  studioEvaluationOutcomeLabel,
+  studioFormatLabel,
+} from './views/studio-presentation.js';
 
 // ---- Platform patterns (ported from the audited shell, MOS-owned) ----
 export {
@@ -128,3 +172,10 @@ export { MissionsListView } from './routes/missions-list.js';
 export { MissionDetailPanel } from './routes/mission-detail.js';
 export { MissionIntentForm } from './routes/mission-intent-form.js';
 export type { MissionIntentFormProps } from './routes/mission-intent-form.js';
+export { StudioView } from './routes/studio-view.js';
+export { StudioSessionDirectoryView } from './views/studio-session-directory.js';
+export { StudioSessionDetailPanel } from './views/studio-session-detail.js';
+export {
+  StudioPackageChainPanel,
+  StudioPackageLibraryView,
+} from './views/studio-packages.js';

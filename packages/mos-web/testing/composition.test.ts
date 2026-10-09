@@ -1,9 +1,11 @@
 /**
- * In-memory composition tests (WEB-001 / UX-001) — the DISCLOSED composition
- * seam the shell boots on: REAL `@mos/identity` + `@mos/missions`
+ * In-memory composition tests (WEB-001 / UX-001 / UX-002) — the DISCLOSED
+ * composition seam the shell boots on: REAL `@mos/identity` + `@mos/missions`
  * repositories behind the declared view ports, seeded with the demo
- * tenant/workspace. NOT the production composition root (TL-owned, over the
- * MOS service transport later — same ports, untouched views).
+ * tenant/workspace, plus the disclosed Studio surface double (UX-002) over
+ * REAL-shaped STUDIO-014 fixture records. NOT the production composition
+ * root (TL-owned, over the MOS service transport later — same ports,
+ * untouched views).
  */
 
 import assert from 'node:assert/strict';
@@ -22,6 +24,27 @@ test('the composition wires both declared view ports over real repositories', ()
   assert.equal(typeof composition.missionCatalog.loadRewardMetricVocabulary, 'function');
   assert.equal(typeof composition.missionCatalog.declareCreateMissionIntent, 'function');
   assert.equal(typeof composition.missionCatalog.loadCreateMissionIntentReceipt, 'function');
+});
+
+test('the composition wires the Studio view ports (UX-002) and turns the section on', async () => {
+  const composition = createInMemoryMosWebComposition();
+  assert.equal(typeof composition.studioDirectory.listStudioSessions, 'function');
+  assert.equal(typeof composition.studioDirectory.loadStudioSessionDetail, 'function');
+  assert.equal(typeof composition.studioPackages.listStudioPackages, 'function');
+  assert.equal(typeof composition.studioPackages.loadStudioPackageChain, 'function');
+
+  const shellView = await composition.appShell.loadAppShell();
+  if ('error' in shellView) {
+    assert.fail(`unexpected app-shell failure: ${shellView.error}`);
+  }
+  const studio = shellView.sections.find((section) => section.id === 'studio');
+  assert.deepEqual(studio?.availability, { kind: 'available' });
+
+  const sessions = await composition.studioDirectory.listStudioSessions(DEMO_SCOPE);
+  if ('error' in sessions) {
+    assert.fail(`unexpected studio directory failure: ${sessions.error}`);
+  }
+  assert.equal(sessions.length > 0, true, 'the demo scope sees fixture sessions');
 });
 
 test('the demo tenant and workspace are seeded and presented by the shell chrome', async () => {

@@ -1,4 +1,4 @@
-import { MissionScope } from './route-scope.js';
+import { MissionScope, StudioScope } from './route-scope.js';
 import type { TenantScope } from '@mos/contracts';
 import type { MosRoute } from './route.js';
 import type { MosWebComposition } from '../ports/composition.js';
@@ -8,6 +8,14 @@ import type {
   MissionSummaryView,
   RewardMetricOptionView,
 } from '../ports/mission-catalog.js';
+import type {
+  StudioSessionDetailView,
+  StudioSessionSummaryView,
+} from '../ports/studio-directory.js';
+import type {
+  StudioPackageSummaryView,
+  StudioVersionChainView,
+} from '../ports/studio-packages.js';
 import type { AppShellView, ShellSectionView } from '../ports/app-shell.js';
 
 /**
@@ -43,12 +51,37 @@ export interface MissionsPageData {
   readonly intentError: string | null;
 }
 
+/** Fully loaded Studio page model (UX-002). */
+export interface StudioPageData {
+  /** Tenant scope for studio reads, or `null` when no tenant context resolved. */
+  readonly scope: TenantScope | null;
+  /** Session directory listing (every lifecycle state the authority reports). */
+  readonly sessions: readonly StudioSessionSummaryView[];
+  /** Session detail for `?session=<id>`, when the id resolved. */
+  readonly selected: StudioSessionDetailView | null;
+  /** Explicit failure marker for a session selection that did not resolve. */
+  readonly selectionError: 'studio-session-not-found' | 'load-failed' | null;
+  /** Package library listing (immutable version chains). */
+  readonly packages: readonly StudioPackageSummaryView[];
+  /** Version chain for `?package=<id>`, when the id resolved. */
+  readonly selectedChain: StudioVersionChainView | null;
+  /** Explicit failure marker for a package selection that did not resolve. */
+  readonly chainError: 'studio-package-not-found' | 'load-failed' | null;
+  /**
+   * Honest-unavailable marker for the package library read: the session
+   * directory loaded, the library did not — the page renders with an explicit
+   * library-unavailable panel instead of pretending an empty library.
+   */
+  readonly libraryError: 'load-failed' | null;
+}
+
 /** The resolved page model for the current route. */
 export type MosRouteView =
   /** Pre-load surface while the page model resolves (mounted by the boot). */
   | { readonly kind: 'loading'; readonly label: string }
   | { readonly kind: 'home' }
   | { readonly kind: 'missions'; readonly data: MissionsPageData }
+  | { readonly kind: 'studio'; readonly data: StudioPageData }
   | {
       readonly kind: 'route-error';
       readonly code: string;
@@ -63,7 +96,11 @@ function retryHrefFor(route: MosRoute): string {
   if (route.kind === 'missions') {
     return '/missions';
   }
-  return route.kind === 'home' ? '/' : `/${route.kind === 'section' ? route.sectionId : ''}`;
+  return route.kind === 'home'
+    ? '/'
+    : route.kind === 'studio'
+      ? '/studio'
+      : `/${route.kind === 'section' ? route.sectionId : ''}`;
 }
 
 /**
@@ -80,6 +117,10 @@ export async function loadMosRouteView(
     return { kind: 'home' };
   }
 
+  if (route.kind === 'studio') {
+    return loadStudioPage(composition, route, shellView, retryHrefFor(route));
+  }
+
   if (route.kind === 'section') {
     const section = shellView.sections.find((candidate) => candidate.id === route.sectionId);
     return section ? { kind: 'section', section } : { kind: 'unknown-route', path: `/${route.sectionId}` };
@@ -90,6 +131,96 @@ export async function loadMosRouteView(
   }
 
   return loadMissionsPage(composition, route, shellView, retryHrefFor(route));
+}
+
+async function loadStudioPage(
+  composition: MosWebComposition,
+  route: MosRoute & { readonly kind: 'studio' },
+  shellView: AppShellView,
+  retryHref: string,
+): Promise<MosRouteView> {
+  const scope = StudioScope.fromTenantContext(shellView.tenant);
+
+  if (!scope) {
+    return {
+      kind: 'studio',
+      data: {
+        scope: null,
+        sessions: [],
+        selected: null,
+        selectionError: null,
+        packages: [],
+        selectedChain: null,
+        chainError: null,
+        libraryError: null,
+      },
+    };
+  }
+
+  const sessionsResult = await composition.studioDirectory.listStudioSessions(scope);
+  if ('error' in sessionsResult) {
+    return {
+      kind: 'route-error',
+      code: sessionsResult.error,
+      message: sessionsResult.message,
+      retryHref,
+    };
+  }
+
+  const packagesResult = await composition.studioPackages.listStudioPackages(scope);
+  let packages: readonly StudioPackageSummaryView[] = [];
+  let libraryError: StudioPageData['libraryError'] = null;
+  if ('error' in packagesResult) {
+    // The library is a co-presented section: its failure degrades to the
+    // explicit library-unavailable marker — the directory still renders.
+    libraryError = 'load-failed';
+  } else {
+    packages = packagesResult;
+  }
+
+  let selected: StudioSessionDetailView | null = null;
+  let selectionError: StudioPageData['selectionError'] = null;
+  if (route.sessionId) {
+    const detailResult = await composition.studioDirectory.loadStudioSessionDetail(
+      StudioScope.sessionRef(route.sessionId),
+      scope,
+    );
+    if ('error' in detailResult) {
+      selectionError =
+        detailResult.error === 'studio-session-not-found' ? 'studio-session-not-found' : 'load-failed';
+    } else {
+      selected = detailResult;
+    }
+  }
+
+  let selectedChain: StudioVersionChainView | null = null;
+  let chainError: StudioPageData['chainError'] = null;
+  if (route.packageId) {
+    const chainResult = await composition.studioPackages.loadStudioPackageChain(
+      StudioScope.packageRef(route.packageId),
+      scope,
+    );
+    if ('error' in chainResult) {
+      chainError =
+        chainResult.error === 'studio-package-not-found' ? 'studio-package-not-found' : 'load-failed';
+    } else {
+      selectedChain = chainResult;
+    }
+  }
+
+  return {
+    kind: 'studio',
+    data: {
+      scope,
+      sessions: sessionsResult,
+      selected,
+      selectionError,
+      packages,
+      selectedChain,
+      chainError,
+      libraryError,
+    },
+  };
 }
 
 async function loadMissionsPage(

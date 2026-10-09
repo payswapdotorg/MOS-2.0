@@ -55,7 +55,7 @@ const LOOP_STAGES: readonly CompleteLoopStageView[] = [
     description:
       "The Content Studio produces the program's media — standalone or Lab-requested sessions, adaptive one-person interviews, multi-account participation — and packages artifacts with full provenance.",
     owner: 'Studio',
-    section: null,
+    section: 'studio',
   },
   {
     id: 'artifact-graph',
