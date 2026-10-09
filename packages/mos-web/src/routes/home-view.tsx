@@ -27,6 +27,7 @@ function LoopStage({
   readonly owner: string;
   readonly section: string | null;
 }) {
+  const sectionLink = SECTION_LINKS[section ?? ''];
   return (
     <li className="relative pl-10" data-testid={`loop-stage-${index}`}>
       <span
@@ -39,19 +40,25 @@ function LoopStage({
       <p className="text-sm leading-relaxed text-slate-300">{description}</p>
       <p className="mt-2 text-xs text-slate-500">
         Owned by <span className="font-semibold text-slate-400">{owner}</span>
-        {section === null ? ' — surface arrives with its wave' : ' · '}
-        {section !== null ? (
+        {sectionLink === undefined ? ' — surface arrives with its wave' : ' · '}
+        {sectionLink !== undefined ? (
           <a
-            href="/missions"
+            href={sectionLink.href}
             className="ml-1 text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
           >
-            open the Missions surface
+            open the {sectionLink.label} surface
           </a>
         ) : null}
       </p>
     </li>
   );
 }
+
+/** Shell sections a loop stage can link into (only surfaces this build shows). */
+const SECTION_LINKS: Readonly<Record<string, { readonly href: string; readonly label: string }>> = {
+  missions: { href: '/missions', label: 'Missions' },
+  studio: { href: '/studio', label: 'Studio' },
+};
 
 /** The MOS Home view: thesis headline, the complete loop, the four loops. */
 export function HomeView() {

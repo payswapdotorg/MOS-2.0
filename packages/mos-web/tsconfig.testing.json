@@ -45,6 +45,7 @@
     { "path": "." },
     { "path": "../mos-contracts" },
     { "path": "../mos-missions" },
-    { "path": "../mos-identity" }
+    { "path": "../mos-identity" },
+    { "path": "../mos-studio" }
   ]
 }

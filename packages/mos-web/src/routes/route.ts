@@ -22,14 +22,22 @@ export interface MissionsRoute {
   readonly intentError: string | null;
 }
 
+export interface StudioRoute {
+  readonly kind: 'studio';
+  /** Selected studio session id (`?session=<id>`), when given. */
+  readonly sessionId: string | null;
+  /** Selected studio package id (`?package=<id>`), when given. */
+  readonly packageId: string | null;
+}
+
 export type MosRoute =
   | { readonly kind: 'home' }
   | MissionsRoute
+  | StudioRoute
   | { readonly kind: 'section'; readonly sectionId: ShellSectionId }
   | { readonly kind: 'unknown'; readonly path: string };
 
 const SECTION_ROUTES: Readonly<Record<string, ShellSectionId>> = {
-  '/studio': 'studio',
   '/lab': 'lab',
   '/connections': 'connections',
 };
@@ -62,6 +70,15 @@ export function parseMosRoute(pathname: string, search: string): MosRoute {
     };
   }
 
+  if (cleanPath === '/studio') {
+    const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    return {
+      kind: 'studio',
+      sessionId: firstParam(params, 'session'),
+      packageId: firstParam(params, 'package'),
+    };
+  }
+
   const sectionId = SECTION_ROUTES[cleanPath];
   if (sectionId) {
     return { kind: 'section', sectionId };
@@ -77,6 +94,15 @@ export function mosRouteTitle(route: MosRoute): string {
       return 'MOS — Home';
     case 'missions':
       return route.missionId ? 'MOS — Missions · mission detail' : 'MOS — Missions';
+    case 'studio':
+      if (route.sessionId !== null && route.packageId !== null) {
+        return 'MOS — Studio · session + package chain';
+      }
+      return route.sessionId !== null
+        ? 'MOS — Studio · session detail'
+        : route.packageId !== null
+          ? 'MOS — Studio · package chain'
+          : 'MOS — Studio';
     case 'section':
       return `MOS — ${route.sectionId}`;
     case 'unknown':

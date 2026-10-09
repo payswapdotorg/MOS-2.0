@@ -3,6 +3,7 @@ import type { MosRouteView } from '../routes/route-loading.js';
 import type { CreateMissionIntentDeclaration } from '../ports/mission-catalog.js';
 import { HomeView } from '../routes/home-view.js';
 import { MissionsView } from '../routes/missions-view.js';
+import { StudioView } from '../routes/studio-view.js';
 import { MosLoadingView } from './status-views.js';
 import {
   MosRouteErrorView,
@@ -143,6 +144,8 @@ function RouteSurface({
       return (
         <MissionsView data={routeView.data} onDeclareMissionIntent={onDeclareMissionIntent} />
       );
+    case 'studio':
+      return <StudioView data={routeView.data} />;
     case 'route-error':
       return (
         <MosRouteErrorView
@@ -166,7 +169,13 @@ export function MosAppShell({
   shellVersion,
 }: MosAppShellProps) {
   const activeRoute =
-    routeView.kind === 'missions' ? '/missions' : routeView.kind === 'home' ? '/' : '';
+    routeView.kind === 'missions'
+      ? '/missions'
+      : routeView.kind === 'studio'
+        ? '/studio'
+        : routeView.kind === 'home'
+          ? '/'
+          : '';
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
       <a

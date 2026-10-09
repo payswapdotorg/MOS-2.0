@@ -5,15 +5,19 @@ import { createInMemoryIdentityRepository } from '../../mos-identity/dist/index.
 import { createInMemoryMissionRepository } from '../../mos-missions/dist/index.js';
 import { createInMemoryAppShellPort } from './in-memory-app-shell.js';
 import { createInMemoryMissionCatalogPort } from './in-memory-mission-catalog.js';
+import { createInMemoryStudioSurface } from './in-memory-studio-surface.js';
 
 /**
  * DISCLOSED in-memory composition for the MOS browser shell (WEB-001 /
- * UX-001 build).
+ * UX-001 + UX-002 build).
  *
  * This is the composition seam OUTSIDE `src/` — the only place allowed to
- * import domain packages (`@mos/identity`, `@mos/missions`), because it is
- * exactly here that domain read models are adapted into the shell's
- * declared view ports. Runtime imports use the RELATIVE BUILT-DIST paths
+ * import domain packages (`@mos/identity`, `@mos/missions` at runtime; and,
+ * for UX-002, `@mos/studio` TYPE-ONLY — the studio runtime is node-side
+ * (`node:crypto`) so the Studio surface runs on REAL-shape fixtures pinned
+ * to the studio port types and adapted through the shared shape adapter;
+ * the node-only compat battery proves that adapter zero-drift over the REAL
+ * exported runtime). Runtime imports use the RELATIVE BUILT-DIST paths
  * (`../../mos-identity/dist/index.js`) — the siblings' exports maps point
  * their runtime condition at untranspiled `src/index.ts`, which node cannot
  * execute — the same disclosed pattern `@mos/studio`'s testing seam uses;
@@ -27,11 +31,12 @@ import { createInMemoryMissionCatalogPort } from './in-memory-mission-catalog.js
  * own surface is consumed type-only (erased) — the seam has NO runtime
  * dependency on `src/`, which is what lets the same file serve both.
  *
- * The shell this composes is the UX-001 presentation: the REAL identity and
- * missions repositories (their in-memory adapters are the siblings' own
- * disclosed ephemeral scaffolds) behind the shell's view ports, with a
- * seeded demo tenant/workspace. It is NOT the production composition root:
- * the TL-owned root binds the same ports over the MOS service transport
+ * The shell this composes is the UX-001/UX-002 presentation: the REAL
+ * identity and missions repositories (their in-memory adapters are the
+ * siblings' own disclosed ephemeral scaffolds) behind the shell's view
+ * ports, plus the disclosed Studio surface double, with a seeded demo
+ * tenant/workspace. It is NOT the production composition root: the TL-owned
+ * root binds the same ports over the MOS service transport
  * (`MosServiceTransport`) without touching the shell's `src/` tree.
  */
 
@@ -54,6 +59,8 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
   readonly recordedIntents: () => readonly unknown[];
   /** The tenant scope the composition presents. */
   readonly scope: { readonly tenantId: string; readonly workspaceId: string | null };
+  /** The disclosed Studio surface double (UX-002 observability). */
+  readonly studioSurface: ReturnType<typeof createInMemoryStudioSurface>;
 }
 
 const DEMO_TENANT_ID = 'tenant-demo';
@@ -107,13 +114,17 @@ export function createInMemoryMosWebComposition(
     missionRepository,
     now,
   });
+  const studioSurface = createInMemoryStudioSurface();
 
   return {
     appShell,
     missionCatalog: catalogDouble.port,
+    studioDirectory: studioSurface.studioDirectory,
+    studioPackages: studioSurface.studioPackages,
     identityRepository,
     missionRepository,
     recordedIntents: catalogDouble.recordedIntents,
     scope: { tenantId, workspaceId },
+    studioSurface,
   };
 }

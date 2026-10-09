@@ -1,4 +1,9 @@
-import type { MissionRef, TenantScope } from '@mos/contracts';
+import type {
+  MissionRef,
+  StudioArtifactPackageId,
+  StudioSessionId,
+  TenantScope,
+} from '@mos/contracts';
 import type { TenantContextView } from '../ports/app-shell.js';
 
 /**
@@ -47,6 +52,30 @@ export function missionRefFromQueryValue(raw: string): MissionRef {
 export const MissionScope = Object.freeze({
   fromTenantContext: missionScopeFromTenantContext,
   missionRef: missionRefFromQueryValue,
+});
+
+/**
+ * Brand a raw query-string studio session id into a `StudioSessionId`, and a
+ * studio package id into a `StudioArtifactPackageId` (UX-002). Presentation-
+ * only coercions: no existence check happens here — the studio view ports
+ * resolve (or fail closed on) the ids against the tenant scope.
+ */
+export function studioSessionRefFromQueryValue(raw: string): StudioSessionId {
+  return raw as StudioSessionId;
+}
+
+export function studioPackageRefFromQueryValue(raw: string): StudioArtifactPackageId {
+  return raw as StudioArtifactPackageId;
+}
+
+/**
+ * The Studio route-scope surface as a single frozen namespace (the same
+ * tenant-scope derivation the Missions surface reads through).
+ */
+export const StudioScope = Object.freeze({
+  fromTenantContext: missionScopeFromTenantContext,
+  sessionRef: studioSessionRefFromQueryValue,
+  packageRef: studioPackageRefFromQueryValue,
 });
 
 export type { TenantScope };

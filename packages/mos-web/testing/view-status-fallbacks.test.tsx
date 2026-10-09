@@ -76,14 +76,14 @@ test('the route-error view names the failure code and offers the retry link', ()
 });
 
 test('the not-yet-available section view names what it waits for', () => {
-  const studioSection = SECTIONS.find((section) => section.id === 'studio');
-  assert.ok(studioSection);
-  const tree = <MosSectionNotAvailableView section={studioSection} />;
-  const panel = elementWithTestId(tree, 'section-studio-not-available');
+  const labSection = SECTIONS.find((section) => section.id === 'lab');
+  assert.ok(labSection);
+  const tree = <MosSectionNotAvailableView section={labSection} />;
+  const panel = elementWithTestId(tree, 'section-lab-not-available');
   assert.ok(panel);
   const text = renderTreeText(panel ?? tree);
   assert.equal(text.includes('not yet available'), true);
-  assert.equal(text.includes('UX-002'), true);
+  assert.equal(text.includes('UX-003'), true);
   assert.equal(linkHrefs(tree).includes('/'), true, 'back to Home is offered');
 });
 

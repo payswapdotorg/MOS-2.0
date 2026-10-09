@@ -57,13 +57,22 @@ test('Home narrates the ten §2 stages in order with their owners', () => {
   assert.equal(fullText.includes('Four cooperating loops'), true);
 });
 
-test('Home links into the Missions surface (the loop\'s front door)', () => {
+test('Home links into the Missions surface (the loop\'s front door) and the Studio stage into UX-002', () => {
   const tree = <HomeView />;
   const cta = elementWithTestId(tree, 'home-cta-missions');
   assert.equal(cta?.type, 'a');
   assert.equal(cta?.props.href, '/missions');
   const hrefs = linkHrefs(tree);
-  assert.equal(hrefs.every((href) => href === '/missions'), true);
+  assert.equal(hrefs.includes('/missions'), true);
+  assert.equal(hrefs.includes('/studio'), true, 'the §2 studio stage links the UX-002 surface');
+  assert.equal(
+    hrefs.every((href) => href === '/missions' || href === '/studio'),
+    true,
+    'Home links only into surfaces this build shows',
+  );
+  const studioStage = elementWithTestId(tree, 'loop-stage-4');
+  assert.ok(studioStage);
+  assert.equal(renderTreeText(studioStage).includes('open the Studio surface'), true);
 });
 
 test('Home summarizes the four cooperating loops', () => {

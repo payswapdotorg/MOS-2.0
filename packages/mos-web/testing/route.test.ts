@@ -56,8 +56,43 @@ test('empty query values are treated as absent', () => {
   });
 });
 
+test('/studio parses with session and package params (UX-002)', () => {
+  assert.deepEqual(parseMosRoute('/studio', ''), {
+    kind: 'studio',
+    sessionId: null,
+    packageId: null,
+  });
+  assert.deepEqual(parseMosRoute('/studio', '?session=session-reaction-1'), {
+    kind: 'studio',
+    sessionId: 'session-reaction-1',
+    packageId: null,
+  });
+  assert.deepEqual(parseMosRoute('/studio', '?package=pkg-reaction-1'), {
+    kind: 'studio',
+    sessionId: null,
+    packageId: 'pkg-reaction-1',
+  });
+  assert.deepEqual(
+    parseMosRoute('/studio', '?session=session-reaction-1&package=pkg-reaction-1'),
+    {
+      kind: 'studio',
+      sessionId: 'session-reaction-1',
+      packageId: 'pkg-reaction-1',
+    },
+  );
+  assert.deepEqual(parseMosRoute('/studio', '?session='), {
+    kind: 'studio',
+    sessionId: null,
+    packageId: null,
+  });
+  assert.deepEqual(parseMosRoute('/studio/', ''), {
+    kind: 'studio',
+    sessionId: null,
+    packageId: null,
+  });
+});
+
 test('future product sections parse to the explicit section route', () => {
-  assert.deepEqual(parseMosRoute('/studio', ''), { kind: 'section', sectionId: 'studio' });
   assert.deepEqual(parseMosRoute('/lab', ''), { kind: 'section', sectionId: 'lab' });
   assert.deepEqual(parseMosRoute('/connections', ''), { kind: 'section', sectionId: 'connections' });
 });
@@ -80,6 +115,19 @@ test('route titles name the surface per route', () => {
     mosRouteTitle({ kind: 'missions', missionId: 'm1', intentId: null, intentError: null }),
     'MOS — Missions · mission detail',
   );
-  assert.equal(mosRouteTitle({ kind: 'section', sectionId: 'studio' }), 'MOS — studio');
+  assert.equal(mosRouteTitle({ kind: 'studio', sessionId: null, packageId: null }), 'MOS — Studio');
+  assert.equal(
+    mosRouteTitle({ kind: 'studio', sessionId: 'session-reaction-1', packageId: null }),
+    'MOS — Studio · session detail',
+  );
+  assert.equal(
+    mosRouteTitle({ kind: 'studio', sessionId: null, packageId: 'pkg-reaction-1' }),
+    'MOS — Studio · package chain',
+  );
+  assert.equal(
+    mosRouteTitle({ kind: 'studio', sessionId: 'session-reaction-1', packageId: 'pkg-reaction-1' }),
+    'MOS — Studio · session + package chain',
+  );
+  assert.equal(mosRouteTitle({ kind: 'section', sectionId: 'lab' }), 'MOS — lab');
   assert.equal(mosRouteTitle({ kind: 'unknown', path: '/x' }), 'MOS — page not found');
 });

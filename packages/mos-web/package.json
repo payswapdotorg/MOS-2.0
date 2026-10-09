@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MOS v2.0 browser shell (WEB-001 + UX-001) — presentation-only Vite React shell: Home narrates the §2 complete loop, Missions presents the mission catalog through view ports; no business authority, no Zcode coding-surface imports",
+  "description": "MOS v2.0 browser shell (WEB-001 + UX-001 + UX-002) — presentation-only Vite React shell: Home narrates the §2 complete loop, Missions presents the mission catalog through view ports, Studio presents the STUDIO-014 operator surfaces read-only (session directory, immutable package browsing with §14 synthetic-provenance labels, §15 consent states, §30 review records); no business authority, no Zcode coding-surface imports, the studio never publishes on this surface",
   "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
@@ -29,6 +29,7 @@
   "devDependencies": {
     "@mos/identity": "workspace:*",
     "@mos/missions": "workspace:*",
+    "@mos/studio": "workspace:*",
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

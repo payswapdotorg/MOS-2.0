@@ -10,7 +10,8 @@ import type {
 } from '../dist/src/ports/app-shell.js';
 
 /**
- * DISCLOSED in-memory double for the {@link AppShellPort} (WEB-001 / UX-001).
+ * DISCLOSED in-memory double for the {@link AppShellPort} (WEB-001 / UX-001
+ * / UX-002).
  *
  * Composition seam (OUTSIDE `src/`): this is the only kind of file allowed
  * to import a domain package, because it ADAPTS the real `@mos/identity`
@@ -21,10 +22,11 @@ import type {
  * touching the port or any view component.
  *
  * The section table mirrors the shell-replacement plan's route readiness
- * (BROWSER-SHELL-REPLACEMENT-PLAN §2.2): Home and Missions are UX-001
- * (available in this build); Studio, Lab and Connections wait on UX-002..004
- * and are presented as explicit `not-yet-available` verdicts — the shell
- * never renders placeholder surfaces.
+ * (BROWSER-SHELL-REPLACEMENT-PLAN §2.2): Home, Missions (UX-001) and Studio
+ * (UX-002, over the delivered STUDIO-014 standalone studio product) are
+ * available in this build; Lab and Connections wait on UX-003/UX-004 and are
+ * presented as explicit `not-yet-available` verdicts — the shell never
+ * renders placeholder surfaces.
  */
 
 /** Options for {@link createInMemoryAppShellPort}. */
@@ -47,12 +49,7 @@ const SECTION_TABLE: readonly {
 }[] = [
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
-  {
-    id: 'studio',
-    label: 'Studio',
-    route: '/studio',
-    availability: { kind: 'not-yet-available', dependsOn: 'UX-002 (STUDIO-014 standalone studio product)' },
-  },
+  { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
   {
     id: 'lab',
     label: 'Lab',
