@@ -1,0 +1,28 @@
+{
+  "name": "@mos/experiments",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MOS v2.0 Real Experiments — BRIDGE-003 the real-experiment/evidence/learning authority (registry authority real-experiment-evidence-learning, deps [contracts, missions, production, distribution, jobs] exact): a selected LAB-017 benchmark candidate becomes a REAL MOS experiment through the §24 boundary chain's final segments — gate-ordered binding creation (candidate resolvable → mission linkage → policy verdict → rights frame → production request → distribution binding → experiment record; a denial means ZERO experiment state, every attributable failure appends exactly one §30 audit record with verbatim authority attribution, caller errors record nothing), the frozen RealExperimentBinding contract projection (all nine required refs, each resolving to an EXACT version of the underlying authority record — never fabrication), EXPERIMENT ≠ LAB pinned compile-time AND runtime (never simulates, never re-runs the Lab's simulators, never treats simulated predictions as observations — the lab candidate's counterfactual expectations stay counterfactual FOREVER, only MEASURED platform-said evidence is real), versioned tenant-scoped append-only evidence records tied to REAL @mos/distribution observation surfaces by reference + declared measurement windows with §22 uncertainty, durable lifecycle (created → running → measured → analysed → closed | abandoned) riding the REAL @mos/jobs JobQueuePort for the long-running measurement segment (leased claims, typed retries with declared backoff, §30-enriched job events — no synchronous-HTTP durable claims), first-class auditable abandonment with reason + snapshot (§18), and the outcome-citation surface the LAB-018 calibration authority consumes through its declared RealityObservationReaderPort boundary (by reference — no second calibration authority, no direct writes into lab state)",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "test": "tsc -b && node --test 'dist/**/*.test.js' && tsc -b ../mos-lab ../mos-policy ../mos-rights && tsc -p tsconfig.compat.json && node --test compat/experiments-real-stack.test.ts",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
+  },
+  "dependencies": {
+    "@mos/contracts": "workspace:*",
+    "@mos/missions": "workspace:*",
+    "@mos/production": "workspace:*",
+    "@mos/distribution": "workspace:*",
+    "@mos/jobs": "workspace:*"
+  }
+}

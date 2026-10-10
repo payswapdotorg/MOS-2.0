@@ -904,6 +904,24 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/mos-experiments:
+    dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
+      '@mos/distribution':
+        specifier: workspace:*
+        version: link:../mos-distribution
+      '@mos/jobs':
+        specifier: workspace:*
+        version: link:../mos-jobs
+      '@mos/missions':
+        specifier: workspace:*
+        version: link:../mos-missions
+      '@mos/production':
+        specifier: workspace:*
+        version: link:../mos-production
+
   packages/mos-identity:
     dependencies:
       '@mos/contracts':

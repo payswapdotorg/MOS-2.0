@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // RPC-style managed package (same shape as packages/mos-lab / mos-studio):
+    // composite project so sibling MOS packages can consume it via project
+    // references and the emitted declarations in dist/.
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../mos-contracts" },
+    { "path": "../mos-missions" },
+    { "path": "../mos-production" },
+    { "path": "../mos-distribution" },
+    { "path": "../mos-jobs" }
+  ]
+}
