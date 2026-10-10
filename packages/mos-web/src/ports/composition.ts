@@ -2,6 +2,8 @@ import type { AppShellPort } from './app-shell.js';
 import type { MissionCatalogPort } from './mission-catalog.js';
 import type { StudioDirectoryPort } from './studio-directory.js';
 import type { StudioPackageLibraryPort } from './studio-packages.js';
+import type { LabBenchmarkDigestPort } from './lab-benchmark.js';
+import type { LabCalibrationStatusPort } from './lab-calibration.js';
 
 /**
  * The composition the browser shell runs on (WEB-001).
@@ -14,7 +16,8 @@ import type { StudioPackageLibraryPort } from './studio-packages.js';
  * (`testing/`), which is the only place allowed to import
  * `@mos/missions` / `@mos/identity` (runtime) and `@mos/studio`
  * (type-only, REAL-shape pins — the studio runtime itself is node-side; see
- * the seam's disclosure).
+ * the seam's disclosure). The Lab surface (UX-003) follows the same
+ * discipline over REAL-shaped LAB-017/LAB-018 records.
  */
 export interface MosWebComposition {
   /** Shell chrome: sections, availability verdicts, tenant context. */
@@ -25,4 +28,8 @@ export interface MosWebComposition {
   readonly studioDirectory: StudioDirectoryPort;
   /** The Studio package library (UX-002, over STUDIO-014): read-only browsing. */
   readonly studioPackages: StudioPackageLibraryPort;
+  /** The Lab benchmark digest (UX-003, over LAB-017): read-only. */
+  readonly labBenchmark: LabBenchmarkDigestPort;
+  /** The Lab online-calibration status (UX-003, over LAB-018): read-only. */
+  readonly labCalibration: LabCalibrationStatusPort;
 }

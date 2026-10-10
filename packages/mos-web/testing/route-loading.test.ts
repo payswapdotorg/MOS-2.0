@@ -18,13 +18,19 @@ const SHELL_SECTIONS: readonly ShellSectionView[] = [
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
+  { id: 'lab', label: 'Lab', route: '/lab', availability: { kind: 'available' } },
   {
-    id: 'lab',
-    label: 'Lab',
-    route: '/lab',
-    availability: { kind: 'not-yet-available', dependsOn: 'UX-003' },
+    id: 'connections',
+    label: 'Connections',
+    route: '/connections',
+    availability: { kind: 'not-yet-available', dependsOn: 'UX-004' },
   },
 ];
+
+/** A chrome WITHOUT the connections section — the absent-section case. */
+const SHELL_SECTIONS_WITHOUT_CONNECTIONS: readonly ShellSectionView[] = SHELL_SECTIONS.filter(
+  (section) => section.id !== 'connections',
+);
 
 const SHELL_VIEW: AppShellView = {
   sections: SHELL_SECTIONS,
@@ -94,6 +100,8 @@ test('the home route resolves to the home view with no port calls', async () => 
     missionCatalog: null as never,
     studioDirectory: null as never,
     studioPackages: null as never,
+    labBenchmark: null as never,
+    labCalibration: null as never,
   };
   const routeView = await loadMosRouteView(composition, { kind: 'home' }, SHELL_VIEW);
   assert.deepEqual(routeView, { kind: 'home' });
@@ -102,17 +110,29 @@ test('the home route resolves to the home view with no port calls', async () => 
 
 test('section routes resolve their section view from the shell chrome', async () => {
   const composition = createInMemoryMosWebComposition();
-  const routeView = await loadMosRouteView(composition, { kind: 'section', sectionId: 'lab' }, SHELL_VIEW);
+  const routeView = await loadMosRouteView(
+    composition,
+    { kind: 'section', sectionId: 'connections' },
+    SHELL_VIEW,
+  );
   assert.equal(routeView.kind, 'section');
   if (routeView.kind === 'section') {
-    assert.equal(routeView.section.id, 'lab');
+    assert.equal(routeView.section.id, 'connections');
     assert.equal(routeView.section.availability.kind, 'not-yet-available');
   }
 });
 
 test('a section id absent from the chrome is an unknown route, never a guess', async () => {
   const composition = createInMemoryMosWebComposition();
-  const routeView = await loadMosRouteView(composition, { kind: 'section', sectionId: 'connections' }, SHELL_VIEW);
+  const absentShellView: AppShellView = {
+    sections: SHELL_SECTIONS_WITHOUT_CONNECTIONS,
+    tenant: SHELL_VIEW.tenant,
+  };
+  const routeView = await loadMosRouteView(
+    composition,
+    { kind: 'section', sectionId: 'connections' },
+    absentShellView,
+  );
   assert.deepEqual(routeView, { kind: 'unknown-route', path: '/connections' });
 });
 
@@ -203,6 +223,8 @@ test('a failing detail load degrades to the load-failed marker', async () => {
       missionCatalog: failingCatalog,
       studioDirectory: composition.studioDirectory,
       studioPackages: composition.studioPackages,
+      labBenchmark: composition.labBenchmark,
+      labCalibration: composition.labCalibration,
     },
     missionsRoute({ mission: 'mission_demo_1' }),
     SHELL_VIEW,
@@ -231,6 +253,8 @@ test('a failing catalog list degrades the WHOLE page to the route-error view', a
       missionCatalog: failingCatalog,
       studioDirectory: composition.studioDirectory,
       studioPackages: composition.studioPackages,
+      labBenchmark: composition.labBenchmark,
+      labCalibration: composition.labCalibration,
     },
     missionsRoute({}),
     SHELL_VIEW,
@@ -261,6 +285,8 @@ test('a failing vocabulary load is secondary data — the page still loads', asy
       missionCatalog: degradedCatalog,
       studioDirectory: composition.studioDirectory,
       studioPackages: composition.studioPackages,
+      labBenchmark: composition.labBenchmark,
+      labCalibration: composition.labCalibration,
     },
     missionsRoute({}),
     SHELL_VIEW,

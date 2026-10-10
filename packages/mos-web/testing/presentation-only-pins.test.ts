@@ -193,14 +193,22 @@ test('no domain package appears anywhere in src (registry: web deps [contracts])
   assert.deepEqual(offenders, []);
 });
 
-test('the browser-smoke script imports only node builtins and playwright-core', async () => {
-  // The smoke script is the DISCLOSED `.cjs` extension exception (the frozen
+test('the browser-smoke scripts import only node builtins, playwright-core and each other', async () => {
+  // The smoke scripts are the DISCLOSED `.cjs` extension exception (the frozen
   // boundary harness does not manage `.cjs`; the script must require the
   // workspace-provided playwright-core to drive the headless browser). This
   // pin keeps the exception exactly as narrow as disclosed: scripts/ may
-  // import node builtins + playwright-core, nothing else.
+  // import node builtins + playwright-core + RELATIVE requires between the
+  // smoke scripts themselves (the per-surface split — browser-smoke.cjs is
+  // the driver, smoke-*-suite.cjs the assertion suites), nothing else.
   const scriptsDir = join(packageRoot, 'scripts');
-  const allowed = new Set(['node:child_process', 'node:fs', 'node:path', 'node:http', 'playwright-core']);
+  const allowed = new Set([
+    'node:child_process',
+    'node:fs',
+    'node:path',
+    'node:http',
+    'playwright-core',
+  ]);
   const offenders: string[] = [];
   let scriptCount = 0;
   try {
@@ -212,7 +220,8 @@ test('the browser-smoke script imports only node builtins and playwright-core', 
       scriptCount += 1;
       const source = await readFile(join(scriptsDir, name), 'utf8');
       for (const specifier of extractImportSpecifiers(source)) {
-        if (!allowed.has(specifier)) {
+        const ok = allowed.has(specifier) || specifier.startsWith('./');
+        if (!ok) {
           offenders.push(`scripts/${name}: "${specifier}"`);
         }
       }
@@ -220,10 +229,10 @@ test('the browser-smoke script imports only node builtins and playwright-core', 
   } catch {
     // no scripts folder — nothing to pin
   }
-  assert.equal(scriptCount >= 1, true, 'the UX-002 browser smoke script exists');
+  assert.equal(scriptCount >= 1, true, 'the UX-003 browser smoke scripts exist');
   assert.deepEqual(
     offenders,
     [],
-    'scripts/ is the disclosed browser-evidence exception: node builtins + playwright-core only',
+    'scripts/ is the disclosed browser-evidence exception: node builtins + playwright-core + relative suite requires only',
   );
 });

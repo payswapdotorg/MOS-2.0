@@ -1,4 +1,4 @@
-import { MissionScope, StudioScope } from './route-scope.js';
+import { LabScope, MissionScope, StudioScope } from './route-scope.js';
 import type { TenantScope } from '@mos/contracts';
 import type { MosRoute } from './route.js';
 import type { MosWebComposition } from '../ports/composition.js';
@@ -16,6 +16,14 @@ import type {
   StudioPackageSummaryView,
   StudioVersionChainView,
 } from '../ports/studio-packages.js';
+import type {
+  LabBenchmarkDigestView,
+  LabBenchmarkSummaryView,
+} from '../ports/lab-benchmark.js';
+import type {
+  LabCalibrationChainView,
+  LabCalibrationRecordView,
+} from '../ports/lab-calibration.js';
 import type { AppShellView, ShellSectionView } from '../ports/app-shell.js';
 
 /**
@@ -75,6 +83,30 @@ export interface StudioPageData {
   readonly libraryError: 'load-failed' | null;
 }
 
+/** Fully loaded Lab page model (UX-003). */
+export interface LabPageData {
+  /** Tenant scope for lab reads, or `null` when no tenant context resolved. */
+  readonly scope: TenantScope | null;
+  /** Benchmark record-chain listing (the primary read of the surface). */
+  readonly benchmarks: readonly LabBenchmarkSummaryView[];
+  /** Benchmark digest for `?benchmark=<id>` (exact `?version=` or latest), when it resolved. */
+  readonly selectedDigest: LabBenchmarkDigestView | null;
+  /** Explicit failure marker for a benchmark selection that did not resolve. */
+  readonly benchmarkSelectionError: 'lab-benchmark-not-found' | 'load-failed' | null;
+  /** Online-calibration chain listing (the co-presented calibration surface). */
+  readonly calibrationChains: readonly LabCalibrationChainView[];
+  /**
+   * Honest-unavailable marker for the calibration listing: the benchmark
+   * surface loaded, the calibration service did not — the page renders with an
+   * explicit calibration-unavailable panel instead of a fabricated empty list.
+   */
+  readonly calibrationError: 'load-failed' | null;
+  /** Calibration records for `?calibration=<id>`, when the id resolved. */
+  readonly selectedCalibrationRecords: readonly LabCalibrationRecordView[] | null;
+  /** Explicit failure marker for a calibration selection that did not resolve. */
+  readonly calibrationSelectionError: 'lab-calibration-not-found' | 'load-failed' | null;
+}
+
 /** The resolved page model for the current route. */
 export type MosRouteView =
   /** Pre-load surface while the page model resolves (mounted by the boot). */
@@ -82,6 +114,7 @@ export type MosRouteView =
   | { readonly kind: 'home' }
   | { readonly kind: 'missions'; readonly data: MissionsPageData }
   | { readonly kind: 'studio'; readonly data: StudioPageData }
+  | { readonly kind: 'lab'; readonly data: LabPageData }
   | {
       readonly kind: 'route-error';
       readonly code: string;
@@ -100,7 +133,9 @@ function retryHrefFor(route: MosRoute): string {
     ? '/'
     : route.kind === 'studio'
       ? '/studio'
-      : `/${route.kind === 'section' ? route.sectionId : ''}`;
+      : route.kind === 'lab'
+        ? '/lab'
+        : `/${route.kind === 'section' ? route.sectionId : ''}`;
 }
 
 /**
@@ -119,6 +154,10 @@ export async function loadMosRouteView(
 
   if (route.kind === 'studio') {
     return loadStudioPage(composition, route, shellView, retryHrefFor(route));
+  }
+
+  if (route.kind === 'lab') {
+    return loadLabPage(composition, route, shellView, retryHrefFor(route));
   }
 
   if (route.kind === 'section') {
@@ -219,6 +258,106 @@ async function loadStudioPage(
       selectedChain,
       chainError,
       libraryError,
+    },
+  };
+}
+
+/**
+ * Load the Lab page model (UX-003): the benchmark listing is the primary
+ * read (its failure is a route error); the calibration listing is the
+ * co-presented section (its failure degrades to the explicit
+ * calibration-unavailable marker — the benchmark surface still renders);
+ * selections degrade to named markers, never placeholders.
+ */
+async function loadLabPage(
+  composition: MosWebComposition,
+  route: MosRoute & { readonly kind: 'lab' },
+  shellView: AppShellView,
+  retryHref: string,
+): Promise<MosRouteView> {
+  const scope = LabScope.fromTenantContext(shellView.tenant);
+
+  if (!scope) {
+    return {
+      kind: 'lab',
+      data: {
+        scope: null,
+        benchmarks: [],
+        selectedDigest: null,
+        benchmarkSelectionError: null,
+        calibrationChains: [],
+        calibrationError: null,
+        selectedCalibrationRecords: null,
+        calibrationSelectionError: null,
+      },
+    };
+  }
+
+  const benchmarksResult = await composition.labBenchmark.listBenchmarkSummaries(scope);
+  if ('error' in benchmarksResult) {
+    return {
+      kind: 'route-error',
+      code: benchmarksResult.error,
+      message: benchmarksResult.message,
+      retryHref,
+    };
+  }
+
+  const calibrationResult = await composition.labCalibration.listCalibrationChains(scope);
+  let calibrationChains: readonly LabCalibrationChainView[] = [];
+  let calibrationError: LabPageData['calibrationError'] = null;
+  if ('error' in calibrationResult) {
+    // The calibration surface is co-presented: its failure degrades to the
+    // explicit calibration-unavailable marker — the benchmarks still render.
+    calibrationError = 'load-failed';
+  } else {
+    calibrationChains = calibrationResult;
+  }
+
+  let selectedDigest: LabBenchmarkDigestView | null = null;
+  let benchmarkSelectionError: LabPageData['benchmarkSelectionError'] = null;
+  if (route.benchmarkId !== null) {
+    const digestResult = await composition.labBenchmark.loadBenchmarkDigest(
+      LabScope.benchmarkRef(route.benchmarkId),
+      route.benchmarkVersion,
+      scope,
+    );
+    if ('error' in digestResult) {
+      benchmarkSelectionError =
+        digestResult.error === 'lab-benchmark-not-found' ? 'lab-benchmark-not-found' : 'load-failed';
+    } else {
+      selectedDigest = digestResult;
+    }
+  }
+
+  let selectedCalibrationRecords: readonly LabCalibrationRecordView[] | null = null;
+  let calibrationSelectionError: LabPageData['calibrationSelectionError'] = null;
+  if (route.calibrationId !== null) {
+    const recordsResult = await composition.labCalibration.loadCalibrationRecords(
+      LabScope.calibrationRef(route.calibrationId),
+      scope,
+    );
+    if ('error' in recordsResult) {
+      calibrationSelectionError =
+        recordsResult.error === 'lab-calibration-not-found'
+          ? 'lab-calibration-not-found'
+          : 'load-failed';
+    } else {
+      selectedCalibrationRecords = recordsResult;
+    }
+  }
+
+  return {
+    kind: 'lab',
+    data: {
+      scope,
+      benchmarks: benchmarksResult,
+      selectedDigest,
+      benchmarkSelectionError,
+      calibrationChains,
+      calibrationError,
+      selectedCalibrationRecords,
+      calibrationSelectionError,
     },
   };
 }

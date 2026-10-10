@@ -25,12 +25,7 @@ export const SECTIONS: readonly ShellSectionView[] = [
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
-  {
-    id: 'lab',
-    label: 'Lab',
-    route: '/lab',
-    availability: { kind: 'not-yet-available', dependsOn: 'UX-003 (LAB-017)' },
-  },
+  { id: 'lab', label: 'Lab', route: '/lab', availability: { kind: 'available' } },
   {
     id: 'connections',
     label: 'Connections',

@@ -78,4 +78,28 @@ export const StudioScope = Object.freeze({
   packageRef: studioPackageRefFromQueryValue,
 });
 
+/**
+ * Brand a raw query-string benchmark chain id and calibration chain id for
+ * the Lab surface (UX-003). Presentation-only coercions: no existence check
+ * happens here — the lab view ports resolve (or fail closed on) the ids
+ * against the tenant scope.
+ */
+export function labBenchmarkRefFromQueryValue(raw: string): string {
+  return raw;
+}
+
+export function labCalibrationRefFromQueryValue(raw: string): string {
+  return raw;
+}
+
+/**
+ * The Lab route-scope surface as a single frozen namespace (the same
+ * tenant-scope derivation the Missions/Studio surfaces read through).
+ */
+export const LabScope = Object.freeze({
+  fromTenantContext: missionScopeFromTenantContext,
+  benchmarkRef: labBenchmarkRefFromQueryValue,
+  calibrationRef: labCalibrationRefFromQueryValue,
+});
+
 export type { TenantScope };

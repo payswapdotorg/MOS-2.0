@@ -41,7 +41,7 @@ test('the shell loads its chrome as a view model (async port contract)', async (
   assert.equal(shellView.sections.length, 5);
 });
 
-test('Home, Missions and Studio come first and are the available sections', async () => {
+test('Home, Missions, Studio and Lab come first and are the available sections', async () => {
   const identity = createInMemoryIdentityRepository();
   identity.createTenant({ id: tenantId('tenant-a'), name: 'Acme Media' });
   const shellView = await expectShellView(
@@ -51,7 +51,7 @@ test('Home, Missions and Studio come first and are the available sections', asyn
   assert.deepEqual(
     shellView.sections.map((section) => section.id),
     ['home', 'missions', 'studio', 'lab', 'connections'],
-    'Home and Missions are first (UX-001), Studio third (UX-002); the plan\'s section order follows',
+    'Home and Missions are first (UX-001), Studio third (UX-002), Lab fourth (UX-003); the plan\'s section order follows',
   );
   const home = shellView.sections[0];
   const missions = shellView.sections[1];
@@ -75,19 +75,23 @@ test('later surfaces are explicit not-yet-available verdicts naming their depend
     createInMemoryAppShellPort({ identityRepository: identity, tenantId: 'tenant-a', workspaceId: null }),
   );
 
-  for (const section of shellView.sections.slice(3)) {
-    assert.equal(section?.availability.kind, 'not-yet-available');
-    if (section?.availability.kind === 'not-yet-available') {
-      assert.equal(section.availability.dependsOn.length > 0, true);
-    }
-  }
   const lab = shellView.sections.find((section) => section.id === 'lab');
-  assert.equal(lab?.availability.kind === 'not-yet-available' && /UX-003/.test(lab.availability.dependsOn), true);
+  assert.deepEqual(
+    lab?.availability,
+    { kind: 'available' },
+    'UX-003 turned the Lab section on — LAB-017 + LAB-018 are delivered',
+  );
   const connections = shellView.sections.find((section) => section.id === 'connections');
   assert.equal(
     connections?.availability.kind === 'not-yet-available' && /UX-004/.test(connections.availability.dependsOn),
     true,
   );
+  for (const section of shellView.sections.slice(4)) {
+    assert.equal(section?.availability.kind, 'not-yet-available');
+    if (section?.availability.kind === 'not-yet-available') {
+      assert.equal(section.availability.dependsOn.length > 0, true);
+    }
+  }
 });
 
 test('tenant context is derived from the REAL identity records', async () => {

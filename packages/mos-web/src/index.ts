@@ -52,6 +52,35 @@ export type {
 export type { MosWebComposition } from './ports/composition.js';
 export type { MosServiceConnection, MosServiceTransport } from './services/mos-services.js';
 export type {
+  LabBaselineComparisonView,
+  LabBenchmarkCandidateOriginView,
+  LabBenchmarkCandidateView,
+  LabBenchmarkDigestFailure,
+  LabBenchmarkDigestPort,
+  LabBenchmarkDigestView,
+  LabBenchmarkSummaryView,
+  LabBenchmarkProvenanceView,
+  LabCalibrationPendingView,
+  LabIntervalView,
+  LabOodSignalView,
+  LabRecordIntegrityView,
+  LabRobustnessPolicyView,
+  LabWorldDisagreementView,
+  LabWorldRobustnessView,
+} from './ports/lab-benchmark.js';
+export { LAB_NOOP_BASELINE_ORIGIN } from './ports/lab-benchmark.js';
+export type {
+  LabCalibrationChainView,
+  LabCalibrationContextSummaryView,
+  LabCalibrationContextView,
+  LabCalibrationFunctionalView,
+  LabCalibrationObservationView,
+  LabCalibrationPredictionView,
+  LabCalibrationRecordView,
+  LabCalibrationStatusFailure,
+  LabCalibrationStatusPort,
+} from './ports/lab-calibration.js';
+export type {
   StudioConsentRequirementView,
   StudioConsentStateView,
   StudioDecisionActorView,
@@ -78,13 +107,21 @@ export type {
 } from './ports/studio-packages.js';
 
 // ---- Route model + page-model loading ----
-export type { MissionsPageData, MosRouteView, StudioPageData } from './routes/route-loading.js';
+export type {
+  LabPageData,
+  MissionsPageData,
+  MosRouteView,
+  StudioPageData,
+} from './routes/route-loading.js';
 export { loadMosRouteView } from './routes/route-loading.js';
-export type { MissionsRoute, MosRoute, StudioRoute } from './routes/route.js';
+export type { LabRoute, MissionsRoute, MosRoute, StudioRoute } from './routes/route.js';
 export { mosRouteTitle, parseMosRoute } from './routes/route.js';
 export {
+  LabScope,
   MissionScope,
   StudioScope,
+  labBenchmarkRefFromQueryValue,
+  labCalibrationRefFromQueryValue,
   missionRefFromQueryValue,
   missionScopeFromTenantContext,
   studioPackageRefFromQueryValue,
@@ -126,6 +163,24 @@ export {
   studioEvaluationOutcomeLabel,
   studioFormatLabel,
 } from './views/studio-presentation.js';
+
+// ---- Lab presentation data (UX-003 — §20/§24 counterfactual labels, §22 badges) ----
+export {
+  LAB_BOUNDARY_NOTE,
+  LAB_CALIBRATION_PENDING_LABEL,
+  LAB_COUNTERFACTUAL_LABEL,
+  LAB_CANDIDATE_ORIGIN_DESCRIPTIONS,
+  LAB_CANDIDATE_ORIGIN_LABELS,
+  LAB_LOOP_NARRATION,
+  LAB_MEASURED_LABEL,
+  LAB_OOD_PRESENTATION,
+  formatLabDigestShort,
+  formatLabExpectedWithInterval,
+  formatLabNumber,
+  labAggregationLabel,
+  labIntegrityLabel,
+  labSweepDimensionLabel,
+} from './views/lab-presentation.js';
 
 // ---- Platform patterns (ported from the audited shell, MOS-owned) ----
 export {
@@ -179,3 +234,8 @@ export {
   StudioPackageChainPanel,
   StudioPackageLibraryView,
 } from './views/studio-packages.js';
+export { LabView } from './routes/lab-view.js';
+export { LabBenchmarkDirectoryView } from './views/lab-benchmark-directory.js';
+export { LabBenchmarkDigestPanel } from './views/lab-benchmark-digest.js';
+export { LabCalibrationStatusView } from './views/lab-calibration-status.js';
+export { LabCalibrationDetailPanel } from './views/lab-calibration-detail.js';
