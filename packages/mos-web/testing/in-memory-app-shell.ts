@@ -22,10 +22,11 @@ import type {
  * touching the port or any view component.
  *
  * The section table mirrors the shell-replacement plan's route readiness
- * (BROWSER-SHELL-REPLACEMENT-PLAN §2.2): Home, Missions (UX-001) and Studio
- * (UX-002, over the delivered STUDIO-014 standalone studio product) are
- * available in this build; Lab and Connections wait on UX-003/UX-004 and are
- * presented as explicit `not-yet-available` verdicts — the shell never
+ * (BROWSER-SHELL-REPLACEMENT-PLAN §2.2): Home, Missions (UX-001), Studio
+ * (UX-002, over the delivered STUDIO-014 standalone studio product) and Lab
+ * (UX-003, over the delivered LAB-017 robust benchmark + LAB-018 online
+ * calibration) are available in this build; Connections waits on UX-004 and
+ * is presented as an explicit `not-yet-available` verdict — the shell never
  * renders placeholder surfaces.
  */
 
@@ -50,12 +51,7 @@ const SECTION_TABLE: readonly {
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
-  {
-    id: 'lab',
-    label: 'Lab',
-    route: '/lab',
-    availability: { kind: 'not-yet-available', dependsOn: 'UX-003 (LAB-017 robust benchmark)' },
-  },
+  { id: 'lab', label: 'Lab', route: '/lab', availability: { kind: 'available' } },
   {
     id: 'connections',
     label: 'Connections',

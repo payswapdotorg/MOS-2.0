@@ -92,8 +92,70 @@ test('/studio parses with session and package params (UX-002)', () => {
   });
 });
 
+test('/lab parses with benchmark, version and calibration params (UX-003)', () => {
+  assert.deepEqual(parseMosRoute('/lab', ''), {
+    kind: 'lab',
+    benchmarkId: null,
+    benchmarkVersion: null,
+    calibrationId: null,
+  });
+  assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1'), {
+    kind: 'lab',
+    benchmarkId: 'bench-reach-v1',
+    benchmarkVersion: null,
+    calibrationId: null,
+  });
+  assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=1'), {
+    kind: 'lab',
+    benchmarkId: 'bench-reach-v1',
+    benchmarkVersion: 1,
+    calibrationId: null,
+  });
+  assert.deepEqual(parseMosRoute('/lab', '?calibration=calib-reach-1'), {
+    kind: 'lab',
+    benchmarkId: null,
+    benchmarkVersion: null,
+    calibrationId: 'calib-reach-1',
+  });
+  assert.deepEqual(
+    parseMosRoute('/lab', '?benchmark=bench-reach-v1&calibration=calib-reach-1'),
+    {
+      kind: 'lab',
+      benchmarkId: 'bench-reach-v1',
+      benchmarkVersion: null,
+      calibrationId: 'calib-reach-1',
+    },
+  );
+});
+
+test('non-numeric, zero and padded version params parse as absent (never guessed)', () => {
+  assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=abc'), {
+    kind: 'lab',
+    benchmarkId: 'bench-reach-v1',
+    benchmarkVersion: null,
+    calibrationId: null,
+  });
+  assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=0'), {
+    kind: 'lab',
+    benchmarkId: 'bench-reach-v1',
+    benchmarkVersion: null,
+    calibrationId: null,
+  });
+  assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=01'), {
+    kind: 'lab',
+    benchmarkId: 'bench-reach-v1',
+    benchmarkVersion: null,
+    calibrationId: null,
+  });
+  assert.deepEqual(parseMosRoute('/lab/', '?benchmark='), {
+    kind: 'lab',
+    benchmarkId: null,
+    benchmarkVersion: null,
+    calibrationId: null,
+  });
+});
+
 test('future product sections parse to the explicit section route', () => {
-  assert.deepEqual(parseMosRoute('/lab', ''), { kind: 'section', sectionId: 'lab' });
   assert.deepEqual(parseMosRoute('/connections', ''), { kind: 'section', sectionId: 'connections' });
 });
 
@@ -128,6 +190,22 @@ test('route titles name the surface per route', () => {
     mosRouteTitle({ kind: 'studio', sessionId: 'session-reaction-1', packageId: 'pkg-reaction-1' }),
     'MOS — Studio · session + package chain',
   );
-  assert.equal(mosRouteTitle({ kind: 'section', sectionId: 'lab' }), 'MOS — lab');
+  assert.equal(
+    mosRouteTitle({ kind: 'lab', benchmarkId: null, benchmarkVersion: null, calibrationId: null }),
+    'MOS — Lab',
+  );
+  assert.equal(
+    mosRouteTitle({ kind: 'lab', benchmarkId: 'bench-reach-v1', benchmarkVersion: null, calibrationId: null }),
+    'MOS — Lab · benchmark digest',
+  );
+  assert.equal(
+    mosRouteTitle({ kind: 'lab', benchmarkId: null, benchmarkVersion: null, calibrationId: 'calib-reach-1' }),
+    'MOS — Lab · calibration records',
+  );
+  assert.equal(
+    mosRouteTitle({ kind: 'lab', benchmarkId: 'bench-reach-v1', benchmarkVersion: null, calibrationId: 'calib-reach-1' }),
+    'MOS — Lab · benchmark digest + calibration',
+  );
+  assert.equal(mosRouteTitle({ kind: 'section', sectionId: 'connections' }), 'MOS — connections');
   assert.equal(mosRouteTitle({ kind: 'unknown', path: '/x' }), 'MOS — page not found');
 });

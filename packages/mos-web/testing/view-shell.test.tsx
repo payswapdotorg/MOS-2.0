@@ -57,7 +57,14 @@ test('available sections are links; later surfaces are aria-disabled with their 
   assert.equal(studio?.props.href, '/studio');
   assert.equal(studio?.props['aria-disabled'], undefined);
 
-  for (const id of ['lab', 'connections']) {
+  // UX-003: the Lab section is ON — a real link to the lab surface.
+  const lab = elementWithTestId(tree, 'nav-lab');
+  assert.ok(lab, 'lab renders as an enabled section (UX-003 delivered)');
+  assert.equal(lab?.type, 'a');
+  assert.equal(lab?.props.href, '/lab');
+  assert.equal(lab?.props['aria-disabled'], undefined);
+
+  for (const id of ['connections']) {
     const unavailable = elementWithTestId(tree, `nav-${id}-unavailable`);
     assert.ok(unavailable, `${id} is explicitly unavailable`);
     assert.equal(unavailable?.props['aria-disabled'], 'true');
@@ -206,5 +213,5 @@ test('the section table the shell renders matches the port readiness verdicts', 
     SECTIONS.map((section) => section.id),
     ['home', 'missions', 'studio', 'lab', 'connections'],
   );
-  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 3);
+  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 4);
 });

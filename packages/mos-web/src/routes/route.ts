@@ -30,21 +30,40 @@ export interface StudioRoute {
   readonly packageId: string | null;
 }
 
+export interface LabRoute {
+  readonly kind: 'lab';
+  /** Selected benchmark chain id (`?benchmark=<id>`), when given. */
+  readonly benchmarkId: string | null;
+  /** Exact benchmark record version (`?version=<n>`); null = latest. */
+  readonly benchmarkVersion: number | null;
+  /** Selected calibration chain id (`?calibration=<id>`), when given. */
+  readonly calibrationId: string | null;
+}
+
 export type MosRoute =
   | { readonly kind: 'home' }
   | MissionsRoute
   | StudioRoute
+  | LabRoute
   | { readonly kind: 'section'; readonly sectionId: ShellSectionId }
   | { readonly kind: 'unknown'; readonly path: string };
 
 const SECTION_ROUTES: Readonly<Record<string, ShellSectionId>> = {
-  '/lab': 'lab',
   '/connections': 'connections',
 };
 
 function firstParam(params: URLSearchParams, name: string): string | null {
   const value = params.get(name);
   return value === null || value.length === 0 ? null : value;
+}
+
+function versionParam(params: URLSearchParams, name: string): number | null {
+  const raw = firstParam(params, name);
+  if (raw === null) {
+    return null;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed >= 1 && String(parsed) === raw ? parsed : null;
 }
 
 /**
@@ -79,6 +98,16 @@ export function parseMosRoute(pathname: string, search: string): MosRoute {
     };
   }
 
+  if (cleanPath === '/lab') {
+    const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    return {
+      kind: 'lab',
+      benchmarkId: firstParam(params, 'benchmark'),
+      benchmarkVersion: versionParam(params, 'version'),
+      calibrationId: firstParam(params, 'calibration'),
+    };
+  }
+
   const sectionId = SECTION_ROUTES[cleanPath];
   if (sectionId) {
     return { kind: 'section', sectionId };
@@ -103,6 +132,15 @@ export function mosRouteTitle(route: MosRoute): string {
         : route.packageId !== null
           ? 'MOS — Studio · package chain'
           : 'MOS — Studio';
+    case 'lab':
+      if (route.benchmarkId !== null && route.calibrationId !== null) {
+        return 'MOS — Lab · benchmark digest + calibration';
+      }
+      return route.benchmarkId !== null
+        ? 'MOS — Lab · benchmark digest'
+        : route.calibrationId !== null
+          ? 'MOS — Lab · calibration records'
+          : 'MOS — Lab';
     case 'section':
       return `MOS — ${route.sectionId}`;
     case 'unknown':
