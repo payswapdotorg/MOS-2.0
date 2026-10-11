@@ -104,10 +104,15 @@ test("the public runtime surface is exactly the three documented exports", async
   const mod = await import("./index.js");
   const runtimeKeys = Object.keys(mod).sort();
   assert.deepEqual(runtimeKeys, [
+    "ATTRIBUTION_BASIS_KINDS",
+    "ATTRIBUTION_ERROR_CODES",
+    "AttributionService",
+    "CAUSALITY_VOCABULARY_PATTERNS",
     "COMMERCE_DISCOVERY_ERROR_CODES",
     "CommerceDiscoveryService",
     "commerceDiscoveryIdDefault",
     "commerceDiscoveryNowDefault",
     "createInMemoryDemandExperimentPort",
+    "validateNoCausalityVocabulary",
   ]);
 });

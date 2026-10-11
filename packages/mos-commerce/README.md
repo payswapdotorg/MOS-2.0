@@ -45,3 +45,26 @@ errors, first-error-out).
 `pnpm --filter @mos/commerce test` — tsc -b + node --test over dist
 (records battery, authority-discipline scans, the compat battery over
 the REAL experiments authority's dist build).
+
+## ATTRIB-001 — the social-to-commerce attribution subtree (src/attribution/)
+
+The last carried-forward Phase 5 item. Attribution records link social
+observations (@mos/distribution SocialObservationRecords) to commerce
+discovery candidates (this package's CommerceDiscoveryRecords):
+
+- DISTINCT FROM CAUSALITY (the hard law): an attribution declares an
+  ASSOCIATION on the frozen basis vocabulary
+  ("platform-reported-association") — never an effect claim. The
+  causality-vocabulary guard (16 frozen effect-language patterns) scans
+  every free-text field fail-closed; the record type structurally carries
+  no effect/impact fields.
+- REFERENCES AUTHORITATIVE OBSERVATIONS: both ends are opaque typed refs —
+  the social side cites the authority's OWN observation id (the REAL
+  record is never re-authored, its `reported` payload never travels into
+  the attribution — pinned); the commerce side cites an EXACT discovery
+  record version. The compat battery pins the REAL observation shape over
+  @mos/distribution dist (devDep).
+- House discipline throughout: versioned tenant-scoped append-only
+  records; corrections append (only the basis note is correctable — the
+  cited refs are immutable); D1/D2/D3/F1/D4; injectable clock/id;
+  frozen 7-code error vocabulary.
