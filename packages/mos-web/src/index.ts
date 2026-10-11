@@ -286,3 +286,25 @@ export { renderConnections } from './views/connections/connections-view.js';
 export type { ConnectionsRenderState } from './views/connections/connections-view.js';
 export { wireConnections } from './platform/connections-wiring.js';
 export type { ConnectionsWiring } from './platform/connections-wiring.js';
+
+// ---- UX-005 progressive disclosure layer ----
+export type {
+  DisclosureItemProps,
+  SummaryLayerProps,
+  SummaryStatView,
+  ViewNode,
+} from './views/disclosure/disclosure-primitive.js';
+export {
+  DisclosureItem,
+  DisclosureList,
+  SummaryLayer,
+} from './views/disclosure/disclosure-primitive.js';
+export type { LoopStageView } from './views/disclosure/loop-orientation.js';
+export { LOOP_STAGES, loopOwnerRoute } from './views/disclosure/loop-orientation.js';
+export type { SurfaceSummaryModel } from './views/disclosure/surface-summaries.js';
+export {
+  buildConnectionsSummary,
+  buildLabSummary,
+  buildMissionsSummary,
+  buildStudioSummary,
+} from './views/disclosure/surface-summaries.js';

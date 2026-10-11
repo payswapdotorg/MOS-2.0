@@ -3,6 +3,8 @@ import type { CreateMissionIntentDeclaration } from '../ports/mission-catalog.js
 import { MissionsListView } from './missions-list.js';
 import { MissionDetailPanel } from './mission-detail.js';
 import { MissionIntentForm } from './mission-intent-form.js';
+import { SummaryLayer, DisclosureItem } from '../views/disclosure/disclosure-primitive.js';
+import { buildMissionsSummary } from '../views/disclosure/surface-summaries.js';
 import { MosNoTenantContextView } from '../shell/route-fallbacks.js';
 
 /**
@@ -129,6 +131,12 @@ export function MissionsView({
     );
   }
 
+  const missionsSummary = buildMissionsSummary({
+    missionCount: data.summaries.length,
+    openCount: data.summaries.filter((m) => m.lifecycleState === 'active' || m.lifecycleState === 'draft').length,
+    tenantLabel: data.scope.tenantId,
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -139,6 +147,13 @@ export function MissionsView({
           live in the Missions authority.
         </p>
       </header>
+
+      <SummaryLayer
+        surface="missions"
+        headline={missionsSummary.headline}
+        stats={missionsSummary.stats}
+        honestyLabels={missionsSummary.honestyLabels}
+      />
 
       {data.intentReceipt !== null ? <IntentReceiptPanel receipt={data.intentReceipt} /> : null}
       {data.intentError !== null ? (
@@ -160,7 +175,20 @@ export function MissionsView({
       </section>
 
       {data.selectionError !== null ? <SelectionErrorPanel error={data.selectionError} /> : null}
-      {data.selected !== null ? <MissionDetailPanel detail={data.selected} /> : null}
+      {data.selected !== null ? (
+        <DisclosureItem
+          id="ux005-mission-detail"
+          defaultOpen
+          summary={
+            <span className="text-sm font-semibold text-slate-200">
+              Mission detail — {data.selected.summary.missionId} (expand for the objective,
+              reward spec and lifecycle record)
+            </span>
+          }
+        >
+          <MissionDetailPanel detail={data.selected} />
+        </DisclosureItem>
+      ) : null}
 
       <MissionIntentForm
         scope={data.scope}
