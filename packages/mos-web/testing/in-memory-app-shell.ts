@@ -56,7 +56,7 @@ const SECTION_TABLE: readonly {
     id: 'connections',
     label: 'Connections',
     route: '/connections',
-    availability: { kind: 'not-yet-available', dependsOn: 'UX-004 (PROD-001 distribution/integrations)' },
+    availability: { kind: 'available' },
   },
 ];
 

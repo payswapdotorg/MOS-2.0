@@ -185,6 +185,7 @@ test('a failing benchmark listing degrades the WHOLE page to the route-error vie
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: composition.missionCatalog,
       studioDirectory: composition.studioDirectory,
@@ -217,6 +218,7 @@ test('a failing calibration listing is secondary — the benchmarks still load w
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: composition.missionCatalog,
       studioDirectory: composition.studioDirectory,

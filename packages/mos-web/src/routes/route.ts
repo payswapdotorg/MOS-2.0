@@ -40,17 +40,29 @@ export interface LabRoute {
   readonly calibrationId: string | null;
 }
 
+export interface ConnectionsRoute {
+  readonly kind: 'connections';
+  /** Selected provider definition id (`?provider=<id>`), when given. */
+  readonly providerId: string | null;
+  /** Selected distribution binding id (`?binding=<id>`), when given. */
+  readonly bindingId: string | null;
+}
+
 export type MosRoute =
   | { readonly kind: 'home' }
   | MissionsRoute
   | StudioRoute
   | LabRoute
+  | ConnectionsRoute
   | { readonly kind: 'section'; readonly sectionId: ShellSectionId }
   | { readonly kind: 'unknown'; readonly path: string };
 
-const SECTION_ROUTES: Readonly<Record<string, ShellSectionId>> = {
-  '/connections': 'connections',
-};
+/*
+ * `/connections` parses into its DEDICATED route kind (UX-004) — the surface
+ * is on; the generic `section` fallback below stays for sections whose
+ * product surfaces have not landed yet.
+ */
+const SECTION_ROUTES: Readonly<Record<string, ShellSectionId>> = {};
 
 function firstParam(params: URLSearchParams, name: string): string | null {
   const value = params.get(name);
@@ -108,6 +120,15 @@ export function parseMosRoute(pathname: string, search: string): MosRoute {
     };
   }
 
+  if (cleanPath === '/connections') {
+    const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    return {
+      kind: 'connections',
+      providerId: firstParam(params, 'provider'),
+      bindingId: firstParam(params, 'binding'),
+    };
+  }
+
   const sectionId = SECTION_ROUTES[cleanPath];
   if (sectionId) {
     return { kind: 'section', sectionId };
@@ -141,6 +162,14 @@ export function mosRouteTitle(route: MosRoute): string {
         : route.calibrationId !== null
           ? 'MOS — Lab · calibration records'
           : 'MOS — Lab';
+    case 'connections':
+      return route.providerId !== null && route.bindingId !== null
+        ? 'MOS — Connections · provider + binding'
+        : route.providerId !== null
+          ? 'MOS — Connections · provider directory entry'
+          : route.bindingId !== null
+            ? 'MOS — Connections · binding lifecycle'
+            : 'MOS — Connections';
     case 'section':
       return `MOS — ${route.sectionId}`;
     case 'unknown':

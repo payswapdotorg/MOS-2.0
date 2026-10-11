@@ -24,6 +24,7 @@ import type {
   LabCalibrationChainView,
   LabCalibrationRecordView,
 } from '../ports/lab-calibration.js';
+import type { ConnectionsViewData } from '../ports/connections-views.js';
 import type { AppShellView, ShellSectionView } from '../ports/app-shell.js';
 
 /**
@@ -107,6 +108,16 @@ export interface LabPageData {
   readonly calibrationSelectionError: 'lab-calibration-not-found' | 'load-failed' | null;
 }
 
+/** Fully loaded Connections page model (UX-004). */
+export interface ConnectionsPageData {
+  /** The two DISTINCT authorities' read models, loaded in one port read. */
+  readonly data: ConnectionsViewData;
+  /** Selected provider entry (`?provider=<id>`) for the directory detail. */
+  readonly selectedProviderId: string | null;
+  /** Selected binding (`?binding=<id>`) for the lifecycle detail view. */
+  readonly selectedBindingId: string | null;
+}
+
 /** The resolved page model for the current route. */
 export type MosRouteView =
   /** Pre-load surface while the page model resolves (mounted by the boot). */
@@ -115,6 +126,7 @@ export type MosRouteView =
   | { readonly kind: 'missions'; readonly data: MissionsPageData }
   | { readonly kind: 'studio'; readonly data: StudioPageData }
   | { readonly kind: 'lab'; readonly data: LabPageData }
+  | { readonly kind: 'connections'; readonly data: ConnectionsPageData }
   | {
       readonly kind: 'route-error';
       readonly code: string;
@@ -135,7 +147,9 @@ function retryHrefFor(route: MosRoute): string {
       ? '/studio'
       : route.kind === 'lab'
         ? '/lab'
-        : `/${route.kind === 'section' ? route.sectionId : ''}`;
+        : route.kind === 'connections'
+          ? '/connections'
+          : `/${route.kind === 'section' ? route.sectionId : ''}`;
 }
 
 /**
@@ -158,6 +172,10 @@ export async function loadMosRouteView(
 
   if (route.kind === 'lab') {
     return loadLabPage(composition, route, shellView, retryHrefFor(route));
+  }
+
+  if (route.kind === 'connections') {
+    return loadConnectionsPage(composition, route, retryHrefFor(route));
   }
 
   if (route.kind === 'section') {
@@ -437,4 +455,36 @@ async function loadMissionsPage(
       intentError,
     },
   };
+}
+
+/**
+ * Load the Connections page model (UX-004): one honest read of the two
+ * DISTINCT authorities through the connections view port. The port's own
+ * availability verdicts live INSIDE the view models (directory/bindings);
+ * a thrown failure of the read itself is a route error — never a
+ * placeholder surface.
+ */
+async function loadConnectionsPage(
+  composition: MosWebComposition,
+  route: MosRoute & { readonly kind: 'connections' },
+  retryHref: string,
+): Promise<MosRouteView> {
+  try {
+    const data = await composition.connections.getConnectionsViewData();
+    return {
+      kind: 'connections',
+      data: {
+        data,
+        selectedProviderId: route.providerId,
+        selectedBindingId: route.bindingId,
+      },
+    };
+  } catch (error) {
+    return {
+      kind: 'route-error',
+      code: 'connections-load-failed',
+      message: error instanceof Error ? error.message : String(error),
+      retryHref,
+    };
+  }
 }

@@ -239,3 +239,50 @@ export { LabBenchmarkDirectoryView } from './views/lab-benchmark-directory.js';
 export { LabBenchmarkDigestPanel } from './views/lab-benchmark-digest.js';
 export { LabCalibrationStatusView } from './views/lab-calibration-status.js';
 export { LabCalibrationDetailPanel } from './views/lab-calibration-detail.js';
+export { ConnectionsView } from './routes/connections-view.js';
+export type { ConnectionsRoute } from './routes/route.js';
+export type { ConnectionsPageData } from './routes/route-loading.js';
+export type {
+  CapabilityMatrixEntryVm,
+  CapabilityStatus,
+  ConnectionsAvailability,
+  ConnectionsViewData,
+  ConnectionsViewPort,
+  DistributionBindingHealthObservationVm,
+  DistributionBindingLifecycleStage,
+  DistributionBindingVm,
+  DistributionBindingsVm,
+  DurableJobEventView,
+  DurableJobLinkVm,
+  GateOutcomeVm,
+  PolicyVerdictGateVm,
+  PolicyVerdictRecordView,
+  ProductionRequestAnchorView,
+  ProviderClientInstanceVm,
+  ProviderDefinitionVm,
+  ProviderDirectoryVm,
+  ProviderImplementationLayerVm,
+  ProviderImplementationStatusVm,
+  ResolvableRef,
+} from './ports/connections-views.js';
+export {
+  CONNECTIONS_ROUTE_PATH,
+  connectionsFallback,
+  connectionsRouteLoading,
+  parseConnectionsRoute,
+} from './routes/connections-route.js';
+export {
+  renderCapabilityCell,
+  renderDirectory,
+} from './views/connections/provider-directory-view.js';
+export {
+  renderBinding,
+  renderBindings,
+  renderGate,
+  renderRef,
+  renderDurable,
+} from './views/connections/binding-lifecycle-view.js';
+export { renderConnections } from './views/connections/connections-view.js';
+export type { ConnectionsRenderState } from './views/connections/connections-view.js';
+export { wireConnections } from './platform/connections-wiring.js';
+export type { ConnectionsWiring } from './platform/connections-wiring.js';

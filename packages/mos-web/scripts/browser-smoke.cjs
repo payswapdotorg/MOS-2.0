@@ -34,6 +34,7 @@ const http = require('node:http');
 
 const { runStudioSuite } = require('./smoke-studio-suite.cjs');
 const { runLabSuite, runResponsiveSuite } = require('./smoke-lab-suite.cjs');
+const { runConnectionsSuite } = require('./smoke-connections-suite.cjs');
 
 const PACKAGE_ROOT = join(__dirname, '..');
 const DIST_WEB = join(PACKAGE_ROOT, 'dist', 'web');
@@ -188,6 +189,7 @@ async function main() {
     // regression), then the Lab surface (UX-003), then the responsive pass.
     await runStudioSuite(page, BASE_URL, check);
     await runLabSuite(page, BASE_URL, check);
+    await runConnectionsSuite(page, BASE_URL, check);
     await runResponsiveSuite(browser, BASE_URL, check);
 
     // Console state.
@@ -213,7 +215,7 @@ async function main() {
     log(`FAILURES: ${failures.join(' | ')}`);
     process.exitCode = 1;
   } else {
-    log('UX-003 BROWSER SMOKE: ALL ASSERTIONS PASSED');
+    log('UX-004 BROWSER SMOKE: ALL ASSERTIONS PASSED');
   }
 }
 
