@@ -65,8 +65,11 @@ test('Home links into the Missions surface (the loop\'s front door) and the Stud
   const hrefs = linkHrefs(tree);
   assert.equal(hrefs.includes('/missions'), true);
   assert.equal(hrefs.includes('/studio'), true, 'the §2 studio stage links the UX-002 surface');
+  // UX-005: the orientation strip adds /lab and /connections — all four
+  // product surfaces exist in this build, and Home links only into those.
   assert.equal(
-    hrefs.every((href) => href === '/missions' || href === '/studio'),
+    hrefs.every((href) =>
+      href === '/missions' || href === '/studio' || href === '/lab' || href === '/connections'),
     true,
     'Home links only into surfaces this build shows',
   );

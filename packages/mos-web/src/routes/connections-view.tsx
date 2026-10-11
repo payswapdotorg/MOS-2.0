@@ -15,6 +15,8 @@ import {
   renderRef,
   renderHealth,
 } from '../views/connections/binding-lifecycle-view.js';
+import { SummaryLayer, DisclosureItem } from '../views/disclosure/disclosure-primitive.js';
+import { buildConnectionsSummary } from '../views/disclosure/surface-summaries.js';
 
 /**
  * The Connections surface (UX-004): the read-side view over TWO DISTINCT
@@ -78,20 +80,28 @@ function ProviderCard({
       className={`rounded-lg border p-4 ${selected ? 'border-emerald-800/70 bg-emerald-950/20' : 'border-slate-800 bg-slate-900/40'}`}
       data-testid={`connections-provider-${provider.providerId}`}
     >
-      <h3 className="text-sm font-semibold text-slate-100">
-        <a
-          href={`/connections?provider=${provider.providerId}`}
-          className="underline decoration-slate-600 underline-offset-2 hover:decoration-slate-300"
-          aria-current={selected ? 'page' : undefined}
-          data-testid={`connections-provider-link-${provider.providerId}`}
-        >
-          {provider.providerLabel}
-        </a>{' '}
-        <span className="font-normal text-slate-500">[{provider.providerKind}]</span>
-      </h3>
-      <p className="mt-0.5 text-xs text-slate-500">
-        authority: {provider.authority} · {renderAvailability(provider.availability)}
-      </p>
+      <DisclosureItem
+        id={`ux005-provider-${provider.providerId}`}
+        defaultOpen={selected}
+        summary={
+          <span>
+        <h3 className="inline text-sm font-semibold text-slate-100">
+          <a
+            href={`/connections?provider=${provider.providerId}`}
+            className="underline decoration-slate-600 underline-offset-2 hover:decoration-slate-300"
+            aria-current={selected ? 'page' : undefined}
+            data-testid={`connections-provider-link-${provider.providerId}`}
+          >
+            {provider.providerLabel}
+          </a>{' '}
+          <span className="font-normal text-slate-500">[{provider.providerKind}]</span>
+        </h3>{' '}
+        <span className="text-xs text-slate-500">
+          authority: {provider.authority} · {renderAvailability(provider.availability)}
+        </span>
+          </span>
+        }
+      >
       {provider.implementations.map((impl) => (
         <div key={impl.implementationId} className="mt-3">
           <p className="text-xs text-slate-300" data-testid={`connections-impl-${impl.implementationId}`}>
@@ -114,6 +124,7 @@ function ProviderCard({
           <ImplementationRefView ref={instance.implementationRef} /> · tenant={instance.scopedToTenant}
         </p>
       ))}
+      </DisclosureItem>
     </li>
   );
 }
@@ -125,12 +136,9 @@ function BindingRow({
   readonly binding: DistributionBindingVm;
   readonly selected: boolean;
 }) {
-  return (
-    <li
-      className={`rounded-lg border p-4 ${selected ? 'border-emerald-800/70 bg-emerald-950/20' : 'border-slate-800 bg-slate-900/40'}`}
-      data-testid={`connections-binding-${binding.bindingId}`}
-    >
-      <h3 className="text-sm font-semibold text-slate-100">
+  const collapsed = (
+    <span>
+      <h3 className="inline text-sm font-semibold text-slate-100">
         <a
           href={`/connections?binding=${binding.bindingId}`}
           className="underline decoration-slate-600 underline-offset-2 hover:decoration-slate-300"
@@ -139,10 +147,23 @@ function BindingRow({
         >
           binding {binding.bindingId}
         </a>
-      </h3>
-      <p className="mt-0.5 text-xs text-slate-400" data-testid={`connections-binding-lifecycle-${binding.bindingId}`}>
+      </h3>{' '}
+      <span className="text-xs text-slate-400" data-testid={`connections-binding-lifecycle-${binding.bindingId}`}>
         lifecycle: {binding.lifecycleStage} · tenant: {binding.tenantContext}
-      </p>
+      </span>
+    </span>
+  );
+  return (
+    <li
+      className={`rounded-lg border p-4 ${selected ? 'border-emerald-800/70 bg-emerald-950/20' : 'border-slate-800 bg-slate-900/40'}`}
+      data-testid={`connections-binding-${binding.bindingId}`}
+    >
+      <DisclosureItem
+        id={`ux005-binding-${binding.bindingId}`}
+        defaultOpen={selected}
+        summary={collapsed}>
+        <BindingLifecycleDetailView binding={binding} />
+      </DisclosureItem>
     </li>
   );
 }
@@ -209,6 +230,22 @@ export function ConnectionsView({ data }: { readonly data: ConnectionsPageData }
       ? null
       : (data.data.bindings.bindings.find((b) => b.bindingId === data.selectedBindingId) ?? null);
 
+  const confirmedCount = data.data.bindings.bindings.flatMap((b) => b.healthObservations).filter(
+    (h) => h.confidence === 'CONFIRMED',
+  ).length;
+  const suspectedCount = data.data.bindings.bindings.flatMap((b) => b.healthObservations).filter(
+    (h) => h.confidence === 'SUSPECTED',
+  ).length;
+  const unknownCapabilityCount = data.data.directory.providers.flatMap((p) =>
+    p.implementations.flatMap((i) => i.capabilityMatrix),
+  ).filter((c) => c.status === 'unknown').length;
+  const summary = buildConnectionsSummary({
+    providerCount: data.data.directory.providers.length,
+    confirmedCount,
+    suspectedCount,
+    unknownCapabilityCount,
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -224,6 +261,13 @@ export function ConnectionsView({ data }: { readonly data: ConnectionsPageData }
           never fused
         </p>
       </header>
+
+      <SummaryLayer
+        surface="connections"
+        headline={summary.headline}
+        stats={summary.stats}
+        honestyLabels={summary.honestyLabels}
+      />
 
       <section aria-labelledby="connections-directory-title">
         <h2 id="connections-directory-title" className="text-base font-semibold text-slate-100">
@@ -274,9 +318,6 @@ export function ConnectionsView({ data }: { readonly data: ConnectionsPageData }
         </ul>
       </section>
 
-      {selectedBinding !== null ? (
-        <BindingLifecycleDetailView binding={selectedBinding} />
-      ) : null}
       {data.selectedBindingId !== null && selectedBinding === null ? (
         <aside
           role="alert"

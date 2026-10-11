@@ -3,6 +3,8 @@ import {
   MOS_COMPLETE_LOOP_STAGES,
   MOS_PRODUCT_THESIS,
 } from '../views/home-loop.js';
+import { LOOP_STAGES } from '../views/disclosure/loop-orientation.js';
+import { DisclosureItem } from '../views/disclosure/disclosure-primitive.js';
 
 /**
  * The Home surface (UX-001): the product's front door, narrating the §2
@@ -104,6 +106,35 @@ export function HomeView() {
             />
           ))}
         </ol>
+      </section>
+
+      <section aria-labelledby="mos-home-orientation-title" data-testid="ux005-orientation-strip">
+        <h2 id="mos-home-orientation-title" className="text-lg font-semibold">
+          The loop at a glance
+        </h2>
+        <p className="mt-1 max-w-2xl text-sm text-slate-400">
+          The complete loop as one compact strip (UX-005 progressive disclosure):
+          each stage expands to its paragraph and links to the surface that owns
+          it — the same narration as above, layered for scanning.
+        </p>
+        <ul className="ux005-loop-strip mt-4 flex flex-col gap-2" aria-label="The complete loop">
+          {LOOP_STAGES.map((stage) => (
+            <li key={stage.id}>
+              <DisclosureItem
+                id={stage.id}
+                summary={<span className="text-sm font-semibold text-slate-200">{stage.stage}</span>}
+              >
+                <p className="text-sm leading-relaxed text-slate-300">{stage.paragraph}</p>
+                <a
+                  href={stage.ownerHref}
+                  className="mt-2 inline-block text-sm text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+                >
+                  Go to {stage.ownerLabel}
+                </a>
+              </DisclosureItem>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section aria-labelledby="mos-home-loops-title">

@@ -5,6 +5,8 @@ import { LabCalibrationDetailPanel } from '../views/lab-calibration-detail.js';
 import { LabCalibrationStatusView } from '../views/lab-calibration-status.js';
 import { LAB_BOUNDARY_NOTE, LAB_LOOP_NARRATION } from '../views/lab-presentation.js';
 import { MosNoTenantContextView } from '../shell/route-fallbacks.js';
+import { SummaryLayer, DisclosureItem } from '../views/disclosure/disclosure-primitive.js';
+import { buildLabSummary } from '../views/disclosure/surface-summaries.js';
 
 /**
  * The Lab surface (UX-003): the read-side view over the Lab's
@@ -82,6 +84,10 @@ export function LabView({ data }: { readonly data: LabPageData }) {
     );
   }
 
+  const counterfactualCount = data.benchmarks.length;
+  const measuredCount = data.calibrationChains.length;
+  const labSummary = buildLabSummary({ measuredCount, counterfactualCount });
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -93,6 +99,13 @@ export function LabView({ data }: { readonly data: LabPageData }) {
           {LAB_BOUNDARY_NOTE}
         </p>
       </header>
+
+      <SummaryLayer
+        surface="lab"
+        headline={labSummary.headline}
+        stats={labSummary.stats}
+        honestyLabels={labSummary.honestyLabels}
+      />
 
       <section aria-labelledby="lab-benchmarks-title">
         <h2 id="lab-benchmarks-title" className="text-base font-semibold text-slate-100">
@@ -115,7 +128,20 @@ export function LabView({ data }: { readonly data: LabPageData }) {
       {data.benchmarkSelectionError !== null ? (
         <BenchmarkSelectionErrorPanel error={data.benchmarkSelectionError} />
       ) : null}
-      {data.selectedDigest !== null ? <LabBenchmarkDigestPanel digest={data.selectedDigest} /> : null}
+      {data.selectedDigest !== null ? (
+        <DisclosureItem
+          id="ux005-lab-digest"
+          defaultOpen
+          summary={
+            <span className="text-sm font-semibold text-slate-200">
+              Benchmark digest — {data.selectedDigest.summary.benchmarkId} (the counterfactual
+              badge stays visible here; expand for the full digest)
+            </span>
+          }
+        >
+          <LabBenchmarkDigestPanel digest={data.selectedDigest} />
+        </DisclosureItem>
+      ) : null}
 
       <section aria-labelledby="lab-calibration-title">
         <h2 id="lab-calibration-title" className="text-base font-semibold text-slate-100">
@@ -144,7 +170,18 @@ export function LabView({ data }: { readonly data: LabPageData }) {
         <CalibrationSelectionErrorPanel error={data.calibrationSelectionError} />
       ) : null}
       {data.selectedCalibrationRecords !== null && data.selectedCalibrationRecords.length > 0 ? (
-        <LabCalibrationDetailPanel records={data.selectedCalibrationRecords} />
+        <DisclosureItem
+          id="ux005-lab-calibration"
+          defaultOpen
+          summary={
+            <span className="text-sm font-semibold text-slate-200">
+              Calibration records — {data.selectedCalibrationRecords.length} append-only
+              prediction-error records (prediction vs measured, labeled)
+            </span>
+          }
+        >
+          <LabCalibrationDetailPanel records={data.selectedCalibrationRecords} />
+        </DisclosureItem>
       ) : null}
       {data.selectedCalibrationRecords !== null && data.selectedCalibrationRecords.length === 0 ? (
         <aside

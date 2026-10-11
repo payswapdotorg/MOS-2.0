@@ -2,3 +2,86 @@
 @theme {
   --color-mos-accent: oklch(0.72 0.15 250);
 }
+
+/* ---- UX-005 progressive disclosure layer -------------------------------- */
+
+.ux005-summary-layer {
+  margin-inline: 0;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(30 41 59);
+  background: rgb(2 6 23 / 0.4);
+  padding: 0.75rem 1rem;
+}
+
+.ux005-summary-headline {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(226 232 240);
+}
+
+.ux005-summary-stats {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  list-style: none;
+  padding: 0;
+}
+
+.ux005-stat {
+  font-size: 0.75rem;
+  color: rgb(148 163 184);
+}
+
+.ux005-stat-value {
+  font-weight: 700;
+  color: rgb(226 232 240);
+}
+
+.ux005-stat--positive .ux005-stat-value { color: rgb(52 211 153); }
+.ux005-stat--caution .ux005-stat-value { color: rgb(251 191 36); }
+.ux005-stat--negative .ux005-stat-value { color: rgb(248 113 113); }
+
+.ux005-honesty-labels {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  list-style: none;
+  padding: 0;
+}
+
+.ux005-honesty-label {
+  font-size: 0.6875rem;
+  color: rgb(253 230 138 / 0.9);
+}
+
+.ux005-disclosure-item {
+  border-top: 1px solid rgb(30 41 59);
+  padding-block: 0.375rem;
+}
+
+.ux005-disclosure-item > summary {
+  cursor: pointer;
+  list-style: revert;
+  focus-visible: outline: 2px solid rgb(56 189 248);
+}
+
+.ux005-disclosure-item[open] > summary {
+  color: rgb(226 232 240);
+}
+
+.ux005-disclosure-panel {
+  margin-top: 0.5rem;
+  padding-block: 0.25rem;
+}
+
+.ux005-disclosure-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ux005-loop-strip {
+  list-style: none;
+  padding: 0;
+}

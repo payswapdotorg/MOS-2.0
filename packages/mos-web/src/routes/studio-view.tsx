@@ -7,6 +7,8 @@ import {
   STUDIO_LOOP_NARRATION,
 } from '../views/studio-presentation.js';
 import { MosNoTenantContextView } from '../shell/route-fallbacks.js';
+import { SummaryLayer, DisclosureItem } from '../views/disclosure/disclosure-primitive.js';
+import { buildStudioSummary } from '../views/disclosure/surface-summaries.js';
 
 /**
  * The Studio surface (UX-002): the read-side view over the standalone studio
@@ -73,6 +75,16 @@ export function StudioView({ data }: { readonly data: StudioPageData }) {
     );
   }
 
+  const packageCount = data.packages.length;
+  // The §15 consent coverage renders per package VERSION inside the library
+  // view (StudioPackageConsentView rides the version records, not the
+  // summaries) — the summary layer counts the packages + versions and keeps
+  // the consent-honesty label; no coverage number is invented here.
+  const consentPendingCount = data.selectedChain === null
+    ? 0
+    : data.selectedChain.versions.filter((v) => !v.consent.allRawArtifactsCovered).length;
+  const studioSummary = buildStudioSummary({ packageCount, consentPendingCount });
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -84,6 +96,13 @@ export function StudioView({ data }: { readonly data: StudioPageData }) {
           {STUDIO_HANDOFF_NOTE}
         </p>
       </header>
+
+      <SummaryLayer
+        surface="studio"
+        headline={studioSummary.headline}
+        stats={studioSummary.stats}
+        honestyLabels={studioSummary.honestyLabels}
+      />
 
       <section aria-labelledby="studio-directory-title">
         <h2 id="studio-directory-title" className="text-base font-semibold text-slate-100">
@@ -100,7 +119,20 @@ export function StudioView({ data }: { readonly data: StudioPageData }) {
       </section>
 
       {data.selectionError !== null ? <SelectionErrorPanel error={data.selectionError} /> : null}
-      {data.selected !== null ? <StudioSessionDetailPanel detail={data.selected} /> : null}
+      {data.selected !== null ? (
+        <DisclosureItem
+          id="ux005-studio-session"
+          defaultOpen
+          summary={
+            <span className="text-sm font-semibold text-slate-200">
+              Session detail — {data.selected.summary.sessionId} (§14 labels and consent states
+              render inside; expand for the full record)
+            </span>
+          }
+        >
+          <StudioSessionDetailPanel detail={data.selected} />
+        </DisclosureItem>
+      ) : null}
 
       <section aria-labelledby="studio-packages-title">
         <h2 id="studio-packages-title" className="text-base font-semibold text-slate-100">
