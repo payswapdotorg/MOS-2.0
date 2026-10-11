@@ -978,9 +978,18 @@ importers:
         specifier: workspace:*
         version: link:../mos-contracts
     devDependencies:
+      '@mos/agents':
+        specifier: workspace:*
+        version: link:../mos-agents
       '@mos/distribution':
         specifier: workspace:*
         version: link:../mos-distribution
+      '@mos/experiments':
+        specifier: workspace:*
+        version: link:../mos-experiments
+      '@mos/jobs':
+        specifier: workspace:*
+        version: link:../mos-jobs
       '@mos/product-intelligence':
         specifier: workspace:*
         version: link:../mos-product-intelligence

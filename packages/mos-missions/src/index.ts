@@ -81,3 +81,18 @@ export {
   createInMemoryMarketingPlanner,
   IN_MEMORY_MARKETING_PLANNER_SOURCE,
 } from './adapters/in-memory-marketing-planner.js';
+
+// PROD-003 (Strategy Compiler / Marketing Automation Surface): the compiler,
+// the durable-run engine, and the host driver join the public surface. The
+// marketing-automation module composes the same in-package authorities the
+// planner established; cross-package authorities (agents/jobs/experiments)
+// arrive through ports at runtime (see src/strategy-compiler/ports.ts).
+export { StrategyCompiler, strategyIdFor } from './strategy-compiler/compile.js';
+export type { StrategyCompilerDeps } from './strategy-compiler/compile.js';
+export { AutomationEngine } from './marketing-automation/engine.js';
+export type { AutomationEngineDeps } from './marketing-automation/engine.js';
+export { driveAutomation, memoryHost } from './marketing-automation/runtime.js';
+export type { AutomationHost, DriveOutcome } from './marketing-automation/runtime.js';
+export * from './marketing-automation/index.js';
+export * from './strategy-compiler/index.js';
+export * from './authority-adapters/index.js';

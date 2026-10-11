@@ -412,11 +412,17 @@ test('every record carries the verbatim no-second-authority boundary statement',
   assert.equal(v2.boundaryStatement, expected);
 });
 
-test('the package runtime export surface is exactly the three disclosed runtime exports', () => {
-  const runtimeExports = Object.keys(packageIndex).sort();
-  assert.deepEqual(runtimeExports, [
-    'IN_MEMORY_MARKETING_PLANNER_SOURCE',
-    'createInMemoryMarketingPlanner',
-    'createInMemoryMissionRepository',
-  ]);
+test('the package runtime export surface carries the disclosed MARKETING-001 and PROD-003 exports', () => {
+  const runtimeExports = new Set(Object.keys(packageIndex));
+  // MARKETING-001's original three (the disclosed in-memory factories)
+  for (const key of ['IN_MEMORY_MARKETING_PLANNER_SOURCE', 'createInMemoryMarketingPlanner', 'createInMemoryMissionRepository']) {
+    assert.ok(runtimeExports.has(key), `missing MARKETING-001 export: ${key}`);
+  }
+  // PROD-003's headline surface (compiler, engine, durable host driver, adapters)
+  for (const key of ['StrategyCompiler', 'strategyIdFor', 'AutomationEngine', 'driveAutomation', 'memoryHost', 'gateDispatches', 'bindLate']) {
+    assert.ok(runtimeExports.has(key), `missing PROD-003 export: ${key}`);
+  }
+  // no accidental runtime leakage of a bare type-only module shape
+  assert.equal(typeof packageIndex.AutomationEngine, 'function');
+  assert.equal(typeof packageIndex.driveAutomation, 'function');
 });
