@@ -36,6 +36,7 @@ const { runStudioSuite } = require('./smoke-studio-suite.cjs');
 const { runLabSuite, runResponsiveSuite } = require('./smoke-lab-suite.cjs');
 const { runConnectionsSuite } = require('./smoke-connections-suite.cjs');
 const { runUx005Suite } = require('./smoke-ux005-suite.cjs');
+const { runUx006 } = require('./smoke-ux006-suite.cjs');
 
 const PACKAGE_ROOT = join(__dirname, '..');
 const DIST_WEB = join(PACKAGE_ROOT, 'dist', 'web');
@@ -192,6 +193,7 @@ async function main() {
     await runLabSuite(page, BASE_URL, check);
     await runConnectionsSuite(page, BASE_URL, check);
     await runUx005Suite(page, BASE_URL, check);
+    await runUx006(page, BASE_URL, check);
     await runResponsiveSuite(browser, BASE_URL, check);
 
     // Console state.
@@ -217,7 +219,7 @@ async function main() {
     log(`FAILURES: ${failures.join(' | ')}`);
     process.exitCode = 1;
   } else {
-    log('UX-005 BROWSER SMOKE: ALL ASSERTIONS PASSED');
+    log('UX-006 BROWSER SMOKE: ALL ASSERTIONS PASSED');
   }
 }
 

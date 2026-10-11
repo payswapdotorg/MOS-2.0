@@ -49,6 +49,14 @@ export interface InMemoryMosWebCompositionOptions {
   /** Tenant/workspace the shell presents. */
   readonly tenantId?: string;
   readonly workspaceId?: string | null;
+  /**
+   * Seed the demo missions (UX-006): three lifecycle-varied REAL records
+   * through the REAL repository, so the browser shell's front door is
+   * demonstrable end-to-end (the Studio/Lab seams already self-seed their
+   * fixture records). Default OFF: the node-side tests seed their own
+   * mission records and assert exact counts from a fresh repository.
+   */
+  readonly seedDemoMissions?: boolean;
 }
 
 /** The composed shell plus the seams tests need to seed and inspect. */
@@ -71,6 +79,83 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
 
 const DEMO_TENANT_ID = 'tenant-demo';
 const DEMO_WORKSPACE_ID = 'ws_demo';
+
+/** Demo missions (UX-006): REAL records seeded through the REAL repository. */
+const DEMO_MISSIONS: readonly {
+  readonly id: string;
+  readonly objective: {
+    readonly statement: string;
+    readonly targetMetrics: readonly {
+      readonly metric: string;
+      readonly target: string;
+      readonly unit: string;
+      readonly horizon: null;
+    }[];
+    readonly constraints: readonly never[];
+  };
+  readonly rewardSpec: {
+    readonly version: number;
+    readonly terms: readonly {
+      readonly metric: string;
+      readonly weight: number;
+      readonly direction: 'maximize';
+      readonly definition: string;
+    }[];
+  };
+  readonly lifecycle: 'draft' | 'active' | 'completed';
+}[] = [
+  {
+    id: 'mission_demo_1',
+    objective: {
+      statement: 'Run the MOS demo mission end to end.',
+      targetMetrics: [
+        { metric: 'qualified-reach', target: '10000', unit: 'count', horizon: null },
+      ],
+      constraints: [],
+    },
+    rewardSpec: {
+      version: 1,
+      terms: [
+        { metric: 'qualified-reach', weight: 1, direction: 'maximize', definition: 'Reach among demo accounts.' },
+      ],
+    },
+    lifecycle: 'active',
+  },
+  {
+    id: 'mission_demo_2',
+    objective: {
+      statement: 'Measure the closed-loop improvement on the demo program.',
+      targetMetrics: [
+        { metric: 'attributed-revenue', target: '2500', unit: 'count', horizon: null },
+      ],
+      constraints: [],
+    },
+    rewardSpec: {
+      version: 1,
+      terms: [
+        { metric: 'attributed-revenue', weight: 1, direction: 'maximize', definition: 'Attributed revenue among demo accounts.' },
+      ],
+    },
+    lifecycle: 'completed',
+  },
+  {
+    id: 'mission_demo_3',
+    objective: {
+      statement: 'Declare the next demo mission for the acceptance pass.',
+      targetMetrics: [
+        { metric: 'qualified-reach', target: '15000', unit: 'count', horizon: null },
+      ],
+      constraints: [],
+    },
+    rewardSpec: {
+      version: 1,
+      terms: [
+        { metric: 'qualified-reach', weight: 1, direction: 'maximize', definition: 'Reach among the next demo cohort.' },
+      ],
+    },
+    lifecycle: 'draft',
+  },
+];
 
 /**
  * Compose the in-memory MOS web shell: REAL identity + missions
@@ -120,6 +205,45 @@ export function createInMemoryMosWebComposition(
     missionRepository,
     now,
   });
+
+  // Seed the demo missions through the REAL repository when asked (the
+  // disclosed-double pattern the Studio/Lab seams already follow — their
+  // surfaces self-seed fixture records; the Missions surface seeded only the
+  // tenant before UX-006, leaving the browser shell's front door
+  // honestly-but-unhelpfully empty. Three lifecycle-varied missions make the
+  // whole-shell acceptance pass demonstrable: REAL records, REAL §13 badges,
+  // REAL selection flow — while the node-side tests keep their fresh-start
+  // default).
+  if (options.seedDemoMissions === true) for (const demo of DEMO_MISSIONS) {
+    const seeded = missionRepository.createMission({
+      scope: { tenantId: tenantId as never },
+      id: demo.id as never,
+      objective: demo.objective as never,
+      rewardSpec: demo.rewardSpec as never,
+    });
+    if ('error' in seeded) {
+      throw new Error(
+        `in-memory composition could not seed the demo mission ${demo.id}: ${seeded.message}`,
+      );
+    }
+    const scope = { tenantId: tenantId as never };
+    if (demo.lifecycle === 'active' || demo.lifecycle === 'completed') {
+      const activated = missionRepository.activateMission(scope, demo.id as never);
+      if ('error' in activated) {
+        throw new Error(
+          `in-memory composition could not activate the demo mission ${demo.id}: ${activated.message}`,
+        );
+      }
+    }
+    if (demo.lifecycle === 'completed') {
+      const completed = missionRepository.completeMission(scope, demo.id as never);
+      if ('error' in completed) {
+        throw new Error(
+          `in-memory composition could not complete the demo mission ${demo.id}: ${completed.message}`,
+        );
+      }
+    }
+  }
   const studioSurface = createInMemoryStudioSurface();
   const labSurface = createInMemoryLabSurface();
 
