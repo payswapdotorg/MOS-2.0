@@ -51,3 +51,27 @@ export {
   commerceDiscoveryIdDefault,
 } from "./helpers.js";
 export { createInMemoryDemandExperimentPort } from "./adapters/in-memory-demand-experiment.js";
+
+export type {
+  SocialObservationRef,
+  AttributionId,
+  AttributionBasis,
+  AttributionBasisKind,
+  AttributionCorrection,
+  AttributionRecord,
+  AttributionError,
+  AttributionErrorCode,
+} from "./attribution/types.js";
+
+export type {
+  AttributionServiceOptions,
+  CreateAttributionInput,
+  AttributionResult,
+} from "./attribution/ops.js";
+
+export { ATTRIBUTION_BASIS_KINDS, ATTRIBUTION_ERROR_CODES } from "./attribution/types.js";
+export { AttributionService } from "./attribution/ops.js";
+export {
+  CAUSALITY_VOCABULARY_PATTERNS,
+  validateNoCausalityVocabulary,
+} from "./attribution/validation.js";

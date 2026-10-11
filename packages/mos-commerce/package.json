@@ -1,7 +1,7 @@
 {
   "name": "@mos/commerce",
   "version": "0.1.0",
-  "description": "MOS v2.0 COMMERCE-001 — the commerce-discovery authority: versioned tenant-scoped append-only discovery candidates whose provenance CITES product-intelligence records (external commerce observations cited with provenance, never authored) and whose demand tests run through the REAL experiment authority via the declared DemandExperimentPort seam. No listing/order/inventory authority — commerce truth stays external (the §25 law carried into discovery).",
+  "description": "MOS v2.0 COMMERCE-001 \u2014 the commerce-discovery authority: versioned tenant-scoped append-only discovery candidates whose provenance CITES product-intelligence records (external commerce observations cited with provenance, never authored) and whose demand tests run through the REAL experiment authority via the declared DemandExperimentPort seam. No listing/order/inventory authority \u2014 commerce truth stays external (the \u00a725 law carried into discovery).",
   "private": true,
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@mos/experiments": "workspace:*",
     "@types/node": "^25.5.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "@mos/distribution": "workspace:*"
   }
 }

@@ -900,6 +900,9 @@ importers:
         specifier: workspace:*
         version: link:../mos-product-intelligence
     devDependencies:
+      '@mos/distribution':
+        specifier: workspace:*
+        version: link:../mos-distribution
       '@mos/experiments':
         specifier: workspace:*
         version: link:../mos-experiments
