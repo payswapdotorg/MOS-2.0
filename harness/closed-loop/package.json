@@ -1,0 +1,19 @@
+{
+  "name": "@mos/harness-closed-loop",
+  "private": true,
+  "type": "module",
+  "description": "PROD-004 repo-level closed-loop proof support (boundary-check precedent). No runtime deps beyond workspace links; every link disclosed in the completion report.",
+  "devDependencies": {
+    "@mos/missions": "workspace:*",
+    "@mos/jobs": "workspace:*",
+    "@mos/agents": "workspace:*",
+    "@mos/distribution": "workspace:*",
+    "@mos/experiments": "workspace:*",
+    "@mos/lab": "workspace:*",
+    "@mos/studio": "workspace:*",
+    "@mos/production": "workspace:*",
+    "@mos/product-intelligence": "workspace:*",
+    "@mos/engines": "workspace:*",
+    "@mos/capabilities": "workspace:*"
+  }
+}

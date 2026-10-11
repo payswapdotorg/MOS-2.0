@@ -606,6 +606,42 @@ importers:
 
   apps/zcode-cli/tools/typescript: {}
 
+  harness/closed-loop:
+    devDependencies:
+      '@mos/agents':
+        specifier: workspace:*
+        version: link:../../packages/mos-agents
+      '@mos/capabilities':
+        specifier: workspace:*
+        version: link:../../packages/mos-capabilities
+      '@mos/distribution':
+        specifier: workspace:*
+        version: link:../../packages/mos-distribution
+      '@mos/engines':
+        specifier: workspace:*
+        version: link:../../packages/mos-engines
+      '@mos/experiments':
+        specifier: workspace:*
+        version: link:../../packages/mos-experiments
+      '@mos/jobs':
+        specifier: workspace:*
+        version: link:../../packages/mos-jobs
+      '@mos/lab':
+        specifier: workspace:*
+        version: link:../../packages/mos-lab
+      '@mos/missions':
+        specifier: workspace:*
+        version: link:../../packages/mos-missions
+      '@mos/product-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/mos-product-intelligence
+      '@mos/production':
+        specifier: workspace:*
+        version: link:../../packages/mos-production
+      '@mos/studio':
+        specifier: workspace:*
+        version: link:../../packages/mos-studio
+
   packages/client:
     dependencies:
       '@zcode/rpc':
