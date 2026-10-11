@@ -155,8 +155,17 @@ test('non-numeric, zero and padded version params parse as absent (never guessed
   });
 });
 
-test('future product sections parse to the explicit section route', () => {
-  assert.deepEqual(parseMosRoute('/connections', ''), { kind: 'section', sectionId: 'connections' });
+test('the Connections surface parses to its dedicated route kind (UX-004)', () => {
+  assert.deepEqual(parseMosRoute('/connections', ''), {
+    kind: 'connections',
+    providerId: null,
+    bindingId: null,
+  });
+  assert.deepEqual(parseMosRoute('/connections', '?provider=prov-a'), {
+    kind: 'connections',
+    providerId: 'prov-a',
+    bindingId: null,
+  });
 });
 
 test('unknown paths parse to the explicit unknown route, never a silent fallback', () => {

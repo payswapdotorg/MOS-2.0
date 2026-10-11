@@ -22,10 +22,12 @@ module.exports.runStudioSuite = async function runStudioSuite(page, baseUrl, che
     (await labNav.count()) === 1 && (await labNav.getAttribute('aria-disabled')) === null,
   );
   check('nav-lab href is /lab', (await labNav.getAttribute('href')) === '/lab');
+  const connectionsNav = page.locator('[data-testid="nav-connections"]');
   check(
-    'nav-connections still renders its not-yet-available verdict (UX-004 untouched)',
-    (await page.locator('[data-testid="nav-connections-unavailable"]').count()) === 1,
+    'nav-connections is an ENABLED link (UX-004 turned the section on)',
+    (await connectionsNav.count()) === 1 && (await connectionsNav.getAttribute('aria-disabled')) === null,
   );
+  check('nav-connections href is /connections', (await connectionsNav.getAttribute('href')) === '/connections');
 
   // 2. Studio section: the session directory.
   await studioNav.click();

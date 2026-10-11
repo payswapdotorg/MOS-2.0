@@ -7,6 +7,7 @@ import { createInMemoryAppShellPort } from './in-memory-app-shell.js';
 import { createInMemoryMissionCatalogPort } from './in-memory-mission-catalog.js';
 import { createInMemoryStudioSurface } from './in-memory-studio-surface.js';
 import { createInMemoryLabSurface } from './in-memory-lab-surface.js';
+import { connectionsCompositionDouble } from './connections-composition-double.js';
 
 /**
  * DISCLOSED in-memory composition for the MOS browser shell (WEB-001 /
@@ -64,6 +65,8 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
   readonly studioSurface: ReturnType<typeof createInMemoryStudioSurface>;
   /** The disclosed Lab surface double (UX-003 observability). */
   readonly labSurface: ReturnType<typeof createInMemoryLabSurface>;
+  /** The disclosed Connections surface double (UX-004 observability). */
+  readonly connectionsSurface: typeof connectionsCompositionDouble;
 }
 
 const DEMO_TENANT_ID = 'tenant-demo';
@@ -127,11 +130,13 @@ export function createInMemoryMosWebComposition(
     studioPackages: studioSurface.studioPackages,
     labBenchmark: labSurface.labBenchmark,
     labCalibration: labSurface.labCalibration,
+    connections: connectionsCompositionDouble,
     identityRepository,
     missionRepository,
     recordedIntents: catalogDouble.recordedIntents,
     scope: { tenantId, workspaceId },
     studioSurface,
     labSurface,
+    connectionsSurface: connectionsCompositionDouble,
   };
 }

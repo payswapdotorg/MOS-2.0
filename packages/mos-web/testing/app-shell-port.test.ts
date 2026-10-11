@@ -82,15 +82,15 @@ test('later surfaces are explicit not-yet-available verdicts naming their depend
     'UX-003 turned the Lab section on — LAB-017 + LAB-018 are delivered',
   );
   const connections = shellView.sections.find((section) => section.id === 'connections');
-  assert.equal(
-    connections?.availability.kind === 'not-yet-available' && /UX-004/.test(connections.availability.dependsOn),
-    true,
+  assert.deepEqual(
+    connections?.availability,
+    { kind: 'available' },
+    'UX-004 turned the Connections section on — PROD-001 distribution/integrations observed read-side',
   );
-  for (const section of shellView.sections.slice(4)) {
-    assert.equal(section?.availability.kind, 'not-yet-available');
-    if (section?.availability.kind === 'not-yet-available') {
-      assert.equal(section.availability.dependsOn.length > 0, true);
-    }
+  // With UX-004 delivered, every declared section is honestly available; a
+  // FUTURE section (none today) would carry not-yet-available + dependsOn.
+  for (const section of shellView.sections) {
+    assert.equal(section.availability.kind, 'available');
   }
 });
 

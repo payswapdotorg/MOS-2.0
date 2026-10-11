@@ -4,6 +4,7 @@ import type { StudioDirectoryPort } from './studio-directory.js';
 import type { StudioPackageLibraryPort } from './studio-packages.js';
 import type { LabBenchmarkDigestPort } from './lab-benchmark.js';
 import type { LabCalibrationStatusPort } from './lab-calibration.js';
+import type { ConnectionsViewPort } from './connections-views.js';
 
 /**
  * The composition the browser shell runs on (WEB-001).
@@ -17,7 +18,8 @@ import type { LabCalibrationStatusPort } from './lab-calibration.js';
  * `@mos/missions` / `@mos/identity` (runtime) and `@mos/studio`
  * (type-only, REAL-shape pins — the studio runtime itself is node-side; see
  * the seam's disclosure). The Lab surface (UX-003) follows the same
- * discipline over REAL-shaped LAB-017/LAB-018 records.
+ * discipline over REAL-shaped LAB-017/LAB-018 records, and the Connections
+ * surface (UX-004) over the PROD-001 distribution/integrations shapes.
  */
 export interface MosWebComposition {
   /** Shell chrome: sections, availability verdicts, tenant context. */
@@ -32,4 +34,6 @@ export interface MosWebComposition {
   readonly labBenchmark: LabBenchmarkDigestPort;
   /** The Lab online-calibration status (UX-003, over LAB-018): read-only. */
   readonly labCalibration: LabCalibrationStatusPort;
+  /** The Connections surface (UX-004, over PROD-001): read-only. */
+  readonly connections: ConnectionsViewPort;
 }

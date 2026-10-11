@@ -151,6 +151,7 @@ test('a failing directory listing degrades the WHOLE page to the route-error vie
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: composition.missionCatalog,
       studioDirectory: {
@@ -183,6 +184,7 @@ test('a failing library listing is secondary — the page loads with the explici
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: composition.missionCatalog,
       studioDirectory: composition.studioDirectory,
@@ -215,6 +217,7 @@ test('a failing detail load degrades to the load-failed marker (not not-found)',
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: composition.missionCatalog,
       studioDirectory: {
@@ -244,6 +247,7 @@ test('a failing chain load degrades to the load-failed marker', async () => {
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: composition.missionCatalog,
       studioDirectory: composition.studioDirectory,

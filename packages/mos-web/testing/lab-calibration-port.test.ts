@@ -169,5 +169,5 @@ test('the composition wires the lab ports and turns the Lab section on (UX-003)'
   const lab = shellView.sections.find((section) => section.id === 'lab');
   assert.deepEqual(lab?.availability, { kind: 'available' });
   const connections = shellView.sections.find((section) => section.id === 'connections');
-  assert.equal(connections?.availability.kind, 'not-yet-available', 'UX-004 stays untouched');
+  assert.deepEqual(connections?.availability, { kind: 'available' }, 'UX-004 turned the Connections section on');
 });

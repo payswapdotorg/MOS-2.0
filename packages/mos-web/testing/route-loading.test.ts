@@ -91,6 +91,7 @@ const seededComposition = (): ReturnType<typeof createInMemoryMosWebComposition>
 test('the home route resolves to the home view with no port calls', async () => {
   let calls = 0;
   const composition: MosWebComposition = {
+      connections: null as never,
     appShell: {
       async loadAppShell() {
         calls += 1;
@@ -219,6 +220,7 @@ test('a failing detail load degrades to the load-failed marker', async () => {
   };
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: failingCatalog,
       studioDirectory: composition.studioDirectory,
@@ -249,6 +251,7 @@ test('a failing catalog list degrades the WHOLE page to the route-error view', a
   };
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: failingCatalog,
       studioDirectory: composition.studioDirectory,
@@ -281,6 +284,7 @@ test('a failing vocabulary load is secondary data — the page still loads', asy
   };
   const routeView = await loadMosRouteView(
     {
+      connections: null as never,
       appShell: composition.appShell,
       missionCatalog: degradedCatalog,
       studioDirectory: composition.studioDirectory,
