@@ -888,6 +888,28 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/mos-commerce:
+    dependencies:
+      '@mos/contracts':
+        specifier: workspace:*
+        version: link:../mos-contracts
+      '@mos/missions':
+        specifier: workspace:*
+        version: link:../mos-missions
+      '@mos/product-intelligence':
+        specifier: workspace:*
+        version: link:../mos-product-intelligence
+    devDependencies:
+      '@mos/experiments':
+        specifier: workspace:*
+        version: link:../mos-experiments
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   packages/mos-content:
     dependencies:
       '@mos/contracts':
