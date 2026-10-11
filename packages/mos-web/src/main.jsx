@@ -56,7 +56,9 @@ function bootMosWebShell() {
   );
 
   const platform = createWebMosPlatform();
-  const composition = createInMemoryMosWebComposition();
+  // seedDemoMissions (UX-006): the browser shell boots with three REAL demo
+  // missions so the whole-shell acceptance pass demonstrates the front door.
+  const composition = createInMemoryMosWebComposition({ seedDemoMissions: true });
   const rootElement = globalThis.document.getElementById('root');
   let reactRoot = null;
 
