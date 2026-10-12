@@ -1,6 +1,11 @@
 /* oxlint-disable eslint(max-lines) -- Share 与 Desktop 共用的只读 Row/turn presentation 需要保持在同一安全边界。
- * 安全边界约束：本文件被匿名公开分享页（packages/web/src/share）直接引用，新增依赖必须考虑
- * 公开页 bundle 体积与无 Desktop 宿主（window.zcode / PlatformProvider / tab store）的运行环境；
+ * SAFETY BOUNDARY (consumer retired): this component was built to render on
+ * the anonymous, unauthenticated public share page; that web consumer was
+ * retired with the ZCode web shell (RETIRE-001, per UX-SUBSTRATE-AUDIT-v1
+ * §2 RETIRE row 3 — replaced by MOS artifact projections, not ported). The
+ * boundary constraint stands: inputs are untrusted externally-sourced share
+ * content; never assume an authenticated or private render context, and any
+ * new public consumer must re-affirm this boundary explicitly.
  * Desktop 专属能力（如 open-with 子树）一律由消费方经组件注入，不得静态 import。 */
 import {
   createContext,
