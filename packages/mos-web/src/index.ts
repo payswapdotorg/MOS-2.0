@@ -287,6 +287,34 @@ export type { ConnectionsRenderState } from './views/connections/connections-vie
 export { wireConnections } from './platform/connections-wiring.js';
 export type { ConnectionsWiring } from './platform/connections-wiring.js';
 
+// ---- NOTIFY-CS notification consumer surface ----
+export { NotificationsSurfaceView } from './routes/notifications-view.js';
+export type { NotificationsRoute } from './routes/route.js';
+export type {
+  NotificationDetailVm,
+  NotificationEventVm,
+  NotificationSummaryVm,
+  NotificationsAvailability,
+  NotificationsPageData,
+  NotificationsViewData,
+  NotificationsViewPort,
+  RecipientSuppressionRuleVm,
+} from './ports/notifications-views.js';
+export {
+  NOTIFICATIONS_ROUTE_PATH,
+  notificationsFallback,
+  notificationsRouteLoading,
+  parseNotificationsRoute,
+} from './routes/notifications-route.js';
+export {
+  renderLifecycleBadge,
+  renderSubjectRefs,
+} from './views/notifications/notifications-lines.js';
+export { renderNotifications } from './views/notifications/notifications-view.js';
+export type { NotificationsRenderState } from './views/notifications/notifications-view.js';
+export { wireNotifications } from './platform/notifications-wiring.js';
+export type { NotificationsWiring } from './platform/notifications-wiring.js';
+
 // ---- UX-005 progressive disclosure layer ----
 export type {
   DisclosureItemProps,

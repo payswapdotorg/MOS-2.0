@@ -28,7 +28,7 @@ export interface SummaryStatView {
 }
 
 export interface SummaryLayerProps {
-  readonly surface: 'home' | 'missions' | 'studio' | 'lab' | 'connections';
+  readonly surface: 'home' | 'missions' | 'studio' | 'lab' | 'connections' | 'notifications';
   readonly headline: string;
   readonly stats: readonly SummaryStatView[];
   /** Honesty labels — rendered ALWAYS, at every disclosure level. */

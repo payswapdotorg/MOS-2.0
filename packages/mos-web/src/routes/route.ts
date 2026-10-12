@@ -48,12 +48,19 @@ export interface ConnectionsRoute {
   readonly bindingId: string | null;
 }
 
+export interface NotificationsRoute {
+  readonly kind: 'notifications';
+  /** Selected notification record id (`?notification=<id>`), when given. */
+  readonly notificationId: string | null;
+}
+
 export type MosRoute =
   | { readonly kind: 'home' }
   | MissionsRoute
   | StudioRoute
   | LabRoute
   | ConnectionsRoute
+  | NotificationsRoute
   | { readonly kind: 'section'; readonly sectionId: ShellSectionId }
   | { readonly kind: 'unknown'; readonly path: string };
 
@@ -129,6 +136,14 @@ export function parseMosRoute(pathname: string, search: string): MosRoute {
     };
   }
 
+  if (cleanPath === '/notifications') {
+    const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    return {
+      kind: 'notifications',
+      notificationId: firstParam(params, 'notification'),
+    };
+  }
+
   const sectionId = SECTION_ROUTES[cleanPath];
   if (sectionId) {
     return { kind: 'section', sectionId };
@@ -170,6 +185,10 @@ export function mosRouteTitle(route: MosRoute): string {
           : route.bindingId !== null
             ? 'MOS — Connections · binding lifecycle'
             : 'MOS — Connections';
+    case 'notifications':
+      return route.notificationId !== null
+        ? 'MOS — Notifications · record history'
+        : 'MOS — Notifications';
     case 'section':
       return `MOS — ${route.sectionId}`;
     case 'unknown':

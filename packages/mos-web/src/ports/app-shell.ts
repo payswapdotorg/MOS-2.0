@@ -19,7 +19,13 @@ import type { TenantId, WorkspaceId } from '@mos/contracts';
  */
 
 /** Product sections of the MOS browser shell. Home and Missions are UX-001. */
-export type ShellSectionId = 'home' | 'missions' | 'studio' | 'lab' | 'connections';
+export type ShellSectionId =
+  | 'home'
+  | 'missions'
+  | 'studio'
+  | 'lab'
+  | 'connections'
+  | 'notifications';
 
 /**
  * Availability of a product surface in this shell build. Unavailable is a

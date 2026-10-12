@@ -38,7 +38,7 @@ test('the shell loads its chrome as a view model (async port contract)', async (
   const shellView = await expectShellView(
     createInMemoryAppShellPort({ identityRepository: identity, tenantId: 'tenant-a', workspaceId: null }),
   );
-  assert.equal(shellView.sections.length, 5);
+  assert.equal(shellView.sections.length, 6);
 });
 
 test('Home, Missions, Studio and Lab come first and are the available sections', async () => {
@@ -50,8 +50,8 @@ test('Home, Missions, Studio and Lab come first and are the available sections',
 
   assert.deepEqual(
     shellView.sections.map((section) => section.id),
-    ['home', 'missions', 'studio', 'lab', 'connections'],
-    'Home and Missions are first (UX-001), Studio third (UX-002), Lab fourth (UX-003); the plan\'s section order follows',
+    ['home', 'missions', 'studio', 'lab', 'connections', 'notifications'],
+    'Home and Missions are first (UX-001), Studio third (UX-002), Lab fourth (UX-003), Connections fifth (UX-004), Notifications sixth (NOTIFY-CS); the plan\'s section order follows',
   );
   const home = shellView.sections[0];
   const missions = shellView.sections[1];

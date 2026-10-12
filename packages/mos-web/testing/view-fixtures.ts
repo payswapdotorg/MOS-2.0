@@ -32,6 +32,12 @@ export const SECTIONS: readonly ShellSectionView[] = [
     route: '/connections',
     availability: { kind: 'not-yet-available', dependsOn: 'UX-004 (PROD-001)' },
   },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    route: '/notifications',
+    availability: { kind: 'available' },
+  },
 ];
 
 export const TENANT: TenantContextView = {

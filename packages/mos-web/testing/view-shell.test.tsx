@@ -208,10 +208,10 @@ test('images/icons carry accessible labels; tables declare column scopes', () =>
 
 test('the section table the shell renders matches the port readiness verdicts', () => {
   // The composition seam's section table (plan §2.2 readiness) is what the
-  // chrome presents; this pins the five sections and their verdict kinds.
+  // chrome presents; this pins the six sections and their verdict kinds.
   assert.deepEqual(
     SECTIONS.map((section) => section.id),
-    ['home', 'missions', 'studio', 'lab', 'connections'],
+    ['home', 'missions', 'studio', 'lab', 'connections', 'notifications'],
   );
-  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 4);
+  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 5);
 });
