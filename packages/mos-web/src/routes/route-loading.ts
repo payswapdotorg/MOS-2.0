@@ -25,6 +25,8 @@ import type {
   LabCalibrationRecordView,
 } from '../ports/lab-calibration.js';
 import type { ConnectionsViewData } from '../ports/connections-views.js';
+import type { NotificationsViewData } from '../ports/notifications-views.js';
+import { loadNotificationsPage } from './notifications-route.js';
 import type { AppShellView, ShellSectionView } from '../ports/app-shell.js';
 
 /**
@@ -127,6 +129,7 @@ export type MosRouteView =
   | { readonly kind: 'studio'; readonly data: StudioPageData }
   | { readonly kind: 'lab'; readonly data: LabPageData }
   | { readonly kind: 'connections'; readonly data: ConnectionsPageData }
+  | { readonly kind: 'notifications'; readonly data: NotificationsViewData }
   | {
       readonly kind: 'route-error';
       readonly code: string;
@@ -149,7 +152,9 @@ function retryHrefFor(route: MosRoute): string {
         ? '/lab'
         : route.kind === 'connections'
           ? '/connections'
-          : `/${route.kind === 'section' ? route.sectionId : ''}`;
+          : route.kind === 'notifications'
+            ? '/notifications'
+            : `/${route.kind === 'section' ? route.sectionId : ''}`;
 }
 
 /**
@@ -176,6 +181,10 @@ export async function loadMosRouteView(
 
   if (route.kind === 'connections') {
     return loadConnectionsPage(composition, route, retryHrefFor(route));
+  }
+
+  if (route.kind === 'notifications') {
+    return loadNotificationsPage(composition, route, retryHrefFor(route));
   }
 
   if (route.kind === 'section') {

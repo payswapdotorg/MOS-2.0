@@ -25,9 +25,10 @@ import type {
  * (BROWSER-SHELL-REPLACEMENT-PLAN §2.2): Home, Missions (UX-001), Studio
  * (UX-002, over the delivered STUDIO-014 standalone studio product) and Lab
  * (UX-003, over the delivered LAB-017 robust benchmark + LAB-018 online
- * calibration) are available in this build; Connections waits on UX-004 and
- * is presented as an explicit `not-yet-available` verdict — the shell never
- * renders placeholder surfaces.
+ * calibration) are available in this build, as are Connections (UX-004, over
+ * the delivered PROD-001 distribution/integrations machinery) and
+ * Notifications (NOTIFY-CS, over the delivered NOTIFY-001 notification
+ * plane). The shell never renders placeholder surfaces.
  */
 
 /** Options for {@link createInMemoryAppShellPort}. */
@@ -56,6 +57,12 @@ const SECTION_TABLE: readonly {
     id: 'connections',
     label: 'Connections',
     route: '/connections',
+    availability: { kind: 'available' },
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    route: '/notifications',
     availability: { kind: 'available' },
   },
 ];

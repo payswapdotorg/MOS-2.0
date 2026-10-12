@@ -8,6 +8,7 @@ import { createInMemoryMissionCatalogPort } from './in-memory-mission-catalog.js
 import { createInMemoryStudioSurface } from './in-memory-studio-surface.js';
 import { createInMemoryLabSurface } from './in-memory-lab-surface.js';
 import { connectionsCompositionDouble } from './connections-composition-double.js';
+import { createInMemoryNotificationsViewPort } from './notifications-composition-double.js';
 
 /**
  * DISCLOSED in-memory composition for the MOS browser shell (WEB-001 /
@@ -75,6 +76,8 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
   readonly labSurface: ReturnType<typeof createInMemoryLabSurface>;
   /** The disclosed Connections surface double (UX-004 observability). */
   readonly connectionsSurface: typeof connectionsCompositionDouble;
+  /** The disclosed Notifications surface double (NOTIFY-CS observability). */
+  readonly notificationsSurface: ReturnType<typeof createInMemoryNotificationsViewPort>;
 }
 
 const DEMO_TENANT_ID = 'tenant-demo';
@@ -247,6 +250,7 @@ export function createInMemoryMosWebComposition(
   const studioSurface = createInMemoryStudioSurface();
   const labSurface = createInMemoryLabSurface();
 
+  const notificationsPort = createInMemoryNotificationsViewPort();
   return {
     appShell,
     missionCatalog: catalogDouble.port,
@@ -255,6 +259,7 @@ export function createInMemoryMosWebComposition(
     labBenchmark: labSurface.labBenchmark,
     labCalibration: labSurface.labCalibration,
     connections: connectionsCompositionDouble,
+    notifications: notificationsPort,
     identityRepository,
     missionRepository,
     recordedIntents: catalogDouble.recordedIntents,
@@ -262,5 +267,6 @@ export function createInMemoryMosWebComposition(
     studioSurface,
     labSurface,
     connectionsSurface: connectionsCompositionDouble,
+    notificationsSurface: notificationsPort,
   };
 }
