@@ -222,7 +222,17 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true,
       // 生产包若直接暴露 sourceMappingURL，攻击者可在客户端侧还原业务源码。
       // 生产使用 hidden sourcemap：本地/发布流程保留 .map，不在产物里暴露映射入口。
-      sourcemap: mode === "production" ? "hidden" : true,
+      // 内存受限构建环境（ZCODE_DESKTOP_NO_MINIFY=1）同时关闭 sourcemap：chunk 渲染
+      // 阶段持有全部模块映射是最大的驻留内存来源。默认行为不变。
+      sourcemap:
+        process.env.ZCODE_DESKTOP_NO_MINIFY === "1"
+          ? false
+          : mode === "production"
+            ? "hidden"
+            : true,
+      // 内存受限构建环境的逃生门（如 4GB 沙箱）：关闭压缩可显著降低 rolldown
+      // 打包阶段的驻留内存，代价是 renderer 产物体积增大。默认行为不变。
+      minify: process.env.ZCODE_DESKTOP_NO_MINIFY === "1" ? false : undefined,
       rollupOptions: {
         // 多入口：主窗口 + 进程监控 + CUA 权限拖拽浮窗
         input: {
