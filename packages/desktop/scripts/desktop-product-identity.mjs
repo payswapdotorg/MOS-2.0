@@ -5,12 +5,16 @@
  */
 export const ZCODE_PREVIEW_IDENTITY_ENV = "ZCODE_PREVIEW_IDENTITY";
 
+// MOS v2.0 desktop product identity (operator directive 2026-10-16): the
+// installable desktop app is the MOS product — "ZCode is infrastructure.
+// MOS is the authority." (README.md). The substrate (transport/UI/sessions/
+// agent execution) is retained; the shipped identity is MOS.
 const PRODUCTION_IDENTITY = Object.freeze({
   flavor: "production",
-  appId: "dev.zcode.app",
-  productName: "ZCode",
-  linuxExecutableName: "zcode",
-  linuxPackageName: "zcode",
+  appId: "org.payswap.mos",
+  productName: "MOS",
+  linuxExecutableName: "mos",
+  linuxPackageName: "mos",
   cuaHelperInstallVariant: null,
 });
 

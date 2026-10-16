@@ -695,7 +695,11 @@ export default {
     artifactName: buildDesktopArtifactName("win"),
   },
   linux: {
-    target: ["AppImage", "deb", "rpm", "pacman"],
+    // MOS desktop release targets (operator directive 2026-10-16): the
+    // installable product ships for Ubuntu-class desktops — AppImage
+    // (distro-agnostic single file) + deb (apt/dpkg install). rpm/pacman
+    // remain available for later waves by re-adding them here.
+    target: ["AppImage", "deb"],
     artifactName: buildDesktopArtifactName("linux"),
     // desktop 包名是 scoped package（@zcode/desktop），electron-builder 默认会把
     // Linux executable/Icon 推成 @zcodedesktop。部分桌面环境无法按这个 icon name 命中
