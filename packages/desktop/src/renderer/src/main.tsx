@@ -1,12 +1,11 @@
 import { DatabaseStartupAdmission } from "./databaseStartupAdmission.js";
+import { MosDatabaseStartupScreen } from "./mosDatabaseStartupScreen.js";
 import { initializeDesktopLocalTtft } from "./localTtftBootstrap.js";
 import { createRoot } from "react-dom/client";
 import { useEffect } from "react";
 import {
   AppErrorBoundary,
-  GlobalDatabaseStartupLoading,
   UpdateStatusWindowRoot,
-  ZCodeIntlProvider,
   registerBaseWorkspaceServices,
   registerRemoteWorkspaceSession,
   createRemoteWorkspaceDisconnectedError,
@@ -152,26 +151,18 @@ const sendStartupControl = (control: DatabaseStartupControl) =>
   window.postMessage({ type: InternalChannels.DatabaseStartupControl, control }, "*");
 function renderDatabaseStartup(): void {
   appRoot?.render(
-    <AppErrorBoundary isDesktop isMacDesktop={isMacDesktop} isWindowsDesktop={isWindowsDesktop}>
-      <ZCodeIntlProvider
-        initialLocale={initialLocaleFlag ? initialLocale : undefined}
-        resolveSystemLocale={desktopPlatform.getSystemLocale}
-      >
-        <StartupReadyNotifier />
-        <GlobalDatabaseStartupLoading
-          state={databaseStartupAdmission.state}
-          onRetry={() => {
-            if (databaseStartupAdmission.state)
-              sendStartupControl({
-                action: "retry",
-                attemptId: databaseStartupAdmission.state.attemptId,
-              });
-          }}
-          onCopy={(details) => navigator.clipboard.writeText(details)}
-          onExit={() => sendStartupControl({ action: "exit" })}
-        />
-      </ZCodeIntlProvider>
-    </AppErrorBoundary>,
+    <MosDatabaseStartupScreen
+      state={databaseStartupAdmission.state}
+      onRetry={() => {
+        if (databaseStartupAdmission.state)
+          sendStartupControl({
+            action: "retry",
+            attemptId: databaseStartupAdmission.state.attemptId,
+          });
+      }}
+      onCopy={(details) => navigator.clipboard.writeText(details)}
+      onExit={() => sendStartupControl({ action: "exit" })}
+    />,
   );
 }
 function enterAppIfPrepared(): void {

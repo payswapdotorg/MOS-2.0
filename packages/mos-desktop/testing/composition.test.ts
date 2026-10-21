@@ -18,7 +18,8 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { MosWebComposition, TenantScope } from '@mos/web';
+import type { MosWebComposition } from '@mos/web';
+import type { TenantScope } from '@mos/contracts';
 import { createProductionMosWebComposition } from '../out/compose-production-mos-web.js';
 import { entrySource } from './pin-scan.js';
 
@@ -55,7 +56,7 @@ test('a fresh composition starts with ZERO missions — no demo seeds', async ()
   assert.equal(composition.missionRepository.listMissions(scope).length, 0);
   const summaries = await composition.missionCatalog.listMissionSummaries(scope);
   assert.deepEqual(summaries, []);
-  const detail = await composition.missionCatalog.loadMissionDetail('mission-x', scope);
+  const detail = await composition.missionCatalog.loadMissionDetail('mission-x' as never, scope);
   assert.ok('error' in detail && detail.error === 'mission-not-found');
 });
 
@@ -117,11 +118,11 @@ test('studio, connections and notifications answer through their own unavailable
 
   const sessions = await composition.studioDirectory.listStudioSessions(scope);
   assert.ok('error' in sessions && sessions.error === 'studio-directory-unavailable');
-  const detail = await composition.studioDirectory.loadStudioSessionDetail('s-x', scope);
+  const detail = await composition.studioDirectory.loadStudioSessionDetail('s-x' as never, scope);
   assert.ok('error' in detail && detail.error === 'studio-directory-unavailable');
   const packages = await composition.studioPackages.listStudioPackages(scope);
   assert.ok('error' in packages && packages.error === 'studio-package-library-unavailable');
-  const chain = await composition.studioPackages.loadStudioPackageChain('p-x', scope);
+  const chain = await composition.studioPackages.loadStudioPackageChain('p-x' as never, scope);
   assert.ok('error' in chain && chain.error === 'studio-package-library-unavailable');
 
   const connections = await composition.connections.getConnectionsViewData();
@@ -148,19 +149,28 @@ test('the create-mission intent declaration records a receipt and creates NO mis
     scope,
     objectiveStatement: 'Grow qualified reach in the device-local tenant.',
     rewardTerms: [
-      { metric: 'qualified-reach', direction: 'maximize', weight: 1, definition: 'Reach among local accounts.' },
+      { metric: 'qualified-reach' as never, direction: 'maximize' as never, weight: 1, definition: 'Reach among local accounts.' },
     ],
-  };
-  const receipt = await composition.missionCatalog.declareCreateMissionIntent(declaration);
-  assert.ok(!('error' in receipt));
+  } as Parameters<typeof composition.missionCatalog.declareCreateMissionIntent>[0];
+  const receiptResult = await composition.missionCatalog.declareCreateMissionIntent(declaration);
+  assert.ok(!('error' in receiptResult), 'expected a receipt');
+  if ('error' in receiptResult) {
+    throw new Error('expected a receipt');
+  }
+  const receipt = receiptResult;
   assert.equal(receipt.routedTo, 'missions-authority');
   assert.equal(receipt.declaredAt, NOW());
 
-  const loaded = await composition.missionCatalog.loadCreateMissionIntentReceipt(
+  const loadedResult = await composition.missionCatalog.loadCreateMissionIntentReceipt(
     receipt.intentId,
     scope,
   );
-  assert.ok(loaded !== null && loaded.intentId === receipt.intentId);
+  assert.ok(loadedResult !== null && !('error' in loadedResult), 'the receipt loads back');
+  if (loadedResult === null || 'error' in loadedResult) {
+    throw new Error('expected the receipt to load back');
+  }
+  const loaded = loadedResult;
+  assert.equal(loaded.intentId, receipt.intentId);
 
   // Cross-tenant receipt reads never leak (§31).
   const otherScope = scopeOf('tenant-other');
@@ -177,7 +187,12 @@ test('the create-mission intent declaration records a receipt and creates NO mis
 
 test('the reward-metric vocabulary mirrors the real RewardMetricId union (17 metrics)', async () => {
   const composition = createProductionMosWebComposition({ now: NOW });
-  const vocabulary = await composition.missionCatalog.loadRewardMetricVocabulary();
+  const vocabularyResult = await composition.missionCatalog.loadRewardMetricVocabulary();
+  assert.ok(!('error' in vocabularyResult));
+  if ('error' in vocabularyResult) {
+    assert.fail('expected the vocabulary');
+  }
+  const vocabulary = vocabularyResult;
   assert.equal(vocabulary.length, 17);
   assert.equal(vocabulary[0]?.id, 'business-outcome');
   assert.equal(vocabulary[16]?.id, 'operational-risk');

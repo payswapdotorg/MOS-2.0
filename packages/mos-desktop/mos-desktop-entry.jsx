@@ -14,8 +14,8 @@
 // src/main.jsx established. All logic it calls lives in scanned, tested
 // TypeScript modules under `src/` and the composition seam under
 // `composition/`; the package's own presentation-only structural test
-// covers this file (no @zcode/* imports, no domain-runtime imports, no
-// engine SDKs).
+// covers this file (no Zcode-substrate imports, no domain-runtime
+// imports, no engine SDKs).
 //
 // Composition disclosure: this entry boots the shell on the PRODUCTION
 // composition root (composition/compose-production-mos-web.ts) — REAL

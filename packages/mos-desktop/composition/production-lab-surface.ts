@@ -86,9 +86,8 @@ const messageOf = (error: unknown): string =>
 export function createProductionLabSurface(
   options: ProductionLabSurfaceOptions = {},
 ): ProductionLabSurface {
-  const now: () => Timestamp = options.now
-    ? () => options.now() as Timestamp
-    : () => new Date().toISOString() as Timestamp;
+  const nowSource: () => string = options.now ?? (() => new Date().toISOString());
+  const now = () => nowSource() as Timestamp;
 
   // ---- the REAL runtime stack (fresh, empty, no seeds) ----
   const worldModels = createInMemorySocialWorldModelStore({ now });
@@ -268,6 +267,9 @@ export function createProductionLabSurface(
             continue;
           }
           const latest = records[records.length - 1];
+          if (latest === undefined) {
+            continue;
+          }
           const latestIntegrity = await calibration.verifyCalibrationErrorRecordIntegrity(
             scope,
             id as never,

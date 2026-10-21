@@ -13,6 +13,10 @@ import {
   type ProductionLabRuntime,
 } from './production-lab-surface.js';
 import {
+  createProductionLabWorkspace,
+  type ProductionLabWorkspaceRuntime,
+} from './production-lab-workspace.js';
+import {
   createUnavailableConnections,
   createUnavailableNotifications,
   createUnavailableStudioDirectory,
@@ -88,6 +92,8 @@ export interface ProductionMosWebComposition extends MosWebComposition {
   readonly recordedIntents: ProductionMissionCatalog['recordedIntents'];
   /** The REAL lab runtimes the Lab surface reads (disclosed observability). */
   readonly labRuntime: ProductionLabRuntime;
+  /** The REAL lab WORKSPACE runtimes (LAB-001..016 — disclosed observability). */
+  readonly labWorkspaceRuntime: ProductionLabWorkspaceRuntime;
   /** The tenant scope the composition presents. */
   readonly scope: { readonly tenantId: string; readonly workspaceId: string | null };
 }
@@ -147,6 +153,7 @@ export function createProductionMosWebComposition(
   });
   const catalog = createProductionMissionCatalogPort({ missionRepository, now });
   const labSurface = createProductionLabSurface({ now });
+  const labWorkspace = createProductionLabWorkspace();
 
   // The notifications binding presents the REAL tenant context (§31).
   const tenant = identityRepository.getTenant(tenantId as never);
@@ -167,12 +174,20 @@ export function createProductionMosWebComposition(
     studioPackages: createUnavailableStudioPackages(),
     labBenchmark: labSurface.labBenchmark,
     labCalibration: labSurface.labCalibration,
+    labOverview: labWorkspace.labOverview,
+    labCorpus: labWorkspace.labCorpus,
+    labIdeaGraph: labWorkspace.labIdeaGraph,
+    labSimulator: labWorkspace.labSimulator,
+    labStrategy: labWorkspace.labStrategy,
+    labTransforms: labWorkspace.labTransforms,
+    labBridge: labWorkspace.labBridge,
     connections: createUnavailableConnections(),
     notifications,
     identityRepository,
     missionRepository,
     recordedIntents: catalog.recordedIntents,
     labRuntime: labSurface.labRuntime,
+    labWorkspaceRuntime: labWorkspace.labWorkspaceRuntime,
     scope: { tenantId, workspaceId },
   };
 }

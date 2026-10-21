@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MOS v2.0 desktop shell (registry module `desktop`, presentation-only) — mounts the SAME @mos/web route component tree through a desktop platform port adapted for the Electron file:// origin (query-param route state, desktop link navigation), plus the PRODUCTION composition root (outside src/, the @mos/web seam discipline) binding REAL @mos/identity + @mos/missions + @mos/lab domain runtimes behind the shell's view ports with honest availability verdicts; no business authority, no Zcode imports, no demo seeds",
+  "description": "MOS v2.0 desktop shell (registry module `desktop`, presentation-only) \u2014 mounts the SAME @mos/web route component tree through a desktop platform port adapted for the Electron file:// origin (query-param route state, desktop link navigation), plus the PRODUCTION composition root (outside src/, the @mos/web seam discipline) binding REAL @mos/identity + @mos/missions + @mos/lab domain runtimes behind the shell's view ports with honest availability verdicts; no business authority, no Zcode imports, no demo seeds",
   "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
@@ -30,6 +30,7 @@
     "@mos/lab": "workspace:*",
     "@mos/missions": "workspace:*",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "@mos/capabilities": "workspace:*"
   }
 }
