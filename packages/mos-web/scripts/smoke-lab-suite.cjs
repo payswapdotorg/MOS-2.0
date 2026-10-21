@@ -9,8 +9,11 @@
 // separation) — plus the responsive pass and the read-only pin.
 
 module.exports.runLabSuite = async function runLabSuite(page, baseUrl, check) {
-  // 8. Lab section (UX-003): the benchmark directory.
-  await page.goto(`${baseUrl}/lab`, { waitUntil: 'networkidle' });
+  // 8. Lab section (UX-003, workspace-era routing): the benchmark directory
+  //  lives on the BENCHMARKS section (the wave-20 workspace made /lab default
+  //  to the overview section — this suite's stations target their owning
+  //  sections explicitly).
+  await page.goto(`${baseUrl}/lab?section=benchmarks`, { waitUntil: 'networkidle' });
   check('lab route reached', page.url().includes('/lab'));
   const benchmarkRows = page.locator('[data-testid="lab-benchmarks-list"] > li');
   check('the benchmark directory lists the fixture chains (2)', (await benchmarkRows.count()) === 2);
@@ -97,15 +100,17 @@ module.exports.runLabSuite = async function runLabSuite(page, baseUrl, check) {
     digestText.includes('policy-robust-reach v1') && digestText.includes('Pooled mean over all worlds'),
   );
 
-  // 10. Exact-version browsing (append-only chain).
+  // 10. Exact-version browsing (append-only chain; the deep-link section
+  //  inference routes the bare ?benchmark= to the benchmarks section).
   await page.goto(`${baseUrl}/lab?benchmark=bench-reach-v1&version=1`, { waitUntil: 'networkidle' });
   check(
     'an exact record version browses (v1: three declared candidates)',
     (await page.locator('[data-testid^="lab-candidate-counterfactual-"]').count()) === 4,
   );
 
-  // 11. Calibration surface: contexts, records, prediction-vs-measured.
-  await page.goto(`${baseUrl}/lab`, { waitUntil: 'networkidle' });
+  // 11. Calibration surface: contexts, records, prediction-vs-measured
+  //  (the CALIBRATION section owns these assertions).
+  await page.goto(`${baseUrl}/lab?section=calibration`, { waitUntil: 'networkidle' });
   check(
     'the calibration status lists the fixture chains (2)',
     (await page.locator('[data-testid="lab-calibrations-list"] > li').count()) === 2,
@@ -149,17 +154,23 @@ module.exports.runLabSuite = async function runLabSuite(page, baseUrl, check) {
       'OUTSIDE',
     ),
   );
-  const labButtons = await page.locator('main button').count();
+  // The wave-21 write-intent transport: the ONLY operator controls on the
+  // Lab surface are intent-form DECLARE submits (the read-only pin's spirit,
+  // restated for the transport era — any OTHER button is a dead control).
+  const labButtons = await page.locator('main button:not([data-testid$="-submit"])').count();
   check(
-    'NO buttons (operator controls) on the Lab surface either (read-only pin)',
+    'the ONLY Lab buttons are intent-form DECLARE submits (the pin, transport era)',
     labButtons === 0,
-    `found ${labButtons}`,
+    `found ${labButtons} non-submit buttons`,
   );
 };
 
 module.exports.runResponsiveSuite = async function runResponsiveSuite(browser, baseUrl, check) {
   // 12. Responsive pass (mobile viewport) across both surfaces.
   const mobile = await browser.newPage({ viewport: { width: 375, height: 667 } });
+  // The mobile page is a FRESH session — boot the demo composition first
+  // (the shell's production default carries no demo fixtures).
+  await mobile.goto(`${baseUrl}/?demo=1`, { waitUntil: 'networkidle' });
   await mobile.goto(`${baseUrl}/lab?benchmark=bench-reach-v1`, { waitUntil: 'networkidle' });
   check(
     'mobile: the Lab benchmark digest renders at 375px',

@@ -14,11 +14,25 @@
 // covers it (no @zcode/*, no domain-package imports, no engine SDKs). All
 // logic it calls lives in scanned, tested TypeScript modules under `src/`.
 //
-// Composition disclosure (UX-001 build): the shell runs on the DISCLOSED
-// in-memory composition seam (`testing/`) — in-memory doubles over
-// `@mos/identity` + `@mos/missions` behind the declared view ports. The
-// production composition root (TL-owned) binds the same ports over the MOS
-// service transport later without touching this file's structure.
+// Composition disclosure (the CONSOLE wave / FINAL TL HANDOFF §2): the
+// shell's DEFAULT composition is the PRODUCTION root — the REAL
+// @mos/identity + @mos/missions + @mos/lab + console authority chain
+// behind the view ports, no demo seeds, honest-unavailable verdicts for
+// the surfaces awaiting the service transport (P2). The in-memory testing
+// composition with its demo missions is an EXPLICIT opt-in demo mode
+// (`?demo=1` on any first load — persisted for the browser session via
+// sessionStorage so full navigations keep it) — never the implicit
+// product runtime (the FINAL TL HANDOFF's discrepancy #2, closed).
+//
+// WHY the relative reach into mos-desktop (disclosed): the production
+// composition root lives at packages/mos-desktop/composition/ (the
+// composition seam outside every package's src/, the disclosed depth-matching
+// invariant) — the same bootstrap-reach pattern the desktop entry already
+// uses for this shell's styles (mos-desktop-entry.jsx imports
+// ../mos-web/src/styles.css). This entry (.jsx, outside the frozen
+// boundary harness's managed extensions) is the only place the two
+// composition roots are selected; everything downstream consumes the
+// composition through the declared ports.
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -47,6 +61,7 @@ import {
   labIntentOutcomeHref,
 } from './routes/lab-intent-declaration.js';
 import { createInMemoryMosWebComposition } from '../testing/compose-in-memory-mos-web.js';
+import { createProductionMosWebComposition } from '../../mos-desktop/composition/compose-production-mos-web.js';
 import './styles.css';
 
 const SHELL_VERSION = __MOS_SHELL_VERSION__;
@@ -64,9 +79,31 @@ function bootMosWebShell() {
   );
 
   const platform = createWebMosPlatform();
-  // seedDemoMissions (UX-006): the browser shell boots with three REAL demo
-  // missions so the whole-shell acceptance pass demonstrates the front door.
-  const composition = createInMemoryMosWebComposition({ seedDemoMissions: true });
+  // The composition selection (the CONSOLE wave): PRODUCTION by default —
+  // the REAL authority chain, no demo seeds. `?demo=1` (any first load of
+  // the session) opts into the disclosed testing composition with its demo
+  // missions; the flag persists in sessionStorage so the one-route-per-load
+  // full navigations of the acceptance harness keep the demo mode.
+  const isDemoSession = (() => {
+    try {
+      if (win && win.sessionStorage && win.sessionStorage.getItem('mos-demo-shell') === '1') {
+        return true;
+      }
+      const search = win && win.location ? win.location.search : '';
+      if (typeof search === 'string' && /[?&]demo=1(&|$)/.test(search)) {
+        if (win && win.sessionStorage) {
+          win.sessionStorage.setItem('mos-demo-shell', '1');
+        }
+        return true;
+      }
+    } catch {
+      // Storage unavailable (private modes): the production default stands.
+    }
+    return false;
+  })();
+  const composition = isDemoSession
+    ? createInMemoryMosWebComposition({ seedDemoMissions: true })
+    : createProductionMosWebComposition();
   const rootElement = globalThis.document.getElementById('root');
   let reactRoot = null;
   // The shell read model ref — the soft post-declaration refresh (below)
@@ -179,6 +216,76 @@ function bootMosWebShell() {
     message: error instanceof Error ? error.message : String(error),
     retryHref: '/',
   });
+
+  // SOFT LINK NAVIGATION (the CONSOLE wave — the desktop link bridge's
+  // browser twin): plain-left-click navigations on app-internal anchors
+  // re-resolve the page model against the SAME composition instead of a
+  // document reload. This is what keeps the console workflow usable
+  // end-to-end in the browser shell — the per-load authority state (the
+  // grants, experiments, intelligence records, plans, strategies, runs and
+  // the intent ledger) survives mode switches and mission selection; a
+  // hard reload (address bar, restart) still starts a fresh composition
+  // (the disclosed session-scoped state — durable persistence is the P2
+  // service transport's).
+  const softNavigateTo = (href) => {
+    const navWin = globalThis.window;
+    if (navWin && navWin.history && typeof navWin.history.replaceState === 'function') {
+      navWin.history.replaceState(null, '', href);
+    }
+    const route = parseMosRoute(globalThis.location.pathname, globalThis.location.search);
+    platform.setDocumentTitle(mosRouteTitle(route));
+    mountShell({
+      shellView: shellViewRef.current,
+      routeView: { kind: 'loading', label: 'Loading the MOS surface' },
+      onDeclareMissionIntent,
+    });
+    loadMosRouteView(composition, route, shellViewRef.current)
+      .then((routeView) => {
+        mountShell({
+          shellView: shellViewRef.current,
+          routeView,
+          onDeclareMissionIntent,
+          onDeclareLabIntent,
+          onDeclareConsoleIntent,
+        });
+      })
+      .catch((error) => {
+        mountShell({
+          shellView: shellViewRef.current,
+          routeView: routeLoadFailureView(error),
+          onDeclareMissionIntent,
+          onDeclareLabIntent,
+          onDeclareConsoleIntent,
+        });
+      });
+  };
+
+  const isAppInternalHref = (href) => typeof href === 'string' && href.startsWith('/') && !href.startsWith('//');
+  const installSoftLinkNavigation = () => {
+    const doc = globalThis.document;
+    if (!doc || typeof doc.addEventListener !== 'function') {
+      return () => undefined;
+    }
+    const handler = (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      const target = event.target;
+      const anchor = target && target.closest ? target.closest('a') : null;
+      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download') || anchor.rel === 'external') {
+        return;
+      }
+      const href = anchor.getAttribute('href');
+      if (!isAppInternalHref(href)) {
+        return;
+      }
+      event.preventDefault();
+      softNavigateTo(href);
+    };
+    doc.addEventListener('click', handler, true);
+    return () => doc.removeEventListener('click', handler, true);
+  };
+  installSoftLinkNavigation();
 
   // 2. Bootstrap: load the app-shell read model first…
   composition.appShell

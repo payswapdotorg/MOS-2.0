@@ -180,7 +180,7 @@ module.exports.runUx006 = async function runUx006(page, BASE_URL, check) {
   check('Lab: counterfactual badge fragment (case-insensitive)', labLower.includes('counterfactual'));
   check('Lab: measured badge fragment (case-insensitive)', labLower.includes('measured'));
   // Benchmark digest + calibration surfaces.
-  const benchLink = page.locator('a[href*="?benchmark="]').first();
+  const benchLink = page.locator('a[href*="?section=benchmarks"]').first();
   check('Lab: benchmark digest link present', (await benchLink.count()) > 0);
   const calibText = labLower.includes('calibration') || labLower.includes('pending') || labLower.includes('active');
   check('Lab: calibration state surface present', calibText);
