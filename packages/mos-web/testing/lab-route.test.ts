@@ -57,6 +57,7 @@ const labRoute = (query: {
   strategyCandidateId: null,
   transformCandidateId: null,
   handoffId: null,
+  intentReceiptId: null,
 });
 
 test('the benchmarks section loads the benchmark listing in the tenant scope', async () => {

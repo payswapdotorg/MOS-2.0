@@ -31,7 +31,7 @@ export type {
   ShellSectionView,
   SurfaceAvailabilityView,
   TenantContextView,
-} from './ports/app-shell.js';
+} from "./ports/app-shell.js";
 export type {
   CreateMissionIntentDeclaration,
   CreateMissionIntentReceipt,
@@ -48,9 +48,9 @@ export type {
   RewardMetricOptionView,
   RewardSpecVersionView,
   RewardTermView,
-} from './ports/mission-catalog.js';
-export type { MosWebComposition } from './ports/composition.js';
-export type { MosServiceConnection, MosServiceTransport } from './services/mos-services.js';
+} from "./ports/mission-catalog.js";
+export type { MosWebComposition } from "./ports/composition.js";
+export type { MosServiceConnection, MosServiceTransport } from "./services/mos-services.js";
 export type {
   LabBaselineComparisonView,
   LabBenchmarkCandidateOriginView,
@@ -67,8 +67,8 @@ export type {
   LabRobustnessPolicyView,
   LabWorldDisagreementView,
   LabWorldRobustnessView,
-} from './ports/lab-benchmark.js';
-export { LAB_NOOP_BASELINE_ORIGIN } from './ports/lab-benchmark.js';
+} from "./ports/lab-benchmark.js";
+export { LAB_NOOP_BASELINE_ORIGIN } from "./ports/lab-benchmark.js";
 export type {
   LabCalibrationChainView,
   LabCalibrationContextSummaryView,
@@ -79,7 +79,7 @@ export type {
   LabCalibrationRecordView,
   LabCalibrationStatusFailure,
   LabCalibrationStatusPort,
-} from './ports/lab-calibration.js';
+} from "./ports/lab-calibration.js";
 // ---- Lab WORKSPACE view ports (UX-003 wave 2 — LAB-001..016 read surfaces) ----
 export type {
   LabOverviewView,
@@ -87,7 +87,7 @@ export type {
   LabRecentRunView,
   LabActiveScenarioView,
   LabOverviewPort,
-} from './ports/lab-overview.js';
+} from "./ports/lab-overview.js";
 export type {
   LabReferenceModalityView,
   LabFeatureKindView,
@@ -98,14 +98,14 @@ export type {
   LabCorpusSummaryView,
   LabCorpusDetailView,
   LabCorpusViewPort,
-} from './ports/lab-corpus.js';
+} from "./ports/lab-corpus.js";
 export type {
   LabIdeaGraphView,
   LabIdeaNodeView,
   LabIdeaEdgeView,
   LabIdeaDetailView,
   LabIdeaGraphViewPort,
-} from './ports/lab-idea-graph.js';
+} from "./ports/lab-idea-graph.js";
 export type {
   LabSimulatorOverviewView,
   LabSimulationRunSummaryView,
@@ -113,26 +113,26 @@ export type {
   LabBranchView,
   LabBranchRecordView,
   LabSimulatorViewPort,
-} from './ports/lab-simulator.js';
+} from "./ports/lab-simulator.js";
 export type {
   LabStrategyCandidateView,
   LabOrganizationSearchResultView,
   LabRewardObjectiveView,
   LabStrategyViewPort,
-} from './ports/lab-strategy.js';
+} from "./ports/lab-strategy.js";
 export type {
   LabTransformDefinitionView,
   LabTransformGraphView,
   LabTransformCandidateDetailView,
   LabTransformsViewPort,
-} from './ports/lab-transforms.js';
+} from "./ports/lab-transforms.js";
 export type {
   LabBridgeStepView,
   LabBridgeCandidateView,
   LabCandidateHandoffView,
   LabBridgeViewPort,
-} from './ports/lab-bridge.js';
-export type { LabBridgeDirectoryData } from './routes/lab-page-model.js';
+} from "./ports/lab-bridge.js";
+export type { LabBridgeDirectoryData } from "./routes/lab-page-model.js";
 export type {
   StudioConsentRequirementView,
   StudioConsentStateView,
@@ -145,7 +145,7 @@ export type {
   StudioSessionLifecycleStateView,
   StudioSessionSummaryView,
   StudioSessionTransitionView,
-} from './ports/studio-directory.js';
+} from "./ports/studio-directory.js";
 export type {
   StudioArtifactLabelView,
   StudioArtifactStageView,
@@ -157,7 +157,7 @@ export type {
   StudioPackageSummaryView,
   StudioPackageVersionView,
   StudioVersionChainView,
-} from './ports/studio-packages.js';
+} from "./ports/studio-packages.js";
 
 // ---- Route model + page-model loading ----
 export type {
@@ -165,10 +165,10 @@ export type {
   MissionsPageData,
   MosRouteView,
   StudioPageData,
-} from './routes/route-loading.js';
-export { loadMosRouteView } from './routes/route-loading.js';
-export type { LabRoute, MissionsRoute, MosRoute, StudioRoute } from './routes/route.js';
-export { mosRouteTitle, parseMosRoute } from './routes/route.js';
+} from "./routes/route-loading.js";
+export { loadMosRouteView } from "./routes/route-loading.js";
+export type { LabRoute, MissionsRoute, MosRoute, StudioRoute } from "./routes/route.js";
+export { mosRouteTitle, parseMosRoute } from "./routes/route.js";
 export {
   LabScope,
   MissionScope,
@@ -179,27 +179,36 @@ export {
   missionScopeFromTenantContext,
   studioPackageRefFromQueryValue,
   studioSessionRefFromQueryValue,
-} from './routes/route-scope.js';
+} from "./routes/route-scope.js";
 
 // ---- Create-mission intent declaration (port-routed, no business logic) ----
-export type { DeclareMissionIntentOutcome } from './routes/intent-declaration.js';
+export type { DeclareMissionIntentOutcome } from "./routes/intent-declaration.js";
 export {
   declareMissionIntentThroughPort,
   missionIntentOutcomeHref,
-} from './routes/intent-declaration.js';
+} from "./routes/intent-declaration.js";
 export {
   MISSION_INTENT_FORM_FIELDS,
   missionIntentDeclarationFromFormData,
-} from './views/mission-intent-form-data.js';
-export type { MissionIntentFormError } from './views/mission-intent-form-data.js';
+} from "./views/mission-intent-form-data.js";
+export type { MissionIntentFormError } from "./views/mission-intent-form-data.js";
+
+// ---- Lab write-intent declaration + forms (UX-003 wave 3) ----
+export type * from "./ports/lab-intents.js";
+export type { DeclareLabIntentOutcome } from "./routes/lab-intent-declaration.js";
+export {
+  declareLabIntentThroughPort,
+  labIntentOutcomeHref,
+} from "./routes/lab-intent-declaration.js";
+export { LAB_INTENT_JSON_INVALID_PREFIX, LAB_INTENT_MISSING_INPUT } from "./ports/lab-intents.js";
 
 // ---- Home narration (§2 complete loop, presentation data) ----
 export {
   MOS_COOPERATING_LOOPS,
   MOS_COMPLETE_LOOP_STAGES,
   MOS_PRODUCT_THESIS,
-} from './views/home-loop.js';
-export type { CompleteLoopStageView, CooperatingLoopView } from './views/home-loop.js';
+} from "./views/home-loop.js";
+export type { CompleteLoopStageView, CooperatingLoopView } from "./views/home-loop.js";
 
 // ---- Studio presentation data (UX-002 — §14 labels, lifecycle badges, hand-off) ----
 export {
@@ -215,7 +224,7 @@ export {
   studioDecisionActorLabel,
   studioEvaluationOutcomeLabel,
   studioFormatLabel,
-} from './views/studio-presentation.js';
+} from "./views/studio-presentation.js";
 
 // ---- Lab presentation data (UX-003 — §20/§24 counterfactual labels, §22 badges) ----
 export {
@@ -246,7 +255,7 @@ export {
   LAB_NO_AUTO_PRODUCTION_NOTE,
   LAB_BRIDGE_NO_BINDING_LABEL,
   formatLabLagMs,
-} from './views/lab-presentation.js';
+} from "./views/lab-presentation.js";
 
 // ---- Platform patterns (ported from the audited shell, MOS-owned) ----
 export {
@@ -256,72 +265,69 @@ export {
   probePrefersDark,
   readStoredMosTheme,
   resolveMosInitialTheme,
-} from './platform/theme-seed.js';
+} from "./platform/theme-seed.js";
 export type {
   MosThemeSeed,
   ResolvedMosTheme,
   ResolveMosInitialThemeInput,
-} from './platform/theme-seed.js';
+} from "./platform/theme-seed.js";
 export {
   encodeMosOAuthState,
   parseMosOAuthState,
   resolveSafeMosAppReturnTo,
-} from './platform/oauth-state-codec.js';
-export type { MosOAuthStatePayload } from './platform/oauth-state-codec.js';
-export { createWebMosPlatform } from './platform/web-platform.js';
-export type { MosWebPlatform } from './platform/web-platform.js';
+} from "./platform/oauth-state-codec.js";
+export type { MosOAuthStatePayload } from "./platform/oauth-state-codec.js";
+export { createWebMosPlatform } from "./platform/web-platform.js";
+export type { MosWebPlatform } from "./platform/web-platform.js";
 
 // ---- React view components (mounted by the browser shell entry; the
 //      future `@mos/desktop` shell mounts the same tree through the
 //      platform port pattern) ----
-export { MosAppShell } from './shell/mos-app-shell.js';
-export type { MosAppShellProps } from './shell/mos-app-shell.js';
-export {
-  MosBootstrapErrorView,
-  MosLoadingView,
-  MosAppErrorView,
-} from './shell/status-views.js';
+export { MosAppShell } from "./shell/mos-app-shell.js";
+export type { MosAppShellProps } from "./shell/mos-app-shell.js";
+export { MosBootstrapErrorView, MosLoadingView, MosAppErrorView } from "./shell/status-views.js";
 export {
   MosNoTenantContextView,
   MosRouteErrorView,
   MosSectionNotAvailableView,
   MosUnknownRouteView,
-} from './shell/route-fallbacks.js';
-export { HomeView } from './routes/home-view.js';
-export { MissionsView } from './routes/missions-view.js';
-export { MissionsListView } from './routes/missions-list.js';
-export { MissionDetailPanel } from './routes/mission-detail.js';
-export { MissionIntentForm } from './routes/mission-intent-form.js';
-export type { MissionIntentFormProps } from './routes/mission-intent-form.js';
-export { StudioView } from './routes/studio-view.js';
-export { StudioSessionDirectoryView } from './views/studio-session-directory.js';
-export { StudioSessionDetailPanel } from './views/studio-session-detail.js';
-export {
-  StudioPackageChainPanel,
-  StudioPackageLibraryView,
-} from './views/studio-packages.js';
-export { LabView } from './routes/lab-view.js';
-export { LabBenchmarkDirectoryView } from './views/lab-benchmark-directory.js';
-export { LabBenchmarkDigestPanel } from './views/lab-benchmark-digest.js';
+} from "./shell/route-fallbacks.js";
+export { HomeView } from "./routes/home-view.js";
+export { MissionsView } from "./routes/missions-view.js";
+export { MissionsListView } from "./routes/missions-list.js";
+export { MissionDetailPanel } from "./routes/mission-detail.js";
+export { MissionIntentForm } from "./routes/mission-intent-form.js";
+export type { MissionIntentFormProps } from "./routes/mission-intent-form.js";
+export { StudioView } from "./routes/studio-view.js";
+export { StudioSessionDirectoryView } from "./views/studio-session-directory.js";
+export { StudioSessionDetailPanel } from "./views/studio-session-detail.js";
+export { StudioPackageChainPanel, StudioPackageLibraryView } from "./views/studio-packages.js";
+export { LabView } from "./routes/lab-view.js";
+export { LabBenchmarkDirectoryView } from "./views/lab-benchmark-directory.js";
+export { LabBenchmarkDigestPanel } from "./views/lab-benchmark-digest.js";
 // UX-003 wave 2 — the Lab WORKSPACE section views (mos-desktop mounts the same tree)
-export { LabOverviewSectionView } from './views/lab-overview-view.js';
-export { LabCorpusSectionView } from './views/lab-corpus-view.js';
-export { LabIdeaGraphSectionView } from './views/lab-idea-graph-view.js';
-export { LabSimulatorSectionView } from './views/lab-simulator-view.js';
-export { LabStrategySectionView } from './views/lab-strategy-view.js';
-export { LabTransformsSectionView } from './views/lab-transforms-view.js';
-export { LabBridgeSectionView } from './views/lab-bridge-view.js';
+export { LabOverviewSectionView } from "./views/lab-overview-view.js";
+export { LabCorpusSectionView } from "./views/lab-corpus-view.js";
+export { LabIdeaGraphSectionView } from "./views/lab-idea-graph-view.js";
+export { LabSimulatorSectionView } from "./views/lab-simulator-view.js";
+export { LabStrategySectionView } from "./views/lab-strategy-view.js";
+export { LabTransformsSectionView } from "./views/lab-transforms-view.js";
+export { LabBridgeSectionView } from "./views/lab-bridge-view.js";
 export {
   LabCounterfactualBadge,
   LabMeasuredBadge,
   LabSectionLoadingPanel,
   LabSectionUnavailablePanel,
-} from './views/lab-workspace-shared.js';
-export { LabCalibrationStatusView } from './views/lab-calibration-status.js';
-export { LabCalibrationDetailPanel } from './views/lab-calibration-detail.js';
-export { ConnectionsView } from './routes/connections-view.js';
-export type { ConnectionsRoute } from './routes/route.js';
-export type { ConnectionsPageData } from './routes/route-loading.js';
+} from "./views/lab-workspace-shared.js";
+export { LabIntentForm } from "./views/lab-intent-form.js";
+export type { LabIntentFormField, LabIntentFormProps } from "./views/lab-intent-form.js";
+export { LabIntentOutcomePanel } from "./views/lab-intent-outcome-panel.js";
+export type { LabIntentOutcomePanelProps } from "./views/lab-intent-outcome-panel.js";
+export { LabCalibrationStatusView } from "./views/lab-calibration-status.js";
+export { LabCalibrationDetailPanel } from "./views/lab-calibration-detail.js";
+export { ConnectionsView } from "./routes/connections-view.js";
+export type { ConnectionsRoute } from "./routes/route.js";
+export type { ConnectionsPageData } from "./routes/route-loading.js";
 export type {
   CapabilityMatrixEntryVm,
   CapabilityStatus,
@@ -344,32 +350,32 @@ export type {
   ProviderImplementationLayerVm,
   ProviderImplementationStatusVm,
   ResolvableRef,
-} from './ports/connections-views.js';
+} from "./ports/connections-views.js";
 export {
   CONNECTIONS_ROUTE_PATH,
   connectionsFallback,
   connectionsRouteLoading,
   parseConnectionsRoute,
-} from './routes/connections-route.js';
+} from "./routes/connections-route.js";
 export {
   renderCapabilityCell,
   renderDirectory,
-} from './views/connections/provider-directory-view.js';
+} from "./views/connections/provider-directory-view.js";
 export {
   renderBinding,
   renderBindings,
   renderGate,
   renderRef,
   renderDurable,
-} from './views/connections/binding-lifecycle-view.js';
-export { renderConnections } from './views/connections/connections-view.js';
-export type { ConnectionsRenderState } from './views/connections/connections-view.js';
-export { wireConnections } from './platform/connections-wiring.js';
-export type { ConnectionsWiring } from './platform/connections-wiring.js';
+} from "./views/connections/binding-lifecycle-view.js";
+export { renderConnections } from "./views/connections/connections-view.js";
+export type { ConnectionsRenderState } from "./views/connections/connections-view.js";
+export { wireConnections } from "./platform/connections-wiring.js";
+export type { ConnectionsWiring } from "./platform/connections-wiring.js";
 
 // ---- NOTIFY-CS notification consumer surface ----
-export { NotificationsSurfaceView } from './routes/notifications-view.js';
-export type { NotificationsRoute } from './routes/route.js';
+export { NotificationsSurfaceView } from "./routes/notifications-view.js";
+export type { NotificationsRoute } from "./routes/route.js";
 export type {
   NotificationDetailVm,
   NotificationEventVm,
@@ -379,21 +385,21 @@ export type {
   NotificationsViewData,
   NotificationsViewPort,
   RecipientSuppressionRuleVm,
-} from './ports/notifications-views.js';
+} from "./ports/notifications-views.js";
 export {
   NOTIFICATIONS_ROUTE_PATH,
   notificationsFallback,
   notificationsRouteLoading,
   parseNotificationsRoute,
-} from './routes/notifications-route.js';
+} from "./routes/notifications-route.js";
 export {
   renderLifecycleBadge,
   renderSubjectRefs,
-} from './views/notifications/notifications-lines.js';
-export { renderNotifications } from './views/notifications/notifications-view.js';
-export type { NotificationsRenderState } from './views/notifications/notifications-view.js';
-export { wireNotifications } from './platform/notifications-wiring.js';
-export type { NotificationsWiring } from './platform/notifications-wiring.js';
+} from "./views/notifications/notifications-lines.js";
+export { renderNotifications } from "./views/notifications/notifications-view.js";
+export type { NotificationsRenderState } from "./views/notifications/notifications-view.js";
+export { wireNotifications } from "./platform/notifications-wiring.js";
+export type { NotificationsWiring } from "./platform/notifications-wiring.js";
 
 // ---- UX-005 progressive disclosure layer ----
 export type {
@@ -401,18 +407,18 @@ export type {
   SummaryLayerProps,
   SummaryStatView,
   ViewNode,
-} from './views/disclosure/disclosure-primitive.js';
+} from "./views/disclosure/disclosure-primitive.js";
 export {
   DisclosureItem,
   DisclosureList,
   SummaryLayer,
-} from './views/disclosure/disclosure-primitive.js';
-export type { LoopStageView } from './views/disclosure/loop-orientation.js';
-export { LOOP_STAGES, loopOwnerRoute } from './views/disclosure/loop-orientation.js';
-export type { SurfaceSummaryModel } from './views/disclosure/surface-summaries.js';
+} from "./views/disclosure/disclosure-primitive.js";
+export type { LoopStageView } from "./views/disclosure/loop-orientation.js";
+export { LOOP_STAGES, loopOwnerRoute } from "./views/disclosure/loop-orientation.js";
+export type { SurfaceSummaryModel } from "./views/disclosure/surface-summaries.js";
 export {
   buildConnectionsSummary,
   buildLabSummary,
   buildMissionsSummary,
   buildStudioSummary,
-} from './views/disclosure/surface-summaries.js';
+} from "./views/disclosure/surface-summaries.js";

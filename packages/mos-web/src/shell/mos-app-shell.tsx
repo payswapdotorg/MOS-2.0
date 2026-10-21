@@ -1,6 +1,7 @@
 import type { AppShellView, ShellSectionView } from '../ports/app-shell.js';
 import type { MosRouteView } from '../routes/route-loading.js';
 import type { CreateMissionIntentDeclaration } from '../ports/mission-catalog.js';
+import type { LabIntentDeclaration } from '../ports/lab-intents.js';
 import { HomeView } from '../routes/home-view.js';
 import { LabView } from '../routes/lab-view.js';
 import { ConnectionsView } from '../routes/connections-view.js';
@@ -21,8 +22,9 @@ import {
  * presentation-only disclosure.
  *
  * Presentation-only by construction: every piece of state arrives through
- * the {@link AppShellView} read model and every command leaves through the
- * `onDeclareMissionIntent` callback — the component itself holds no state,
+ * the {@link AppShellView} read model and every command leaves through a
+ * declared-intent callback (`onDeclareMissionIntent`,
+ * `onDeclareLabIntent`) — the component itself holds no state,
  * owns no authority and computes nothing.
  */
 
@@ -35,6 +37,12 @@ export interface MosAppShellProps {
    * component never records it itself).
    */
   readonly onDeclareMissionIntent: (declaration: CreateMissionIntentDeclaration) => void;
+  /**
+   * Called when a Lab surface declares a write intent (UX-003 wave 3: the
+   * lab-intent forms route their declaration through the shell to the
+   * composition's lab-intents port — the component never executes it).
+   */
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
   /** Shell build version shown in the footer. */
   readonly shellVersion: string;
 }
@@ -134,9 +142,11 @@ function ShellNav({
 function RouteSurface({
   routeView,
   onDeclareMissionIntent,
+  onDeclareLabIntent,
 }: {
   readonly routeView: MosRouteView;
   readonly onDeclareMissionIntent: MosAppShellProps['onDeclareMissionIntent'];
+  readonly onDeclareLabIntent: MosAppShellProps['onDeclareLabIntent'];
 }) {
   switch (routeView.kind) {
     case 'loading':
@@ -150,7 +160,7 @@ function RouteSurface({
     case 'studio':
       return <StudioView data={routeView.data} />;
     case 'lab':
-      return <LabView data={routeView.data} />;
+      return <LabView data={routeView.data} onDeclareLabIntent={onDeclareLabIntent} />;
     case 'connections':
       return <ConnectionsView data={routeView.data} />;
     case 'notifications':
@@ -175,6 +185,7 @@ export function MosAppShell({
   shellView,
   routeView,
   onDeclareMissionIntent,
+  onDeclareLabIntent,
   shellVersion,
 }: MosAppShellProps) {
   const activeRoute =
@@ -221,7 +232,11 @@ export function MosAppShell({
         <ShellNav sections={shellView.sections} activeRoute={activeRoute} />
       </div>
       <main id="mos-main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        <RouteSurface routeView={routeView} onDeclareMissionIntent={onDeclareMissionIntent} />
+        <RouteSurface
+          routeView={routeView}
+          onDeclareMissionIntent={onDeclareMissionIntent}
+          onDeclareLabIntent={onDeclareLabIntent}
+        />
       </main>
       <footer className="border-t border-slate-800 bg-slate-900/40 px-4 py-3 text-xs text-slate-500">
         <p>

@@ -1,5 +1,6 @@
 import type { LabPageData } from './route-loading.js';
 import type { LabSectionId } from './route.js';
+import type { LabIntentDeclaration } from '../ports/lab-intents.js';
 import { LabOverviewSectionView } from '../views/lab-overview-view.js';
 import { LabCorpusSectionView } from '../views/lab-corpus-view.js';
 import { LabIdeaGraphSectionView } from '../views/lab-idea-graph-view.js';
@@ -21,6 +22,7 @@ import { MosNoTenantContextView } from '../shell/route-fallbacks.js';
 import { DisclosureItem, SummaryLayer } from '../views/disclosure/disclosure-primitive.js';
 import { buildLabSummary } from '../views/disclosure/surface-summaries.js';
 import { LabSectionLoadingPanel, LabSectionUnavailablePanel } from '../views/lab-workspace-shared.js';
+import { LabIntentOutcomePanel } from '../views/lab-intent-outcome-panel.js';
 
 /**
  * The Lab WORKSPACE (UX-003 wave 2): a first-class MOS research surface —
@@ -256,7 +258,13 @@ function LabCalibrationSection({ data }: { readonly data: LabPageData }) {
   );
 }
 
-function LabSectionContent({ data }: { readonly data: LabPageData }) {
+function LabSectionContent({
+  data,
+  onDeclareLabIntent,
+}: {
+  readonly data: LabPageData;
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
+}) {
   switch (data.section) {
     case 'overview':
       return <LabOverviewSectionView overview={data.overview} overviewError={data.overviewError} />;
@@ -266,6 +274,7 @@ function LabSectionContent({ data }: { readonly data: LabPageData }) {
           summaries={data.corpusSummaries}
           selectedCorpus={data.selectedCorpus}
           corpusSelectionError={data.corpusSelectionError}
+          onDeclareLabIntent={onDeclareLabIntent}
         />
       );
     case 'idea-graph':
@@ -325,7 +334,13 @@ function LabSectionContent({ data }: { readonly data: LabPageData }) {
 }
 
 /** The Lab workspace page view over the loaded section's page model. */
-export function LabView({ data }: { readonly data: LabPageData }) {
+export function LabView({
+  data,
+  onDeclareLabIntent,
+}: {
+  readonly data: LabPageData;
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
+}) {
   if (data.scope === null) {
     return (
       <div className="flex flex-col gap-6">
@@ -361,8 +376,13 @@ export function LabView({ data }: { readonly data: LabPageData }) {
       <LabResearchContextStrip data={data} />
       <LabWorkspaceNav current={data.section} />
 
+      <LabIntentOutcomePanel
+        outcome={data.intentOutcome}
+        outcomeError={data.intentOutcomeError}
+      />
+
       <div className="border-t border-slate-800 pt-4">
-        <LabSectionContent data={data} />
+        <LabSectionContent data={data} onDeclareLabIntent={onDeclareLabIntent} />
       </div>
 
     </div>

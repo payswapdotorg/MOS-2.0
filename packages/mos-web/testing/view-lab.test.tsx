@@ -41,6 +41,7 @@ import {
   renderTreeText,
 } from './render-tree.js';
 
+const NOOP_ON_DECLARE_LAB_INTENT = (): void => undefined;
 const DEMO_SCOPE: TenantScope = { tenantId: 'tenant-demo' as never, workspaceId: 'ws_demo' as never };
 
 const surface = createInMemoryLabSurface();
@@ -72,6 +73,8 @@ const CALIB_RECORDS: readonly LabCalibrationRecordView[] = recordsResult;
 const labPage = (overrides: Partial<LabPageData> = {}): LabPageData => ({
   scope: DEMO_SCOPE,
   section: 'benchmarks',
+  intentOutcome: null,
+  intentOutcomeError: null,
   overview: null,
   overviewError: null,
   corpusSummaries: null,
@@ -114,12 +117,12 @@ const labPage = (overrides: Partial<LabPageData> = {}): LabPageData => ({
 const noTenantLabPage = labPage({ scope: null, benchmarks: [], calibrationChains: [] });
 
 test('the Lab page without a tenant scope renders the explicit no-tenant view', () => {
-  const tree = <LabView data={noTenantLabPage} />;
+  const tree = <LabView data={noTenantLabPage} onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT} />;
   assert.ok(elementWithTestId(tree, 'missions-no-tenant'));
 });
 
 test('the Lab page narrates the learning-loop position and the standing §24 boundary note', () => {
-  const tree = <LabView data={labPage()} />;
+  const tree = <LabView data={labPage()} onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT} />;
   const text = renderTreeText(tree);
   assert.equal(text.includes('Learning loop'), true);
   assert.equal(text.includes('counterfactual'), true);
@@ -394,6 +397,7 @@ test('the benchmarks section page renders directory and digest together honestly
       data={labPage({
         selectedDigest: DIGEST,
       })}
+      onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT}
     />
   );
   assert.ok(elementWithTestId(tree, 'lab-benchmarks-list'));
@@ -409,6 +413,7 @@ test('the calibration section page renders the chains and records together hones
         section: 'calibration',
         selectedCalibrationRecords: CALIB_RECORDS,
       })}
+      onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT}
     />
   );
   assert.ok(elementWithTestId(tree, 'lab-calibrations-list'));
@@ -421,6 +426,7 @@ test('selection failures render their honest panels, never guessed data', () => 
       data={labPage({
         benchmarkSelectionError: 'lab-benchmark-not-found',
       })}
+      onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT}
     />
   );
   const benchmarkError = elementWithTestId(benchmarkTree, 'lab-benchmark-selection-error');
@@ -438,6 +444,7 @@ test('selection failures render their honest panels, never guessed data', () => 
         calibrationSelectionError: 'lab-calibration-not-found',
         calibrationError: 'load-failed',
       })}
+      onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT}
     />
   );
   assert.ok(elementWithTestId(calibrationTree, 'lab-calibration-selection-error'));
@@ -456,6 +463,7 @@ test('the Lab surface offers NO operator control (read-only pin — no buttons a
         selectedDigest: DIGEST,
         selectedCalibrationRecords: CALIB_RECORDS,
       })}
+      onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT}
     />
   );
   const buttons = elementsWithTag(tree, 'button');
@@ -463,7 +471,7 @@ test('the Lab surface offers NO operator control (read-only pin — no buttons a
 });
 
 test('every navigation affordance on the Lab surface is a real link (keyboard reachable)', () => {
-  const benchmarkTree = <LabView data={labPage({ selectedDigest: DIGEST })} />;
+  const benchmarkTree = <LabView data={labPage({ selectedDigest: DIGEST })} onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT} />;
   const benchmarkHrefs = linkHrefs(benchmarkTree);
   assert.equal(benchmarkHrefs.includes('/lab?benchmark=bench-reach-v1'), true);
   for (const href of benchmarkHrefs) {
@@ -471,14 +479,14 @@ test('every navigation affordance on the Lab surface is a real link (keyboard re
   }
 
   const calibrationTree = (
-    <LabView data={labPage({ section: 'calibration', selectedCalibrationRecords: CALIB_RECORDS })} />
+    <LabView data={labPage({ section: 'calibration', selectedCalibrationRecords: CALIB_RECORDS })} onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT} />
   );
   const calibrationHrefs = linkHrefs(calibrationTree);
   assert.equal(calibrationHrefs.includes('/lab?calibration=calib-reach-1'), true);
   assert.equal(calibrationHrefs.includes('/lab?calibration=calib-launch-1'), true);
 
   // The workspace rail links every section as a real href
-  const railTree = <LabView data={labPage({})} />;
+  const railTree = <LabView data={labPage({})} onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT} />;
   const railHrefs = linkHrefs(railTree);
   for (const sectionHref of [
     '/lab',

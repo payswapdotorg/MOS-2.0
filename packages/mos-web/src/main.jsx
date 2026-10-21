@@ -38,6 +38,10 @@ import {
 import { MosAppErrorBoundary } from './shell/error-boundary.jsx';
 import { MosAppShell } from './shell/mos-app-shell.js';
 import { MosBootstrapErrorView } from './shell/status-views.js';
+import {
+  declareLabIntentThroughPort,
+  labIntentOutcomeHref,
+} from './routes/lab-intent-declaration.js';
 import { createInMemoryMosWebComposition } from '../testing/compose-in-memory-mos-web.js';
 import './styles.css';
 
@@ -70,6 +74,7 @@ function bootMosWebShell() {
             shellView={routeView.shellView}
             routeView={routeView.routeView}
             onDeclareMissionIntent={routeView.onDeclareMissionIntent}
+            onDeclareLabIntent={onDeclareLabIntent}
             shellVersion={SHELL_VERSION}
           />
         </MosAppErrorBoundary>
@@ -86,6 +91,15 @@ function bootMosWebShell() {
       // The receipt/failure marker is carried by the next full load —
       // one route per load, real navigation, no client route state.
       globalThis.location.assign(missionIntentOutcomeHref(outcome));
+    });
+  };
+
+  const onDeclareLabIntent = (declaration) => {
+    // The lab write-intent transport (UX-003 wave 3): the declaration routes
+    // through the composition's lab-intents port; the ledger record (receipt
+    // or the authority's named rejection) is carried by the next full load.
+    declareLabIntentThroughPort(composition, declaration).then((outcome) => {
+      globalThis.location.assign(labIntentOutcomeHref(outcome));
     });
   };
 

@@ -143,6 +143,14 @@ export interface LabRoute {
   readonly transformCandidateId: string | null;
   /** Selected lab-candidate handoff id (`?handoff=<id>`), when given. */
   readonly handoffId: string | null;
+  /**
+   * Write-intent ledger marker (`?receipt=<intentId>`, UX-003 wave 3): the
+   * intent outcome surface reads the ledger record with this id after a
+   * declared lab intent navigates here. Not a section selection — the
+   * explicit `?section=` (or the owning-section navigation) decides the
+   * section; this marker only carries the record id.
+   */
+  readonly intentReceiptId: string | null;
 }
 
 export interface ConnectionsRoute {
@@ -243,6 +251,7 @@ export function parseMosRoute(pathname: string, search: string): MosRoute {
       section: inferLabSection(labSectionFromParam(firstParam(params, 'section')), selections),
       benchmarkVersion: versionParam(params, 'version'),
       ...selections,
+      intentReceiptId: firstParam(params, 'receipt'),
     };
   }
 

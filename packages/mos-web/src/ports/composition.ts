@@ -11,6 +11,7 @@ import type { LabSimulatorViewPort } from './lab-simulator.js';
 import type { LabStrategyViewPort } from './lab-strategy.js';
 import type { LabTransformsViewPort } from './lab-transforms.js';
 import type { LabBridgeViewPort } from './lab-bridge.js';
+import type { LabIntentsPort } from './lab-intents.js';
 import type { ConnectionsViewPort } from './connections-views.js';
 import type { NotificationsViewPort } from './notifications-views.js';
 
@@ -58,6 +59,13 @@ export interface MosWebComposition {
   readonly labTransforms: LabTransformsViewPort;
   /** The Lab next-steps bridge (UX-003, over the §24 authorized path): read-only declarations. */
   readonly labBridge: LabBridgeViewPort;
+  /**
+   * The Lab write-intent transport (UX-003 wave 3): declarations in,
+   * authority-verdict receipts out. The shell never writes — this port
+   * routes declared intents to the lab authority runtimes at the seam
+   * (additive: read models stay on the section ports above).
+   */
+  readonly labIntents: LabIntentsPort;
   /** The Connections surface (UX-004, over PROD-001): read-only. */
   readonly connections: ConnectionsViewPort;
   /** The Notifications consumer surface (NOTIFY-CS, over NOTIFY-001): read-only. */

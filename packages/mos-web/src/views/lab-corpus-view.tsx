@@ -3,6 +3,13 @@ import type {
   LabCorpusSummaryView,
 } from '../ports/lab-corpus.js';
 import { formatLabDigestShort, LAB_NO_INGESTION_NOTE } from './lab-presentation.js';
+import type { LabIntentDeclaration } from '../ports/lab-intents.js';
+import {
+  LAB_INTENT_FORM_FIELDS,
+  ingestDeclarationFromFormData,
+  snapshotDeclarationFromFormData,
+} from './lab-intent-form-data.js';
+import { LabIntentForm } from './lab-intent-form.js';
 import {
   LabDeclaredAffordance,
   LabFact,
@@ -219,11 +226,14 @@ export function LabCorpusSectionView({
   summaries,
   selectedCorpus,
   corpusSelectionError,
+  onDeclareLabIntent,
 }: {
   /** null = not loaded on this pass (the explicit loading state). */
   readonly summaries: readonly LabCorpusSummaryView[] | null;
   readonly selectedCorpus: LabCorpusDetailView | null;
   readonly corpusSelectionError: 'lab-corpus-not-found' | 'load-failed' | null;
+  /** Shell callback routing write-intent declarations to the lab-intents port. */
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
 }) {
   if (summaries === null) {
     return <LabSectionLoadingPanel section="corpus" />;
@@ -256,18 +266,42 @@ export function LabCorpusSectionView({
 
       <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Declared lab-authority actions (read-only surface)
+          Declared lab-authority actions (write-intent declarations)
         </h4>
-        <div className="flex flex-wrap gap-4">
-          <LabDeclaredAffordance
-            action="Acquire reference documents…"
-            reason={LAB_NO_INGESTION_NOTE}
-            testId="lab-corpus-affordance-ingest"
+        <p className="text-[11px] text-slate-500">
+          The two write paths of this section are EXECUTABLE through the lab-intents port; the
+          authority's verdict (receipt or named rejection) returns here after the declaration.
+        </p>
+        <div className="flex flex-col gap-3">
+          <LabIntentForm
+            testId="lab-corpus-intent-ingest"
+            summaryLabel="Acquire a reference document (LAB-001 — rights-gated)"
+            routedTo="lab-corpus-authority"
+            disclosureNote="Acquisition requires an explicit, active, tenant-matching rights grant — with none registered the authority DENIES and the rejection says so."
+            onDeclareLabIntent={onDeclareLabIntent}
+            parse={ingestDeclarationFromFormData}
+            fields={[
+              { name: LAB_INTENT_FORM_FIELDS.documentId, label: 'Document id', kind: 'text', required: true, placeholder: 'e.g. doc-refs-001' },
+              { name: LAB_INTENT_FORM_FIELDS.niche, label: 'Niche', kind: 'text', required: true, placeholder: 'e.g. developer-marketing' },
+              { name: LAB_INTENT_FORM_FIELDS.platform, label: 'Platform', kind: 'text', required: true, placeholder: 'e.g. mastodon' },
+              { name: LAB_INTENT_FORM_FIELDS.modality, label: 'Modality (authority vocabulary)', kind: 'text', required: true, placeholder: 'e.g. text' },
+              { name: LAB_INTENT_FORM_FIELDS.artifactId, label: 'Artifact id', kind: 'text', required: true },
+              { name: LAB_INTENT_FORM_FIELDS.sourceRefsText, label: 'Source refs (comma-separated)', kind: 'text', required: false },
+              { name: LAB_INTENT_FORM_FIELDS.acquiredAt, label: 'Acquired at (ISO-8601)', kind: 'text', required: true, placeholder: 'e.g. 2026-10-21T12:00:00Z' },
+              { name: LAB_INTENT_FORM_FIELDS.rightsRef, label: 'Rights ref (the acquisition gate resolves this)', kind: 'text', required: true },
+              { name: LAB_INTENT_FORM_FIELDS.provenanceRef, label: 'Provenance ref', kind: 'text', required: true },
+            ]}
           />
-          <LabDeclaredAffordance
-            action="Snapshot corpus version…"
-            reason={LAB_NO_INGESTION_NOTE}
-            testId="lab-corpus-affordance-snapshot"
+          <LabIntentForm
+            testId="lab-corpus-intent-snapshot"
+            summaryLabel="Snapshot a corpus version (LAB-001 — append-only membership set)"
+            routedTo="lab-corpus-authority"
+            disclosureNote="The snapshot's membership is the declared document refs — duplicates are the authority's to reject by name; an empty set is a valid version."
+            onDeclareLabIntent={onDeclareLabIntent}
+            parse={snapshotDeclarationFromFormData}
+            fields={[
+              { name: LAB_INTENT_FORM_FIELDS.documentRefsText, label: 'Document refs (comma-separated membership set)', kind: 'text', required: false },
+            ]}
           />
           <LabDeclaredAffordance
             action="Attach feature bundle…"

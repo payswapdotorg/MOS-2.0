@@ -8,6 +8,7 @@ import { createInMemoryMissionCatalogPort } from './in-memory-mission-catalog.js
 import { createInMemoryStudioSurface } from './in-memory-studio-surface.js';
 import { createInMemoryLabSurface } from './in-memory-lab-surface.js';
 import { createInMemoryLabWorkspace } from './in-memory-lab-workspace.js';
+import { createInMemoryLabIntents } from './in-memory-lab-intents.js';
 import { connectionsCompositionDouble } from './connections-composition-double.js';
 import { createInMemoryNotificationsViewPort } from './notifications-composition-double.js';
 
@@ -77,6 +78,8 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
   readonly labSurface: ReturnType<typeof createInMemoryLabSurface>;
   /** The disclosed Lab WORKSPACE double (UX-003 wave 2 observability). */
   readonly labWorkspace: ReturnType<typeof createInMemoryLabWorkspace>;
+  /** The disclosed Lab write-intents double (UX-003 wave 3 observability). */
+  readonly labIntents: ReturnType<typeof createInMemoryLabIntents>;
   /** The disclosed Connections surface double (UX-004 observability). */
   readonly connectionsSurface: typeof connectionsCompositionDouble;
   /** The disclosed Notifications surface double (NOTIFY-CS observability). */
@@ -211,6 +214,10 @@ export function createInMemoryMosWebComposition(
     missionRepository,
     now,
   });
+  const labIntents = createInMemoryLabIntents({
+    now,
+    scope: { tenantId: tenantId as never, workspaceId: workspaceId as never },
+  });
 
   // Seed the demo missions through the REAL repository when asked (the
   // disclosed-double pattern the Studio/Lab seams already follow — their
@@ -269,6 +276,7 @@ export function createInMemoryMosWebComposition(
     labStrategy: labWorkspace.labStrategy,
     labTransforms: labWorkspace.labTransforms,
     labBridge: labWorkspace.labBridge,
+    labIntents,
     connections: connectionsCompositionDouble,
     notifications: notificationsPort,
     identityRepository,

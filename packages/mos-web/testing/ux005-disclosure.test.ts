@@ -71,7 +71,7 @@ test('lab view renders the ux005 summary layer with BOTH lab honesty labels', as
   const composition = createInMemoryMosWebComposition();
   const shellView = (await composition.appShell.loadAppShell()) as AppShellView;
   const data = (await pageDataFor('/lab', composition, shellView)) as LabPageData;
-  const tree = LabView({ data });
+  const tree = LabView({ data, onDeclareLabIntent: () => undefined });
   const layer = ux005Layer(tree, 'lab');
   assert.ok(layer !== null, 'summary layer present');
   const text = renderTreeText(layer);
