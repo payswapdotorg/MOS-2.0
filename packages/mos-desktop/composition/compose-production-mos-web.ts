@@ -15,8 +15,8 @@ import {
 } from './production-lab-surface.js';
 import { createProductionLabIntents } from './production-lab-intents.js';
 import {
-  createInterimAgentConsole,
-  createInterimConsoleIntents,
+  createProductionAgentConsole,
+  type ProductionAgentConsole,
 } from './production-agent-console.js';
 import {
   createProductionLabWorkspace,
@@ -107,6 +107,8 @@ export interface ProductionMosWebComposition extends MosWebComposition {
   readonly labRuntime: ProductionLabRuntime;
   /** The REAL lab WORKSPACE runtimes (LAB-001..016 — disclosed observability). */
   readonly labWorkspaceRuntime: ProductionLabWorkspaceRuntime;
+  /** The REAL console authority chain (the CONSOLE wave — disclosed observability). */
+  readonly consoleBinding: ProductionAgentConsole;
   /** The tenant scope the composition presents. */
   readonly scope: { readonly tenantId: string; readonly workspaceId: string | null };
 }
@@ -185,12 +187,17 @@ export function createProductionMosWebComposition(
     now,
   });
 
-  // INTERIM Console binding (the CONSOLE wave foundation): the REAL
-  // planner/compiler/engine/agents/rights/intelligence/experiments binding
-  // lands with this wave's Worker C delivery and replaces the interim
-  // honest-unavailable stub (production-agent-console.ts).
-  const agentConsole = createInterimAgentConsole();
-  const consoleIntents = createInterimConsoleIntents();
+  // The PRODUCTION Agent Console binding (the CONSOLE wave): the REAL
+  // planner/compiler/engine + rights/intelligence/experiments/agents
+  // authorities behind the console view ports — every declared intent
+  // executes against the REAL runtimes and every verdict is relayed
+  // VERBATIM (production-agent-console.ts + its split modules).
+  const consoleBinding = createProductionAgentConsole({
+    scope,
+    now,
+    missionRepository,
+    labBenchmark: labSurface.labRuntime.benchmark,
+  });
 
   // The notifications binding presents the REAL tenant context (§31).
   const tenant = identityRepository.getTenant(tenantId as never);
@@ -219,8 +226,8 @@ export function createProductionMosWebComposition(
     labTransforms: labWorkspace.labTransforms,
     labBridge: labWorkspace.labBridge,
     labIntents,
-    agentConsole,
-    consoleIntents,
+    agentConsole: consoleBinding.agentConsole,
+    consoleIntents: consoleBinding.consoleIntents,
     connections: createUnavailableConnections(),
     notifications,
     identityRepository,
@@ -228,6 +235,7 @@ export function createProductionMosWebComposition(
     recordedIntents: catalog.recordedIntents,
     labRuntime: labSurface.labRuntime,
     labWorkspaceRuntime: labWorkspace.labWorkspaceRuntime,
+    consoleBinding,
     scope: { tenantId, workspaceId },
   };
 }
