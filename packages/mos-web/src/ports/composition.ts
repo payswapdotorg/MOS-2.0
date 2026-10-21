@@ -4,6 +4,13 @@ import type { StudioDirectoryPort } from './studio-directory.js';
 import type { StudioPackageLibraryPort } from './studio-packages.js';
 import type { LabBenchmarkDigestPort } from './lab-benchmark.js';
 import type { LabCalibrationStatusPort } from './lab-calibration.js';
+import type { LabOverviewPort } from './lab-overview.js';
+import type { LabCorpusViewPort } from './lab-corpus.js';
+import type { LabIdeaGraphViewPort } from './lab-idea-graph.js';
+import type { LabSimulatorViewPort } from './lab-simulator.js';
+import type { LabStrategyViewPort } from './lab-strategy.js';
+import type { LabTransformsViewPort } from './lab-transforms.js';
+import type { LabBridgeViewPort } from './lab-bridge.js';
 import type { ConnectionsViewPort } from './connections-views.js';
 import type { NotificationsViewPort } from './notifications-views.js';
 
@@ -19,8 +26,10 @@ import type { NotificationsViewPort } from './notifications-views.js';
  * `@mos/missions` / `@mos/identity` (runtime) and `@mos/studio`
  * (type-only, REAL-shape pins — the studio runtime itself is node-side; see
  * the seam's disclosure). The Lab surface (UX-003) follows the same
- * discipline over REAL-shaped LAB-017/LAB-018 records, and the Connections
- * surface (UX-004) over the PROD-001 distribution/integrations shapes.
+ * discipline over REAL-shaped LAB-017/LAB-018 records, the full Lab
+ * WORKSPACE (UX-003 wave 2) over the REAL-shaped LAB-001..016 + §24 bridge
+ * record mirrors, and the Connections surface (UX-004) over the PROD-001
+ * distribution/integrations shapes.
  */
 export interface MosWebComposition {
   /** Shell chrome: sections, availability verdicts, tenant context. */
@@ -35,6 +44,20 @@ export interface MosWebComposition {
   readonly labBenchmark: LabBenchmarkDigestPort;
   /** The Lab online-calibration status (UX-003, over LAB-018): read-only. */
   readonly labCalibration: LabCalibrationStatusPort;
+  /** The Lab research overview (UX-003, over the LAB-001..018 aggregate): read-only. */
+  readonly labOverview: LabOverviewPort;
+  /** The Lab corpus & evidence surface (UX-003, over LAB-001/002): read-only. */
+  readonly labCorpus: LabCorpusViewPort;
+  /** The Lab Idea Graph surface (UX-003, over LAB-003): read-only. */
+  readonly labIdeaGraph: LabIdeaGraphViewPort;
+  /** The Lab simulator & Time Machine surface (UX-003, over LAB-004/005/006): read-only. */
+  readonly labSimulator: LabSimulatorViewPort;
+  /** The Lab strategy & organizations surface (UX-003, over LAB-007..010 + LAB-016 seam): read-only. */
+  readonly labStrategy: LabStrategyViewPort;
+  /** The Lab transforms surface (UX-003, over LAB-011/012): read-only. */
+  readonly labTransforms: LabTransformsViewPort;
+  /** The Lab next-steps bridge (UX-003, over the §24 authorized path): read-only declarations. */
+  readonly labBridge: LabBridgeViewPort;
   /** The Connections surface (UX-004, over PROD-001): read-only. */
   readonly connections: ConnectionsViewPort;
   /** The Notifications consumer surface (NOTIFY-CS, over NOTIFY-001): read-only. */

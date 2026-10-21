@@ -71,6 +71,32 @@ const CALIB_RECORDS: readonly LabCalibrationRecordView[] = recordsResult;
 
 const labPage = (overrides: Partial<LabPageData> = {}): LabPageData => ({
   scope: DEMO_SCOPE,
+  section: 'benchmarks',
+  overview: null,
+  overviewError: null,
+  corpusSummaries: null,
+  selectedCorpus: null,
+  corpusSelectionError: null,
+  ideaGraph: null,
+  selectedIdea: null,
+  ideaSelectionError: null,
+  simulator: null,
+  selectedRun: null,
+  runSelectionError: null,
+  selectedBranchRecords: null,
+  branchSelectionError: null,
+  strategyCandidates: null,
+  organizationSearches: null,
+  rewardObjective: null,
+  strategyError: null,
+  selectedCandidate: null,
+  candidateSelectionError: null,
+  transformDefinitions: null,
+  transformGraphs: null,
+  transformCandidates: null,
+  transformsError: null,
+  selectedTransformCandidate: null,
+  transformSelectionError: null,
   benchmarks: BENCHMARKS,
   selectedDigest: null,
   benchmarkSelectionError: null,
@@ -78,6 +104,10 @@ const labPage = (overrides: Partial<LabPageData> = {}): LabPageData => ({
   calibrationError: null,
   selectedCalibrationRecords: null,
   calibrationSelectionError: null,
+  bridgeDirectory: null,
+  bridgeError: null,
+  selectedHandoff: null,
+  handoffSelectionError: null,
   ...overrides,
 });
 
@@ -358,40 +388,60 @@ test('the error decomposition, containment and frozen functional render per reco
   assert.ok(elementWithTestId(tree, 'lab-calibration-labonly'), 'the §24 statement renders per record');
 });
 
-test('the full Lab page renders directory, digest and calibration together honestly', () => {
+test('the benchmarks section page renders directory and digest together honestly', () => {
   const tree = (
     <LabView
       data={labPage({
         selectedDigest: DIGEST,
-        selectedCalibrationRecords: CALIB_RECORDS,
       })}
     />
   );
   assert.ok(elementWithTestId(tree, 'lab-benchmarks-list'));
   assert.ok(elementWithTestId(tree, 'lab-benchmark-digest'));
+  assert.ok(elementWithTestId(tree, 'lab-nav-benchmarks'), 'the workspace nav renders');
+  assert.ok(elementWithTestId(tree, 'lab-workspace-nav'), 'the workspace section rail is present');
+});
+
+test('the calibration section page renders the chains and records together honestly', () => {
+  const tree = (
+    <LabView
+      data={labPage({
+        section: 'calibration',
+        selectedCalibrationRecords: CALIB_RECORDS,
+      })}
+    />
+  );
   assert.ok(elementWithTestId(tree, 'lab-calibrations-list'));
   assert.ok(elementWithTestId(tree, 'lab-calibration-detail'));
 });
 
 test('selection failures render their honest panels, never guessed data', () => {
-  const tree = (
+  const benchmarkTree = (
     <LabView
       data={labPage({
         benchmarkSelectionError: 'lab-benchmark-not-found',
-        calibrationSelectionError: 'lab-calibration-not-found',
-        calibrationError: 'load-failed',
       })}
     />
   );
-  const benchmarkError = elementWithTestId(tree, 'lab-benchmark-selection-error');
+  const benchmarkError = elementWithTestId(benchmarkTree, 'lab-benchmark-selection-error');
   assert.ok(benchmarkError);
   assert.equal(benchmarkError.props.role, 'alert');
   assert.equal(
     renderTreeText(benchmarkError).includes('cannot tell and will not guess'),
     true,
   );
-  assert.ok(elementWithTestId(tree, 'lab-calibration-selection-error'));
-  const calibrationUnavailable = elementWithTestId(tree, 'lab-calibration-unavailable');
+
+  const calibrationTree = (
+    <LabView
+      data={labPage({
+        section: 'calibration',
+        calibrationSelectionError: 'lab-calibration-not-found',
+        calibrationError: 'load-failed',
+      })}
+    />
+  );
+  assert.ok(elementWithTestId(calibrationTree, 'lab-calibration-selection-error'));
+  const calibrationUnavailable = elementWithTestId(calibrationTree, 'lab-calibration-unavailable');
   assert.ok(calibrationUnavailable);
   assert.equal(
     renderTreeText(calibrationUnavailable).includes('explicitly unavailable'),
@@ -413,14 +463,34 @@ test('the Lab surface offers NO operator control (read-only pin — no buttons a
 });
 
 test('every navigation affordance on the Lab surface is a real link (keyboard reachable)', () => {
-  const tree = (
-    <LabView data={labPage({ selectedDigest: DIGEST, selectedCalibrationRecords: CALIB_RECORDS })} />
+  const benchmarkTree = <LabView data={labPage({ selectedDigest: DIGEST })} />;
+  const benchmarkHrefs = linkHrefs(benchmarkTree);
+  assert.equal(benchmarkHrefs.includes('/lab?benchmark=bench-reach-v1'), true);
+  for (const href of benchmarkHrefs) {
+    assert.equal(href.startsWith('/lab') || href === '/', true, `internal links only: ${href}`);
+  }
+
+  const calibrationTree = (
+    <LabView data={labPage({ section: 'calibration', selectedCalibrationRecords: CALIB_RECORDS })} />
   );
-  const hrefs = linkHrefs(tree);
-  assert.equal(hrefs.includes('/lab?benchmark=bench-reach-v1'), true);
-  assert.equal(hrefs.includes('/lab?calibration=calib-reach-1'), true);
-  assert.equal(hrefs.includes('/lab?calibration=calib-launch-1'), true);
-  for (const href of hrefs) {
-    assert.equal(href.startsWith('/lab?') || href === '/', true, `internal links only: ${href}`);
+  const calibrationHrefs = linkHrefs(calibrationTree);
+  assert.equal(calibrationHrefs.includes('/lab?calibration=calib-reach-1'), true);
+  assert.equal(calibrationHrefs.includes('/lab?calibration=calib-launch-1'), true);
+
+  // The workspace rail links every section as a real href
+  const railTree = <LabView data={labPage({})} />;
+  const railHrefs = linkHrefs(railTree);
+  for (const sectionHref of [
+    '/lab',
+    '/lab?section=corpus',
+    '/lab?section=idea-graph',
+    '/lab?section=simulator',
+    '/lab?section=strategy',
+    '/lab?section=transforms',
+    '/lab?section=benchmarks',
+    '/lab?section=calibration',
+    '/lab?section=bridge',
+  ]) {
+    assert.equal(railHrefs.includes(sectionHref), true, `the rail links ${sectionHref}`);
   }
 });

@@ -1,0 +1,282 @@
+import type {
+  LabCorpusDetailView,
+  LabCorpusSummaryView,
+} from '../ports/lab-corpus.js';
+import { formatLabDigestShort, LAB_NO_INGESTION_NOTE } from './lab-presentation.js';
+import {
+  LabDeclaredAffordance,
+  LabFact,
+  LabSectionEmptyPanel,
+  LabSectionLoadingPanel,
+  LabSelectionErrorPanel,
+} from './lab-workspace-shared.js';
+
+/**
+ * The Lab workspace's Corpus & Evidence section view (UX-003 wave 2, over
+ * LAB-001 + LAB-002): corpus version snapshots listed with their
+ * reference-document counts, and the selected chain's full detail — every
+ * document an acquired CONTENT REFERENCE (never bytes) with its explicit
+ * rights grant + provenance, feature bundles as COMPUTED artifact refs, and
+ * the DECLARED capability requirements. NO INGESTION SURFACE: the
+ * acquisition affordances render disabled-with-reason (CORE-003 gating).
+ */
+
+function LabCorpusSummaryRow({
+  corpus,
+  selected,
+}: {
+  readonly corpus: LabCorpusSummaryView;
+  readonly selected: boolean;
+}) {
+  return (
+    <li>
+      <a
+        href={`/lab?section=corpus&corpus=${encodeURIComponent(corpus.corpusId)}`}
+        aria-current={selected ? 'page' : undefined}
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:flex-row sm:items-center sm:justify-between ${
+          selected
+            ? 'border-sky-600 bg-sky-500/10'
+            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+        }`}
+        data-testid={`lab-corpus-row-${corpus.corpusId}`}
+      >
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-slate-100">{corpus.corpusId}</span>
+            <span className="text-xs text-slate-400">
+              {corpus.niche} · {corpus.platform}
+            </span>
+          </span>
+          <span className="text-xs text-slate-400">
+            chain v{corpus.latestVersion} · {corpus.versionCount} snapshot
+            {corpus.versionCount === 1 ? '' : 's'} · {corpus.documentCount} documents ·{' '}
+            {corpus.attachedBundleCount} attached feature bundle
+            {corpus.attachedBundleCount === 1 ? '' : 's'}
+          </span>
+          <span className="text-xs text-slate-500">
+            modalities: {corpus.modalities.join(', ') || '—'}
+          </span>
+          <span className="font-mono text-xs text-slate-500">{corpus.tenantId}</span>
+        </span>
+        <span className="flex shrink-0 flex-col gap-0.5 text-right text-xs text-slate-500">
+          <span>latest snapshot {corpus.latestSnapshotAt}</span>
+          <span>
+            acquired {corpus.acquiredFrom} → {corpus.acquiredTo}
+          </span>
+        </span>
+      </a>
+    </li>
+  );
+}
+
+function LabCorpusDetailPanel({ detail }: { readonly detail: LabCorpusDetailView }) {
+  const { summary, versions, documents, featureBundles, featureRequirements } = detail;
+  return (
+    <div className="flex flex-col gap-4" data-testid="lab-corpus-detail">
+      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-sky-800/60 bg-sky-950/20 p-4">
+        <LabFact label="corpus">{summary.corpusId}</LabFact>
+        <LabFact label="latest version">v{summary.latestVersion}</LabFact>
+        <LabFact label="documents">{summary.documentCount}</LabFact>
+        <LabFact label="attached bundles">{summary.attachedBundleCount}</LabFact>
+        <LabFact label="tenant">{summary.tenantId}</LabFact>
+      </div>
+
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Append-only version history (oldest first)
+        </h4>
+        <ul className="flex flex-col gap-1" data-testid="lab-corpus-versions">
+          {versions.map((version) => (
+            <li
+              key={version.version}
+              className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400"
+            >
+              <span className="font-mono text-slate-300">v{version.version}</span>
+              <span>{version.documentCount} documents</span>
+              <span className="font-mono text-slate-500">{version.createdAt}</span>
+              <span className="text-slate-500">{version.notes ?? '— no notes'}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Reference documents (acquired content REFERENCES — never bytes)
+        </h4>
+        <ul className="flex flex-col gap-2" data-testid="lab-corpus-documents">
+          {documents.map((document) => (
+            <li
+              key={document.documentId}
+              className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+              data-testid={`lab-corpus-document-${document.documentId}`}
+            >
+              <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="font-mono text-xs text-slate-200">{document.documentId}</span>
+                <span className="text-xs text-slate-500">v{document.version}</span>
+                <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+                  {document.modality}
+                </span>
+              </span>
+              <span className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-400">
+                <span>
+                  artifact{' '}
+                  <span className="font-mono text-slate-300" title={String(document.artifact.artifactId)}>
+                    {String(document.artifact.artifactId)} ·{' '}
+                    {formatLabDigestShort(String(document.artifact.digest))}
+                  </span>
+                </span>
+                <span>acquired {document.acquiredAt}</span>
+              </span>
+              <span className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
+                <span className="text-amber-300/70">rights {document.rightsRef}</span>
+                <span>provenance {document.provenanceRef}</span>
+              </span>
+              <span className="text-[11px] text-slate-500">
+                sources: {document.sourceRefs.join(' · ')}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Feature bundles (LAB-002 — computed artifact refs + scalar manifests)
+        </h4>
+        {featureBundles.length === 0 ? (
+          <LabSectionEmptyPanel section="corpus-bundles" what="attached feature bundles" />
+        ) : (
+          <ul className="flex flex-col gap-2" data-testid="lab-corpus-bundles">
+            {featureBundles.map((bundle) => (
+              <li
+                key={bundle.bundleId}
+                className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+                data-testid={`lab-corpus-bundle-${bundle.bundleId}`}
+              >
+                <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-mono text-xs text-slate-200">{bundle.bundleId}</span>
+                  <span className="text-xs text-slate-500">v{bundle.version}</span>
+                  <span className="text-xs text-slate-400">over {bundle.documentId}</span>
+                  {bundle.detachedAt === null ? null : (
+                    <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-300">
+                      detached {bundle.detachedAt}
+                    </span>
+                  )}
+                </span>
+                <ul className="flex flex-col gap-0.5">
+                  {bundle.features.map((feature) => (
+                    <li
+                      key={feature.kind}
+                      className="flex flex-wrap gap-x-4 text-[11px] text-slate-400"
+                    >
+                      <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+                        {feature.kind}
+                      </span>
+                      <span className="font-mono text-slate-300">
+                        {String(feature.artifact.artifactId)}
+                      </span>
+                      <span className="text-slate-500">
+                        {Object.entries(feature.metadata)
+                          .map(([key, value]) => `${key}=${String(value)}`)
+                          .join(' · ')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <span className="text-[11px] text-slate-500">
+                  provenance {bundle.provenanceRef} · created {bundle.createdAt}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          DECLARED capability requirements (per feature kind)
+        </h4>
+        <ul className="flex flex-wrap gap-2" data-testid="lab-corpus-requirements">
+          {featureRequirements.map((requirement) => (
+            <li
+              key={requirement.kind}
+              className="rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400"
+            >
+              <span className="text-slate-200">{requirement.kind}</span> needs{' '}
+              <span className="font-mono text-slate-300">{requirement.capabilityId}</span> @
+              v{requirement.capabilityVersion}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/** The Corpus & Evidence section view over the loaded page model fields. */
+export function LabCorpusSectionView({
+  summaries,
+  selectedCorpus,
+  corpusSelectionError,
+}: {
+  /** null = not loaded on this pass (the explicit loading state). */
+  readonly summaries: readonly LabCorpusSummaryView[] | null;
+  readonly selectedCorpus: LabCorpusDetailView | null;
+  readonly corpusSelectionError: 'lab-corpus-not-found' | 'load-failed' | null;
+}) {
+  if (summaries === null) {
+    return <LabSectionLoadingPanel section="corpus" />;
+  }
+  return (
+    <div className="flex flex-col gap-4" data-testid="lab-corpus-section">
+      {summaries.length === 0 ? (
+        <LabSectionEmptyPanel section="corpus" what="corpus chains" />
+      ) : (
+        <ul className="flex flex-col gap-3" data-testid="lab-corpus-list">
+          {summaries.map((corpus) => (
+            <LabCorpusSummaryRow
+              key={corpus.corpusId}
+              corpus={corpus}
+              selected={selectedCorpus?.summary.corpusId === corpus.corpusId}
+            />
+          ))}
+        </ul>
+      )}
+
+      {corpusSelectionError !== null ? (
+        <LabSelectionErrorPanel
+          section="corpus"
+          error={corpusSelectionError === 'lab-corpus-not-found' ? 'not-found' : 'load-failed'}
+          vocabulary={corpusSelectionError}
+        />
+      ) : null}
+
+      {selectedCorpus !== null ? <LabCorpusDetailPanel detail={selectedCorpus} /> : null}
+
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Declared lab-authority actions (read-only surface)
+        </h4>
+        <div className="flex flex-wrap gap-4">
+          <LabDeclaredAffordance
+            action="Acquire reference documents…"
+            reason={LAB_NO_INGESTION_NOTE}
+            testId="lab-corpus-affordance-ingest"
+          />
+          <LabDeclaredAffordance
+            action="Snapshot corpus version…"
+            reason={LAB_NO_INGESTION_NOTE}
+            testId="lab-corpus-affordance-snapshot"
+          />
+          <LabDeclaredAffordance
+            action="Attach feature bundle…"
+            reason={LAB_NO_INGESTION_NOTE}
+            testId="lab-corpus-affordance-bundle"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+

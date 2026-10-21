@@ -1,26 +1,42 @@
 import type { LabPageData } from './route-loading.js';
+import type { LabSectionId } from './route.js';
+import { LabOverviewSectionView } from '../views/lab-overview-view.js';
+import { LabCorpusSectionView } from '../views/lab-corpus-view.js';
+import { LabIdeaGraphSectionView } from '../views/lab-idea-graph-view.js';
+import { LabSimulatorSectionView } from '../views/lab-simulator-view.js';
+import { LabStrategySectionView } from '../views/lab-strategy-view.js';
+import { LabTransformsSectionView } from '../views/lab-transforms-view.js';
+import { LabBridgeSectionView } from '../views/lab-bridge-view.js';
 import { LabBenchmarkDirectoryView } from '../views/lab-benchmark-directory.js';
 import { LabBenchmarkDigestPanel } from '../views/lab-benchmark-digest.js';
 import { LabCalibrationDetailPanel } from '../views/lab-calibration-detail.js';
 import { LabCalibrationStatusView } from '../views/lab-calibration-status.js';
-import { LAB_BOUNDARY_NOTE, LAB_LOOP_NARRATION } from '../views/lab-presentation.js';
+import {
+  LAB_BOUNDARY_NOTE,
+  LAB_LOOP_NARRATION,
+  LAB_SECTION_IDS,
+  LAB_SECTION_LABELS,
+} from '../views/lab-presentation.js';
 import { MosNoTenantContextView } from '../shell/route-fallbacks.js';
-import { SummaryLayer, DisclosureItem } from '../views/disclosure/disclosure-primitive.js';
+import { DisclosureItem, SummaryLayer } from '../views/disclosure/disclosure-primitive.js';
 import { buildLabSummary } from '../views/disclosure/surface-summaries.js';
+import { LabSectionLoadingPanel, LabSectionUnavailablePanel } from '../views/lab-workspace-shared.js';
 
 /**
- * The Lab surface (UX-003): the read-side view over the Lab's
- * benchmark/calibration/uncertainty authorities (LAB-017 + LAB-018). It
- * presents the benchmark record chains with their digests — every expected
- * value WITH its uncertainty interval, model disagreement, OOD flags, the
- * always-present no-op baseline, calibration shown honestly as pending
- * reality — and the online-calibration chains with their prediction-error
- * records and derived feedback contexts. Counterfactual discipline is
- * VISIBLE everywhere (§20/§24): simulated values are labeled simulated,
- * measured observations are labeled measured, and the §24 boundary note
- * stands at the top of the surface. NO lab actions exist here: running
- * benchmarks, recording calibration errors and deriving contexts are
- * lab-authority actions this surface never performs or fakes.
+ * The Lab WORKSPACE (UX-003 wave 2): a first-class MOS research surface —
+ * section navigation over the full research loop (overview → corpus &
+ * evidence → ideas → simulation & Time Machine → strategy &
+ * organizations → transforms → robust benchmarks → calibration → the
+ * authorized next-step bridge), one section per load, with the persistent
+ * research context (the active scenario's Time Machine horizon and
+ * information cutoff pins) in the workspace header.
+ *
+ * Every section view keeps the accepted UX-003 discipline: counterfactual
+ * values labeled simulated, measured observations labeled measured, the
+ * §24 boundary note at the top, uncertainty intervals never flattened, the
+ * no-op baseline always visible in comparisons, and NO lab action
+ * performed or faked on this surface (declared affordances render
+ * disabled-with-reason until the authority is bound).
  */
 
 function BenchmarkSelectionErrorPanel({
@@ -73,40 +89,84 @@ function CalibrationUnavailablePanel() {
   );
 }
 
-/** The Lab page view over the loaded page model. */
-export function LabView({ data }: { readonly data: LabPageData }) {
-  if (data.scope === null) {
-    return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-xl font-bold">Lab</h1>
-        <MosNoTenantContextView />
-      </div>
-    );
+/** The workspace's persistent research-context strip (every section). */
+function LabResearchContextStrip({ data }: { readonly data: LabPageData }) {
+  if (data.overviewError !== null || data.overview === null) {
+    return null;
   }
-
-  const counterfactualCount = data.benchmarks.length;
-  const measuredCount = data.calibrationChains.length;
-  const labSummary = buildLabSummary({ measuredCount, counterfactualCount });
-
+  const scenario = data.overview.activeScenario;
   return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-xl font-bold">Lab</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          {LAB_LOOP_NARRATION.position} — {LAB_LOOP_NARRATION.summary}
-        </p>
-        <p className="mt-1 text-xs text-amber-200/80" data-testid="lab-boundary-note">
-          {LAB_BOUNDARY_NOTE}
-        </p>
-      </header>
+    <div
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-slate-800 bg-slate-900/40 px-4 py-2 text-xs text-slate-400"
+      data-testid="lab-research-context"
+    >
+      <span className="font-semibold text-slate-300">Research context</span>
+      {scenario === null ? (
+        <span data-testid="lab-research-context-no-scenario">
+          No active scenario — the corpus/overview sections hold the standing evidence.
+        </span>
+      ) : (
+        <>
+          <span data-testid="lab-research-context-scenario">
+            <span className="font-semibold text-slate-300">{scenario.scenarioRef}</span>
+            {' — '}
+            {scenario.niche} / {scenario.platform}
+          </span>
+          <span
+            data-testid="lab-research-context-lag"
+            title="Time Machine information lag L (§20): at T the agent sees only information available by T−L."
+          >
+            information cutoff T−{Math.round(scenario.informationLag / 86_400_000)}d
+          </span>
+          <span data-testid="lab-research-context-pins">
+            pins: corpus v{scenario.pins.corpusVersion} · simulator v{scenario.pins.simulatorVersion} ·
+            reward v{scenario.pins.rewardVersion}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
 
-      <SummaryLayer
-        surface="lab"
-        headline={labSummary.headline}
-        stats={labSummary.stats}
-        honestyLabels={labSummary.honestyLabels}
-      />
+/** The workspace section rail — full-load navigation (one section per load). */
+function LabWorkspaceNav({ current }: { readonly current: LabSectionId }) {
+  return (
+    <nav
+      aria-label="Research Lab sections"
+      className="flex flex-wrap gap-2"
+      data-testid="lab-workspace-nav"
+    >
+      {LAB_SECTION_IDS.map((section) => {
+        const active = section === current;
+        return (
+          <a
+            key={section}
+            href={section === 'overview' ? '/lab' : `/lab?section=${section}`}
+            aria-current={active ? 'page' : undefined}
+            className={
+              active
+                ? 'rounded-md border border-emerald-800/70 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-200'
+                : 'rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-200'
+            }
+            data-testid={`lab-nav-${section}`}
+          >
+            {LAB_SECTION_LABELS[section]}
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
 
+function LabBenchmarksSection({ data }: { readonly data: LabPageData }) {
+  if (data.benchmarks === null) {
+    return <LabSectionLoadingPanel section="benchmarks" />;
+  }
+  if (data.benchmarkSelectionError === 'load-failed') {
+    return <LabSectionUnavailablePanel section="benchmarks" />;
+  }
+  return (
+    <div className="flex flex-col gap-6" data-testid="lab-benchmarks-section">
       <section aria-labelledby="lab-benchmarks-title">
         <h2 id="lab-benchmarks-title" className="text-base font-semibold text-slate-100">
           Benchmark record chains
@@ -142,19 +202,27 @@ export function LabView({ data }: { readonly data: LabPageData }) {
           <LabBenchmarkDigestPanel digest={data.selectedDigest} />
         </DisclosureItem>
       ) : null}
+    </div>
+  );
+}
 
-      <section aria-labelledby="lab-calibration-title">
-        <h2 id="lab-calibration-title" className="text-base font-semibold text-slate-100">
-          Online calibration
-        </h2>
-        <p className="mb-3 mt-1 text-xs text-slate-500">
-          Simulation-to-reality prediction error (LAB-018) — append-only analysis records joining
-          counterfactual benchmark predictions with measured boundary-chain observations, and the
-          versioned feedback contexts derived from them.
-        </p>
-        {data.calibrationError !== null ? (
-          <CalibrationUnavailablePanel />
-        ) : (
+function LabCalibrationSection({ data }: { readonly data: LabPageData }) {
+  if (data.calibrationChains === null && data.calibrationError === null) {
+    return <LabSectionLoadingPanel section="calibration" />;
+  }
+  return (
+    <div className="flex flex-col gap-6" data-testid="lab-calibration-section">
+      {data.calibrationError !== null ? <CalibrationUnavailablePanel /> : null}
+      {data.calibrationChains !== null ? (
+        <section aria-labelledby="lab-calibration-title">
+          <h2 id="lab-calibration-title" className="text-base font-semibold text-slate-100">
+            Online calibration
+          </h2>
+          <p className="mb-3 mt-1 text-xs text-slate-500">
+            Simulation-to-reality prediction error (LAB-018) — append-only analysis records joining
+            counterfactual benchmark predictions with measured boundary-chain observations, and the
+            versioned feedback contexts derived from them.
+          </p>
           <LabCalibrationStatusView
             chains={data.calibrationChains}
             selectedCalibrationId={data.selectedCalibrationRecords === null
@@ -163,35 +231,140 @@ export function LabView({ data }: { readonly data: LabPageData }) {
                 ? (data.selectedCalibrationRecords[0]?.calibrationId ?? null)
                 : null}
           />
-        )}
-      </section>
+        </section>
+      ) : null}
 
       {data.calibrationSelectionError !== null ? (
         <CalibrationSelectionErrorPanel error={data.calibrationSelectionError} />
       ) : null}
-      {data.selectedCalibrationRecords !== null && data.selectedCalibrationRecords.length > 0 ? (
+      {data.selectedCalibrationRecords !== null &&
+      data.selectedCalibrationRecords.length > 0 ? (
         <DisclosureItem
-          id="ux005-lab-calibration"
+          id="ux005-lab-calibration-records"
           defaultOpen
           summary={
             <span className="text-sm font-semibold text-slate-200">
-              Calibration records — {data.selectedCalibrationRecords.length} append-only
-              prediction-error records (prediction vs measured, labeled)
+              Calibration records — {data.selectedCalibrationRecords[0]?.calibrationId} (append-only
+              chain; expand for the full record list)
             </span>
           }
         >
           <LabCalibrationDetailPanel records={data.selectedCalibrationRecords} />
         </DisclosureItem>
       ) : null}
-      {data.selectedCalibrationRecords !== null && data.selectedCalibrationRecords.length === 0 ? (
-        <aside
-          className="rounded-lg border border-dashed border-slate-800 p-4 text-xs text-slate-500"
-          data-testid="lab-calibration-empty-chain"
-        >
-          This calibration chain exists but holds no error records yet — rendered as exactly that,
-          never as fabricated calibration.
-        </aside>
-      ) : null}
+    </div>
+  );
+}
+
+function LabSectionContent({ data }: { readonly data: LabPageData }) {
+  switch (data.section) {
+    case 'overview':
+      return <LabOverviewSectionView overview={data.overview} overviewError={data.overviewError} />;
+    case 'corpus':
+      return (
+        <LabCorpusSectionView
+          summaries={data.corpusSummaries}
+          selectedCorpus={data.selectedCorpus}
+          corpusSelectionError={data.corpusSelectionError}
+        />
+      );
+    case 'idea-graph':
+      return (
+        <LabIdeaGraphSectionView
+          ideaGraph={data.ideaGraph}
+          selectedIdea={data.selectedIdea}
+          ideaSelectionError={data.ideaSelectionError}
+        />
+      );
+    case 'simulator':
+      return (
+        <LabSimulatorSectionView
+          simulator={data.simulator}
+          selectedRun={data.selectedRun}
+          runSelectionError={data.runSelectionError}
+          selectedBranchRecords={data.selectedBranchRecords}
+          branchSelectionError={data.branchSelectionError}
+        />
+      );
+    case 'strategy':
+      return (
+        <LabStrategySectionView
+          strategyCandidates={data.strategyCandidates}
+          organizationSearches={data.organizationSearches}
+          rewardObjective={data.rewardObjective}
+          strategyError={data.strategyError}
+          selectedCandidate={data.selectedCandidate}
+          candidateSelectionError={data.candidateSelectionError}
+        />
+      );
+    case 'transforms':
+      return (
+        <LabTransformsSectionView
+          transformDefinitions={data.transformDefinitions}
+          transformGraphs={data.transformGraphs}
+          transformCandidates={data.transformCandidates}
+          transformsError={data.transformsError}
+          selectedTransformCandidate={data.selectedTransformCandidate}
+          transformSelectionError={data.transformSelectionError}
+        />
+      );
+    case 'benchmarks':
+      return <LabBenchmarksSection data={data} />;
+    case 'calibration':
+      return <LabCalibrationSection data={data} />;
+    case 'bridge':
+      return (
+        <LabBridgeSectionView
+          path={data.bridgeDirectory === null ? null : data.bridgeDirectory.path}
+          candidates={data.bridgeDirectory === null ? null : data.bridgeDirectory.candidates}
+          selectedHandoff={data.selectedHandoff}
+          handoffSelectionError={data.handoffSelectionError}
+        />
+      );
+  }
+}
+
+/** The Lab workspace page view over the loaded section's page model. */
+export function LabView({ data }: { readonly data: LabPageData }) {
+  if (data.scope === null) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-xl font-bold">Research Lab</h1>
+        <MosNoTenantContextView />
+      </div>
+    );
+  }
+
+  const counterfactualCount = data.benchmarks === null ? 0 : data.benchmarks.length;
+  const measuredCount = data.calibrationChains === null ? 0 : data.calibrationChains.length;
+  const labSummary = buildLabSummary({ measuredCount, counterfactualCount });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <header>
+        <h1 className="text-xl font-bold">Research Lab</h1>
+        <p className="mt-1 text-sm text-slate-400">
+          {LAB_LOOP_NARRATION.position} — {LAB_LOOP_NARRATION.summary}
+        </p>
+        <p className="mt-1 text-xs text-amber-200/80" data-testid="lab-boundary-note">
+          {LAB_BOUNDARY_NOTE}
+        </p>
+      </header>
+
+      <SummaryLayer
+        surface="lab"
+        headline={labSummary.headline}
+        stats={labSummary.stats}
+        honestyLabels={labSummary.honestyLabels}
+      />
+
+      <LabResearchContextStrip data={data} />
+      <LabWorkspaceNav current={data.section} />
+
+      <div className="border-t border-slate-800 pt-4">
+        <LabSectionContent data={data} />
+      </div>
+
     </div>
   );
 }

@@ -93,13 +93,80 @@ export function labCalibrationRefFromQueryValue(raw: string): string {
 }
 
 /**
+ * Resolve the Lab workspace section id from its raw `?section=` query value
+ * (UX-003 wave 2): the KNOWN vocabulary passes through verbatim; anything
+ * else — including an absent value — resolves to `overview` (the workspace's
+ * default landing section). Presentation-only resolution: the section is a
+ * navigation key, never an authority id, so there is no miss state to fail
+ * closed on; an unknown value never routes to a guessed surface, only to
+ * the declared default.
+ */
+export function labSectionFromQueryValue(
+  raw: string | null,
+): 'overview' | 'corpus' | 'idea-graph' | 'simulator' | 'strategy' | 'transforms' | 'benchmarks' | 'calibration' | 'bridge' {
+  switch (raw) {
+    case 'corpus':
+    case 'idea-graph':
+    case 'simulator':
+    case 'strategy':
+    case 'transforms':
+    case 'benchmarks':
+    case 'calibration':
+    case 'bridge':
+      return raw;
+    default:
+      return 'overview';
+  }
+}
+
+/** Brand a raw query-string corpus chain id (plain string id, LAB-001). */
+export function labCorpusRefFromQueryValue(raw: string): string {
+  return raw;
+}
+
+/** Brand a raw query-string idea node id (plain string id, LAB-003). */
+export function labIdeaRefFromQueryValue(raw: string): string {
+  return raw;
+}
+
+/** Brand a raw query-string simulation run id (plain string id, LAB-004). */
+export function labRunRefFromQueryValue(raw: string): string {
+  return raw;
+}
+
+/** Brand a raw query-string strategy candidate id (plain string id, LAB-009). */
+export function labCandidateRefFromQueryValue(raw: string): string {
+  return raw;
+}
+
+/** Brand a raw query-string transform candidate id (plain string id, LAB-012). */
+export function labTransformRefFromQueryValue(raw: string): string {
+  return raw;
+}
+
+/** Brand a raw query-string lab-candidate handoff id (the §24 bridge). */
+export function labHandoffRefFromQueryValue(raw: string): string {
+  return raw;
+}
+
+/**
  * The Lab route-scope surface as a single frozen namespace (the same
- * tenant-scope derivation the Missions/Studio surfaces read through).
+ * tenant-scope derivation the Missions/Studio surfaces read through). The
+ * workspace section resolution and every selection-ref coercion are
+ * presentation-only: the lab view ports resolve (or fail closed on) the ids
+ * against the tenant scope.
  */
 export const LabScope = Object.freeze({
   fromTenantContext: missionScopeFromTenantContext,
+  section: labSectionFromQueryValue,
   benchmarkRef: labBenchmarkRefFromQueryValue,
   calibrationRef: labCalibrationRefFromQueryValue,
+  corpusRef: labCorpusRefFromQueryValue,
+  ideaRef: labIdeaRefFromQueryValue,
+  runRef: labRunRefFromQueryValue,
+  candidateRef: labCandidateRefFromQueryValue,
+  transformRef: labTransformRefFromQueryValue,
+  handoffRef: labHandoffRefFromQueryValue,
 });
 
 export type { TenantScope };

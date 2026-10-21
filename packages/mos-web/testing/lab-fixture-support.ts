@@ -82,7 +82,10 @@ export const REACH_SCENARIO: LabScenario = {
   objective: 'Grow qualified reach of the home-baker audience this quarter.',
   context: { audience: 'home bakers', region: 'eu-west' },
   budget: { maxCost: { amount: 4000, currency: 'EUR' }, maxDurationMs: 2_592_000_000 },
-  informationLag: 7,
+  // Time Machine information lag L in MILLISECONDS (the unit the LAB-006
+  // authority consumes `LabScenario.informationLag` under): a 7-day lag —
+  // the same L the workspace double's delayed replay declares (lagMs).
+  informationLag: 604_800_000,
   corpusVersion: 6 as never,
   simulatorVersion: 4 as never,
   rewardVersion: 2 as never,
@@ -96,7 +99,8 @@ export const LAUNCH_SCENARIO: LabScenario = {
   objective: 'Launch the starter-kit offer without fatiguing the audience.',
   context: { audience: 'home bakers', region: 'eu-west' },
   budget: { maxCost: { amount: 2500, currency: 'EUR' }, maxDurationMs: 1_296_000_000 },
-  informationLag: 3,
+  // 3-day information lag, in milliseconds (same unit convention as above).
+  informationLag: 259_200_000,
   corpusVersion: 6 as never,
   simulatorVersion: 4 as never,
   rewardVersion: 2 as never,

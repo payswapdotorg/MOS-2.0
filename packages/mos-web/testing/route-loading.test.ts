@@ -91,8 +91,22 @@ const seededComposition = (): ReturnType<typeof createInMemoryMosWebComposition>
 test('the home route resolves to the home view with no port calls', async () => {
   let calls = 0;
   const composition: MosWebComposition = {
+    ...({
+      labOverview: null as never,
+      labCorpus: null as never,
+      labIdeaGraph: null as never,
+      labSimulator: null as never,
+      labStrategy: null as never,
+      labTransforms: null as never,
+      labBridge: null as never,
+      studioDirectory: null as never,
+      studioPackages: null as never,
+      missionCatalog: null as never,
+      labBenchmark: null as never,
+      labCalibration: null as never,
       connections: null as never,
       notifications: null as never,
+    } satisfies Record<string, unknown>),
     appShell: {
       async loadAppShell() {
         calls += 1;
@@ -221,14 +235,8 @@ test('a failing detail load degrades to the load-failed marker', async () => {
   };
   const routeView = await loadMosRouteView(
     {
-      connections: null as never,
-      notifications: null as never,
-      appShell: composition.appShell,
+      ...composition,
       missionCatalog: failingCatalog,
-      studioDirectory: composition.studioDirectory,
-      studioPackages: composition.studioPackages,
-      labBenchmark: composition.labBenchmark,
-      labCalibration: composition.labCalibration,
     },
     missionsRoute({ mission: 'mission_demo_1' }),
     SHELL_VIEW,
@@ -253,14 +261,8 @@ test('a failing catalog list degrades the WHOLE page to the route-error view', a
   };
   const routeView = await loadMosRouteView(
     {
-      connections: null as never,
-      notifications: null as never,
-      appShell: composition.appShell,
+      ...composition,
       missionCatalog: failingCatalog,
-      studioDirectory: composition.studioDirectory,
-      studioPackages: composition.studioPackages,
-      labBenchmark: composition.labBenchmark,
-      labCalibration: composition.labCalibration,
     },
     missionsRoute({}),
     SHELL_VIEW,
@@ -287,14 +289,8 @@ test('a failing vocabulary load is secondary data — the page still loads', asy
   };
   const routeView = await loadMosRouteView(
     {
-      connections: null as never,
-      notifications: null as never,
-      appShell: composition.appShell,
+      ...composition,
       missionCatalog: degradedCatalog,
-      studioDirectory: composition.studioDirectory,
-      studioPackages: composition.studioPackages,
-      labBenchmark: composition.labBenchmark,
-      labCalibration: composition.labCalibration,
     },
     missionsRoute({}),
     SHELL_VIEW,

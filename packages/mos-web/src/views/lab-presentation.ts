@@ -1,4 +1,6 @@
 import type { LabBenchmarkCandidateOriginView, LabOodSignalView } from '../ports/lab-benchmark.js';
+import type { LabSectionId } from '../routes/route.js';
+import type { LabLoopStageStandingView } from '../ports/lab-overview.js';
 
 /**
  * Lab presentation data (UX-003) — labels, badge classes, formatting helpers
@@ -136,3 +138,150 @@ export function labIntegrityLabel(status: 'intact' | 'tampered'): string {
 
 /** Presentation of the §22 calibration-pending state (LAB-018 seam). */
 export const LAB_CALIBRATION_PENDING_LABEL = 'Calibration pending reality (LAB-018 seam)';
+
+// ——— UX-003 wave 2: the Lab WORKSPACE presentation data ———
+
+/**
+ * The Lab workspace's section navigation (the §2 research loop's stages as
+ * navigable sections, declaration order). Presentation-only ordering: the
+ * labels and order are declared here because they are presentation, not lab
+ * state.
+ */
+export const LAB_SECTION_IDS: readonly LabSectionId[] = [
+  'overview',
+  'corpus',
+  'idea-graph',
+  'simulator',
+  'strategy',
+  'transforms',
+  'benchmarks',
+  'calibration',
+  'bridge',
+];
+
+/** One-line label per workspace section (the navigation rail). */
+export const LAB_SECTION_LABELS: Readonly<Record<LabSectionId, string>> = Object.freeze({
+  overview: 'Overview',
+  corpus: 'Corpus & Evidence',
+  'idea-graph': 'Idea Graph',
+  simulator: 'Simulator & Time Machine',
+  strategy: 'Strategy & Organizations',
+  transforms: 'Transforms',
+  benchmarks: 'Benchmarks',
+  calibration: 'Calibration',
+  bridge: 'Next Steps',
+});
+
+/** One-sentence description per workspace section (the section intro). */
+export const LAB_SECTION_DESCRIPTIONS: Readonly<Record<LabSectionId, string>> = Object.freeze({
+  overview: 'Where the research loop stands in this tenant scope — stage standings, the §20-split evidence counts, the active scenario and recent runs.',
+  corpus: 'The reference-first niche corpus (LAB-001) and its multimodal feature-bundle declarations (LAB-002): documents are acquired references, never content bytes.',
+  'idea-graph': 'The Idea Graph (LAB-003): statements distilled from corpus evidence, typed weighted versioned edges, and the derivation chains back to acquired artifacts.',
+  simulator:
+    "The simulator (LAB-004/005) and the Time Machine's three §20 modes (LAB-006): every prediction counterfactual-labeled with its §22 interval; measured observations never rewritten.",
+  strategy: 'Strategy candidates (LAB-009) with the §23 three-way organization comparison (LAB-010) and the declared reward objective (LAB-008): selection inputs, never deployment evidence.',
+  transforms: 'The versioned transform contracts (LAB-011) and the §8 discovery candidates with their seven promotion gates (LAB-012): declared contracts, never engines.',
+  benchmarks: 'Robust marketing benchmarks (LAB-017): multi-seed, multi-world-model evaluation with the no-op baseline always present.',
+  calibration: 'Online calibration (LAB-018): simulation-to-reality prediction error joined with measured boundary-chain observations.',
+  bridge: 'The §24 authorized path from a lab candidate to reality: nine declared steps, each naming its gating authority — no bypass, no shortcut.',
+});
+
+/** The §2 research-loop stage labels (the overview's loop standings). */
+export const LAB_LOOP_STAGE_LABELS: Readonly<
+  Record<LabLoopStageStandingView['stageId'], string>
+> = Object.freeze({
+  corpus: 'Corpus & evidence',
+  features: 'Feature bundles',
+  ideas: 'Idea graph',
+  simulator: 'Simulator & Time Machine',
+  strategy: 'Strategy & organizations',
+  transforms: 'Transforms',
+  benchmarks: 'Robust benchmarks',
+  calibration: 'Online calibration',
+});
+
+/**
+ * The next research-loop stage: the FIRST stage with zero records (a
+ * derivation over the port's DECLARED stage standings — never a business
+ * decision; every stage started means the loop is complete through
+ * calibration). Presentation-only derivation over declared states.
+ */
+export function labNextStageLabel(
+  stages: readonly LabLoopStageStandingView[],
+): string | null {
+  const next = stages.find((stage) => !stage.started);
+  if (next === undefined) {
+    return null;
+  }
+  const label = LAB_LOOP_STAGE_LABELS[next.stageId];
+  return label === undefined ? null : label;
+}
+
+/** The Time Machine's three §20 mode labels (LAB-006). */
+export const LAB_TIME_MACHINE_MODE_LABELS = Object.freeze({
+  historical: 'Mode 1 — historical replay (observations ≤ T)',
+  delayed: 'Mode 2 — delayed information (visible only through T−L)',
+  branches: 'Mode 3 — counterfactual branches',
+});
+
+/** The read-only ingestion affordance's standing reason (LAB-001/002). */
+export const LAB_NO_INGESTION_NOTE =
+  'Acquiring documents, snapshotting corpus versions and attaching feature bundles are lab-authority actions gated by the explicit rights check (CORE-003) — this surface renders them as declared affordances only, never as controls that could imply successful ingestion.';
+
+/** The read-only run affordance's standing reason (LAB-004). */
+export const LAB_NO_SIMULATION_NOTE =
+  'Stepping simulations, forking branches and recording predictions are lab-authority actions over the pinned world models — this surface is read-only and offers no control that could imply a run happened.';
+
+/** The read-only strategy affordance's standing reason (LAB-009/010). */
+export const LAB_NO_STRATEGY_NOTE =
+  'Learning strategy candidates and running agent-organization searches are lab-authority actions — this surface renders their records and evaluation provenance only.';
+
+/** The read-only promotion affordance's standing reason (LAB-011/012). */
+export const LAB_NO_PROMOTION_NOTE =
+  'Validating contracts, recording gate evidence and promoting candidates are lab-authority actions over the seven §8 gates — this surface renders the audit trail only.';
+
+/** The read-only handoff affordance's standing reason (the §24 bridge). */
+export const LAB_NO_HANDOFF_NOTE =
+  "Creating the mission, requesting production and running the real experiment are the owning authorities' actions through their own surfaces — the bridge declares the path and names the gatekeepers; it never performs a step.";
+
+/** The NO-AUTO-PRODUCTION pin for the transforms section (§24). */
+export const LAB_NO_AUTO_PRODUCTION_NOTE =
+  'A promoted transform candidate only becomes AVAILABLE to program search (§24: no auto-production) — availability is not production, and production crosses the boundary through its own authorities.';
+
+/** The honest no-binding state of a §24 candidate handoff. */
+export const LAB_BRIDGE_NO_BINDING_LABEL = 'No real experiment bound (the boundary is un-crossed)';
+
+/** The transforms section's §8 promotion-gate status labels. */
+export const LAB_TRANSFORM_GATE_STATUS_LABELS: Readonly<
+  Record<'evidence-recorded' | 'evidence-stale' | 'evidence-missing', string>
+> = Object.freeze({
+  'evidence-recorded': 'Recorded at this version',
+  'evidence-stale': 'STALE — recorded at an older candidate version',
+  'evidence-missing': 'No evidence recorded',
+});
+
+/** Presentation labels for the §23 organization comparison rows. */
+export const LAB_ORGANIZATION_COMPARISON_LABELS = Object.freeze({
+  baseline: 'Generalist single-agent baseline',
+  handDesigned: 'Hand-designed organization',
+  generated: 'Search-generated organizations',
+});
+
+/**
+ * Format a Time Machine information lag (milliseconds) as a whole-day /
+ * whole-hour label — presentation formatting of a value the port reported
+ * (never a recomputation).
+ */
+export function formatLabLagMs(lagMs: number): string {
+  if (lagMs <= 0) {
+    return '0 (exact historical replay)';
+  }
+  const hours = lagMs / 3_600_000;
+  if (hours >= 24 && Number.isInteger(hours / 24)) {
+    return `${hours / 24}d`;
+  }
+  if (Number.isInteger(hours)) {
+    return `${hours}h`;
+  }
+  return `${Math.round(hours * 10) / 10}h`;
+}
