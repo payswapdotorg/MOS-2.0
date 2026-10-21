@@ -259,7 +259,7 @@ export function MosAppShell({
       </main>
       <footer className="border-t border-slate-800 bg-slate-900/40 px-4 py-3 text-xs text-slate-500">
         <p>
-          MOS browser shell <span data-testid="shell-version">v{shellVersion}</span> —
+          MOS shell <span data-testid="shell-version">v{shellVersion}</span> —
           presentation-only surface: it renders state from MOS services and declares intent; it
           holds no business authority.
         </p>

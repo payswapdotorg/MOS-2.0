@@ -10,8 +10,10 @@ import {
 
 const LINUX_DEEP_LINK_DESKTOP_FILE = "zcode.desktop";
 const LINUX_DEEP_LINK_MIME_TYPE = "x-scheme-handler/zcode";
-// 归属标记：用于识别用户级 zcode.desktop 是否由本应用写入（历史所有版本都带这行 Comment）。
-const LINUX_DESKTOP_ENTRY_OWNERSHIP_MARKER = "Comment=ZCode Desktop App";
+// 归属标记：用于识别用户级 zcode.desktop 是否由本应用写入。写入侧只用当前 MOS 标记；
+// 检测侧兼容历史 ZCode 时代的标记，保证升级后仍能清理旧版本写入的用户级条目。
+const LINUX_DESKTOP_ENTRY_OWNERSHIP_MARKER = "Comment=MOS Desktop App";
+const LEGACY_LINUX_DESKTOP_ENTRY_OWNERSHIP_MARKERS = ["Comment=ZCode Desktop App"] as const;
 
 type LinuxDesktopEnv = {
   APPIMAGE?: string;
@@ -109,8 +111,8 @@ function createLinuxDeepLinkDesktopEntry(params: {
   productName?: string;
   iconName?: string;
 }): string {
-  const productName = params.productName ?? "ZCode";
-  const iconName = params.iconName ?? "zcode";
+  const productName = params.productName ?? "MOS";
+  const iconName = params.iconName ?? "mos";
   const command = {
     executablePath: params.executablePath,
     args: params.args ?? [],
@@ -172,9 +174,13 @@ function isOwnedDesktopEntry(path: string): boolean {
     const content = readFileSync(path, "utf8");
     // 去掉 \r 与行首尾空白，兼容 CRLF 行尾或手工编辑器引入的额外空白，
     // 避免可清理的遗留条目被误判为用户自定义条目而永久残留。
-    return content
-      .split("\n")
-      .some((line) => line.replaceAll("\r", "").trim() === LINUX_DESKTOP_ENTRY_OWNERSHIP_MARKER);
+    const normalizedLines = content.split("\n").map((line) => line.replaceAll("\r", "").trim());
+    return (
+      normalizedLines.includes(LINUX_DESKTOP_ENTRY_OWNERSHIP_MARKER) ||
+      LEGACY_LINUX_DESKTOP_ENTRY_OWNERSHIP_MARKERS.some((marker) =>
+        normalizedLines.includes(marker),
+      )
+    );
   } catch {
     return false;
   }
