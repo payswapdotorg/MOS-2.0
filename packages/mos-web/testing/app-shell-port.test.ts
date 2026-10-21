@@ -38,7 +38,7 @@ test('the shell loads its chrome as a view model (async port contract)', async (
   const shellView = await expectShellView(
     createInMemoryAppShellPort({ identityRepository: identity, tenantId: 'tenant-a', workspaceId: null }),
   );
-  assert.equal(shellView.sections.length, 6);
+  assert.equal(shellView.sections.length, 7);
 });
 
 test('Home, Missions, Studio and Lab come first and are the available sections', async () => {
@@ -50,16 +50,23 @@ test('Home, Missions, Studio and Lab come first and are the available sections',
 
   assert.deepEqual(
     shellView.sections.map((section) => section.id),
-    ['home', 'missions', 'studio', 'lab', 'connections', 'notifications'],
-    'Home and Missions are first (UX-001), Studio third (UX-002), Lab fourth (UX-003), Connections fifth (UX-004), Notifications sixth (NOTIFY-CS); the plan\'s section order follows',
+    ['home', 'missions', 'console', 'studio', 'lab', 'connections', 'notifications'],
+    'Home and Missions are first (UX-001), Console third (the CONSOLE wave — the operational center), Studio fourth (UX-002), Lab fifth (UX-003), Connections sixth (UX-004), Notifications seventh (NOTIFY-CS); the plan\'s section order follows',
   );
   const home = shellView.sections[0];
   const missions = shellView.sections[1];
-  const studio = shellView.sections[2];
+  const consoleSection = shellView.sections[2];
+  const studio = shellView.sections[3];
   assert.equal(home?.route, '/');
   assert.deepEqual(home?.availability, { kind: 'available' });
   assert.equal(missions?.route, '/missions');
   assert.deepEqual(missions?.availability, { kind: 'available' });
+  assert.equal(consoleSection?.route, '/console');
+  assert.deepEqual(
+    consoleSection?.availability,
+    { kind: 'available' },
+    'the CONSOLE wave turned the Agent Console section on — the operational center',
+  );
   assert.equal(studio?.route, '/studio');
   assert.deepEqual(
     studio?.availability,

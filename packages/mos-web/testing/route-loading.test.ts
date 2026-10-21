@@ -100,6 +100,8 @@ test('the home route resolves to the home view with no port calls', async () => 
       labTransforms: null as never,
       labBridge: null as never,
       labIntents: null as never,
+      agentConsole: null as never,
+      consoleIntents: null as never,
       studioDirectory: null as never,
       studioPackages: null as never,
       missionCatalog: null as never,

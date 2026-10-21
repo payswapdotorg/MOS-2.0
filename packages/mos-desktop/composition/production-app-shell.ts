@@ -64,6 +64,7 @@ const SECTION_TABLE: readonly {
 }[] = [
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
+  { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
   {
     id: 'studio',
     label: 'Studio',

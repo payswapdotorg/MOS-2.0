@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { MosAppShell } from '../dist/src/index.js';
-import { MISSION_DETAIL, missionsPage, noopIntent, noopLabIntent, SECTIONS, shellView, TENANT } from './view-fixtures.js';
+import { MISSION_DETAIL, missionsPage, noopConsoleIntent, noopIntent, noopLabIntent, SECTIONS, shellView, TENANT } from './view-fixtures.js';
 import { elementWithTestId, elementsWithTag, elementsWithAriaCurrent, linkHrefs, renderTreeText } from './render-tree.js';
 
 test('the shell renders the five sections with Home and Missions first', () => {
@@ -24,6 +24,7 @@ test('the shell renders the five sections with Home and Missions first', () => {
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -42,6 +43,7 @@ test('available sections are links; later surfaces are aria-disabled with their 
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -85,6 +87,7 @@ test('the active section is marked aria-current="page" (keyboard/AT navigation p
       routeView={{ kind: 'missions', data: missionsPage() }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -100,6 +103,7 @@ test('every navigation affordance is a real link (keyboard reachable)', () => {
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -119,6 +123,7 @@ test('the shell displays the tenant context (spec §31)', () => {
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -136,6 +141,7 @@ test('without tenant context the shell says so explicitly', () => {
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -151,6 +157,7 @@ test('the shell carries a skip link, a main landmark and the version footer', ()
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -181,6 +188,7 @@ test('the shell renders the loading surface while the page model loads', () => {
       routeView={{ kind: 'loading', label: 'Loading the MOS surface…' }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -198,6 +206,7 @@ test('images/icons carry accessible labels; tables declare column scopes', () =>
       routeView={{ kind: 'missions', data: missionsPage({ selected: MISSION_DETAIL }) }}
       onDeclareMissionIntent={noopIntent}
       onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -220,7 +229,7 @@ test('the section table the shell renders matches the port readiness verdicts', 
   // chrome presents; this pins the six sections and their verdict kinds.
   assert.deepEqual(
     SECTIONS.map((section) => section.id),
-    ['home', 'missions', 'studio', 'lab', 'connections', 'notifications'],
+    ['home', 'missions', 'console', 'studio', 'lab', 'connections', 'notifications'],
   );
-  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 5);
+  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 6);
 });

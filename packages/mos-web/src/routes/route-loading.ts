@@ -2,6 +2,9 @@ import { MissionScope, StudioScope } from './route-scope.js';
 import { loadLabPage } from './lab-page-loading.js';
 import type { LabPageData } from './lab-page-model.js';
 export type { LabBridgeDirectoryData, LabPageData } from './lab-page-model.js';
+import type { ConsoleRoutePageModel, ConsolePageData } from './console-page-loading.js';
+export type { ConsoleRoutePageModel, ConsolePageData } from './console-page-loading.js';
+import { loadConsolePage } from './console-page-loading.js';
 import type { TenantScope } from '@mos/contracts';
 import type { MosRoute } from './route.js';
 import type { MosWebComposition } from '../ports/composition.js';
@@ -99,6 +102,7 @@ export type MosRouteView =
   | { readonly kind: 'missions'; readonly data: MissionsPageData }
   | { readonly kind: 'studio'; readonly data: StudioPageData }
   | { readonly kind: 'lab'; readonly data: LabPageData }
+  | { readonly kind: 'console'; readonly data: ConsoleRoutePageModel }
   | { readonly kind: 'connections'; readonly data: ConnectionsPageData }
   | { readonly kind: 'notifications'; readonly data: NotificationsViewData }
   | {
@@ -121,11 +125,13 @@ function retryHrefFor(route: MosRoute): string {
       ? '/studio'
       : route.kind === 'lab'
         ? '/lab'
-        : route.kind === 'connections'
-          ? '/connections'
-          : route.kind === 'notifications'
-            ? '/notifications'
-            : `/${route.kind === 'section' ? route.sectionId : ''}`;
+        : route.kind === 'console'
+          ? '/console'
+          : route.kind === 'connections'
+            ? '/connections'
+            : route.kind === 'notifications'
+              ? '/notifications'
+              : `/${route.kind === 'section' ? route.sectionId : ''}`;
 }
 
 /**
@@ -148,6 +154,10 @@ export async function loadMosRouteView(
 
   if (route.kind === 'lab') {
     return loadLabPage(composition, route, shellView, retryHrefFor(route));
+  }
+
+  if (route.kind === 'console') {
+    return loadConsolePage(composition, route, shellView, retryHrefFor(route));
   }
 
   if (route.kind === 'connections') {

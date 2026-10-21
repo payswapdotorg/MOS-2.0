@@ -202,6 +202,34 @@ export {
 } from "./routes/lab-intent-declaration.js";
 export { LAB_INTENT_JSON_INVALID_PREFIX, LAB_INTENT_MISSING_INPUT } from "./ports/lab-intents.js";
 
+// ---- Agent Console (the CONSOLE wave) ----
+export type * from "./ports/agent-console.js";
+export type * from "./ports/console-intents.js";
+export type { ConsoleRoutePageModel, ConsolePageData } from "./routes/console-page-loading.js";
+export type { DeclareConsoleIntentOutcome } from "./routes/console-intent-declaration.js";
+export {
+  declareConsoleIntentThroughPort,
+  consoleIntentOutcomeHref,
+  CONSOLE_INTENT_MODE_BY_ACTION,
+} from "./routes/console-intent-declaration.js";
+export { CONSOLE_INTENT_JSON_INVALID_PREFIX, CONSOLE_INTENT_MISSING_INPUT } from "./ports/console-intents.js";
+export { ConsoleView } from "./views/console-view.js";
+export { ConsoleIntentForm } from "./views/console-intent-form.js";
+export type { ConsoleIntentFormField, ConsoleIntentFormProps } from "./views/console-intent-form.js";
+export { ConsoleIntentOutcomePanel } from "./views/console-intent-outcome-panel.js";
+export type { ConsoleIntentOutcomePanelProps } from "./views/console-intent-outcome-panel.js";
+export type { ConsoleIntentFormParse } from "./views/console-intent-form-data.js";
+export {
+  CONSOLE_INTENT_FORM_FIELDS,
+  armRunDeclarationFromFormData,
+  compileStrategyDeclarationFromFormData,
+  composePlanDeclarationFromFormData,
+  createExperimentDeclarationFromFormData,
+  createRunDeclarationFromFormData,
+  grantAnalysisRightsDeclarationFromFormData,
+  recordIntelligenceDeclarationFromFormData,
+} from "./views/console-intent-form-data.js";
+
 // ---- Home narration (§2 complete loop, presentation data) ----
 export {
   MOS_COOPERATING_LOOPS,

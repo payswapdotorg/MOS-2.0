@@ -84,13 +84,14 @@ test('the availability verdicts are honest for this release', async () => {
   assert.deepEqual(sections, [
     'home',
     'missions',
+    'console',
     'studio',
     'lab',
     'connections',
     'notifications',
   ]);
   const byId = new Map(shell.sections.map((section) => [section.id, section]));
-  for (const id of ['home', 'missions', 'lab'] as const) {
+  for (const id of ['home', 'missions', 'console', 'lab'] as const) {
     assert.deepEqual(byId.get(id)?.availability, { kind: 'available' }, `${id} is available`);
   }
   for (const id of ['studio', 'connections', 'notifications'] as const) {

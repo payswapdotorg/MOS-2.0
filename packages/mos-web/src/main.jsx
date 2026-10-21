@@ -35,6 +35,10 @@ import {
   declareMissionIntentThroughPort,
   missionIntentOutcomeHref,
 } from './routes/intent-declaration.js';
+import {
+  declareConsoleIntentThroughPort,
+  consoleIntentOutcomeHref,
+} from './routes/console-intent-declaration.js';
 import { MosAppErrorBoundary } from './shell/error-boundary.jsx';
 import { MosAppShell } from './shell/mos-app-shell.js';
 import { MosBootstrapErrorView } from './shell/status-views.js';
@@ -79,6 +83,7 @@ function bootMosWebShell() {
             routeView={routeView.routeView}
             onDeclareMissionIntent={routeView.onDeclareMissionIntent}
             onDeclareLabIntent={onDeclareLabIntent}
+            onDeclareConsoleIntent={onDeclareConsoleIntent}
             shellVersion={SHELL_VERSION}
           />
         </MosAppErrorBoundary>
@@ -117,7 +122,7 @@ function bootMosWebShell() {
       platform.setDocumentTitle(mosRouteTitle(route));
       loadMosRouteView(composition, route, shellViewRef.current)
         .then((routeView) => {
-          mountShell({ shellView: shellViewRef.current, routeView, onDeclareMissionIntent, onDeclareLabIntent });
+          mountShell({ shellView: shellViewRef.current, routeView, onDeclareMissionIntent, onDeclareLabIntent, onDeclareConsoleIntent });
         })
         .catch((error) => {
           mountShell({
@@ -125,6 +130,44 @@ function bootMosWebShell() {
             routeView: routeLoadFailureView(error),
             onDeclareMissionIntent,
             onDeclareLabIntent,
+            onDeclareConsoleIntent,
+          });
+        });
+    });
+  };
+
+  const onDeclareConsoleIntent = (declaration) => {
+    // The console write-intent transport (the CONSOLE wave): the declaration
+    // routes through the composition's console-intents port, and the refresh
+    // after the declaration is SOFT for the same reason as the lab flow —
+    // the per-load authority records (plans, strategies, runs, the ledger)
+    // the declaration just wrote survive the mode navigation.
+    const currentRoute = parseMosRoute(globalThis.location.pathname, globalThis.location.search);
+    const missionId =
+      declaration.action === 'compose-plan'
+        ? declaration.missionId
+        : currentRoute.kind === 'console'
+          ? currentRoute.missionId
+          : null;
+    declareConsoleIntentThroughPort(composition, declaration).then((outcome) => {
+      const win = globalThis.window;
+      const href = consoleIntentOutcomeHref(outcome, missionId);
+      if (win && win.history && typeof win.history.replaceState === 'function') {
+        win.history.replaceState(null, '', href);
+      }
+      const route = parseMosRoute(globalThis.location.pathname, globalThis.location.search);
+      platform.setDocumentTitle(mosRouteTitle(route));
+      loadMosRouteView(composition, route, shellViewRef.current)
+        .then((routeView) => {
+          mountShell({ shellView: shellViewRef.current, routeView, onDeclareMissionIntent, onDeclareLabIntent, onDeclareConsoleIntent });
+        })
+        .catch((error) => {
+          mountShell({
+            shellView: shellViewRef.current,
+            routeView: routeLoadFailureView(error),
+            onDeclareMissionIntent,
+            onDeclareLabIntent,
+            onDeclareConsoleIntent,
           });
         });
     });

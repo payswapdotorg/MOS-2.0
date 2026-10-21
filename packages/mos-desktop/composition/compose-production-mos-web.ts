@@ -15,6 +15,10 @@ import {
 } from './production-lab-surface.js';
 import { createProductionLabIntents } from './production-lab-intents.js';
 import {
+  createInterimAgentConsole,
+  createInterimConsoleIntents,
+} from './production-agent-console.js';
+import {
   createProductionLabWorkspace,
   type ProductionLabWorkspaceRuntime,
 } from './production-lab-workspace.js';
@@ -181,6 +185,13 @@ export function createProductionMosWebComposition(
     now,
   });
 
+  // INTERIM Console binding (the CONSOLE wave foundation): the REAL
+  // planner/compiler/engine/agents/rights/intelligence/experiments binding
+  // lands with this wave's Worker C delivery and replaces the interim
+  // honest-unavailable stub (production-agent-console.ts).
+  const agentConsole = createInterimAgentConsole();
+  const consoleIntents = createInterimConsoleIntents();
+
   // The notifications binding presents the REAL tenant context (§31).
   const tenant = identityRepository.getTenant(tenantId as never);
   const notifications = createUnavailableNotifications({
@@ -208,6 +219,8 @@ export function createProductionMosWebComposition(
     labTransforms: labWorkspace.labTransforms,
     labBridge: labWorkspace.labBridge,
     labIntents,
+    agentConsole,
+    consoleIntents,
     connections: createUnavailableConnections(),
     notifications,
     identityRepository,

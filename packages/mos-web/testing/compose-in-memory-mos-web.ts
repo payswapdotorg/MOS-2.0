@@ -1,5 +1,6 @@
 import type { IdentityRepository } from '@mos/identity';
 import type { MissionRepository } from '@mos/missions';
+import type { TenantScope } from '@mos/contracts';
 import type { MosWebComposition } from '../dist/src/ports/composition.js';
 import { createInMemoryIdentityRepository } from '../../mos-identity/dist/index.js';
 import { createInMemoryMissionRepository } from '../../mos-missions/dist/index.js';
@@ -9,6 +10,11 @@ import { createInMemoryStudioSurface } from './in-memory-studio-surface.js';
 import { createInMemoryLabSurface } from './in-memory-lab-surface.js';
 import { createInMemoryLabWorkspace } from './in-memory-lab-workspace.js';
 import { createInMemoryLabIntents } from './in-memory-lab-intents.js';
+import {
+  createConsoleDoubleState,
+  createInMemoryAgentConsolePort,
+  createInMemoryConsoleIntents,
+} from './in-memory-console-double.js';
 import { connectionsCompositionDouble } from './connections-composition-double.js';
 import { createInMemoryNotificationsViewPort } from './notifications-composition-double.js';
 
@@ -84,6 +90,8 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
   readonly connectionsSurface: typeof connectionsCompositionDouble;
   /** The disclosed Notifications surface double (NOTIFY-CS observability). */
   readonly notificationsSurface: ReturnType<typeof createInMemoryNotificationsViewPort>;
+  /** The disclosed Console double state (the CONSOLE wave observability). */
+  readonly consoleDoubleState: ReturnType<typeof createConsoleDoubleState>;
 }
 
 const DEMO_TENANT_ID = 'tenant-demo';
@@ -262,6 +270,28 @@ export function createInMemoryMosWebComposition(
   const labWorkspace = createInMemoryLabWorkspace();
 
   const notificationsPort = createInMemoryNotificationsViewPort();
+
+  // The Agent Console double (the CONSOLE wave): the shared state the read
+  // projections and the intent executions ride, over the REAL mission
+  // repository this composition already holds.
+  const consoleDoubleState = createConsoleDoubleState();
+  const consoleScope: TenantScope =
+    workspaceId === null
+      ? { tenantId: tenantId as never }
+      : { tenantId: tenantId as never, workspaceId: workspaceId as never };
+  const agentConsole = createInMemoryAgentConsolePort({
+    state: consoleDoubleState,
+    missionRepository,
+    scope: consoleScope,
+    now,
+  });
+  const consoleIntents = createInMemoryConsoleIntents({
+    state: consoleDoubleState,
+    missionRepository,
+    scope: consoleScope,
+    now,
+  });
+
   return {
     appShell,
     missionCatalog: catalogDouble.port,
@@ -277,6 +307,8 @@ export function createInMemoryMosWebComposition(
     labTransforms: labWorkspace.labTransforms,
     labBridge: labWorkspace.labBridge,
     labIntents,
+    agentConsole,
+    consoleIntents,
     connections: connectionsCompositionDouble,
     notifications: notificationsPort,
     identityRepository,
@@ -288,5 +320,6 @@ export function createInMemoryMosWebComposition(
     labWorkspace,
     connectionsSurface: connectionsCompositionDouble,
     notificationsSurface: notificationsPort,
+    consoleDoubleState,
   };
 }
