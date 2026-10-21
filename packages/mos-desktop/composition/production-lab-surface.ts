@@ -1,10 +1,13 @@
 import type { TenantScope, Timestamp } from '@mos/contracts';
 import type {
+  EnsemblePort,
   MarketingBenchmarkPort,
   OnlineCalibrationPort,
   RealityObservationReaderPort,
   RobustBenchmarkError,
   RobustBenchmarkRecord,
+  SimulatorEnginePort,
+  SocialWorldModelStore,
 } from '@mos/lab';
 import type { LabBenchmarkDigestPort, LabCalibrationStatusPort } from '@mos/web';
 import {
@@ -70,6 +73,17 @@ export interface ProductionLabRuntime {
   readonly calibration: OnlineCalibrationPort;
   /** The disclosed in-memory reality observation reader (empty at start). */
   readonly reality: RealityObservationReaderPort;
+  /** The REAL LAB-004 world-model store the ensemble members resolve through. */
+  readonly worldModels: SocialWorldModelStore;
+  /** The REAL LAB-005 simulator engine the ensemble evaluates members through. */
+  readonly simulator: SimulatorEnginePort;
+  /**
+   * The REAL LAB-007 ensemble registry the benchmark's declared
+   * world-model set resolves against (UX-003 wave 3: the lab-intent
+   * transport and its tests register real world models and ensembles
+   * here — disclosed observability; they stay authority-written).
+   */
+  readonly ensemble: EnsemblePort;
 }
 
 /** The production Lab surface bundle. */
@@ -386,6 +400,6 @@ export function createProductionLabSurface(
   return {
     labBenchmark,
     labCalibration,
-    labRuntime: { benchmark, calibration, reality },
+    labRuntime: { benchmark, calibration, reality, worldModels, simulator, ensemble },
   };
 }

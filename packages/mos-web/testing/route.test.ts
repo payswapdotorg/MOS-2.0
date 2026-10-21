@@ -106,6 +106,7 @@ test('/lab parses with benchmark, version and calibration params (UX-003)', () =
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1'), {
     kind: 'lab',
@@ -120,6 +121,7 @@ test('/lab parses with benchmark, version and calibration params (UX-003)', () =
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=1'), {
     kind: 'lab',
@@ -134,6 +136,7 @@ test('/lab parses with benchmark, version and calibration params (UX-003)', () =
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?calibration=calib-reach-1'), {
     kind: 'lab',
@@ -148,6 +151,7 @@ test('/lab parses with benchmark, version and calibration params (UX-003)', () =
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   });
   assert.deepEqual(
     parseMosRoute('/lab', '?benchmark=bench-reach-v1&calibration=calib-reach-1'),
@@ -164,6 +168,7 @@ test('/lab parses with benchmark, version and calibration params (UX-003)', () =
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   },
   );
 });
@@ -182,6 +187,7 @@ test('non-numeric, zero and padded version params parse as absent (never guessed
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=0'), {
     kind: 'lab',
@@ -196,6 +202,7 @@ test('non-numeric, zero and padded version params parse as absent (never guessed
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=01'), {
     kind: 'lab',
@@ -210,6 +217,7 @@ test('non-numeric, zero and padded version params parse as absent (never guessed
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   });
   assert.deepEqual(parseMosRoute('/lab/', '?benchmark='), {
     kind: 'lab',
@@ -224,6 +232,7 @@ test('non-numeric, zero and padded version params parse as absent (never guessed
     strategyCandidateId: null,
     transformCandidateId: null,
     handoffId: null,
+    intentReceiptId: null,
   });
 });
 
@@ -264,6 +273,7 @@ const labTitleRoute = (query: {
   strategyCandidateId: null,
   transformCandidateId: null,
   handoffId: null,
+  intentReceiptId: null,
 });
 
 test('route titles name the surface per route', () => {

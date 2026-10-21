@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { MosAppShell } from '../dist/src/index.js';
-import { MISSION_DETAIL, missionsPage, noopIntent, SECTIONS, shellView, TENANT } from './view-fixtures.js';
+import { MISSION_DETAIL, missionsPage, noopIntent, noopLabIntent, SECTIONS, shellView, TENANT } from './view-fixtures.js';
 import { elementWithTestId, elementsWithTag, elementsWithAriaCurrent, linkHrefs, renderTreeText } from './render-tree.js';
 
 test('the shell renders the five sections with Home and Missions first', () => {
@@ -23,6 +23,7 @@ test('the shell renders the five sections with Home and Missions first', () => {
       shellView={shellView(TENANT)}
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -40,6 +41,7 @@ test('available sections are links; later surfaces are aria-disabled with their 
       shellView={shellView(TENANT)}
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -82,6 +84,7 @@ test('the active section is marked aria-current="page" (keyboard/AT navigation p
       shellView={shellView(TENANT)}
       routeView={{ kind: 'missions', data: missionsPage() }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -96,6 +99,7 @@ test('every navigation affordance is a real link (keyboard reachable)', () => {
       shellView={shellView(TENANT)}
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -114,6 +118,7 @@ test('the shell displays the tenant context (spec §31)', () => {
       shellView={shellView(TENANT)}
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -130,6 +135,7 @@ test('without tenant context the shell says so explicitly', () => {
       shellView={shellView(null)}
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -144,6 +150,7 @@ test('the shell carries a skip link, a main landmark and the version footer', ()
       shellView={shellView(TENANT)}
       routeView={{ kind: 'home' }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -173,6 +180,7 @@ test('the shell renders the loading surface while the page model loads', () => {
       shellView={shellView(TENANT)}
       routeView={{ kind: 'loading', label: 'Loading the MOS surface…' }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );
@@ -189,6 +197,7 @@ test('images/icons carry accessible labels; tables declare column scopes', () =>
       shellView={shellView(TENANT)}
       routeView={{ kind: 'missions', data: missionsPage({ selected: MISSION_DETAIL }) }}
       onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
       shellVersion="0.1.0-test"
     />
   );

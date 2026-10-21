@@ -5,6 +5,7 @@ import type {
   MissionDetailView,
   MissionSummaryView,
 } from '../dist/src/ports/mission-catalog.js';
+import type { LabIntentDeclaration } from '../dist/src/ports/lab-intents.js';
 import type {
   StudioSessionDetailView,
   StudioSessionSummaryView,
@@ -48,6 +49,7 @@ export const TENANT: TenantContextView = {
 };
 
 export const noopIntent = (_declaration: CreateMissionIntentDeclaration): void => undefined;
+export const noopLabIntent = (_declaration: LabIntentDeclaration): void => undefined;
 
 export const shellView = (tenant: AppShellView['tenant']): AppShellView => ({
   sections: SECTIONS,

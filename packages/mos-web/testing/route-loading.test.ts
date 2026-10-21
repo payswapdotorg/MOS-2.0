@@ -99,6 +99,7 @@ test('the home route resolves to the home view with no port calls', async () => 
       labStrategy: null as never,
       labTransforms: null as never,
       labBridge: null as never,
+      labIntents: null as never,
       studioDirectory: null as never,
       studioPackages: null as never,
       missionCatalog: null as never,
@@ -118,6 +119,7 @@ test('the home route resolves to the home view with no port calls', async () => 
     studioPackages: null as never,
     labBenchmark: null as never,
     labCalibration: null as never,
+    labIntents: null as never,
   };
   const routeView = await loadMosRouteView(composition, { kind: 'home' }, SHELL_VIEW);
   assert.deepEqual(routeView, { kind: 'home' });

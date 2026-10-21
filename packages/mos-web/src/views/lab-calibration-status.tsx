@@ -1,8 +1,11 @@
-import type { LabCalibrationChainView } from '../ports/lab-calibration.js';
+import type { LabCalibrationChainView } from "../ports/lab-calibration.js";
+import { formatLabNumber, labIntegrityLabel } from "./lab-presentation.js";
+import type { LabIntentDeclaration } from "../ports/lab-intents.js";
 import {
-  formatLabNumber,
-  labIntegrityLabel,
-} from './lab-presentation.js';
+  LAB_INTENT_FORM_FIELDS,
+  recordCalibrationErrorDeclarationFromFormData,
+} from "./lab-intent-form-data.js";
+import { LabIntentForm } from "./lab-intent-form.js";
 
 /**
  * The Lab online-calibration status listing (UX-003, over LAB-018): one row
@@ -12,13 +15,22 @@ import {
  * derived. A chain with NO derived context renders the FIRST-CLASS honest
  * "calibration pending" state — never a fabricated context, never hidden.
  * Rows are real links to the chain's records (`?calibration=<id>`).
+ *
+ * UX-003 wave 3: the listing also carries the section's write path — the
+ * record-calibration-error intent form (LAB-018). Recording resolves the
+ * DECLARED prediction against a FROZEN LAB-017 benchmark record and joins
+ * it with MEASURED boundary-chain observations; with no benchmark record
+ * behind the declared citation the authority rejects by name. The verdict
+ * (receipt or named rejection) returns on the next load; the form renders
+ * beside an EMPTY listing too — with no chain behind the declared id, the
+ * authority's rejection is the honest outcome.
  */
 
 function ContextState({
   context,
   calibrationId,
 }: {
-  readonly context: LabCalibrationChainView['context'];
+  readonly context: LabCalibrationChainView["context"];
   readonly calibrationId: string;
 }) {
   if (context === null) {
@@ -32,10 +44,10 @@ function ContextState({
   return (
     <span className="text-emerald-300/80" data-testid={`lab-calibration-context-${calibrationId}`}>
       Context v{context.version} derived over {context.summary.errorRecordCount} error record
-      {context.summary.errorRecordCount === 1 ? '' : 's'} · bias{' '}
-      {formatLabNumber(context.summary.meanSignedError)} · MAE{' '}
-      {formatLabNumber(context.summary.meanAbsoluteError)} · worst{' '}
-      {formatLabNumber(context.summary.worstAbsoluteError)} · interval coverage{' '}
+      {context.summary.errorRecordCount === 1 ? "" : "s"} · bias{" "}
+      {formatLabNumber(context.summary.meanSignedError)} · MAE{" "}
+      {formatLabNumber(context.summary.meanAbsoluteError)} · worst{" "}
+      {formatLabNumber(context.summary.worstAbsoluteError)} · interval coverage{" "}
       {formatLabNumber(context.summary.intervalCoverage)} (§22)
     </span>
   );
@@ -52,11 +64,11 @@ function LabCalibrationRow({
     <li>
       <a
         href={`/lab?calibration=${encodeURIComponent(chain.calibrationId)}`}
-        aria-current={selected ? 'page' : undefined}
+        aria-current={selected ? "page" : undefined}
         className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:flex-row sm:items-center sm:justify-between ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? "border-sky-600 bg-sky-500/10"
+            : "border-slate-800 bg-slate-900/40 hover:border-slate-700"
         }`}
         data-testid={`lab-calibration-row-${chain.calibrationId}`}
       >
@@ -65,9 +77,9 @@ function LabCalibrationRow({
             <span className="text-sm font-semibold text-slate-100">{chain.calibrationId}</span>
             <span
               className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                chain.latestIntegrity === 'intact'
-                  ? 'bg-emerald-500/15 text-emerald-300'
-                  : 'bg-red-500/15 text-red-300'
+                chain.latestIntegrity === "intact"
+                  ? "bg-emerald-500/15 text-emerald-300"
+                  : "bg-red-500/15 text-red-300"
               }`}
               data-testid={`lab-calibration-integrity-${chain.calibrationId}`}
             >
@@ -76,11 +88,9 @@ function LabCalibrationRow({
           </span>
           <span className="text-xs text-slate-400">
             calibrates benchmark {chain.benchmarkId} · {chain.errorRecordCount} error record
-            {chain.errorRecordCount === 1 ? '' : 's'} (latest v{chain.latestErrorVersion} at{' '}
+            {chain.errorRecordCount === 1 ? "" : "s"} (latest v{chain.latestErrorVersion} at{" "}
             {chain.latestErrorAt})
-            {chain.regimes.length === 0
-              ? ''
-              : ` · regimes ${chain.regimes.join(', ')}`}
+            {chain.regimes.length === 0 ? "" : ` · regimes ${chain.regimes.join(", ")}`}
           </span>
           <span className="font-mono text-xs text-slate-500" data-testid="lab-calibration-tenant">
             {chain.tenantId}
@@ -94,35 +104,98 @@ function LabCalibrationRow({
   );
 }
 
-/** The calibration status list. Empty state is explicit, never placeholder rows. */
+/** The calibration status list + the section's write-intent form. Empty state is explicit, never placeholder rows. */
 export function LabCalibrationStatusView({
   chains,
   selectedCalibrationId,
+  onDeclareLabIntent,
 }: {
   readonly chains: readonly LabCalibrationChainView[];
   readonly selectedCalibrationId: string | null;
+  /** Shell callback routing write-intent declarations to the lab-intents port. */
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
 }) {
-  if (chains.length === 0) {
-    return (
-      <p
-        className="rounded-lg border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500"
-        data-testid="lab-calibrations-empty"
-      >
-        No online-calibration chains are visible in this tenant scope. Calibration records appear
-        here once simulation-to-reality prediction errors are recorded (LAB-018) — the shell does
-        not fabricate them.
-      </p>
-    );
-  }
   return (
-    <ul className="flex flex-col gap-3" data-testid="lab-calibrations-list">
-      {chains.map((chain) => (
-        <LabCalibrationRow
-          key={chain.calibrationId}
-          chain={chain}
-          selected={chain.calibrationId === selectedCalibrationId}
+    <div className="flex flex-col gap-4" data-testid="lab-calibration-status">
+      {chains.length === 0 ? (
+        <p
+          className="rounded-lg border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500"
+          data-testid="lab-calibrations-empty"
+        >
+          No online-calibration chains are visible in this tenant scope. Calibration records appear
+          here once simulation-to-reality prediction errors are recorded (LAB-018) — the shell does
+          not fabricate them.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-3" data-testid="lab-calibrations-list">
+          {chains.map((chain) => (
+            <LabCalibrationRow
+              key={chain.calibrationId}
+              chain={chain}
+              selected={chain.calibrationId === selectedCalibrationId}
+            />
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Declared lab-authority actions (write-intent declarations)
+        </h4>
+        <p className="text-[11px] text-slate-500">
+          Recording a calibration error is an EXECUTABLE declaration through the lab-intents port —
+          the prediction side stays COUNTERFACTUAL and the observation side stays MEASURED, and the
+          authority's verdict (receipt or named rejection) returns here after the declaration.
+        </p>
+        <LabIntentForm
+          testId="lab-calibration-intent-record"
+          summaryLabel="Record a calibration error (LAB-018 — prediction vs measured reality)"
+          routedTo="lab-calibration-authority"
+          disclosureNote="Recording resolves the DECLARED prediction against a frozen LAB-017 benchmark record; with no benchmark record behind the citation the authority rejects by name. The joined observations are measured boundary-chain reality — never lab-simulated data."
+          onDeclareLabIntent={onDeclareLabIntent}
+          parse={recordCalibrationErrorDeclarationFromFormData}
+          fields={[
+            {
+              name: LAB_INTENT_FORM_FIELDS.calibrationId,
+              label: "Calibration id",
+              kind: "text",
+              required: true,
+              placeholder: "e.g. calib-reach-1",
+            },
+            {
+              name: LAB_INTENT_FORM_FIELDS.predictionJson,
+              label: "Prediction (declared JSON)",
+              kind: "json",
+              required: true,
+            },
+            {
+              name: LAB_INTENT_FORM_FIELDS.observationRefsJson,
+              label: "Observation refs (declared JSON)",
+              kind: "json",
+              required: true,
+              placeholder: "JSON array of observation refs — at least one, distinct",
+            },
+            {
+              name: LAB_INTENT_FORM_FIELDS.rewardSpecJson,
+              label: "Reward spec (declared JSON)",
+              kind: "json",
+              required: true,
+            },
+            {
+              name: LAB_INTENT_FORM_FIELDS.functionalJson,
+              label: "Error functional (declared JSON)",
+              kind: "json",
+              required: true,
+            },
+            {
+              name: LAB_INTENT_FORM_FIELDS.noteText,
+              label: "Note (optional)",
+              kind: "long-text",
+              required: false,
+            },
+          ]}
         />
-      ))}
-    </ul>
+      </div>
+    </div>
   );
 }

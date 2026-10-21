@@ -35,6 +35,7 @@ import type {
   LabBridgeStepView,
   LabCandidateHandoffView,
 } from '../ports/lab-bridge.js';
+import type { LabIntentLedgerRecord } from '../ports/lab-intents.js';
 import type { LabSectionId } from './route.js';
 import type { TenantScope } from '@mos/contracts';
 
@@ -49,6 +50,20 @@ import type { TenantScope } from '@mos/contracts';
 export interface LabBridgeDirectoryData {
   readonly path: readonly LabBridgeStepView[];
   readonly candidates: readonly LabBridgeCandidateView[];
+}
+
+/**
+ * The write-intent outcome read (UX-003 wave 3): the ledger record a
+ * declared intent produced — EXECUTED receipt or the authority's named
+ * rejection, both with their verbatim verdicts. `intentOutcomeError`
+ * covers the honest degradation cases: the marker's intent id resolves to
+ * no record this tenant can see (`lab-intent-not-found` — including
+ * cross-tenant ids) or the ledger read itself failed (`load-failed`).
+ * Never a route error: the section's primary read decides the route.
+ */
+export interface LabIntentOutcomeData {
+  readonly intentOutcome: LabIntentLedgerRecord | null;
+  readonly intentOutcomeError: 'lab-intent-not-found' | 'load-failed' | null;
 }
 
 /**
@@ -67,6 +82,18 @@ export interface LabPageData {
   readonly scope: TenantScope | null;
   /** The workspace section this page model serves. */
   readonly section: LabSectionId;
+
+  // ——— write-intent outcome read (UX-003 wave 3, every section) ———
+  /**
+   * The declared intent's ledger record when the route carries the
+   * `?receipt=<intentId>` marker — executed receipt or verbatim rejection.
+   * Present on EVERY section: any section can be the owning surface of an
+   * outcome (the navigation already targets the owning section, but a
+   * shared marker read keeps deep links honest too).
+   */
+  readonly intentOutcome: LabIntentLedgerRecord | null;
+  /** Honest degradation of the outcome read (never a route error). */
+  readonly intentOutcomeError: 'lab-intent-not-found' | 'load-failed' | null;
 
   // ——— persistent research-context read (every section) ———
   /** The research overview (active scenario pins + evidence counts). */

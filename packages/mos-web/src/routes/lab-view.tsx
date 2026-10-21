@@ -1,26 +1,31 @@
-import type { LabPageData } from './route-loading.js';
-import type { LabSectionId } from './route.js';
-import { LabOverviewSectionView } from '../views/lab-overview-view.js';
-import { LabCorpusSectionView } from '../views/lab-corpus-view.js';
-import { LabIdeaGraphSectionView } from '../views/lab-idea-graph-view.js';
-import { LabSimulatorSectionView } from '../views/lab-simulator-view.js';
-import { LabStrategySectionView } from '../views/lab-strategy-view.js';
-import { LabTransformsSectionView } from '../views/lab-transforms-view.js';
-import { LabBridgeSectionView } from '../views/lab-bridge-view.js';
-import { LabBenchmarkDirectoryView } from '../views/lab-benchmark-directory.js';
-import { LabBenchmarkDigestPanel } from '../views/lab-benchmark-digest.js';
-import { LabCalibrationDetailPanel } from '../views/lab-calibration-detail.js';
-import { LabCalibrationStatusView } from '../views/lab-calibration-status.js';
+import type { LabPageData } from "./route-loading.js";
+import type { LabSectionId } from "./route.js";
+import type { LabIntentDeclaration } from "../ports/lab-intents.js";
+import { LabOverviewSectionView } from "../views/lab-overview-view.js";
+import { LabCorpusSectionView } from "../views/lab-corpus-view.js";
+import { LabIdeaGraphSectionView } from "../views/lab-idea-graph-view.js";
+import { LabSimulatorSectionView } from "../views/lab-simulator-view.js";
+import { LabStrategySectionView } from "../views/lab-strategy-view.js";
+import { LabTransformsSectionView } from "../views/lab-transforms-view.js";
+import { LabBridgeSectionView } from "../views/lab-bridge-view.js";
+import { LabBenchmarkDirectoryView } from "../views/lab-benchmark-directory.js";
+import { LabBenchmarkDigestPanel } from "../views/lab-benchmark-digest.js";
+import { LabCalibrationDetailPanel } from "../views/lab-calibration-detail.js";
+import { LabCalibrationStatusView } from "../views/lab-calibration-status.js";
 import {
   LAB_BOUNDARY_NOTE,
   LAB_LOOP_NARRATION,
   LAB_SECTION_IDS,
   LAB_SECTION_LABELS,
-} from '../views/lab-presentation.js';
-import { MosNoTenantContextView } from '../shell/route-fallbacks.js';
-import { DisclosureItem, SummaryLayer } from '../views/disclosure/disclosure-primitive.js';
-import { buildLabSummary } from '../views/disclosure/surface-summaries.js';
-import { LabSectionLoadingPanel, LabSectionUnavailablePanel } from '../views/lab-workspace-shared.js';
+} from "../views/lab-presentation.js";
+import { MosNoTenantContextView } from "../shell/route-fallbacks.js";
+import { DisclosureItem, SummaryLayer } from "../views/disclosure/disclosure-primitive.js";
+import { buildLabSummary } from "../views/disclosure/surface-summaries.js";
+import {
+  LabSectionLoadingPanel,
+  LabSectionUnavailablePanel,
+} from "../views/lab-workspace-shared.js";
+import { LabIntentOutcomePanel } from "../views/lab-intent-outcome-panel.js";
 
 /**
  * The Lab WORKSPACE (UX-003 wave 2): a first-class MOS research surface —
@@ -42,7 +47,7 @@ import { LabSectionLoadingPanel, LabSectionUnavailablePanel } from '../views/lab
 function BenchmarkSelectionErrorPanel({
   error,
 }: {
-  readonly error: 'lab-benchmark-not-found' | 'load-failed';
+  readonly error: "lab-benchmark-not-found" | "load-failed";
 }) {
   return (
     <aside
@@ -50,9 +55,9 @@ function BenchmarkSelectionErrorPanel({
       className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
       data-testid="lab-benchmark-selection-error"
     >
-      {error === 'lab-benchmark-not-found'
-        ? 'The selected benchmark record chain does not exist in this tenant scope (or does not exist at all — the shell cannot tell and will not guess).'
-        : 'The selected benchmark digest could not be loaded — the lab benchmark service failed explicitly.'}
+      {error === "lab-benchmark-not-found"
+        ? "The selected benchmark record chain does not exist in this tenant scope (or does not exist at all — the shell cannot tell and will not guess)."
+        : "The selected benchmark digest could not be loaded — the lab benchmark service failed explicitly."}
     </aside>
   );
 }
@@ -60,7 +65,7 @@ function BenchmarkSelectionErrorPanel({
 function CalibrationSelectionErrorPanel({
   error,
 }: {
-  readonly error: 'lab-calibration-not-found' | 'load-failed';
+  readonly error: "lab-calibration-not-found" | "load-failed";
 }) {
   return (
     <aside
@@ -68,9 +73,9 @@ function CalibrationSelectionErrorPanel({
       className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
       data-testid="lab-calibration-selection-error"
     >
-      {error === 'lab-calibration-not-found'
-        ? 'The selected calibration chain does not exist in this tenant scope (or does not exist at all — the shell cannot tell and will not guess).'
-        : 'The selected calibration records could not be loaded — the lab calibration service failed explicitly.'}
+      {error === "lab-calibration-not-found"
+        ? "The selected calibration chain does not exist in this tenant scope (or does not exist at all — the shell cannot tell and will not guess)."
+        : "The selected calibration records could not be loaded — the lab calibration service failed explicitly."}
     </aside>
   );
 }
@@ -109,7 +114,7 @@ function LabResearchContextStrip({ data }: { readonly data: LabPageData }) {
         <>
           <span data-testid="lab-research-context-scenario">
             <span className="font-semibold text-slate-300">{scenario.scenarioRef}</span>
-            {' — '}
+            {" — "}
             {scenario.niche} / {scenario.platform}
           </span>
           <span
@@ -119,8 +124,8 @@ function LabResearchContextStrip({ data }: { readonly data: LabPageData }) {
             information cutoff T−{Math.round(scenario.informationLag / 86_400_000)}d
           </span>
           <span data-testid="lab-research-context-pins">
-            pins: corpus v{scenario.pins.corpusVersion} · simulator v{scenario.pins.simulatorVersion} ·
-            reward v{scenario.pins.rewardVersion}
+            pins: corpus v{scenario.pins.corpusVersion} · simulator v
+            {scenario.pins.simulatorVersion} · reward v{scenario.pins.rewardVersion}
           </span>
         </>
       )}
@@ -141,12 +146,12 @@ function LabWorkspaceNav({ current }: { readonly current: LabSectionId }) {
         return (
           <a
             key={section}
-            href={section === 'overview' ? '/lab' : `/lab?section=${section}`}
-            aria-current={active ? 'page' : undefined}
+            href={section === "overview" ? "/lab" : `/lab?section=${section}`}
+            aria-current={active ? "page" : undefined}
             className={
               active
-                ? 'rounded-md border border-emerald-800/70 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-200'
-                : 'rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                ? "rounded-md border border-emerald-800/70 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-200"
+                : "rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-200"
             }
             data-testid={`lab-nav-${section}`}
           >
@@ -158,11 +163,17 @@ function LabWorkspaceNav({ current }: { readonly current: LabSectionId }) {
   );
 }
 
-function LabBenchmarksSection({ data }: { readonly data: LabPageData }) {
+function LabBenchmarksSection({
+  data,
+  onDeclareLabIntent,
+}: {
+  readonly data: LabPageData;
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
+}) {
   if (data.benchmarks === null) {
     return <LabSectionLoadingPanel section="benchmarks" />;
   }
-  if (data.benchmarkSelectionError === 'load-failed') {
+  if (data.benchmarkSelectionError === "load-failed") {
     return <LabSectionUnavailablePanel section="benchmarks" />;
   }
   return (
@@ -179,9 +190,10 @@ function LabBenchmarksSection({ data }: { readonly data: LabPageData }) {
         </p>
         <LabBenchmarkDirectoryView
           benchmarks={data.benchmarks}
-          selectedBenchmarkId={data.selectedDigest === null
-            ? null
-            : data.selectedDigest.summary.benchmarkId}
+          selectedBenchmarkId={
+            data.selectedDigest === null ? null : data.selectedDigest.summary.benchmarkId
+          }
+          onDeclareLabIntent={onDeclareLabIntent}
         />
       </section>
 
@@ -194,8 +206,8 @@ function LabBenchmarksSection({ data }: { readonly data: LabPageData }) {
           defaultOpen
           summary={
             <span className="text-sm font-semibold text-slate-200">
-              Benchmark digest — {data.selectedDigest.summary.benchmarkId} (the counterfactual
-              badge stays visible here; expand for the full digest)
+              Benchmark digest — {data.selectedDigest.summary.benchmarkId} (the counterfactual badge
+              stays visible here; expand for the full digest)
             </span>
           }
         >
@@ -206,7 +218,13 @@ function LabBenchmarksSection({ data }: { readonly data: LabPageData }) {
   );
 }
 
-function LabCalibrationSection({ data }: { readonly data: LabPageData }) {
+function LabCalibrationSection({
+  data,
+  onDeclareLabIntent,
+}: {
+  readonly data: LabPageData;
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
+}) {
   if (data.calibrationChains === null && data.calibrationError === null) {
     return <LabSectionLoadingPanel section="calibration" />;
   }
@@ -225,11 +243,14 @@ function LabCalibrationSection({ data }: { readonly data: LabPageData }) {
           </p>
           <LabCalibrationStatusView
             chains={data.calibrationChains}
-            selectedCalibrationId={data.selectedCalibrationRecords === null
-              ? null
-              : data.selectedCalibrationRecords.length > 0
-                ? (data.selectedCalibrationRecords[0]?.calibrationId ?? null)
-                : null}
+            selectedCalibrationId={
+              data.selectedCalibrationRecords === null
+                ? null
+                : data.selectedCalibrationRecords.length > 0
+                  ? (data.selectedCalibrationRecords[0]?.calibrationId ?? null)
+                  : null
+            }
+            onDeclareLabIntent={onDeclareLabIntent}
           />
         </section>
       ) : null}
@@ -237,8 +258,7 @@ function LabCalibrationSection({ data }: { readonly data: LabPageData }) {
       {data.calibrationSelectionError !== null ? (
         <CalibrationSelectionErrorPanel error={data.calibrationSelectionError} />
       ) : null}
-      {data.selectedCalibrationRecords !== null &&
-      data.selectedCalibrationRecords.length > 0 ? (
+      {data.selectedCalibrationRecords !== null && data.selectedCalibrationRecords.length > 0 ? (
         <DisclosureItem
           id="ux005-lab-calibration-records"
           defaultOpen
@@ -256,19 +276,26 @@ function LabCalibrationSection({ data }: { readonly data: LabPageData }) {
   );
 }
 
-function LabSectionContent({ data }: { readonly data: LabPageData }) {
+function LabSectionContent({
+  data,
+  onDeclareLabIntent,
+}: {
+  readonly data: LabPageData;
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
+}) {
   switch (data.section) {
-    case 'overview':
+    case "overview":
       return <LabOverviewSectionView overview={data.overview} overviewError={data.overviewError} />;
-    case 'corpus':
+    case "corpus":
       return (
         <LabCorpusSectionView
           summaries={data.corpusSummaries}
           selectedCorpus={data.selectedCorpus}
           corpusSelectionError={data.corpusSelectionError}
+          onDeclareLabIntent={onDeclareLabIntent}
         />
       );
-    case 'idea-graph':
+    case "idea-graph":
       return (
         <LabIdeaGraphSectionView
           ideaGraph={data.ideaGraph}
@@ -276,7 +303,7 @@ function LabSectionContent({ data }: { readonly data: LabPageData }) {
           ideaSelectionError={data.ideaSelectionError}
         />
       );
-    case 'simulator':
+    case "simulator":
       return (
         <LabSimulatorSectionView
           simulator={data.simulator}
@@ -284,9 +311,10 @@ function LabSectionContent({ data }: { readonly data: LabPageData }) {
           runSelectionError={data.runSelectionError}
           selectedBranchRecords={data.selectedBranchRecords}
           branchSelectionError={data.branchSelectionError}
+          onDeclareLabIntent={onDeclareLabIntent}
         />
       );
-    case 'strategy':
+    case "strategy":
       return (
         <LabStrategySectionView
           strategyCandidates={data.strategyCandidates}
@@ -295,9 +323,10 @@ function LabSectionContent({ data }: { readonly data: LabPageData }) {
           strategyError={data.strategyError}
           selectedCandidate={data.selectedCandidate}
           candidateSelectionError={data.candidateSelectionError}
+          onDeclareLabIntent={onDeclareLabIntent}
         />
       );
-    case 'transforms':
+    case "transforms":
       return (
         <LabTransformsSectionView
           transformDefinitions={data.transformDefinitions}
@@ -308,11 +337,11 @@ function LabSectionContent({ data }: { readonly data: LabPageData }) {
           transformSelectionError={data.transformSelectionError}
         />
       );
-    case 'benchmarks':
-      return <LabBenchmarksSection data={data} />;
-    case 'calibration':
-      return <LabCalibrationSection data={data} />;
-    case 'bridge':
+    case "benchmarks":
+      return <LabBenchmarksSection data={data} onDeclareLabIntent={onDeclareLabIntent} />;
+    case "calibration":
+      return <LabCalibrationSection data={data} onDeclareLabIntent={onDeclareLabIntent} />;
+    case "bridge":
       return (
         <LabBridgeSectionView
           path={data.bridgeDirectory === null ? null : data.bridgeDirectory.path}
@@ -325,7 +354,13 @@ function LabSectionContent({ data }: { readonly data: LabPageData }) {
 }
 
 /** The Lab workspace page view over the loaded section's page model. */
-export function LabView({ data }: { readonly data: LabPageData }) {
+export function LabView({
+  data,
+  onDeclareLabIntent,
+}: {
+  readonly data: LabPageData;
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
+}) {
   if (data.scope === null) {
     return (
       <div className="flex flex-col gap-6">
@@ -361,10 +396,11 @@ export function LabView({ data }: { readonly data: LabPageData }) {
       <LabResearchContextStrip data={data} />
       <LabWorkspaceNav current={data.section} />
 
-      <div className="border-t border-slate-800 pt-4">
-        <LabSectionContent data={data} />
-      </div>
+      <LabIntentOutcomePanel outcome={data.intentOutcome} outcomeError={data.intentOutcomeError} />
 
+      <div className="border-t border-slate-800 pt-4">
+        <LabSectionContent data={data} onDeclareLabIntent={onDeclareLabIntent} />
+      </div>
     </div>
   );
 }

@@ -68,6 +68,23 @@ export async function loadLabPage(
     overviewError,
   };
 
+  // ——— the write-intent outcome read (UX-003 wave 3, every section) ———
+  // The `?receipt=<intentId>` marker resolves through the lab-intents
+  // ledger, tenant-scoped. Its failure is SECONDARY (the same discipline
+  // as the overview read): a named marker on the section, never a route
+  // error — the section's primary read below still decides the route.
+  if (route.intentReceiptId !== null) {
+    const outcomeRecord = await composition.labIntents.loadLabIntentLedgerRecord(
+      route.intentReceiptId,
+      scope,
+    );
+    if (outcomeRecord === null) {
+      data.intentOutcomeError = 'lab-intent-not-found';
+    } else {
+      data.intentOutcome = outcomeRecord;
+    }
+  }
+
   switch (route.section) {
     case 'overview': {
       // The overview IS the section: its failure is the route error (it is
@@ -341,6 +358,8 @@ function emptyLabPageData(section: LabSectionId): LabPageData {
   return {
     scope: null,
     section,
+    intentOutcome: null,
+    intentOutcomeError: null,
     overview: null,
     overviewError: null,
     corpusSummaries: null,
