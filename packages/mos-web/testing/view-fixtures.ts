@@ -6,6 +6,7 @@ import type {
   MissionSummaryView,
 } from '../dist/src/ports/mission-catalog.js';
 import type { LabIntentDeclaration } from '../dist/src/ports/lab-intents.js';
+import type { ConsoleIntentDeclaration } from '../dist/src/ports/console-intents.js';
 import type {
   StudioSessionDetailView,
   StudioSessionSummaryView,
@@ -25,6 +26,7 @@ import type {
 export const SECTIONS: readonly ShellSectionView[] = [
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
+  { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
   { id: 'lab', label: 'Lab', route: '/lab', availability: { kind: 'available' } },
   {
@@ -50,6 +52,7 @@ export const TENANT: TenantContextView = {
 
 export const noopIntent = (_declaration: CreateMissionIntentDeclaration): void => undefined;
 export const noopLabIntent = (_declaration: LabIntentDeclaration): void => undefined;
+export const noopConsoleIntent = (_declaration: ConsoleIntentDeclaration): void => undefined;
 
 export const shellView = (tenant: AppShellView['tenant']): AppShellView => ({
   sections: SECTIONS,

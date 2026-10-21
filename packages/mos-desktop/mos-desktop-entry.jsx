@@ -30,6 +30,8 @@ import {
   MosAppShell,
   MosBootstrapErrorView,
   applyMosThemeToDocument,
+  declareConsoleIntentThroughPort,
+  consoleIntentOutcomeHref,
   declareLabIntentThroughPort,
   declareMissionIntentThroughPort,
   labIntentOutcomeHref,
@@ -146,6 +148,7 @@ export function bootMosDesktopShell(options) {
     routeView: { kind: 'loading', label: 'Loading the MOS surface…' },
     onDeclareMissionIntent,
     onDeclareLabIntent,
+    onDeclareConsoleIntent,
   });
 
   /**
@@ -177,6 +180,7 @@ export function bootMosDesktopShell(options) {
           routeView,
           onDeclareMissionIntent,
           onDeclareLabIntent,
+          onDeclareConsoleIntent,
         });
       })
       .catch((error) => {
@@ -185,6 +189,7 @@ export function bootMosDesktopShell(options) {
           routeView: routeLoadFailureView(error),
           onDeclareMissionIntent,
           onDeclareLabIntent,
+          onDeclareConsoleIntent,
         });
       });
   };
@@ -211,6 +216,7 @@ export function bootMosDesktopShell(options) {
             routeView={routeView.routeView}
             onDeclareMissionIntent={routeView.onDeclareMissionIntent}
             onDeclareLabIntent={routeView.onDeclareLabIntent}
+            onDeclareConsoleIntent={routeView.onDeclareConsoleIntent}
             shellVersion={shellVersion}
           />
         </MosDesktopErrorBoundary>
@@ -240,6 +246,21 @@ export function bootMosDesktopShell(options) {
   const onDeclareLabIntent = (declaration) => {
     declareLabIntentThroughPort(composition, declaration).then((outcome) => {
       softNavigateTo(labIntentOutcomeHref(outcome));
+    });
+  };
+
+  // The CONSOLE wave: the Agent Console surfaces DECLARE write intents;
+  // the production composition routes them to the OWNING authority runtimes
+  // (planner / compiler / engine / rights / intelligence / experiments)
+  // and the ledger carries every verdict verbatim. The refresh after a
+  // declaration is SOFT for the same reason as the lab flow — the
+  // per-load authority records the declaration just wrote survive.
+  const onDeclareConsoleIntent = (declaration) => {
+    const currentRoute = desktopRouteFromSearch(globalThis.location.search);
+    const missionId =
+      currentRoute.kind === 'console' ? currentRoute.missionId : null;
+    declareConsoleIntentThroughPort(composition, declaration).then((outcome) => {
+      softNavigateTo(consoleIntentOutcomeHref(outcome, missionId));
     });
   };
 
@@ -281,12 +302,13 @@ export function bootMosDesktopShell(options) {
         routeView: { kind: 'loading', label: 'Loading the MOS surface…' },
         onDeclareMissionIntent,
         onDeclareLabIntent,
+        onDeclareConsoleIntent,
       });
 
       // …then resolve the page model and mount it (one pass per load).
       return loadMosRouteView(composition, route, shellResult)
         .then((routeView) => {
-          mountShell({ shellView: shellResult, routeView, onDeclareMissionIntent, onDeclareLabIntent });
+          mountShell({ shellView: shellResult, routeView, onDeclareMissionIntent, onDeclareLabIntent, onDeclareConsoleIntent });
         })
         .catch((error) => {
           mountShell({
@@ -294,6 +316,7 @@ export function bootMosDesktopShell(options) {
             routeView: routeLoadFailureView(error),
             onDeclareMissionIntent,
             onDeclareLabIntent,
+            onDeclareConsoleIntent,
           });
         });
     })

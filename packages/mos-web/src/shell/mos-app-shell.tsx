@@ -2,8 +2,10 @@ import type { AppShellView, ShellSectionView } from '../ports/app-shell.js';
 import type { MosRouteView } from '../routes/route-loading.js';
 import type { CreateMissionIntentDeclaration } from '../ports/mission-catalog.js';
 import type { LabIntentDeclaration } from '../ports/lab-intents.js';
+import type { ConsoleIntentDeclaration } from '../ports/console-intents.js';
 import { HomeView } from '../routes/home-view.js';
 import { LabView } from '../routes/lab-view.js';
+import { ConsoleView } from '../views/console-view.js';
 import { ConnectionsView } from '../routes/connections-view.js';
 import { NotificationsSurfaceView } from '../routes/notifications-view.js';
 import { MissionsView } from '../routes/missions-view.js';
@@ -24,8 +26,8 @@ import {
  * Presentation-only by construction: every piece of state arrives through
  * the {@link AppShellView} read model and every command leaves through a
  * declared-intent callback (`onDeclareMissionIntent`,
- * `onDeclareLabIntent`) — the component itself holds no state,
- * owns no authority and computes nothing.
+ * `onDeclareLabIntent`, `onDeclareConsoleIntent`) — the component itself
+ * holds no state, owns no authority and computes nothing.
  */
 
 export interface MosAppShellProps {
@@ -43,6 +45,13 @@ export interface MosAppShellProps {
    * composition's lab-intents port — the component never executes it).
    */
   readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
+  /**
+   * Called when an Agent Console surface declares a write intent (the
+   * CONSOLE wave: the console intent forms route their declaration through
+   * the shell to the composition's console-intents port — the component
+   * never executes it).
+   */
+  readonly onDeclareConsoleIntent: (declaration: ConsoleIntentDeclaration) => void;
   /** Shell build version shown in the footer. */
   readonly shellVersion: string;
 }
@@ -143,10 +152,12 @@ function RouteSurface({
   routeView,
   onDeclareMissionIntent,
   onDeclareLabIntent,
+  onDeclareConsoleIntent,
 }: {
   readonly routeView: MosRouteView;
   readonly onDeclareMissionIntent: MosAppShellProps['onDeclareMissionIntent'];
   readonly onDeclareLabIntent: MosAppShellProps['onDeclareLabIntent'];
+  readonly onDeclareConsoleIntent: MosAppShellProps['onDeclareConsoleIntent'];
 }) {
   switch (routeView.kind) {
     case 'loading':
@@ -161,6 +172,10 @@ function RouteSurface({
       return <StudioView data={routeView.data} />;
     case 'lab':
       return <LabView data={routeView.data} onDeclareLabIntent={onDeclareLabIntent} />;
+    case 'console':
+      return (
+        <ConsoleView data={routeView.data} onDeclareConsoleIntent={onDeclareConsoleIntent} />
+      );
     case 'connections':
       return <ConnectionsView data={routeView.data} />;
     case 'notifications':
@@ -186,6 +201,7 @@ export function MosAppShell({
   routeView,
   onDeclareMissionIntent,
   onDeclareLabIntent,
+  onDeclareConsoleIntent,
   shellVersion,
 }: MosAppShellProps) {
   const activeRoute =
@@ -195,13 +211,15 @@ export function MosAppShell({
         ? '/studio'
         : routeView.kind === 'lab'
           ? '/lab'
-          : routeView.kind === 'connections'
-            ? '/connections'
-            : routeView.kind === 'notifications'
-              ? '/notifications'
-              : routeView.kind === 'home'
-                ? '/'
-                : '';
+          : routeView.kind === 'console'
+            ? '/console'
+            : routeView.kind === 'connections'
+              ? '/connections'
+              : routeView.kind === 'notifications'
+                ? '/notifications'
+                : routeView.kind === 'home'
+                  ? '/'
+                  : '';
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
       <a
@@ -236,6 +254,7 @@ export function MosAppShell({
           routeView={routeView}
           onDeclareMissionIntent={onDeclareMissionIntent}
           onDeclareLabIntent={onDeclareLabIntent}
+          onDeclareConsoleIntent={onDeclareConsoleIntent}
         />
       </main>
       <footer className="border-t border-slate-800 bg-slate-900/40 px-4 py-3 text-xs text-slate-500">

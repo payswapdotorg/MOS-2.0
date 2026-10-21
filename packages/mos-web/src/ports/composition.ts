@@ -12,6 +12,8 @@ import type { LabStrategyViewPort } from './lab-strategy.js';
 import type { LabTransformsViewPort } from './lab-transforms.js';
 import type { LabBridgeViewPort } from './lab-bridge.js';
 import type { LabIntentsPort } from './lab-intents.js';
+import type { AgentConsolePort } from './agent-console.js';
+import type { ConsoleIntentsPort } from './console-intents.js';
 import type { ConnectionsViewPort } from './connections-views.js';
 import type { NotificationsViewPort } from './notifications-views.js';
 
@@ -66,6 +68,20 @@ export interface MosWebComposition {
    * (additive: read models stay on the section ports above).
    */
   readonly labIntents: LabIntentsPort;
+  /**
+   * The Agent Console read models (the CONSOLE wave): the mission-first
+   * workspace's per-mode views over the REAL mission/agent/rights/
+   * intelligence/experiment authorities at the seam.
+   */
+  readonly agentConsole: AgentConsolePort;
+  /**
+   * The Console write-intent transport: declarations in, authority-verdict
+   * receipts out (the wave-21 lab-intents pattern applied to the
+   * mission→evidence→plan→strategy→run→approval chain). The shell never
+   * writes — this port routes declared intents to the owning authority
+   * runtimes at the seam.
+   */
+  readonly consoleIntents: ConsoleIntentsPort;
   /** The Connections surface (UX-004, over PROD-001): read-only. */
   readonly connections: ConnectionsViewPort;
   /** The Notifications consumer surface (NOTIFY-CS, over NOTIFY-001): read-only. */

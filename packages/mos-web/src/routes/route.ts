@@ -160,11 +160,54 @@ export interface ConnectionsRoute {
   /** Selected distribution binding id (`?binding=<id>`), when given. */
   readonly bindingId: string | null;
 }
-
 export interface NotificationsRoute {
   readonly kind: 'notifications';
   /** Selected notification record id (`?notification=<id>`), when given. */
   readonly notificationId: string | null;
+}
+
+/**
+ * The Agent Console's working modes (the CONSOLE wave): the focused
+ * center-region modes of the mission-first workspace. `direct` is the
+ * default when no `?mode=` arrives.
+ */
+export type ConsoleModeId = 'direct' | 'plan' | 'research' | 'results' | 'control';
+
+const CONSOLE_MODES: readonly ConsoleModeId[] = [
+  'direct',
+  'plan',
+  'research',
+  'results',
+  'control',
+];
+
+function consoleModeFromParam(raw: string | null): ConsoleModeId {
+  if (raw === null) {
+    return 'direct';
+  }
+  return (CONSOLE_MODES as readonly string[]).includes(raw) ? (raw as ConsoleModeId) : 'direct';
+}
+
+export interface ConsoleRoute {
+  readonly kind: 'console';
+  /** Selected mission id (`?mission=<id>`) — the workspace's mission context. */
+  readonly missionId: string | null;
+  /** The working mode (`?mode=<id>`; default `direct`). */
+  readonly mode: ConsoleModeId;
+  /** Selected plan chain id (`?plan=<id>`), when given. */
+  readonly planId: string | null;
+  /** Selected strategy id (`?strategy=<id>`), when given. */
+  readonly strategyId: string | null;
+  /** Selected run id (`?run=<id>`), when given. */
+  readonly runId: string | null;
+  /** Selected experiment id (`?experiment=<id>`), when given. */
+  readonly experimentId: string | null;
+  /**
+   * Write-intent ledger marker (`?receipt=<intentId>`): the intent outcome
+   * surface reads the ledger record with this id after a declared console
+   * intent navigates here. Not a mode selection — `?mode=` decides the mode.
+   */
+  readonly intentReceiptId: string | null;
 }
 
 export type MosRoute =
@@ -172,6 +215,7 @@ export type MosRoute =
   | MissionsRoute
   | StudioRoute
   | LabRoute
+  | ConsoleRoute
   | ConnectionsRoute
   | NotificationsRoute
   | { readonly kind: 'section'; readonly sectionId: ShellSectionId }
@@ -255,6 +299,20 @@ export function parseMosRoute(pathname: string, search: string): MosRoute {
     };
   }
 
+  if (cleanPath === '/console') {
+    const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    return {
+      kind: 'console',
+      missionId: firstParam(params, 'mission'),
+      mode: consoleModeFromParam(firstParam(params, 'mode')),
+      planId: firstParam(params, 'plan'),
+      strategyId: firstParam(params, 'strategy'),
+      runId: firstParam(params, 'run'),
+      experimentId: firstParam(params, 'experiment'),
+      intentReceiptId: firstParam(params, 'receipt'),
+    };
+  }
+
   if (cleanPath === '/connections') {
     const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
     return {
@@ -319,6 +377,14 @@ export function mosRouteTitle(route: MosRoute): string {
                         ? null
                         : route.section;
       return detail === null ? 'MOS — Lab' : `MOS — Lab · ${detail}`;
+    }
+    case 'console': {
+      const detail = route.missionId !== null
+        ? `mission workspace · ${route.mode}`
+        : route.mode === 'direct'
+          ? null
+          : route.mode;
+      return detail === null ? 'MOS — Agent Console' : `MOS — Agent Console · ${detail}`;
     }
     case 'connections':
       return route.providerId !== null && route.bindingId !== null

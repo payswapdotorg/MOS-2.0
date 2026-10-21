@@ -15,6 +15,10 @@ import {
 } from './production-lab-surface.js';
 import { createProductionLabIntents } from './production-lab-intents.js';
 import {
+  createProductionAgentConsole,
+  type ProductionAgentConsole,
+} from './production-agent-console.js';
+import {
   createProductionLabWorkspace,
   type ProductionLabWorkspaceRuntime,
 } from './production-lab-workspace.js';
@@ -103,6 +107,8 @@ export interface ProductionMosWebComposition extends MosWebComposition {
   readonly labRuntime: ProductionLabRuntime;
   /** The REAL lab WORKSPACE runtimes (LAB-001..016 — disclosed observability). */
   readonly labWorkspaceRuntime: ProductionLabWorkspaceRuntime;
+  /** The REAL console authority chain (the CONSOLE wave — disclosed observability). */
+  readonly consoleBinding: ProductionAgentConsole;
   /** The tenant scope the composition presents. */
   readonly scope: { readonly tenantId: string; readonly workspaceId: string | null };
 }
@@ -181,6 +187,18 @@ export function createProductionMosWebComposition(
     now,
   });
 
+  // The PRODUCTION Agent Console binding (the CONSOLE wave): the REAL
+  // planner/compiler/engine + rights/intelligence/experiments/agents
+  // authorities behind the console view ports — every declared intent
+  // executes against the REAL runtimes and every verdict is relayed
+  // VERBATIM (production-agent-console.ts + its split modules).
+  const consoleBinding = createProductionAgentConsole({
+    scope,
+    now,
+    missionRepository,
+    labBenchmark: labSurface.labRuntime.benchmark,
+  });
+
   // The notifications binding presents the REAL tenant context (§31).
   const tenant = identityRepository.getTenant(tenantId as never);
   const notifications = createUnavailableNotifications({
@@ -208,6 +226,8 @@ export function createProductionMosWebComposition(
     labTransforms: labWorkspace.labTransforms,
     labBridge: labWorkspace.labBridge,
     labIntents,
+    agentConsole: consoleBinding.agentConsole,
+    consoleIntents: consoleBinding.consoleIntents,
     connections: createUnavailableConnections(),
     notifications,
     identityRepository,
@@ -215,6 +235,7 @@ export function createProductionMosWebComposition(
     recordedIntents: catalog.recordedIntents,
     labRuntime: labSurface.labRuntime,
     labWorkspaceRuntime: labWorkspace.labWorkspaceRuntime,
+    consoleBinding,
     scope: { tenantId, workspaceId },
   };
 }

@@ -22,6 +22,7 @@ import type { TenantId, WorkspaceId } from '@mos/contracts';
 export type ShellSectionId =
   | 'home'
   | 'missions'
+  | 'console'
   | 'studio'
   | 'lab'
   | 'connections'

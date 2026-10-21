@@ -249,6 +249,40 @@ test('the Connections surface parses to its dedicated route kind (UX-004)', () =
   });
 });
 
+test('/console parses with mission, mode, selections and the receipt marker (the CONSOLE wave)', () => {
+  const route = parseMosRoute('/console', '?mission=mission-1&mode=plan&plan=plan-1&receipt=console-intent-0001');
+  assert.deepEqual(route, {
+    kind: 'console',
+    missionId: 'mission-1',
+    mode: 'plan',
+    planId: 'plan-1',
+    strategyId: null,
+    runId: null,
+    experimentId: null,
+    intentReceiptId: 'console-intent-0001',
+  });
+});
+
+test('/console defaults to the direct mode and rejects unknown modes without guessing', () => {
+  const bare = parseMosRoute('/console', '');
+  assert.equal(bare.kind, 'console');
+  if (bare.kind === 'console') {
+    assert.equal(bare.mode, 'direct');
+    assert.equal(bare.missionId, null);
+    assert.equal(bare.intentReceiptId, null);
+  }
+  const unknownMode = parseMosRoute('/console', '?mode=chat');
+  assert.equal(unknownMode.kind, 'console');
+  if (unknownMode.kind === 'console') {
+    assert.equal(unknownMode.mode, 'direct', 'an unknown mode resolves to the declared default, never a guessed surface');
+  }
+});
+
+test('/console route titles name the workspace and the working mode', () => {
+  assert.equal(mosRouteTitle({ kind: 'console', missionId: null, mode: 'direct', planId: null, strategyId: null, runId: null, experimentId: null, intentReceiptId: null }), 'MOS — Agent Console');
+  assert.equal(mosRouteTitle({ kind: 'console', missionId: 'mission-1', mode: 'control', planId: null, strategyId: null, runId: null, experimentId: null, intentReceiptId: null }), 'MOS — Agent Console · mission workspace · control');
+});
+
 test('unknown paths parse to the explicit unknown route, never a silent fallback', () => {
   assert.deepEqual(parseMosRoute('/admin', ''), { kind: 'unknown', path: '/admin' });
   assert.deepEqual(parseMosRoute('/missions/detail/x', ''), {

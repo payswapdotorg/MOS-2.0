@@ -37,6 +37,7 @@ const { runLabSuite, runResponsiveSuite } = require('./smoke-lab-suite.cjs');
 const { runConnectionsSuite } = require('./smoke-connections-suite.cjs');
 const { runUx005Suite } = require('./smoke-ux005-suite.cjs');
 const { runUx006 } = require('./smoke-ux006-suite.cjs');
+const { runConsoleSuite } = require('./smoke-console-suite.cjs');
 
 const PACKAGE_ROOT = join(__dirname, '..');
 const DIST_WEB = join(PACKAGE_ROOT, 'dist', 'web');
@@ -187,6 +188,18 @@ async function main() {
       log(`  PAGE-ERROR ${error.message}`);
     });
 
+    // The DEMO session boot (the CONSOLE wave): the shell's default
+    // composition is now the PRODUCTION root (no demo missions, honest
+    // unavailable verdicts) — the smoke harness opts into the disclosed
+    // demo composition by visiting ?demo=1 ONCE first (the sessionStorage
+    // flag keeps it for the whole session's full navigations). The
+    // production default's own surfaces are asserted in the console suite
+    // BELOW (its empty states run on the demo composition here; the
+    // production binding's REAL runtimes are proven by the mos-desktop
+    // battery + the packaged-app smoke).
+    await page.goto(`${BASE_URL}/?demo=1`, { waitUntil: 'networkidle' });
+    check('demo session boot: the shell answers on the demo composition', true);
+
     // Suites (see the sibling files): home chrome + Studio (UX-002
     // regression), then the Lab surface (UX-003), then the responsive pass.
     await runStudioSuite(page, BASE_URL, check);
@@ -194,6 +207,7 @@ async function main() {
     await runConnectionsSuite(page, BASE_URL, check);
     await runUx005Suite(page, BASE_URL, check);
     await runUx006(page, BASE_URL, check);
+    await runConsoleSuite(page, BASE_URL, check);
     await runResponsiveSuite(browser, BASE_URL, check);
 
     // Console state.
