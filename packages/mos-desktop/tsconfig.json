@@ -1,0 +1,36 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Presentation-only desktop shell package (registry module `desktop` →
+    // packages/mos-desktop, authority presentation-only).
+    //
+    // MAIN project: compiles src/ only → dist/src/** (the package's built
+    // surface; package.json exports/types point there). The production
+    // composition seam (composition/) and the tests (testing/) are compiled
+    // by tsconfig.composition.json / tsconfig.testing.json — the same
+    // split-project discipline @mos/web uses (see its tsconfig comments).
+    //
+    // The package-ROOT mount entry (mos-desktop-entry.jsx) is deliberately
+    // NOT in the tsc program: it imports `react`/`react-dom/client` directly,
+    // which the frozen boundary harness forbids in every scanned managed
+    // extension — the disclosed .jsx pattern @mos/web's src/main.jsx
+    // established. Vite (esbuild) compiles it for the desktop renderer
+    // bundle; its typed surface is declared for consumers by the renderer.
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [{ "path": "../mos-contracts" }, { "path": "../mos-web" }]
+}

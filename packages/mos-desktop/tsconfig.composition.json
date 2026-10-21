@@ -1,0 +1,46 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // COMPOSITION project: compiles the PRODUCTION composition seam
+    // (composition/) → out/*.js — the depth-matching invariant of
+    // @mos/web's testing seam, split across two seam folders.
+    //
+    // WHY rootDir "composition" and outDir "out": the seam lives OUTSIDE
+    // src/ per the registry discipline, and an emitted file must import the
+    // siblings' BUILT dist by RELATIVE path (their exports maps point the
+    // runtime condition at untranspiled src, which node cannot execute).
+    // A relative specifier resolves identically from source and emitted
+    // output ONLY when both sit at the same package depth:
+    // composition/x.ts and out/x.js are both one level under the package,
+    // so '../../mos-identity/dist/index.js' resolves to the same file from
+    // either. The shell's own surface is consumed TYPE-ONLY (erased).
+    //
+    // The tests (testing/, compiled by tsconfig.testing.json into the SAME
+    // out/ root) import this seam through the EMITTED '../out/<file>.js'
+    // path — which resolves identically from testing/x.ts (typecheck, via
+    // the emitted declarations this project guarantees) and out/x.js
+    // (node runtime). Vite consumes the seam from SOURCE (the renderer
+    // entry imports composition/compose-production-mos-web.ts directly),
+    // where the same relative sibling paths already resolve.
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./out",
+    "rootDir": "./composition",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": ["composition/**/*.ts"],
+  "references": [
+    { "path": "." },
+    { "path": "../mos-contracts" },
+    { "path": "../mos-web" }
+  ]
+}

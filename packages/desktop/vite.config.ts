@@ -186,7 +186,21 @@ export default defineConfig(({ mode }) => {
       },
       dedupe: ["react", "react-dom", "lucide-react"],
     },
-    server: { port: 5174, strictPort: true },
+    server: {
+      port: 5174,
+      strictPort: true,
+      // MOS desktop shell (@mos/desktop) 以工作区源码形式被 renderer 消费，其挂载入口
+      // 与样式位于 packages/mos-desktop / packages/mos-web（renderer root 之外）。
+      // dev server 需要放行仓库根，否则 file watch 与模块加载会被 fs 白名单拦截。
+      fs: {
+        allow: [repoRoot],
+      },
+    },
+    // @mos/desktop 的挂载入口是包根的 .jsx（披露模式：react/react-dom 只在入口内）。
+    // 预打包管线不处理该子路径导出，按源码模块图加载更稳。
+    optimizeDeps: {
+      exclude: ["@mos/desktop"],
+    },
     define: {
       __ZCODE_ENDPOINT_ENV__: JSON.stringify(pickProductEndpointEnv(env)),
       __ZCODE_VERSION__: JSON.stringify(buildMetadata.appVersion),

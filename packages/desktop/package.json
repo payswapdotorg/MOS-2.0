@@ -24,7 +24,8 @@
     "audit:bundle-size": "node scripts/audit-bundle-size.mjs",
     "postinstall": "node scripts/node-pty-rebuild.mjs",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "lint:fix": "oxlint --fix",
+    "typecheck": "tsc -b tsconfig.renderer.json"
   },
   "dependencies": {
     "@arms/rum-electron": "^0.0.3",
@@ -33,6 +34,7 @@
     "@larksuiteoapi/node-sdk": "1.61.1",
     "@lydell/node-pty-linux-arm64": "1.2.0-beta.10",
     "@lydell/node-pty-linux-x64": "1.2.0-beta.10",
+    "@mos/desktop": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/exporter-metrics-otlp-proto": "0.214.0",
     "@opentelemetry/exporter-trace-otlp-proto": "0.214.0",

@@ -1620,6 +1620,8 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5
 
+  packages/zcode-cua: {}
+
   packages/zcode-server-cli:
     dependencies:
       '@hono/node-server':

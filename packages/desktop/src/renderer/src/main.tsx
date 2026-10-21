@@ -4,7 +4,6 @@ import { createRoot } from "react-dom/client";
 import { useEffect } from "react";
 import {
   AppErrorBoundary,
-  Root,
   GlobalDatabaseStartupLoading,
   UpdateStatusWindowRoot,
   ZCodeIntlProvider,
@@ -115,22 +114,11 @@ const isLocalDevelopmentRuntime =
   (globalThis as typeof globalThis & { __ZCODE_LOCAL_DEVELOPMENT_RUNTIME__?: boolean })
     .__ZCODE_LOCAL_DEVELOPMENT_RUNTIME__ === true;
 
-function readBooleanFlag(name: string, defaultValue: boolean): boolean {
-  const value = new URLSearchParams(window.location.search).get(name);
-  if (value == null) return defaultValue;
-  return value !== "false" && value !== "0";
-}
-
 function readStringFlag(name: string): string | undefined {
   const value = new URLSearchParams(window.location.search).get(name);
   return value == null || value.trim() === "" ? undefined : value;
 }
 
-const restoreSession = readBooleanFlag("restoreSession", true);
-const supportsSettings = readBooleanFlag("supportsSettings", true);
-const initialWorkspaceAbsPath = readStringFlag("initialWorkspacePath");
-const initialWorkspacePurpose = readStringFlag("initialWorkspacePurpose");
-const unavailableWorkspacePath = readStringFlag("unavailableWorkspacePath");
 const windowKind = readStringFlag("windowKind");
 const initialLocaleFlag = readStringFlag("locale");
 const initialLocale: Locale =
@@ -306,7 +294,6 @@ function initializeBusinessRoot(port: MessagePort): void {
   baseServicesForRemoteSessions = services;
   registerBaseWorkspaceServices(services);
   flushPendingRemoteWorkspaceServicePorts();
-  const settingService = supportsSettings ? services.settingService : undefined;
 
   syncAppTelemetryContext({
     bridge: {
@@ -319,35 +306,63 @@ function initializeBusinessRoot(port: MessagePort): void {
   setStreamClientId(desktopPlatform.getDeviceId());
 
   // React 错误边界捕获的异常不会冒泡到 window.onerror，RUM Browser SDK 默认收不到。
-  // 必须在 createRoot 之前注入 reporter：根级 AppErrorBoundary 的职责正是兜住 Root 自身
-  // 渲染崩溃，若依赖 Root 的 effect 注入，则 Root 首帧就崩时上报会丢失。
+  // 必须在 createRoot 之前注入 reporter：根级 AppErrorBoundary 的职责正是兜住根组件
+  // 自身渲染崩溃，若依赖组件的 effect 注入，首帧就崩时上报会丢失。
   setReactErrorArmsReporter(desktopPlatform);
 
-  appRoot?.render(
-    <AppErrorBoundary isDesktop isMacDesktop={isMacDesktop} isWindowsDesktop={isWindowsDesktop}>
-      <ZCodeIntlProvider
-        settingService={settingService}
-        broadcastService={services.broadcastService}
-        resolveSystemLocale={desktopPlatform.getSystemLocale}
-      >
-        <StartupReadyNotifier />
-        <Root
-          services={services}
-          platform={desktopPlatform}
-          isDesktop
-          assistantCodeCommentCardsEnabled
-          isMacDesktop={isMacDesktop}
-          isWindowsDesktop={isWindowsDesktop}
-          restoreSession={restoreSession}
-          supportsSettings={supportsSettings}
-          initialWorkspaceAbsPath={initialWorkspaceAbsPath}
-          initialWorkspacePurpose={
-            initialWorkspacePurpose === "conversation" ? "conversation" : "project"
-          }
-          unavailableWorkspacePath={unavailableWorkspacePath}
-        />
-      </ZCodeIntlProvider>
-    </AppErrorBoundary>,
+  // MOS 产品表面（desktop shell swap）：主窗口挂载 @mos/desktop 的 MOS shell
+  // （与浏览器 shell 相同的 mos-web 路由组件树 + 桌面平台端口 + 生产 composition
+  // root），替代此前的 @zcode/ui Root 编码产品表面。substrate 生命周期全部保留：
+  // database-startup 握手已在上方完成，remote-workspace 服务端口继续注册消费，
+  // telemetry/ARMS 引导不变。update-status 窗口分支仍渲染 @zcode/ui 的
+  // UpdateStatusWindowRoot（见文件尾）。
+  void import("@mos/desktop/mos-desktop-entry.jsx").then(
+    ({ bootMosDesktopShell }) => {
+      bootMosDesktopShell({
+        reactRoot: appRoot ?? undefined,
+        rootElement: document.getElementById("root"),
+        onFirstReactCommit: () => {
+          // T5:React 首次 commit（MOS shell 首帧）。供启动分阶段耗时计算 react_commit 段。
+          (
+            window as Window & { __ZCODE_REACT_COMMIT_AT__?: number }
+          ).__ZCODE_REACT_COMMIT_AT__ = Date.now();
+          // HTML 启动壳等待 React ready 后退场（见 index.html 的启动壳脚本）。
+          window.dispatchEvent(new Event("zcode-react-startup-ready"));
+        },
+        shellVersion: __ZCODE_VERSION__,
+      });
+    },
+    (error: unknown) => {
+      // 显式失败，绝不静默空白：MOS shell 模块加载失败时主窗口呈现明确的错误面。
+      appRoot?.render(
+        <AppErrorBoundary isDesktop isMacDesktop={isMacDesktop} isWindowsDesktop={isWindowsDesktop}>
+          <div
+            role="alert"
+            style={{
+              display: "flex",
+              minHeight: "100vh",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "2rem",
+              color: "#fca5a5",
+              background: "#020617",
+              fontFamily: "system-ui, sans-serif",
+              textAlign: "center",
+            }}
+          >
+            <div>
+              <h1 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+                MOS failed to start
+              </h1>
+              <p style={{ fontSize: "0.875rem", opacity: 0.8 }}>
+                The MOS desktop shell could not be loaded:{" "}
+                {error instanceof Error ? error.message : String(error)}
+              </p>
+            </div>
+          </div>
+        </AppErrorBoundary>,
+      );
+    },
   );
 }
 

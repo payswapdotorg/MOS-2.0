@@ -1,0 +1,20 @@
+/* MOS desktop shell body policy (registry module `desktop`).
+ *
+ * The desktop renderer retains the ZCode UI stylesheet for the substrate
+ * surfaces that still render in this release (the database-startup
+ * admission screen and the update-status window), and that stylesheet sets
+ * `body { overflow: hidden }` for its own app-shell layout. The MOS shell
+ * is a normal scrolling document (`min-h-screen` flex column that grows
+ * with content), so the entry scopes this override to the main window
+ * (it adds the `mos-desktop-shell` class to <html> at boot — the
+ * update-status window never mounts the MOS entry).
+ */
+
+html.mos-desktop-shell body {
+  overflow: auto;
+}
+
+html.mos-desktop-shell,
+html.mos-desktop-shell body {
+  background: #020617;
+}

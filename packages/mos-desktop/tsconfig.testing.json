@@ -1,0 +1,37 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // TESTING project: compiles the package's structural + composition tests
+    // (testing/) → out/*.test.js, flat in the SAME out/ root the composition
+    // project emits into (file names never collide: the composition seam
+    // emits out/<seam>.js, this project emits out/<name>.test.js).
+    //
+    // The tests consume the composition seam through the EMITTED
+    // '../out/<seam>.js' specifier — resolving to the built declarations at
+    // typecheck time (the tsconfig.composition.json reference guarantees
+    // they exist first) and to the built modules at node runtime. The
+    // package's own src/ surface is consumed via the package name
+    // TYPE-ONLY (erased; resolved through the workspace link's
+    // dist/src/index.d.ts, which the "." reference guarantees).
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./out",
+    "rootDir": "./testing",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": ["testing/**/*.ts", "testing/**/*.tsx"],
+  "references": [
+    { "path": "./tsconfig.composition.json" },
+    { "path": "../mos-contracts" },
+    { "path": "../mos-web" }
+  ]
+}
