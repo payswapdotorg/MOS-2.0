@@ -30,14 +30,119 @@ export interface StudioRoute {
   readonly packageId: string | null;
 }
 
+/**
+ * The Lab workspace's section ids (UX-003 wave 2): the §2 research loop's
+ * stages as navigable workspace sections. `overview` is the default when
+ * no `?section=` arrives — the workspace's landing read.
+ */
+export type LabSectionId =
+  | 'overview'
+  | 'corpus'
+  | 'idea-graph'
+  | 'simulator'
+  | 'strategy'
+  | 'transforms'
+  | 'benchmarks'
+  | 'calibration'
+  | 'bridge';
+
+/** The Lab workspace's known section ids (parse vocabulary). */
+const LAB_SECTIONS: readonly LabSectionId[] = [
+  'overview',
+  'corpus',
+  'idea-graph',
+  'simulator',
+  'strategy',
+  'transforms',
+  'benchmarks',
+  'calibration',
+  'bridge',
+];
+
+function labSectionFromParam(raw: string | null): LabSectionId {
+  if (raw === null) {
+    return 'overview';
+  }
+  return (LAB_SECTIONS as readonly string[]).includes(raw) ? (raw as LabSectionId) : 'overview';
+}
+
+/**
+ * Deep-link section inference: a selection param without an explicit
+ * `?section=` routes to the section that OWNS the selection (the accepted
+ * UX-003 hrefs `/lab?benchmark=…` / `/lab?calibration=…` keep working —
+ * they now land on their section instead of the overview). Explicit
+ * `?section=` always wins; multiple selection params resolve in the
+ * route's declared precedence (benchmark, then calibration, then the
+ * workspace-specific selections).
+ */
+function inferLabSection(
+  explicit: LabSectionId,
+  selections: {
+    readonly benchmarkId: string | null;
+    readonly calibrationId: string | null;
+    readonly corpusId: string | null;
+    readonly ideaNodeId: string | null;
+    readonly simulationRunId: string | null;
+    readonly branchId: string | null;
+    readonly strategyCandidateId: string | null;
+    readonly transformCandidateId: string | null;
+    readonly handoffId: string | null;
+  },
+): LabSectionId {
+  if (explicit !== 'overview') {
+    return explicit;
+  }
+  if (selections.benchmarkId !== null) {
+    return 'benchmarks';
+  }
+  if (selections.calibrationId !== null) {
+    return 'calibration';
+  }
+  if (selections.corpusId !== null) {
+    return 'corpus';
+  }
+  if (selections.ideaNodeId !== null) {
+    return 'idea-graph';
+  }
+  if (selections.simulationRunId !== null || selections.branchId !== null) {
+    return 'simulator';
+  }
+  if (selections.strategyCandidateId !== null) {
+    return 'strategy';
+  }
+  if (selections.transformCandidateId !== null) {
+    return 'transforms';
+  }
+  if (selections.handoffId !== null) {
+    return 'bridge';
+  }
+  return 'overview';
+}
+
 export interface LabRoute {
   readonly kind: 'lab';
+  /** The workspace section (`?section=<id>`; default `overview`). */
+  readonly section: LabSectionId;
   /** Selected benchmark chain id (`?benchmark=<id>`), when given. */
   readonly benchmarkId: string | null;
   /** Exact benchmark record version (`?version=<n>`); null = latest. */
   readonly benchmarkVersion: number | null;
-  /** Selected calibration chain id (`?calibration=<id>`), when given. */
+  /** Selected calibration chain id (`?calibration=<id>` / `?chain=<id>`), when given. */
   readonly calibrationId: string | null;
+  /** Selected corpus chain id (`?corpus=<id>`), when given. */
+  readonly corpusId: string | null;
+  /** Selected idea node id (`?node=<id>`), when given. */
+  readonly ideaNodeId: string | null;
+  /** Selected simulation run id (`?run=<id>`), when given. */
+  readonly simulationRunId: string | null;
+  /** Selected counterfactual branch id (`?branch=<id>`), when given. */
+  readonly branchId: string | null;
+  /** Selected strategy candidate id (`?candidate=<id>`), when given. */
+  readonly strategyCandidateId: string | null;
+  /** Selected transform candidate id (`?transform=<id>`), when given. */
+  readonly transformCandidateId: string | null;
+  /** Selected lab-candidate handoff id (`?handoff=<id>`), when given. */
+  readonly handoffId: string | null;
 }
 
 export interface ConnectionsRoute {
@@ -119,11 +224,25 @@ export function parseMosRoute(pathname: string, search: string): MosRoute {
 
   if (cleanPath === '/lab') {
     const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    // `?chain=` is the calibration selection's section-scoped alias — the
+    // legacy `?calibration=` param keeps working (same selection, same
+    // route kind; the first present one wins).
+    const selections = {
+      benchmarkId: firstParam(params, 'benchmark'),
+      calibrationId: firstParam(params, 'calibration') ?? firstParam(params, 'chain'),
+      corpusId: firstParam(params, 'corpus'),
+      ideaNodeId: firstParam(params, 'node'),
+      simulationRunId: firstParam(params, 'run'),
+      branchId: firstParam(params, 'branch'),
+      strategyCandidateId: firstParam(params, 'candidate'),
+      transformCandidateId: firstParam(params, 'transform'),
+      handoffId: firstParam(params, 'handoff'),
+    };
     return {
       kind: 'lab',
-      benchmarkId: firstParam(params, 'benchmark'),
+      section: inferLabSection(labSectionFromParam(firstParam(params, 'section')), selections),
       benchmarkVersion: versionParam(params, 'version'),
-      calibrationId: firstParam(params, 'calibration'),
+      ...selections,
     };
   }
 
@@ -168,15 +287,30 @@ export function mosRouteTitle(route: MosRoute): string {
         : route.packageId !== null
           ? 'MOS — Studio · package chain'
           : 'MOS — Studio';
-    case 'lab':
-      if (route.benchmarkId !== null && route.calibrationId !== null) {
-        return 'MOS — Lab · benchmark digest + calibration';
-      }
-      return route.benchmarkId !== null
-        ? 'MOS — Lab · benchmark digest'
+    case 'lab': {
+      const detail = route.benchmarkId !== null
+        ? route.benchmarkVersion !== null
+          ? 'benchmark record version'
+          : 'benchmark digest'
         : route.calibrationId !== null
-          ? 'MOS — Lab · calibration records'
-          : 'MOS — Lab';
+          ? 'calibration records'
+          : route.ideaNodeId !== null
+            ? 'idea detail'
+            : route.simulationRunId !== null
+              ? 'simulation run'
+              : route.corpusId !== null
+                ? 'corpus detail'
+                : route.strategyCandidateId !== null
+                  ? 'strategy candidate'
+                  : route.transformCandidateId !== null
+                    ? 'transform candidate'
+                    : route.handoffId !== null
+                      ? 'candidate handoff'
+                      : route.section === 'overview'
+                        ? null
+                        : route.section;
+      return detail === null ? 'MOS — Lab' : `MOS — Lab · ${detail}`;
+    }
     case 'connections':
       return route.providerId !== null && route.bindingId !== null
         ? 'MOS — Connections · provider + binding'

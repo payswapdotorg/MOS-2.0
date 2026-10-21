@@ -95,63 +95,135 @@ test('/studio parses with session and package params (UX-002)', () => {
 test('/lab parses with benchmark, version and calibration params (UX-003)', () => {
   assert.deepEqual(parseMosRoute('/lab', ''), {
     kind: 'lab',
+    section: 'overview',
     benchmarkId: null,
     benchmarkVersion: null,
     calibrationId: null,
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1'), {
     kind: 'lab',
+    section: 'benchmarks',
     benchmarkId: 'bench-reach-v1',
     benchmarkVersion: null,
     calibrationId: null,
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=1'), {
     kind: 'lab',
+    section: 'benchmarks',
     benchmarkId: 'bench-reach-v1',
     benchmarkVersion: 1,
     calibrationId: null,
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?calibration=calib-reach-1'), {
     kind: 'lab',
+    section: 'calibration',
     benchmarkId: null,
     benchmarkVersion: null,
     calibrationId: 'calib-reach-1',
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
   });
   assert.deepEqual(
     parseMosRoute('/lab', '?benchmark=bench-reach-v1&calibration=calib-reach-1'),
     {
-      kind: 'lab',
-      benchmarkId: 'bench-reach-v1',
-      benchmarkVersion: null,
-      calibrationId: 'calib-reach-1',
-    },
+    kind: 'lab',
+    section: 'benchmarks',
+    benchmarkId: 'bench-reach-v1',
+    benchmarkVersion: null,
+    calibrationId: 'calib-reach-1',
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
+  },
   );
 });
 
 test('non-numeric, zero and padded version params parse as absent (never guessed)', () => {
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=abc'), {
     kind: 'lab',
+    section: 'benchmarks',
     benchmarkId: 'bench-reach-v1',
     benchmarkVersion: null,
     calibrationId: null,
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=0'), {
     kind: 'lab',
+    section: 'benchmarks',
     benchmarkId: 'bench-reach-v1',
     benchmarkVersion: null,
     calibrationId: null,
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
   });
   assert.deepEqual(parseMosRoute('/lab', '?benchmark=bench-reach-v1&version=01'), {
     kind: 'lab',
+    section: 'benchmarks',
     benchmarkId: 'bench-reach-v1',
     benchmarkVersion: null,
     calibrationId: null,
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
   });
   assert.deepEqual(parseMosRoute('/lab/', '?benchmark='), {
     kind: 'lab',
+    section: 'overview',
     benchmarkId: null,
     benchmarkVersion: null,
     calibrationId: null,
+    corpusId: null,
+    ideaNodeId: null,
+    simulationRunId: null,
+    branchId: null,
+    strategyCandidateId: null,
+    transformCandidateId: null,
+    handoffId: null,
   });
 });
 
@@ -174,6 +246,24 @@ test('unknown paths parse to the explicit unknown route, never a silent fallback
     kind: 'unknown',
     path: '/missions/detail/x',
   });
+});
+
+const labTitleRoute = (query: {
+  readonly benchmark?: string;
+  readonly calibration?: string;
+}) => ({
+  kind: 'lab' as const,
+  section: 'benchmarks' as never,
+  benchmarkId: query.benchmark ?? null,
+  benchmarkVersion: null,
+  calibrationId: query.calibration ?? null,
+  corpusId: null,
+  ideaNodeId: null,
+  simulationRunId: null,
+  branchId: null,
+  strategyCandidateId: null,
+  transformCandidateId: null,
+  handoffId: null,
 });
 
 test('route titles name the surface per route', () => {
@@ -200,20 +290,22 @@ test('route titles name the surface per route', () => {
     'MOS — Studio · session + package chain',
   );
   assert.equal(
-    mosRouteTitle({ kind: 'lab', benchmarkId: null, benchmarkVersion: null, calibrationId: null }),
-    'MOS — Lab',
+    mosRouteTitle(labTitleRoute({})),
+    'MOS — Lab · benchmarks',
   );
+  assert.equal(mosRouteTitle({ ...labTitleRoute({}), section: 'overview' as never }), 'MOS — Lab');
+  assert.equal(mosRouteTitle({ ...labTitleRoute({}), section: 'simulator' as never }), 'MOS — Lab · simulator');
   assert.equal(
-    mosRouteTitle({ kind: 'lab', benchmarkId: 'bench-reach-v1', benchmarkVersion: null, calibrationId: null }),
+    mosRouteTitle(labTitleRoute({ benchmark: 'bench-reach-v1' })),
     'MOS — Lab · benchmark digest',
   );
   assert.equal(
-    mosRouteTitle({ kind: 'lab', benchmarkId: null, benchmarkVersion: null, calibrationId: 'calib-reach-1' }),
+    mosRouteTitle(labTitleRoute({ calibration: 'calib-reach-1' })),
     'MOS — Lab · calibration records',
   );
   assert.equal(
-    mosRouteTitle({ kind: 'lab', benchmarkId: 'bench-reach-v1', benchmarkVersion: null, calibrationId: 'calib-reach-1' }),
-    'MOS — Lab · benchmark digest + calibration',
+    mosRouteTitle(labTitleRoute({ benchmark: 'bench-reach-v1', calibration: 'calib-reach-1' })),
+    'MOS — Lab · benchmark digest',
   );
   assert.equal(mosRouteTitle({ kind: 'section', sectionId: 'connections' }), 'MOS — connections');
   assert.equal(mosRouteTitle({ kind: 'unknown', path: '/x' }), 'MOS — page not found');

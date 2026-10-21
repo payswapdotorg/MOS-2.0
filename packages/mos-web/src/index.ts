@@ -80,6 +80,59 @@ export type {
   LabCalibrationStatusFailure,
   LabCalibrationStatusPort,
 } from './ports/lab-calibration.js';
+// ---- Lab WORKSPACE view ports (UX-003 wave 2 — LAB-001..016 read surfaces) ----
+export type {
+  LabOverviewView,
+  LabLoopStageStandingView,
+  LabRecentRunView,
+  LabActiveScenarioView,
+  LabOverviewPort,
+} from './ports/lab-overview.js';
+export type {
+  LabReferenceModalityView,
+  LabFeatureKindView,
+  LabReferenceDocumentView,
+  LabFeatureDescriptorView,
+  LabFeatureKindRequirementView,
+  LabFeatureBundleView,
+  LabCorpusSummaryView,
+  LabCorpusDetailView,
+  LabCorpusViewPort,
+} from './ports/lab-corpus.js';
+export type {
+  LabIdeaGraphView,
+  LabIdeaNodeView,
+  LabIdeaEdgeView,
+  LabIdeaDetailView,
+  LabIdeaGraphViewPort,
+} from './ports/lab-idea-graph.js';
+export type {
+  LabSimulatorOverviewView,
+  LabSimulationRunSummaryView,
+  LabSimulationRunDetailView,
+  LabBranchView,
+  LabBranchRecordView,
+  LabSimulatorViewPort,
+} from './ports/lab-simulator.js';
+export type {
+  LabStrategyCandidateView,
+  LabOrganizationSearchResultView,
+  LabRewardObjectiveView,
+  LabStrategyViewPort,
+} from './ports/lab-strategy.js';
+export type {
+  LabTransformDefinitionView,
+  LabTransformGraphView,
+  LabTransformCandidateDetailView,
+  LabTransformsViewPort,
+} from './ports/lab-transforms.js';
+export type {
+  LabBridgeStepView,
+  LabBridgeCandidateView,
+  LabCandidateHandoffView,
+  LabBridgeViewPort,
+} from './ports/lab-bridge.js';
+export type { LabBridgeDirectoryData } from './routes/lab-page-model.js';
 export type {
   StudioConsentRequirementView,
   StudioConsentStateView,
@@ -180,6 +233,19 @@ export {
   labAggregationLabel,
   labIntegrityLabel,
   labSweepDimensionLabel,
+  // UX-003 wave 2 (the Lab WORKSPACE): section rail + Time Machine labels + declared-affordance notes
+  LAB_SECTION_IDS,
+  LAB_SECTION_LABELS,
+  LAB_SECTION_DESCRIPTIONS,
+  LAB_TIME_MACHINE_MODE_LABELS,
+  LAB_NO_INGESTION_NOTE,
+  LAB_NO_SIMULATION_NOTE,
+  LAB_NO_STRATEGY_NOTE,
+  LAB_NO_PROMOTION_NOTE,
+  LAB_NO_HANDOFF_NOTE,
+  LAB_NO_AUTO_PRODUCTION_NOTE,
+  LAB_BRIDGE_NO_BINDING_LABEL,
+  formatLabLagMs,
 } from './views/lab-presentation.js';
 
 // ---- Platform patterns (ported from the audited shell, MOS-owned) ----
@@ -237,6 +303,20 @@ export {
 export { LabView } from './routes/lab-view.js';
 export { LabBenchmarkDirectoryView } from './views/lab-benchmark-directory.js';
 export { LabBenchmarkDigestPanel } from './views/lab-benchmark-digest.js';
+// UX-003 wave 2 — the Lab WORKSPACE section views (mos-desktop mounts the same tree)
+export { LabOverviewSectionView } from './views/lab-overview-view.js';
+export { LabCorpusSectionView } from './views/lab-corpus-view.js';
+export { LabIdeaGraphSectionView } from './views/lab-idea-graph-view.js';
+export { LabSimulatorSectionView } from './views/lab-simulator-view.js';
+export { LabStrategySectionView } from './views/lab-strategy-view.js';
+export { LabTransformsSectionView } from './views/lab-transforms-view.js';
+export { LabBridgeSectionView } from './views/lab-bridge-view.js';
+export {
+  LabCounterfactualBadge,
+  LabMeasuredBadge,
+  LabSectionLoadingPanel,
+  LabSectionUnavailablePanel,
+} from './views/lab-workspace-shared.js';
 export { LabCalibrationStatusView } from './views/lab-calibration-status.js';
 export { LabCalibrationDetailPanel } from './views/lab-calibration-detail.js';
 export { ConnectionsView } from './routes/connections-view.js';

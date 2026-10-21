@@ -19,6 +19,17 @@
       "rules": {
         "max-lines": "off"
       }
+    },
+    // The mos-web composition seam (testing/) is test infrastructure of the same
+    // nature as *.test.ts — REAL-shaped fixtures, shape adapters and in-memory
+    // doubles stack scenarios beyond the 400-line business-code budget. The
+    // seam is OUTSIDE src/ and covered by its own structural tests; production
+    // code keeps the full budget.
+    {
+      "files": ["packages/mos-web/testing/**"],
+      "rules": {
+        "max-lines": "off"
+      }
     }
   ],
   "settings": {

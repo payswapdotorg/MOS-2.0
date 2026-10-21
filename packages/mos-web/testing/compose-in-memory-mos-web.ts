@@ -7,6 +7,7 @@ import { createInMemoryAppShellPort } from './in-memory-app-shell.js';
 import { createInMemoryMissionCatalogPort } from './in-memory-mission-catalog.js';
 import { createInMemoryStudioSurface } from './in-memory-studio-surface.js';
 import { createInMemoryLabSurface } from './in-memory-lab-surface.js';
+import { createInMemoryLabWorkspace } from './in-memory-lab-workspace.js';
 import { connectionsCompositionDouble } from './connections-composition-double.js';
 import { createInMemoryNotificationsViewPort } from './notifications-composition-double.js';
 
@@ -74,6 +75,8 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
   readonly studioSurface: ReturnType<typeof createInMemoryStudioSurface>;
   /** The disclosed Lab surface double (UX-003 observability). */
   readonly labSurface: ReturnType<typeof createInMemoryLabSurface>;
+  /** The disclosed Lab WORKSPACE double (UX-003 wave 2 observability). */
+  readonly labWorkspace: ReturnType<typeof createInMemoryLabWorkspace>;
   /** The disclosed Connections surface double (UX-004 observability). */
   readonly connectionsSurface: typeof connectionsCompositionDouble;
   /** The disclosed Notifications surface double (NOTIFY-CS observability). */
@@ -249,6 +252,7 @@ export function createInMemoryMosWebComposition(
   }
   const studioSurface = createInMemoryStudioSurface();
   const labSurface = createInMemoryLabSurface();
+  const labWorkspace = createInMemoryLabWorkspace();
 
   const notificationsPort = createInMemoryNotificationsViewPort();
   return {
@@ -258,6 +262,13 @@ export function createInMemoryMosWebComposition(
     studioPackages: studioSurface.studioPackages,
     labBenchmark: labSurface.labBenchmark,
     labCalibration: labSurface.labCalibration,
+    labOverview: labWorkspace.labOverview,
+    labCorpus: labWorkspace.labCorpus,
+    labIdeaGraph: labWorkspace.labIdeaGraph,
+    labSimulator: labWorkspace.labSimulator,
+    labStrategy: labWorkspace.labStrategy,
+    labTransforms: labWorkspace.labTransforms,
+    labBridge: labWorkspace.labBridge,
     connections: connectionsCompositionDouble,
     notifications: notificationsPort,
     identityRepository,
@@ -266,6 +277,7 @@ export function createInMemoryMosWebComposition(
     scope: { tenantId, workspaceId },
     studioSurface,
     labSurface,
+    labWorkspace,
     connectionsSurface: connectionsCompositionDouble,
     notificationsSurface: notificationsPort,
   };

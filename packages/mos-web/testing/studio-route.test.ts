@@ -151,10 +151,7 @@ test('a failing directory listing degrades the WHOLE page to the route-error vie
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
-      connections: null as never,
-      notifications: null as never,
-      appShell: composition.appShell,
-      missionCatalog: composition.missionCatalog,
+      ...composition,
       studioDirectory: {
         async listStudioSessions() {
           return {
@@ -185,11 +182,7 @@ test('a failing library listing is secondary — the page loads with the explici
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
-      connections: null as never,
-      notifications: null as never,
-      appShell: composition.appShell,
-      missionCatalog: composition.missionCatalog,
-      studioDirectory: composition.studioDirectory,
+      ...composition,
       studioPackages: {
         async listStudioPackages() {
           return {
@@ -219,10 +212,7 @@ test('a failing detail load degrades to the load-failed marker (not not-found)',
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
-      connections: null as never,
-      notifications: null as never,
-      appShell: composition.appShell,
-      missionCatalog: composition.missionCatalog,
+      ...composition,
       studioDirectory: {
         ...composition.studioDirectory,
         async loadStudioSessionDetail() {
@@ -250,11 +240,7 @@ test('a failing chain load degrades to the load-failed marker', async () => {
   const composition = createInMemoryMosWebComposition();
   const routeView = await loadMosRouteView(
     {
-      connections: null as never,
-      notifications: null as never,
-      appShell: composition.appShell,
-      missionCatalog: composition.missionCatalog,
-      studioDirectory: composition.studioDirectory,
+      ...composition,
       studioPackages: {
         ...composition.studioPackages,
         async loadStudioPackageChain() {
