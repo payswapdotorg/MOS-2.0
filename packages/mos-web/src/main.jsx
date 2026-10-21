@@ -65,6 +65,10 @@ function bootMosWebShell() {
   const composition = createInMemoryMosWebComposition({ seedDemoMissions: true });
   const rootElement = globalThis.document.getElementById('root');
   let reactRoot = null;
+  // The shell read model ref — the soft post-declaration refresh (below)
+  // re-resolves the page model against the SAME shell view without a
+  // document reload.
+  const shellViewRef = { current: null };
 
   const mountShell = (routeView) => {
     const element = (
@@ -96,10 +100,33 @@ function bootMosWebShell() {
 
   const onDeclareLabIntent = (declaration) => {
     // The lab write-intent transport (UX-003 wave 3): the declaration routes
-    // through the composition's lab-intents port; the ledger record (receipt
-    // or the authority's named rejection) is carried by the next full load.
+    // through the composition's lab-intents port. The refresh after the
+    // declaration is SOFT — `history.replaceState` lands the receipt marker
+    // in the URL without a document reload, then the SAME composition's
+    // page model is re-resolved and remounted (the in-process runtimes and
+    // the intent ledger are per-load; a hard navigation would wipe the very
+    // records the declaration just wrote — the testing seam's composition
+    // included).
     declareLabIntentThroughPort(composition, declaration).then((outcome) => {
-      globalThis.location.assign(labIntentOutcomeHref(outcome));
+      const win = globalThis.window;
+      const href = labIntentOutcomeHref(outcome);
+      if (win && win.history && typeof win.history.replaceState === 'function') {
+        win.history.replaceState(null, '', href);
+      }
+      const route = parseMosRoute(globalThis.location.pathname, globalThis.location.search);
+      platform.setDocumentTitle(mosRouteTitle(route));
+      loadMosRouteView(composition, route, shellViewRef.current)
+        .then((routeView) => {
+          mountShell({ shellView: shellViewRef.current, routeView, onDeclareMissionIntent, onDeclareLabIntent });
+        })
+        .catch((error) => {
+          mountShell({
+            shellView: shellViewRef.current,
+            routeView: routeLoadFailureView(error),
+            onDeclareMissionIntent,
+            onDeclareLabIntent,
+          });
+        });
     });
   };
 
@@ -128,6 +155,7 @@ function bootMosWebShell() {
 
       const route = parseMosRoute(globalThis.location.pathname, globalThis.location.search);
       platform.setDocumentTitle(mosRouteTitle(route));
+      shellViewRef.current = shellResult;
 
       // …mount the chrome with the loading surface while the page model loads…
       mountShell({

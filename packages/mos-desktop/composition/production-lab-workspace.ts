@@ -34,7 +34,6 @@ import {
   createInMemoryEnsemble,
   createInMemoryFeatureBundleRegistry,
   createInMemoryIdeaGraph,
-  createInMemorySocialWorldModelStore,
   createInMemorySimulatorEngine,
   createInMemoryDynamicsModelStore,
   createInMemoryDynamicsStepper,
@@ -45,6 +44,10 @@ import {
   createInMemoryTransformGraph,
   createInMemoryTransformDiscovery,
 } from '../../mos-lab/dist/index.js';
+import {
+  createIndexedWorldModelStore,
+  projectWorldModelRows,
+} from './production-lab-world-model-chain.js';
 
 /**
  * PRODUCTION Lab WORKSPACE binding over the REAL `@mos/lab` runtimes
@@ -221,7 +224,11 @@ export function createProductionLabWorkspace(): ProductionLabWorkspace {
   const corpus = createInMemoryCorpusStore({ rights });
   const featureBundles = createInMemoryFeatureBundleRegistry({ corpus });
   const ideas = createInMemoryIdeaGraph({ corpus, bundles: featureBundles });
-  const worldModels = createInMemorySocialWorldModelStore();
+  // UX-003 wave 3: the world-model chain index (the disclosed wrapper
+  // pattern — registration feeds the tenant-scoped id index the simulator
+  // read model presents; see production-lab-world-model-chain.ts).
+  const worldModelChain = createIndexedWorldModelStore();
+  const worldModels = worldModelChain.store;
   const simulator = createInMemorySimulatorEngine({ worldModels });
   const dynamicsModels = createInMemoryDynamicsModelStore();
   const dynamicsStepper = createInMemoryDynamicsStepper({});
@@ -335,9 +342,18 @@ export function createProductionLabWorkspace(): ProductionLabWorkspace {
   const labSimulator: LabSimulatorViewPort = {
     async loadSimulatorOverview(scope) {
       const asOf = nowIso();
+      // The world-model listing is the tenant-scoped index of ids the REAL
+      // store accepted through this composition's registration write path
+      // (the lab-intent transport), resolved per-id — never an
+      // enumerate-all the runtime does not expose.
+      const worldModels = await projectWorldModelRows(
+        runtime.worldModels,
+        worldModelChain.idsFor(String(tenantOf(scope))),
+        scope,
+      );
       return {
         tenantId: tenantOf(scope),
-        worldModels: [],
+        worldModels,
         dynamicsModels: [],
         runs: [],
         timeMachine: {

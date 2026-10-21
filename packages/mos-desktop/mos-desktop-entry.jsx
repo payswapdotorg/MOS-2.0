@@ -30,7 +30,9 @@ import {
   MosAppShell,
   MosBootstrapErrorView,
   applyMosThemeToDocument,
+  declareLabIntentThroughPort,
   declareMissionIntentThroughPort,
+  labIntentOutcomeHref,
   loadMosRouteView,
   missionIntentOutcomeHref,
   mosRouteTitle,
@@ -40,6 +42,7 @@ import {
 } from '@mos/web';
 import {
   createDesktopMosPlatform,
+  desktopQueryFromAppHref,
   desktopRouteFromSearch,
   installDesktopShellLinkNavigation,
   navigateDesktopAppHref,
@@ -131,10 +134,64 @@ export function bootMosDesktopShell(options) {
   }
   const platform = createDesktopMosPlatform();
   platform.setDocumentTitle(SHELL_DOCUMENT_TITLE);
-  installDesktopShellLinkNavigation();
 
   // 3. The PRODUCTION composition (REAL domain runtimes, honest verdicts).
   const composition = createProductionMosWebComposition({});
+  // The shell read model ref — the soft refresh paths (below) re-resolve the
+  // page model against the SAME shell view without a document reload.
+  const shellViewRef = { current: null };
+  // The loading surface shown while a soft refresh resolves.
+  const loadingRouteView = () => ({
+    shellView: shellViewRef.current,
+    routeView: { kind: 'loading', label: 'Loading the MOS surface…' },
+    onDeclareMissionIntent,
+    onDeclareLabIntent,
+  });
+
+  /**
+   * SOFT navigation (UX-003 wave 3): `history.replaceState` rewrites the
+   * query (the URL stays the route truth — no client route state), then the
+   * SAME composition's page model is re-resolved and remounted WITHOUT a
+   * document reload. The per-load composition (the in-process lab runtimes
+   * + the intent ledger) therefore survives BOTH declared-intent refreshes
+   * AND internal link navigation for the whole document session; a hard
+   * reload or app restart starts a fresh composition (the disclosed
+   * session-scoped workspace state — durable persistence is the P2
+   * service transport's).
+   */
+  const softNavigateTo = (appHref) => {
+    const win = globalThis.window;
+    const query = desktopQueryFromAppHref(appHref);
+    if (win && win.history && typeof win.history.replaceState === 'function') {
+      win.history.replaceState(null, '', query);
+    }
+    const route = desktopRouteFromSearch(win ? win.location.search : query);
+    platform.setDocumentTitle(mosRouteTitle(route));
+    if (shellViewRef.current) {
+      mountShell(loadingRouteView());
+    }
+    loadMosRouteView(composition, route, shellViewRef.current)
+      .then((routeView) => {
+        mountShell({
+          shellView: shellViewRef.current,
+          routeView,
+          onDeclareMissionIntent,
+          onDeclareLabIntent,
+        });
+      })
+      .catch((error) => {
+        mountShell({
+          shellView: shellViewRef.current,
+          routeView: routeLoadFailureView(error),
+          onDeclareMissionIntent,
+          onDeclareLabIntent,
+        });
+      });
+  };
+
+  // The link bridge with the SOFT navigator: internal anchors refresh the
+  // page model in place instead of reloading the document.
+  installDesktopShellLinkNavigation((href) => softNavigateTo(href));
 
   let committed = false;
   const mountShell = (routeView) => {
@@ -153,6 +210,7 @@ export function bootMosDesktopShell(options) {
             shellView={routeView.shellView}
             routeView={routeView.routeView}
             onDeclareMissionIntent={routeView.onDeclareMissionIntent}
+            onDeclareLabIntent={routeView.onDeclareLabIntent}
             shellVersion={shellVersion}
           />
         </MosDesktopErrorBoundary>
@@ -166,6 +224,22 @@ export function bootMosDesktopShell(options) {
       // The receipt/failure marker is carried by the next full load —
       // one route per load, real navigation, no client route state.
       navigateDesktopAppHref(missionIntentOutcomeHref(outcome));
+    });
+  };
+
+  // UX-003 wave 3: the Lab surfaces DECLARE write intents; the production
+  // composition routes them to the lab authority runtimes and the ledger
+  // carries every verdict. The refresh after a declaration is SOFT:
+  // `history.replaceState` rewrites the query (the receipt marker lands in
+  // the URL without a document reload), then the SAME composition's page
+  // model is re-resolved and remounted — the in-process runtimes and the
+  // intent ledger are per-load (the one-route-per-load discipline), so a
+  // hard navigation would wipe the very records the declaration just
+  // wrote. A deep link to a receipt id from a PREVIOUS load resolves to
+  // the outcome panel's honest not-found state.
+  const onDeclareLabIntent = (declaration) => {
+    declareLabIntentThroughPort(composition, declaration).then((outcome) => {
+      softNavigateTo(labIntentOutcomeHref(outcome));
     });
   };
 
@@ -198,6 +272,7 @@ export function bootMosDesktopShell(options) {
 
       const route = desktopRouteFromSearch(globalThis.location.search);
       platform.setDocumentTitle(mosRouteTitle(route));
+      shellViewRef.current = shellResult;
 
       // …mount the chrome with the loading surface while the page model
       // loads…
@@ -205,18 +280,20 @@ export function bootMosDesktopShell(options) {
         shellView: shellResult,
         routeView: { kind: 'loading', label: 'Loading the MOS surface…' },
         onDeclareMissionIntent,
+        onDeclareLabIntent,
       });
 
       // …then resolve the page model and mount it (one pass per load).
       return loadMosRouteView(composition, route, shellResult)
         .then((routeView) => {
-          mountShell({ shellView: shellResult, routeView, onDeclareMissionIntent });
+          mountShell({ shellView: shellResult, routeView, onDeclareMissionIntent, onDeclareLabIntent });
         })
         .catch((error) => {
           mountShell({
             shellView: shellResult,
             routeView: routeLoadFailureView(error),
             onDeclareMissionIntent,
+            onDeclareLabIntent,
           });
         });
     })

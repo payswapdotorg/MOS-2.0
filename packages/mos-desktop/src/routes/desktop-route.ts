@@ -100,11 +100,23 @@ function isPlainLeftClick(event: MouseEvent): boolean {
  * than `_self`, download links and `rel="external"` links are left to the
  * host untouched.
  *
+ * UX-003 wave 3: when the host passes `onAppInternalNavigate`, internal
+ * link clicks go through the SOFT navigation the declared-intent refresh
+ * established — `history.replaceState` rewrites the query (the URL stays
+ * the route truth) and the host re-resolves the page model against the
+ * SAME composition without a document reload. The per-load composition
+ * therefore SURVIVES section navigation for the whole document session
+ * (the in-process lab runtimes keep their records); without it every link
+ * click would reload the document and wipe them. Hosts without the
+ * callback keep the hard-navigation behavior verbatim.
+ *
  * Returns the dispose function (idempotent) so hosts can tear the bridge
  * down on unmount; installing twice installs two bridges — hosts own the
  * lifecycle.
  */
-export function installDesktopShellLinkNavigation(): () => void {
+export function installDesktopShellLinkNavigation(
+  onAppInternalNavigate?: (href: string) => void,
+): () => void {
   const doc = globalThis.document;
   if (!doc || typeof doc.addEventListener !== 'function') {
     return () => undefined;
@@ -137,6 +149,10 @@ export function installDesktopShellLinkNavigation(): () => void {
       return;
     }
     event.preventDefault();
+    if (onAppInternalNavigate) {
+      onAppInternalNavigate(href);
+      return;
+    }
     navigateDesktopAppHref(href);
   };
 

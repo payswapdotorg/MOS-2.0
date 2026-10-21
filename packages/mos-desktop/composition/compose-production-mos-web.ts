@@ -1,5 +1,6 @@
 import type { IdentityRepository } from '@mos/identity';
 import type { MissionRepository } from '@mos/missions';
+import type { TenantScope } from '@mos/contracts';
 import type { MosWebComposition } from '@mos/web';
 import { createInMemoryIdentityRepository } from '../../mos-identity/dist/index.js';
 import { createInMemoryMissionRepository } from '../../mos-missions/dist/index.js';
@@ -12,6 +13,7 @@ import {
   createProductionLabSurface,
   type ProductionLabRuntime,
 } from './production-lab-surface.js';
+import { createProductionLabIntents } from './production-lab-intents.js';
 import {
   createProductionLabWorkspace,
   type ProductionLabWorkspaceRuntime,
@@ -50,6 +52,13 @@ import {
  *    calibration over the disclosed in-memory reality reader): fresh
  *    state, empty tenant-scoped listings, fail-closed record projection
  *    (production-lab-surface.ts + lab-runtime-projection.ts).
+ *  - `labIntents` — the Lab WRITE-INTENT transport (UX-003 wave 3) over
+ *    the REAL lab runtimes: the shell declares, this composition routes
+ *    each declaration to the lab authority (corpus rights gate, world
+ *    models + simulator, organization search, strategy learning, robust
+ *    benchmark, online calibration), the ledger carries every verdict
+ *    verbatim, and executed records surface in the section read models
+ *    (production-lab-intents.ts + its parse/core/workspace/runs split).
  *  - `studioDirectory` / `studioPackages` / `connections` / `notifications`
  *    — explicit honest-unavailable bindings (unavailable-surfaces.ts): P2
  *    DISCLOSURE — these surfaces await the production MOS service
@@ -155,6 +164,23 @@ export function createProductionMosWebComposition(
   const labSurface = createProductionLabSurface({ now });
   const labWorkspace = createProductionLabWorkspace();
 
+  // The Lab write-intent transport over the REAL runtimes (UX-003 wave 3):
+  // the workspace runtimes carry the corpus/simulator/search/learning
+  // authorities, the lab surface's runtime stack carries the benchmark and
+  // calibration authorities, and the composition's tenant scope scopes
+  // every declaration + ledger read.
+  const scope: TenantScope =
+    workspaceId === null
+      ? { tenantId: tenantId as never }
+      : { tenantId: tenantId as never, workspaceId: workspaceId as never };
+  const labIntents = createProductionLabIntents({
+    scope,
+    labWorkspaceRuntime: labWorkspace.labWorkspaceRuntime,
+    benchmark: labSurface.labRuntime.benchmark,
+    calibration: labSurface.labRuntime.calibration,
+    now,
+  });
+
   // The notifications binding presents the REAL tenant context (§31).
   const tenant = identityRepository.getTenant(tenantId as never);
   const notifications = createUnavailableNotifications({
@@ -181,6 +207,7 @@ export function createProductionMosWebComposition(
     labStrategy: labWorkspace.labStrategy,
     labTransforms: labWorkspace.labTransforms,
     labBridge: labWorkspace.labBridge,
+    labIntents,
     connections: createUnavailableConnections(),
     notifications,
     identityRepository,

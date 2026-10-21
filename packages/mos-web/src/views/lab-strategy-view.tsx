@@ -3,24 +3,24 @@ import type {
   LabRankedOrganizationView,
   LabRewardObjectiveView,
   LabStrategyCandidateView,
-} from '../ports/lab-strategy.js';
+} from "../ports/lab-strategy.js";
 import {
   formatLabExpectedWithInterval,
   LAB_CANDIDATE_ORIGIN_DESCRIPTIONS,
   LAB_CANDIDATE_ORIGIN_LABELS,
-  LAB_NO_STRATEGY_NOTE,
   LAB_OOD_PRESENTATION,
   LAB_ORGANIZATION_COMPARISON_LABELS,
-} from './lab-presentation.js';
+} from "./lab-presentation.js";
+import type { LabIntentDeclaration } from "../ports/lab-intents.js";
+import { LabStrategyIntentForms } from "./lab-strategy-intent-forms.js";
 import {
   LabCounterfactualBadge,
-  LabDeclaredAffordance,
   LabFact,
   LabSectionEmptyPanel,
   LabSectionLoadingPanel,
   LabSectionUnavailablePanel,
   LabSelectionErrorPanel,
-} from './lab-workspace-shared.js';
+} from "./lab-workspace-shared.js";
 
 /**
  * The Lab workspace's Strategy & Organizations section view (UX-003 wave 2,
@@ -32,6 +32,12 @@ import {
  * all three), and the DECLARED mission-specific reward objective with
  * explicit metric-source bindings (§21). Every expected value renders WITH
  * its §22 interval; every candidate is counterfactual-labeled.
+ *
+ * UX-003 wave 3: the section's two write paths (organization search +
+ * strategy learning) are DECLARED through the lab-intents port — the forms
+ * live in `lab-strategy-intent-forms.tsx` (the 400-line budget split); the
+ * owning authorities alone execute, version and gate the records (frozen
+ * ensembles), and their verdicts return on the next load.
  */
 
 function LabStrategyCandidateRow({
@@ -45,11 +51,11 @@ function LabStrategyCandidateRow({
     <li>
       <a
         href={`/lab?section=strategy&candidate=${encodeURIComponent(candidate.candidateId)}`}
-        aria-current={selected ? 'page' : undefined}
+        aria-current={selected ? "page" : undefined}
         className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? "border-sky-600 bg-sky-500/10"
+            : "border-slate-800 bg-slate-900/40 hover:border-slate-700"
         }`}
         data-testid={`lab-strategy-row-${candidate.candidateId}`}
       >
@@ -69,36 +75,36 @@ function LabStrategyCandidateRow({
         </span>
         <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-400">
           <span>
-            action {candidate.action.kind} · {candidate.action.cadencePerWeek}×/week · novelty{' '}
-            {candidate.action.novelty.toFixed(2)} · engagement{' '}
+            action {candidate.action.kind} · {candidate.action.cadencePerWeek}×/week · novelty{" "}
+            {candidate.action.novelty.toFixed(2)} · engagement{" "}
             {candidate.action.engagementEffort.toFixed(2)}
           </span>
           <span className="font-mono text-slate-500">{candidate.action.strategyRef}</span>
         </span>
         <span className="font-mono text-xs text-slate-300" data-testid="lab-strategy-expected">
-          {formatLabExpectedWithInterval(candidate.expectedReward, candidate.interval)} · horizon{' '}
+          {formatLabExpectedWithInterval(candidate.expectedReward, candidate.interval)} · horizon{" "}
           {candidate.horizonSteps} steps
         </span>
         <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
           <span>
             ensemble {candidate.provenance.ensembleId} v{candidate.provenance.ensembleVersion} ·
-            members v{candidate.provenance.memberWorldModelVersions.join('/')}
+            members v{candidate.provenance.memberWorldModelVersions.join("/")}
           </span>
           <span>
             simulator v{candidate.provenance.simulatorVersion} · reward spec v
             {candidate.provenance.rewardSpecVersion}
           </span>
           <span>
-            seed{candidate.provenance.seeds.length === 1 ? '' : 's'}{' '}
-            {candidate.provenance.seeds.join(', ')}
+            seed{candidate.provenance.seeds.length === 1 ? "" : "s"}{" "}
+            {candidate.provenance.seeds.join(", ")}
           </span>
         </span>
         {candidate.learning === null ? null : (
           <span className="text-[11px] text-slate-500" data-testid="lab-strategy-learning">
-            learned over {candidate.learning.iterationCount} iterations · stopped:{' '}
+            learned over {candidate.learning.iterationCount} iterations · stopped:{" "}
             {candidate.learning.stoppingReason} — {candidate.learning.stoppingDetail}
             {candidate.learning.finalEstimate === null
-              ? ''
+              ? ""
               : ` · final estimate ${formatLabExpectedWithInterval(
                   candidate.learning.finalEstimate.reward,
                   candidate.learning.finalEstimate.interval,
@@ -110,11 +116,7 @@ function LabStrategyCandidateRow({
   );
 }
 
-function LabRankedOrganizationRow({
-  ranked,
-}: {
-  readonly ranked: LabRankedOrganizationView;
-}) {
+function LabRankedOrganizationRow({ ranked }: { readonly ranked: LabRankedOrganizationView }) {
   const ood = LAB_OOD_PRESENTATION[ranked.ood.status];
   return (
     <li
@@ -133,7 +135,7 @@ function LabRankedOrganizationRow({
         <LabCounterfactualBadge />
         <span
           className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${ood.badgeClass}`}
-          title={ranked.ood.flagged ? 'flagged' : 'not flagged'}
+          title={ranked.ood.flagged ? "flagged" : "not flagged"}
         >
           {ood.label}
         </span>
@@ -144,28 +146,32 @@ function LabRankedOrganizationRow({
       </span>
       <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
         <span>
-          {ranked.features.agentCount} agents · roles {ranked.features.roles.join(', ')}
+          {ranked.features.agentCount} agents · roles {ranked.features.roles.join(", ")}
         </span>
         <span>
-          critics {ranked.features.critics.join(', ') || '—'} · {ranked.features.executionOrdering}
+          critics {ranked.features.critics.join(", ") || "—"} · {ranked.features.executionOrdering}
         </span>
         <span>
-          tools {ranked.features.toolAllocation.map((entry) => `${entry.nodeId}:${entry.toolRefs.length}`).join(' ') || '—'}
+          tools{" "}
+          {ranked.features.toolAllocation
+            .map((entry) => `${entry.nodeId}:${entry.toolRefs.length}`)
+            .join(" ") || "—"}
         </span>
       </span>
       <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
         <span className="font-mono">
-          per-seed {ranked.seedRobustness.perSeedExpected.map((value) => value.toFixed(2)).join(' / ')}{' '}
-          · spread {ranked.seedRobustness.spread.toFixed(2)}
+          per-seed{" "}
+          {ranked.seedRobustness.perSeedExpected.map((value) => value.toFixed(2)).join(" / ")} ·
+          spread {ranked.seedRobustness.spread.toFixed(2)}
         </span>
         {ranked.generationIndex === null ? null : <span>generation {ranked.generationIndex}</span>}
         {ranked.variedDimensions.length === 0 ? null : (
-          <span>varied: {ranked.variedDimensions.join(', ')}</span>
+          <span>varied: {ranked.variedDimensions.join(", ")}</span>
         )}
         {ranked.intervalOverlapWithLeader === null ? null : (
           <span>
-            leader interval{' '}
-            {ranked.intervalOverlapWithLeader.overlaps ? 'OVERLAPS' : 'does not overlap'}
+            leader interval{" "}
+            {ranked.intervalOverlapWithLeader.overlaps ? "OVERLAPS" : "does not overlap"}
           </span>
         )}
       </span>
@@ -226,7 +232,10 @@ function LabOrganizationSearchPanel({
             </span>
             <ul className="mt-1 flex flex-col gap-1">
               {search.comparison.generated.map((ranked) => (
-                <LabRankedOrganizationRow key={ranked.organization.organizationId} ranked={ranked} />
+                <LabRankedOrganizationRow
+                  key={ranked.organization.organizationId}
+                  ranked={ranked}
+                />
               ))}
             </ul>
           </div>
@@ -235,12 +244,12 @@ function LabOrganizationSearchPanel({
 
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-slate-500">
         <LabFact label="budget">
-          {search.budget.consumedMemberSteps}/{search.budget.maxMemberSteps} member steps ·{' '}
-          {search.budget.evaluationsExecuted} evaluations · {search.budget.generatedEvaluated}{' '}
+          {search.budget.consumedMemberSteps}/{search.budget.maxMemberSteps} member steps ·{" "}
+          {search.budget.evaluationsExecuted} evaluations · {search.budget.generatedEvaluated}{" "}
           generated evaluated
         </LabFact>
         <LabFact label="stopping">
-          {search.stopping.reason} — {search.stopping.detail} ({search.stopping.generationsExecuted}{' '}
+          {search.stopping.reason} — {search.stopping.detail} ({search.stopping.generationsExecuted}{" "}
           generations)
         </LabFact>
       </div>
@@ -248,11 +257,7 @@ function LabOrganizationSearchPanel({
   );
 }
 
-function LabRewardObjectivePanel({
-  objective,
-}: {
-  readonly objective: LabRewardObjectiveView;
-}) {
+function LabRewardObjectivePanel({ objective }: { readonly objective: LabRewardObjectiveView }) {
   return (
     <div
       className="flex flex-col gap-2 rounded-lg border border-slate-800 bg-slate-900/40 p-4"
@@ -306,14 +311,17 @@ export function LabStrategySectionView({
   strategyError,
   selectedCandidate,
   candidateSelectionError,
+  onDeclareLabIntent,
 }: {
   /** null = not loaded on this pass (the explicit loading state). */
   readonly strategyCandidates: readonly LabStrategyCandidateView[] | null;
   readonly organizationSearches: readonly LabOrganizationSearchResultView[] | null;
   readonly rewardObjective: LabRewardObjectiveView | null;
-  readonly strategyError: 'load-failed' | null;
+  readonly strategyError: "load-failed" | null;
   readonly selectedCandidate: LabStrategyCandidateView | null;
-  readonly candidateSelectionError: 'lab-candidate-not-found' | null;
+  readonly candidateSelectionError: "lab-candidate-not-found" | null;
+  /** Shell callback routing write-intent declarations to the lab-intents port. */
+  readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
 }) {
   if (strategyCandidates === null) {
     return <LabSectionLoadingPanel section="strategy" />;
@@ -361,7 +369,10 @@ export function LabStrategySectionView({
         ) : organizationSearches === null ? (
           <LabSectionLoadingPanel section="organization-searches" />
         ) : organizationSearches.length === 0 ? (
-          <LabSectionEmptyPanel section="organization-searches" what="organization search results" />
+          <LabSectionEmptyPanel
+            section="organization-searches"
+            what="organization search results"
+          />
         ) : (
           <div className="flex flex-col gap-4" data-testid="lab-org-search-list">
             {organizationSearches.map((search) => (
@@ -392,23 +403,7 @@ export function LabStrategySectionView({
         )}
       </section>
 
-      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Declared lab-authority actions (read-only surface)
-        </h4>
-        <div className="flex flex-wrap gap-4">
-          <LabDeclaredAffordance
-            action="Learn strategy candidate…"
-            reason={LAB_NO_STRATEGY_NOTE}
-            testId="lab-strategy-affordance-learn"
-          />
-          <LabDeclaredAffordance
-            action="Run organization search…"
-            reason={LAB_NO_STRATEGY_NOTE}
-            testId="lab-strategy-affordance-search"
-          />
-        </div>
-      </div>
+      <LabStrategyIntentForms onDeclareLabIntent={onDeclareLabIntent} />
     </div>
   );
 }
