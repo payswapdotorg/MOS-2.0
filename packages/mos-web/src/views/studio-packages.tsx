@@ -24,20 +24,20 @@ function ArtifactLabel({ artifact }: { readonly artifact: StudioArtifactLabelVie
   const synthetic = artifact.synthetic || isSyntheticCreationMethod(artifact.creationMethod);
   return (
     <li
-      className="flex flex-wrap items-center gap-2 text-xs text-slate-400"
+      className="flex flex-wrap items-center gap-2 text-xs text-slate-500"
       data-testid={`studio-package-artifact-${artifact.artifactId}`}
     >
       <span className="font-mono">{artifact.artifactId}</span>
-      <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+      <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
         {artifact.stage}
       </span>
-      <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+      <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
         {artifact.type}
       </span>
       <span>{studioCreationMethodLabel(artifact.creationMethod)}</span>
       {synthetic ? (
         <span
-          className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-300"
+          className="rounded bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700"
           data-testid="studio-synthetic-mark"
         >
           Synthetic
@@ -55,25 +55,25 @@ function ArtifactLabel({ artifact }: { readonly artifact: StudioArtifactLabelVie
 function PackageVersionCard({ version }: { readonly version: StudioPackageVersionView }) {
   return (
     <li
-      className="flex flex-col gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4"
       data-testid={`studio-package-version-${version.packageId}-v${version.version}`}
       aria-label={`Package ${version.packageId} version ${version.version}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded bg-sky-500/15 px-2 py-0.5 text-xs font-semibold text-sky-300">
+        <span className="rounded bg-mos-navy/10 px-2 py-0.5 text-xs font-semibold text-mos-navy">
           v{version.version}
         </span>
         <span className="font-mono text-xs text-slate-500">{version.createdAt}</span>
         {version.provenance.containsSyntheticMaterial ? (
           <span
-            className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-300"
+            className="rounded bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700"
             data-testid="studio-synthetic-disclosure"
           >
             Contains synthetic material (§14)
           </span>
         ) : (
           <span
-            className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400"
+            className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500"
             data-testid="studio-no-synthetic-disclosure"
           >
             No synthetic material
@@ -82,8 +82,8 @@ function PackageVersionCard({ version }: { readonly version: StudioPackageVersio
         <span
           className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
             version.evaluation.status === 'evaluated'
-              ? 'bg-emerald-500/15 text-emerald-300'
-              : 'bg-slate-700/60 text-slate-300'
+              ? 'bg-emerald-100 text-emerald-700'
+              : 'bg-slate-200 text-slate-700'
           }`}
           data-testid="studio-package-evaluation"
         >
@@ -91,7 +91,7 @@ function PackageVersionCard({ version }: { readonly version: StudioPackageVersio
         </span>
       </div>
 
-      <dl className="grid gap-x-4 gap-y-1 text-xs text-slate-400 sm:grid-cols-2">
+      <dl className="grid gap-x-4 gap-y-1 text-xs text-slate-500 sm:grid-cols-2">
         <div className="flex gap-1">
           <dt className="text-slate-500">Evaluation:</dt>
           <dd data-testid="studio-package-evaluation-ref">
@@ -172,18 +172,18 @@ function PackageLibraryRow({
       <a
         href={`/studio?package=${encodeURIComponent(summary.packageId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:flex-row sm:items-center sm:justify-between ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy sm:flex-row sm:items-center sm:justify-between ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`studio-package-row-${summary.packageId}`}
       >
         <span className="flex min-w-0 flex-col gap-1">
-          <span className="font-mono text-sm font-semibold text-slate-100">
+          <span className="font-mono text-sm font-semibold text-slate-900">
             {summary.packageId}
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             from session <span className="font-mono">{summary.sessionRef}</span>
           </span>
         </span>
@@ -193,7 +193,7 @@ function PackageLibraryRow({
               ? '1 immutable version'
               : `${summary.versionCount} immutable versions (treatment chain)`}
           </span>
-          <span className="text-slate-400">latest v{summary.latestVersion}</span>
+          <span className="text-slate-500">latest v{summary.latestVersion}</span>
         </span>
       </a>
     </li>
@@ -211,7 +211,7 @@ export function StudioPackageLibraryView({
   if (packages.length === 0) {
     return (
       <p
-        className="rounded-lg border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500"
+        className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500"
         data-testid="studio-packages-empty"
       >
         No artifact packages are visible in this tenant scope. Either the studio composed none yet,
@@ -237,18 +237,18 @@ export function StudioPackageChainPanel({ chain }: { readonly chain: StudioVersi
   return (
     <article
       aria-labelledby="studio-package-chain-title"
-      className="flex flex-col gap-4 rounded-lg border border-slate-800 bg-slate-900/30 p-4 sm:p-6"
+      className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-6"
       data-testid="studio-package-chain"
     >
       <header className="flex flex-col gap-1">
-        <h3 id="studio-package-chain-title" className="text-base font-semibold text-slate-100">
+        <h3 id="studio-package-chain-title" className="text-base font-semibold text-slate-900">
           Package <span className="font-mono">{chain.packageId}</span> — version chain
         </h3>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           from session{' '}
           <a
             href={`/studio?session=${encodeURIComponent(chain.sessionRef)}`}
-            className="text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+            className="text-mos-navy underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
           >
             <span className="font-mono">{chain.sessionRef}</span>
           </a>{' '}

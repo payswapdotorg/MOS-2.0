@@ -26,7 +26,7 @@ export function ResearchModeContent({
   return (
     <div className="flex flex-col gap-4" data-testid="console-mode-research">
       <section aria-labelledby="console-lab-links-title">
-        <h2 id="console-lab-links-title" className="text-base font-semibold text-slate-100">
+        <h2 id="console-lab-links-title" className="text-base font-semibold text-slate-900">
           The Lab workspace
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -38,15 +38,15 @@ export function ResearchModeContent({
             <a
               key={link.href}
               href={link.href}
-              className="rounded-md border border-slate-800 px-2 py-1 text-xs text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+              className="rounded-md border border-slate-200 px-2 py-1 text-xs text-mos-navy underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
             >
               {link.label}
             </a>
           ))}
         </div>
       </section>
-      <section aria-labelledby="console-intelligence-title">
-        <h2 id="console-intelligence-title" className="text-base font-semibold text-slate-100">
+      <section aria-labelledby="console-intelligence-title" className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 id="console-intelligence-title" className="text-base font-semibold text-slate-900">
           Product intelligence (§25)
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -54,7 +54,7 @@ export function ResearchModeContent({
           record carries its basis label and rights status verbatim.
         </p>
         {intelligenceRecords.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-intelligence-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-intelligence-empty">
             No intelligence records in this tenant yet — the evidence path needs a rights grant
             before records can be recorded.
           </p>
@@ -63,25 +63,25 @@ export function ResearchModeContent({
             {intelligenceRecords.map((record) => (
               <li
                 key={`${record.recordId}-${record.version}`}
-                className="rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2 text-xs"
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs"
                 data-testid={`console-intelligence-record-${record.recordId}`}
               >
-                <span className="font-mono text-slate-200">
+                <span className="font-mono text-slate-800">
                   {record.recordId}@v{record.version}
                 </span>{' '}
                 <span className="text-slate-500">· {record.contentKind} · basis </span>
                 <span
                   className={
                     record.basis === 'counterfactual-forecast'
-                      ? 'text-amber-300'
-                      : 'text-emerald-300'
+                      ? 'text-amber-700'
+                      : 'text-emerald-700'
                   }
                   data-testid={`console-intelligence-basis-${record.recordId}`}
                 >
                   {record.basis}
                 </span>
                 {record.basis === 'counterfactual-forecast' ? (
-                  <span className="text-amber-200/70"> (declared forecast, never measured)</span>
+                  <span className="text-amber-700"> (declared forecast, never measured)</span>
                 ) : null}
                 <span className="block text-[10px] text-slate-500">
                   rights: {record.rightsStatus} · recorded {record.recordedAt}
@@ -92,7 +92,7 @@ export function ResearchModeContent({
         )}
       </section>
       <section aria-labelledby="console-experiments-title">
-        <h2 id="console-experiments-title" className="text-base font-semibold text-slate-100">
+        <h2 id="console-experiments-title" className="text-base font-semibold text-slate-900">
           Experiments
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -100,7 +100,7 @@ export function ResearchModeContent({
           verbatim from the experiments authority.
         </p>
         {experiments.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-experiments-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-experiments-empty">
             No experiments yet — a plan's expectations arm against a REAL experiment record.
           </p>
         ) : (
@@ -108,10 +108,10 @@ export function ResearchModeContent({
             {experiments.map((experiment) => (
               <li
                 key={experiment.experimentId}
-                className="rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2 text-xs"
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs"
                 data-testid={`console-experiment-${experiment.experimentId}`}
               >
-                <span className="font-mono text-slate-200">{experiment.experimentId}</span>{' '}
+                <span className="font-mono text-slate-800">{experiment.experimentId}</span>{' '}
                 <span className="text-slate-500">· {experiment.status}</span>
                 <span className="block text-[10px] text-slate-500">{experiment.question}</span>
               </li>

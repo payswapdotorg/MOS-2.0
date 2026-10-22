@@ -335,8 +335,8 @@ function initializeBusinessRoot(port: MessagePort): void {
               alignItems: "center",
               justifyContent: "center",
               padding: "2rem",
-              color: "#fca5a5",
-              background: "#020617",
+              color: "#b91c1c",
+              background: "#f8fafc",
               fontFamily: "system-ui, sans-serif",
               textAlign: "center",
             }}

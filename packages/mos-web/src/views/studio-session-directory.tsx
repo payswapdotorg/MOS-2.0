@@ -25,16 +25,16 @@ function StudioSessionRow({
       <a
         href={`/studio?session=${encodeURIComponent(session.sessionId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:flex-row sm:items-center sm:justify-between ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy sm:flex-row sm:items-center sm:justify-between ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`studio-session-row-${session.sessionId}`}
       >
         <span className="flex min-w-0 flex-col gap-1">
           <span className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-slate-100">
+            <span className="text-sm font-semibold text-slate-900">
               {studioFormatLabel(session.formatId)}
             </span>
             <span
@@ -47,7 +47,7 @@ function StudioSessionRow({
             </span>
             <span className="font-mono text-xs text-slate-500">{session.sessionId}</span>
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             {session.participantCount === 1
               ? '1 participant'
               : `${session.participantCount} participants (§15 multi-account)`}{' '}
@@ -67,7 +67,7 @@ function StudioSessionRow({
             </span>
           ) : (
             <span
-              className="text-emerald-300/80"
+              className="text-emerald-700"
               data-testid={`studio-session-package-${session.sessionId}`}
             >
               Package {session.artifactPackageRef.packageId} v{session.artifactPackageRef.version}
@@ -90,7 +90,7 @@ export function StudioSessionDirectoryView({
   if (sessions.length === 0) {
     return (
       <p
-        className="rounded-lg border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500"
+        className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500"
         data-testid="studio-sessions-empty"
       >
         No studio sessions are visible in this tenant scope. Either none exist yet, or the scope

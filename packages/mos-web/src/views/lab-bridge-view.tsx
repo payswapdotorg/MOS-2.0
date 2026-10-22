@@ -28,16 +28,16 @@ import {
 function LabBridgeStepRow({ step }: { readonly step: LabBridgeStepView }) {
   return (
     <li
-      className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+      className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
       data-testid={`lab-bridge-step-${step.position}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-mono text-xs font-semibold text-slate-200">{step.position}.</span>
-        <span className="text-sm text-slate-100">{step.label}</span>
+        <span className="font-mono text-xs font-semibold text-slate-800">{step.position}.</span>
+        <span className="text-sm text-slate-900">{step.label}</span>
         {step.surfaceRoute === null ? null : (
           <a
             href={step.surfaceRoute}
-            className="text-[11px] text-sky-300 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+            className="text-[11px] text-mos-navy underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
             data-testid={`lab-bridge-step-route-${step.position}`}
           >
             {step.surfaceRoute}
@@ -45,10 +45,10 @@ function LabBridgeStepRow({ step }: { readonly step: LabBridgeStepView }) {
         )}
       </span>
       <span className="flex flex-wrap gap-x-2 text-[11px] text-slate-500">
-        <span className="font-semibold text-slate-400">gated by</span>
-        <span className="text-slate-400">{step.gatingAuthority}</span>
+        <span className="font-semibold text-slate-500">gated by</span>
+        <span className="text-slate-500">{step.gatingAuthority}</span>
       </span>
-      <span className="text-[11px] text-slate-400">{step.requires}</span>
+      <span className="text-[11px] text-slate-500">{step.requires}</span>
     </li>
   );
 }
@@ -65,16 +65,16 @@ function LabBridgeCandidateRow({
       <a
         href={`/lab?section=bridge&handoff=${encodeURIComponent(candidate.handoffId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`lab-bridge-candidate-${candidate.handoffId}`}
       >
         <span className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm text-slate-100">{candidate.label}</span>
-          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+          <span className="font-mono text-sm text-slate-900">{candidate.label}</span>
+          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
             {candidate.kind}
           </span>
           <LabCounterfactualBadge />
@@ -91,7 +91,7 @@ function LabBridgeCandidateRow({
 function LabHandoffPanel({ handoff }: { readonly handoff: LabCandidateHandoffView }) {
   return (
     <div className="flex flex-col gap-4" data-testid="lab-handoff-detail">
-      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-sky-800/60 bg-sky-950/20 p-4">
+      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-mos-navy/30 bg-mos-navy/5 p-4">
         <LabFact label="candidate">
           {handoff.candidate.label} ({handoff.candidate.kind})
         </LabFact>
@@ -114,7 +114,7 @@ function LabHandoffPanel({ handoff }: { readonly handoff: LabCandidateHandoffVie
 
       {handoff.binding === null ? (
         <p
-          className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
           data-testid="lab-handoff-no-binding"
         >
           {LAB_BRIDGE_NO_BINDING_LABEL} — no real experiment has been bound to this candidate.
@@ -122,7 +122,7 @@ function LabHandoffPanel({ handoff }: { readonly handoff: LabCandidateHandoffVie
         </p>
       ) : (
         <div
-          className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-emerald-900/50 bg-emerald-950/15 p-4"
+          className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-emerald-200 bg-emerald-50 p-4"
           data-testid="lab-handoff-binding"
         >
           <LabFact label="mission">{handoff.binding.missionRef}</LabFact>
@@ -157,7 +157,7 @@ export function LabBridgeSectionView({
   return (
     <div className="flex flex-col gap-6" data-testid="lab-bridge-section">
       <section aria-labelledby="lab-bridge-path-title">
-        <h3 id="lab-bridge-path-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-bridge-path-title" className="text-sm font-semibold text-slate-900">
           The §24 authorized path
         </h3>
         <p className="mb-2 mt-1 text-xs text-slate-500">
@@ -173,7 +173,7 @@ export function LabBridgeSectionView({
       </section>
 
       <section aria-labelledby="lab-bridge-candidates-title">
-        <h3 id="lab-bridge-candidates-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-bridge-candidates-title" className="text-sm font-semibold text-slate-900">
           Lab candidates ({candidates.length})
         </h3>
         <p className="mb-2 mt-1 text-xs text-slate-500">
@@ -205,7 +205,7 @@ export function LabBridgeSectionView({
 
       {selectedHandoff !== null ? <LabHandoffPanel handoff={selectedHandoff} /> : null}
 
-      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-200 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Declared authority actions (read-only surface)
         </h4>

@@ -36,28 +36,28 @@ function LabBenchmarkRow({
       <a
         href={`/lab?benchmark=${encodeURIComponent(benchmark.benchmarkId)}`}
         aria-current={selected ? "page" : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:flex-row sm:items-center sm:justify-between ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy sm:flex-row sm:items-center sm:justify-between ${
           selected
-            ? "border-sky-600 bg-sky-500/10"
-            : "border-slate-800 bg-slate-900/40 hover:border-slate-700"
+            ? "border-mos-navy bg-mos-navy/5"
+            : "border-slate-200 bg-white hover:border-slate-300"
         }`}
         data-testid={`lab-benchmark-row-${benchmark.benchmarkId}`}
       >
         <span className="flex min-w-0 flex-col gap-1">
           <span className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-slate-100">{benchmark.benchmarkId}</span>
+            <span className="text-sm font-semibold text-slate-900">{benchmark.benchmarkId}</span>
             <span
-              className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-300"
+              className="rounded bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700"
               data-testid={`lab-benchmark-counterfactual-${benchmark.benchmarkId}`}
             >
               Counterfactual
             </span>
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             {benchmark.scenarioNiche} · {benchmark.scenarioPlatform} · scenario{" "}
             {benchmark.scenarioRef}
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             policy {benchmark.policyId} v{benchmark.policyVersion} · reward spec v
             {benchmark.rewardSpecVersion} · {benchmark.declaredCandidateCount} declared candidate
             {benchmark.declaredCandidateCount === 1 ? "" : "s"} + no-op baseline
@@ -75,7 +75,7 @@ function LabBenchmarkRow({
             {benchmark.citedCalibrationContextVersion === null ? (
               LAB_CALIBRATION_PENDING_LABEL
             ) : (
-              <span className="text-emerald-300/80">
+              <span className="text-emerald-700">
                 cites calibration context v{benchmark.citedCalibrationContextVersion} (provenance
                 only)
               </span>
@@ -102,7 +102,7 @@ export function LabBenchmarkDirectoryView({
     <div className="flex flex-col gap-4" data-testid="lab-benchmark-directory">
       {benchmarks.length === 0 ? (
         <p
-          className="rounded-lg border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500"
+          className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500"
           data-testid="lab-benchmarks-empty"
         >
           No benchmark record chains are visible in this tenant scope. Either none exist yet, or the
@@ -120,7 +120,7 @@ export function LabBenchmarkDirectoryView({
         </ul>
       )}
 
-      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-200 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Declared lab-authority actions (write-intent declarations)
         </h4>

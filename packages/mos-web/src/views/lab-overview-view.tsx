@@ -40,15 +40,15 @@ function LabStageStandingRow({
   readonly started: boolean;
 }) {
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2">
+    <li className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
       <span className="flex min-w-0 items-center gap-2">
         <span
-          className={`h-2 w-2 shrink-0 rounded-full ${started ? 'bg-emerald-400' : 'bg-slate-600'}`}
+          className={`h-2 w-2 shrink-0 rounded-full ${started ? 'bg-emerald-500' : 'bg-slate-300'}`}
           aria-hidden="true"
         />
-        <span className="truncate text-sm text-slate-200">{LAB_LOOP_STAGE_LABELS[stageId]}</span>
+        <span className="truncate text-sm text-slate-800">{LAB_LOOP_STAGE_LABELS[stageId]}</span>
       </span>
-      <span className="shrink-0 text-xs text-slate-400">
+      <span className="shrink-0 text-xs text-slate-500">
         {recordCount} record{recordCount === 1 ? '' : 's'}
         {started ? '' : ' · not started'}
       </span>
@@ -59,14 +59,14 @@ function LabStageStandingRow({
 function LabRecentRunRow({ run }: { readonly run: LabRecentRunView }) {
   return (
     <li
-      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2"
       data-testid={`lab-recent-run-${run.runId}`}
     >
       <span className="flex min-w-0 flex-wrap items-center gap-2">
-        <span className="font-mono text-xs text-slate-300">{run.runId}</span>
+        <span className="font-mono text-xs text-slate-700">{run.runId}</span>
         <LabCounterfactualBadge testId={`lab-recent-run-counterfactual-${run.runId}`} />
       </span>
-      <span className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+      <span className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
         <span>{RUN_SURFACE_LABELS[run.surface]}</span>
         <span className="font-mono text-slate-500">{run.recordedAt}</span>
       </span>
@@ -78,7 +78,7 @@ function LabActiveScenarioPanel({ scenario }: { readonly scenario: LabOverviewVi
   if (scenario === null) {
     return (
       <p
-        className="rounded-lg border border-dashed border-slate-800 p-4 text-xs text-slate-500"
+        className="rounded-lg border border-dashed border-slate-200 p-4 text-xs text-slate-500"
         data-testid="lab-overview-no-active-scenario"
       >
         No active scenario is pinned in this tenant scope — the overview renders exactly that,
@@ -88,16 +88,16 @@ function LabActiveScenarioPanel({ scenario }: { readonly scenario: LabOverviewVi
   }
   return (
     <div
-      className="flex flex-col gap-2 rounded-lg border border-slate-800 bg-slate-900/40 p-4"
+      className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4"
       data-testid="lab-overview-active-scenario"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-semibold text-slate-100">{scenario.scenarioRef}</span>
-        <span className="text-xs text-slate-400">
+        <span className="text-sm font-semibold text-slate-900">{scenario.scenarioRef}</span>
+        <span className="text-xs text-slate-500">
           {scenario.niche} · {scenario.platform}
         </span>
       </div>
-      <p className="text-xs text-slate-300">{scenario.objective}</p>
+      <p className="text-xs text-slate-700">{scenario.objective}</p>
       <div className="flex flex-wrap gap-x-5 gap-y-1" data-testid="lab-overview-scenario-pins">
         <LabFact label="Time Machine information lag">
           {formatLabLagMs(scenario.informationLag)} (at T the agent sees only information by T−L)
@@ -131,7 +131,7 @@ export function LabOverviewSectionView({
   return (
     <div className="flex flex-col gap-6" data-testid="lab-overview-section">
       <section aria-labelledby="lab-overview-stages-title">
-        <h3 id="lab-overview-stages-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-overview-stages-title" className="text-sm font-semibold text-slate-900">
           Research-loop standings
         </h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -153,7 +153,7 @@ export function LabOverviewSectionView({
       </section>
 
       <section aria-labelledby="lab-overview-evidence-title">
-        <h3 id="lab-overview-evidence-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-overview-evidence-title" className="text-sm font-semibold text-slate-900">
           Evidence split (§20 — never summed)
         </h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -162,17 +162,17 @@ export function LabOverviewSectionView({
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div
-            className="flex flex-col gap-1 rounded-lg border border-emerald-900/50 bg-emerald-950/20 p-4"
+            className="flex flex-col gap-1 rounded-lg border border-emerald-200 bg-emerald-50 p-4"
             data-testid="lab-overview-measured-count"
             title={LAB_MEASURED_LABEL}
           >
-            <span className="text-xs font-semibold uppercase tracking-wide text-emerald-300/80">
+            <span className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
               Measured — {LAB_MEASURED_LABEL}
             </span>
-            <span className="text-2xl font-bold text-emerald-200">
+            <span className="text-2xl font-bold text-emerald-800">
               {overview.evidence.historicalObservationCount}
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               boundary-chain observations
               {overview.evidence.regimes.length > 0
                 ? ` · regimes: ${overview.evidence.regimes.join(', ')}`
@@ -180,17 +180,17 @@ export function LabOverviewSectionView({
             </span>
           </div>
           <div
-            className="flex flex-col gap-1 rounded-lg border border-fuchsia-900/50 bg-fuchsia-950/20 p-4"
+            className="flex flex-col gap-1 rounded-lg border border-fuchsia-300 bg-fuchsia-950/20 p-4"
             data-testid="lab-overview-counterfactual-count"
             title={LAB_COUNTERFACTUAL_LABEL}
           >
-            <span className="text-xs font-semibold uppercase tracking-wide text-fuchsia-300/80">
+            <span className="text-xs font-semibold uppercase tracking-wide text-fuchsia-700/80">
               Counterfactual — {LAB_COUNTERFACTUAL_LABEL}
             </span>
-            <span className="text-2xl font-bold text-fuchsia-200">
+            <span className="text-2xl font-bold text-fuchsia-700">
               {overview.evidence.counterfactualRecordCount}
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               simulation-derived records (runs, benchmarks, searches, learning)
             </span>
           </div>
@@ -198,7 +198,7 @@ export function LabOverviewSectionView({
       </section>
 
       <section aria-labelledby="lab-overview-scenario-title">
-        <h3 id="lab-overview-scenario-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-overview-scenario-title" className="text-sm font-semibold text-slate-900">
           Active scenario
         </h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -209,7 +209,7 @@ export function LabOverviewSectionView({
       </section>
 
       <section aria-labelledby="lab-overview-runs-title">
-        <h3 id="lab-overview-runs-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-overview-runs-title" className="text-sm font-semibold text-slate-900">
           Recent runs
         </h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -227,13 +227,13 @@ export function LabOverviewSectionView({
       </section>
 
       <section aria-labelledby="lab-overview-corpus-window-title">
-        <h3 id="lab-overview-corpus-window-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-overview-corpus-window-title" className="text-sm font-semibold text-slate-900">
           Corpus acquisition window
         </h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
           The earliest/latest acquisition boundary of the corpus evidence in this scope.
         </p>
-        <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+        <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-slate-200 bg-white p-4">
           <LabFact label="earliest acquired">
             {overview.corpusTimeBoundaries.earliestAcquiredAt ?? '— no corpus evidence yet'}
           </LabFact>

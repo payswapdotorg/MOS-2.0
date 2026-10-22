@@ -27,11 +27,11 @@ export function LabBranchRecordsPanel({ records }: { readonly records: readonly 
           {records.map((record) => (
             <li
               key={record.recordId}
-              className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+              className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
               data-testid={`lab-branch-record-${record.recordId}`}
             >
               <span className="flex flex-wrap items-baseline gap-x-3">
-                <span className="font-mono text-xs text-slate-200">{record.recordId}</span>
+                <span className="font-mono text-xs text-slate-800">{record.recordId}</span>
                 <LabCounterfactualBadge />
               </span>
               <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
@@ -46,10 +46,10 @@ export function LabBranchRecordsPanel({ records }: { readonly records: readonly 
                 {record.prediction.metrics.map((metric) => (
                   <li
                     key={metric.metric}
-                    className="flex flex-wrap justify-between gap-2 text-[11px] text-slate-400"
+                    className="flex flex-wrap justify-between gap-2 text-[11px] text-slate-500"
                   >
                     <span>{metric.metric}</span>
-                    <span className="font-mono text-slate-300">
+                    <span className="font-mono text-slate-700">
                       {formatLabExpectedWithInterval(metric.expectedValue, metric.interval)}{' '}
                       {metric.unit}
                     </span>

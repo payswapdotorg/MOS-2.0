@@ -31,7 +31,7 @@ import {
 function CounterfactualBadge({ testId }: { readonly testId?: string }) {
   return (
     <span
-      className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-300"
+      className="rounded bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700"
       data-testid={testId ?? 'lab-counterfactual-badge'}
       title={LAB_COUNTERFACTUAL_LABEL}
     >
@@ -51,7 +51,7 @@ function CandidatePanel({
   return (
     <li
       className={`flex flex-col gap-3 rounded-lg border p-4 ${
-        isBaseline ? 'border-slate-600 bg-slate-800/30' : 'border-slate-800 bg-slate-900/40'
+        isBaseline ? 'border-slate-400 bg-slate-100' : 'border-slate-200 bg-white'
       }`}
       data-testid={`lab-candidate-${candidate.key}`}
       aria-label={`Benchmark candidate ${candidate.key}`}
@@ -59,25 +59,25 @@ function CandidatePanel({
       <div className="flex flex-wrap items-center gap-2">
         {isBaseline ? (
           <span
-            className="rounded bg-slate-700/60 px-2 py-0.5 text-xs font-semibold text-slate-200"
+            className="rounded bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-800"
             data-testid="lab-noop-baseline-mark"
           >
             No-op baseline (always present)
           </span>
         ) : (
-          <span className="rounded bg-sky-500/15 px-2 py-0.5 text-xs font-semibold text-sky-300">
+          <span className="rounded bg-mos-navy/10 px-2 py-0.5 text-xs font-semibold text-mos-navy">
             rank {candidate.rank}
           </span>
         )}
-        <span className="text-sm font-semibold text-slate-100">
+        <span className="text-sm font-semibold text-slate-900">
           {candidate.label === null ? candidate.key : `${candidate.label} (${candidate.key})`}
         </span>
-        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
           {LAB_CANDIDATE_ORIGIN_LABELS[candidate.origin]}
         </span>
         <CounterfactualBadge testId={`lab-candidate-counterfactual-${candidate.key}`} />
         <span
-          className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400"
+          className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500"
           data-testid={`lab-candidate-calibration-${candidate.key}`}
         >
           {LAB_CALIBRATION_PENDING_LABEL}
@@ -85,7 +85,7 @@ function CandidatePanel({
       </div>
 
       <p
-        className="font-mono text-sm text-slate-200"
+        className="font-mono text-sm text-slate-800"
         data-testid={`lab-candidate-expected-${candidate.key}`}
       >
         {formatLabExpectedWithInterval(candidate.expectedReward, candidate.interval)}
@@ -95,7 +95,7 @@ function CandidatePanel({
         </span>
       </p>
 
-      <dl className="grid gap-x-4 gap-y-1 text-xs text-slate-400 sm:grid-cols-2">
+      <dl className="grid gap-x-4 gap-y-1 text-xs text-slate-500 sm:grid-cols-2">
         <div className="flex flex-wrap gap-1">
           <dt className="text-slate-500">Interval breakdown:</dt>
           <dd data-testid={`lab-candidate-breakdown-${candidate.key}`}>
@@ -196,20 +196,20 @@ export function LabBenchmarkDigestPanel({ digest }: { readonly digest: LabBenchm
   return (
     <section
       aria-labelledby="lab-benchmark-digest-title"
-      className="flex flex-col gap-4 rounded-lg border border-slate-800 bg-slate-900/40 p-4"
+      className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4"
       data-testid="lab-benchmark-digest"
     >
       <header className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 id="lab-benchmark-digest-title" className="text-base font-semibold text-slate-100">
+          <h3 id="lab-benchmark-digest-title" className="text-base font-semibold text-slate-900">
             Benchmark digest — {digest.summary.benchmarkId} v{digest.version}
           </h3>
           <CounterfactualBadge testId="lab-digest-counterfactual" />
           <span
             className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
               digest.integrity.status === 'intact'
-                ? 'bg-emerald-500/15 text-emerald-300'
-                : 'bg-red-500/15 text-red-300'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-red-100 text-red-700'
             }`}
             data-testid="lab-digest-integrity"
           >
@@ -221,13 +221,13 @@ export function LabBenchmarkDigestPanel({ digest }: { readonly digest: LabBenchm
           {digest.summary.scenarioNiche} / {digest.summary.scenarioPlatform} · tenant{' '}
           <span data-testid="lab-digest-tenant">{digest.summary.tenantId}</span>
         </p>
-        <p className="text-xs text-amber-200/80" data-testid="lab-digest-boundary-note">
+        <p className="text-xs text-amber-700" data-testid="lab-digest-boundary-note">
           {digest.labOnly}
         </p>
         <p className="text-xs text-slate-500">{digest.disclosure}</p>
       </header>
 
-      <div className="grid gap-x-6 gap-y-2 text-xs text-slate-400 sm:grid-cols-2">
+      <div className="grid gap-x-6 gap-y-2 text-xs text-slate-500 sm:grid-cols-2">
         <div>
           <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Declared robustness policy (versioned)
@@ -298,10 +298,10 @@ export function LabBenchmarkDigestPanel({ digest }: { readonly digest: LabBenchm
       </div>
 
       <p
-        className="rounded border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400"
+        className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500"
         data-testid="lab-digest-fairness"
       >
-        <span className="font-semibold text-slate-300">Fairness pin:</span> {digest.fairnessStatement}
+        <span className="font-semibold text-slate-700">Fairness pin:</span> {digest.fairnessStatement}
       </p>
 
       <div>

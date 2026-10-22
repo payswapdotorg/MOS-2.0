@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#020617" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#f8fafc" />
+    <meta name="color-scheme" content="light" />
     <meta
       name="description"
       content="MOS — a marketing-engineering operating system: declared mission, complete loop."
@@ -12,14 +12,14 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>MOS</title>
     <script>
-      // Pre-paint theme resolution (WEB-001) — the audited pattern from
-      // packages/web/index.html with MOS tokens: resolve the persisted
-      // `mos-theme` seed before the JS bundle executes so a dark-theme user
-      // never sees a white first frame. Mirrors src/platform/theme-seed.ts;
-      // that module is the canonical, tested version.
+      // Pre-paint theme resolution (WEB-001; light default since the wave-24
+      // target-design conversion) — resolve the persisted `mos-theme` seed
+      // before the JS bundle executes so a dark-theme user never sees a light
+      // first frame. Mirrors src/platform/theme-seed.ts; that module is the
+      // canonical, tested version.
       (() => {
         const STORAGE_KEY = 'mos-theme';
-        const DEFAULT_THEME = 'dark';
+        const DEFAULT_THEME = 'light';
         const THEME_COLORS = { dark: '#020617', light: '#f8fafc' };
         const syncThemeSurface = (theme) => {
           const root = document.documentElement;
@@ -41,8 +41,7 @@
           syncThemeSurface(resolved);
           if (resolved === 'dark') document.documentElement.classList.add('dark');
         } catch {
-          syncThemeSurface('dark');
-          document.documentElement.classList.add('dark');
+          syncThemeSurface('light');
         }
       })();
     </script>
@@ -56,8 +55,8 @@
       }
 
       body {
-        background: #020617;
-        color: #e2e8f0;
+        background: #f8fafc;
+        color: #334155;
         font-family:
           Inter,
           -apple-system,
@@ -66,9 +65,9 @@
           sans-serif;
       }
 
-      html[data-mos-theme='light'] body {
-        background: #f8fafc;
-        color: #334155;
+      html[data-mos-theme='dark'] body {
+        background: #020617;
+        color: #e2e8f0;
       }
 
       /* Boot loading shell (pre-JS): stays visible from first paint until
@@ -80,14 +79,14 @@
         justify-content: center;
         width: 100%;
         min-height: 100vh;
-        background: #020617;
-        color: #94a3b8;
+        background: #f8fafc;
+        color: #64748b;
         font-size: 14px;
       }
 
-      html[data-mos-theme='light'] .mos-boot-loading {
-        background: #f8fafc;
-        color: #64748b;
+      html[data-mos-theme='dark'] .mos-boot-loading {
+        background: #020617;
+        color: #94a3b8;
       }
     </style>
   </head>

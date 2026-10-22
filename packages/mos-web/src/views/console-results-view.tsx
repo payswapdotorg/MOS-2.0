@@ -16,8 +16,8 @@ export function ResultsModeContent({
   const { runs, artifacts } = page.data;
   return (
     <div className="flex flex-col gap-4" data-testid="console-mode-results">
-      <section aria-labelledby="console-runs-title">
-        <h2 id="console-runs-title" className="text-base font-semibold text-slate-100">
+      <section aria-labelledby="console-runs-title" className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 id="console-runs-title" className="text-base font-semibold text-slate-900">
           Automation runs (PROD-004)
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -26,7 +26,7 @@ export function ResultsModeContent({
           run for its full audit trail, ledger and evidence.
         </p>
         {runs.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-runs-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-runs-empty">
             No runs yet — a compiled strategy instantiates a run that waits for authorization in
             the Control mode.
           </p>
@@ -35,11 +35,11 @@ export function ResultsModeContent({
             {runs.map((run) => (
               <li key={run.runId}>
                 <details
-                  className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2"
                   data-testid={`console-run-${run.runId}`}
                 >
-                  <summary className="cursor-pointer select-none text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">
-                    <span className="font-mono text-slate-200">{run.runId}</span>
+                  <summary className="cursor-pointer select-none text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy">
+                    <span className="font-mono text-slate-800">{run.runId}</span>
                     <span className="text-slate-500">
                       {' '}
                       · lifecycle <span className="font-mono">{run.lifecycle}</span> · budget{' '}
@@ -47,13 +47,13 @@ export function ResultsModeContent({
                       {run.stepCount}/{run.maxSteps} · {run.trail.length} trail events
                     </span>
                   </summary>
-                  <div className="mt-2 border-t border-slate-800 pt-2">
+                  <div className="mt-2 border-t border-slate-200 pt-2">
                     <RunDetailView run={run} />
                   </div>
                 </details>
                 {run.waitingOn !== null ? (
                   <p
-                    className="mt-1 text-[10px] text-amber-300/80"
+                    className="mt-1 text-[10px] text-amber-700"
                     data-testid={`console-run-waiting-${run.runId}`}
                   >
                     Waiting on {run.waitingOn}
@@ -68,14 +68,14 @@ export function ResultsModeContent({
         )}
       </section>
       <section aria-labelledby="console-artifacts-title">
-        <h2 id="console-artifacts-title" className="text-base font-semibold text-slate-100">
+        <h2 id="console-artifacts-title" className="text-base font-semibold text-slate-900">
           Durable artifacts
         </h2>
         <p className="mt-1 text-xs text-slate-500">
           The plans and strategies this mission holds as inspectable, versioned records.
         </p>
         {artifacts.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-artifacts-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-artifacts-empty">
             No durable artifacts yet — plans and strategies appear here as inspectable records.
           </p>
         ) : (
@@ -83,10 +83,10 @@ export function ResultsModeContent({
             {artifacts.map((artifact) => (
               <li
                 key={`${artifact.kind}-${artifact.id}-${artifact.version}`}
-                className="text-slate-400"
+                className="text-slate-500"
                 data-testid={`console-artifact-${artifact.id}`}
               >
-                <span className="font-mono text-slate-200">
+                <span className="font-mono text-slate-800">
                   {artifact.id}@v{artifact.version}
                 </span>{' '}
                 · {artifact.kind}

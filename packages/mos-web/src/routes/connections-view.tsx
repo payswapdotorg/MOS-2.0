@@ -41,13 +41,13 @@ function CapabilityMatrixView({
   return (
     <ul className="mt-1 flex flex-col gap-0.5" data-testid={testId}>
       {entries.map((entry) => (
-        <li key={entry.capability} className="text-xs text-slate-400">
-          <span className="text-slate-300">{entry.capability}</span>:{' '}
+        <li key={entry.capability} className="text-xs text-slate-500">
+          <span className="text-slate-700">{entry.capability}</span>:{' '}
           <span
             className={
               entry.status === 'unknown'
-                ? 'rounded bg-amber-950/40 px-1 py-0.5 text-amber-200/90'
-                : 'text-slate-400'
+                ? 'rounded bg-amber-50 px-1 py-0.5 text-amber-800'
+                : 'text-slate-500'
             }
           >
             {renderCapabilityCell(entry)}
@@ -60,9 +60,9 @@ function CapabilityMatrixView({
 
 function ImplementationRefView({ ref }: { readonly ref: ResolvableRef<unknown> }) {
   return ref.resolvable ? (
-    <span className="text-slate-400">→ {ref.target !== null && typeof ref.target === 'object' && 'implementationLabel' in (ref.target as Record<string, unknown>) ? String((ref.target as Record<string, unknown>).implementationLabel) : ref.label}</span>
+    <span className="text-slate-500">→ {ref.target !== null && typeof ref.target === 'object' && 'implementationLabel' in (ref.target as Record<string, unknown>) ? String((ref.target as Record<string, unknown>).implementationLabel) : ref.label}</span>
   ) : (
-    <span className="rounded bg-rose-950/40 px-1 py-0.5 text-rose-200/90" role="note">
+    <span className="rounded bg-rose-100 px-1 py-0.5 text-rose-200/90" role="note">
       ref-failure: {ref.reason}
     </span>
   );
@@ -77,7 +77,7 @@ function ProviderCard({
 }) {
   return (
     <li
-      className={`rounded-lg border p-4 ${selected ? 'border-emerald-800/70 bg-emerald-950/20' : 'border-slate-800 bg-slate-900/40'}`}
+      className={`rounded-lg border p-4 ${selected ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'}`}
       data-testid={`connections-provider-${provider.providerId}`}
     >
       <DisclosureItem
@@ -85,7 +85,7 @@ function ProviderCard({
         defaultOpen={selected}
         summary={
           <span>
-        <h3 className="inline text-sm font-semibold text-slate-100">
+        <h3 className="inline text-sm font-semibold text-slate-900">
           <a
             href={`/connections?provider=${provider.providerId}`}
             className="underline decoration-slate-600 underline-offset-2 hover:decoration-slate-300"
@@ -104,7 +104,7 @@ function ProviderCard({
       >
       {provider.implementations.map((impl) => (
         <div key={impl.implementationId} className="mt-3">
-          <p className="text-xs text-slate-300" data-testid={`connections-impl-${impl.implementationId}`}>
+          <p className="text-xs text-slate-700" data-testid={`connections-impl-${impl.implementationId}`}>
             {impl.implementationLabel} ({impl.implementationId}) — status={impl.status}
             {impl.transports.length > 0
               ? ` · transports[${impl.transports
@@ -119,7 +119,7 @@ function ProviderCard({
         </div>
       ))}
       {provider.clientInstances.map((instance) => (
-        <p key={instance.instanceId} className="mt-2 text-xs text-slate-400">
+        <p key={instance.instanceId} className="mt-2 text-xs text-slate-500">
           {instance.merchantLabel} ({instance.instanceId}){' '}
           <ImplementationRefView ref={instance.implementationRef} /> · tenant={instance.scopedToTenant}
         </p>
@@ -138,7 +138,7 @@ function BindingRow({
 }) {
   const collapsed = (
     <span>
-      <h3 className="inline text-sm font-semibold text-slate-100">
+      <h3 className="inline text-sm font-semibold text-slate-900">
         <a
           href={`/connections?binding=${binding.bindingId}`}
           className="underline decoration-slate-600 underline-offset-2 hover:decoration-slate-300"
@@ -148,14 +148,14 @@ function BindingRow({
           binding {binding.bindingId}
         </a>
       </h3>{' '}
-      <span className="text-xs text-slate-400" data-testid={`connections-binding-lifecycle-${binding.bindingId}`}>
+      <span className="text-xs text-slate-500" data-testid={`connections-binding-lifecycle-${binding.bindingId}`}>
         lifecycle: {binding.lifecycleStage} · tenant: {binding.tenantContext}
       </span>
     </span>
   );
   return (
     <li
-      className={`rounded-lg border p-4 ${selected ? 'border-emerald-800/70 bg-emerald-950/20' : 'border-slate-800 bg-slate-900/40'}`}
+      className={`rounded-lg border p-4 ${selected ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'}`}
       data-testid={`connections-binding-${binding.bindingId}`}
     >
       <DisclosureItem
@@ -172,14 +172,14 @@ function BindingLifecycleDetailView({ binding }: { readonly binding: Distributio
   const lines = renderHealth(binding);
   return (
     <aside
-      className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
+      className="rounded-lg border border-slate-300 bg-white p-4"
       aria-label={`binding ${binding.bindingId} lifecycle detail`}
       data-testid={`connections-binding-detail-${binding.bindingId}`}
     >
-      <h3 className="text-sm font-semibold text-slate-100">
+      <h3 className="text-sm font-semibold text-slate-900">
         Binding {binding.bindingId} — lifecycle detail
       </h3>
-      <dl className="mt-2 grid grid-cols-1 gap-1 text-xs text-slate-400 sm:grid-cols-[max-content_1fr]">
+      <dl className="mt-2 grid grid-cols-1 gap-1 text-xs text-slate-500 sm:grid-cols-[max-content_1fr]">
         <dt className="text-slate-500">lifecycle</dt>
         <dd data-testid="connections-detail-lifecycle">lifecycle: {binding.lifecycleStage}</dd>
         <dt className="text-slate-500">productionRequest</dt>
@@ -250,7 +250,7 @@ export function ConnectionsView({ data }: { readonly data: ConnectionsPageData }
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-xl font-bold">Connections</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-slate-500">
           Provider integrations and distribution bindings — two DISTINCT authorities observed
           read-side: the provider directory (provider-integrations) and the distribution binding
           lifecycle (social-distribution). The surface presents what the authorities report,
@@ -270,7 +270,7 @@ export function ConnectionsView({ data }: { readonly data: ConnectionsPageData }
       />
 
       <section aria-labelledby="connections-directory-title">
-        <h2 id="connections-directory-title" className="text-base font-semibold text-slate-100">
+        <h2 id="connections-directory-title" className="text-base font-semibold text-slate-900">
           Provider directory
         </h2>
         <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -293,7 +293,7 @@ export function ConnectionsView({ data }: { readonly data: ConnectionsPageData }
       </section>
 
       <section aria-labelledby="connections-bindings-title">
-        <h2 id="connections-bindings-title" className="text-base font-semibold text-slate-100">
+        <h2 id="connections-bindings-title" className="text-base font-semibold text-slate-900">
           Distribution bindings
         </h2>
         <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -321,7 +321,7 @@ export function ConnectionsView({ data }: { readonly data: ConnectionsPageData }
       {data.selectedBindingId !== null && selectedBinding === null ? (
         <aside
           role="alert"
-          className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
           data-testid="connections-binding-selection-error"
         >
           The selected binding does not exist in this tenant scope (or does not exist at all — the

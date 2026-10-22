@@ -28,27 +28,27 @@ export function PlanChainDetailView({
 }) {
   return (
     <div className="flex flex-col gap-3" data-testid={`console-plan-detail-${chain.planId}`}>
-      <p className="text-xs text-slate-300" data-testid={`console-plan-alignment-${chain.planId}`}>
+      <p className="text-xs text-slate-700" data-testid={`console-plan-alignment-${chain.planId}`}>
         {chain.objectiveAlignment}
       </p>
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold text-slate-400">Platform choices (rationale + citations)</p>
+        <p className="text-xs font-semibold text-slate-500">Platform choices (rationale + citations)</p>
         {chain.platforms.map((platform) => (
           <p key={platform.platform} className="text-xs" data-testid={`console-plan-platform-${chain.planId}-${platform.platform}`}>
-            <span className="font-mono text-slate-200">{platform.platform}</span>
+            <span className="font-mono text-slate-800">{platform.platform}</span>
             <span className="text-slate-500"> — {platform.rationale}</span>
           </p>
         ))}
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold text-slate-400">Metric expectations (basis verbatim)</p>
+        <p className="text-xs font-semibold text-slate-500">Metric expectations (basis verbatim)</p>
         {chain.metricExpectations.map((expectation) => (
           <p
             key={expectation.metric}
             className="text-xs"
             data-testid={`console-plan-expectation-${chain.planId}-${expectation.metric}`}
           >
-            <span className="font-mono text-slate-200">{expectation.metric}</span>
+            <span className="font-mono text-slate-800">{expectation.metric}</span>
             <span className="text-slate-500">
               {' '}
               · {expectation.expectation} {expectation.unit} · basis{' '}
@@ -56,14 +56,14 @@ export function PlanChainDetailView({
             <span
               className={
                 expectation.basis === 'counterfactual-forecast'
-                  ? 'text-amber-300'
-                  : 'text-emerald-300'
+                  ? 'text-amber-700'
+                  : 'text-emerald-700'
               }
             >
               {expectation.basis}
             </span>
             {expectation.basis === 'counterfactual-forecast' ? (
-              <span className="text-amber-200/70">
+              <span className="text-amber-700">
                 {' '}
                 (a declared forecast — counterfactual, never measured)
               </span>
@@ -72,14 +72,14 @@ export function PlanChainDetailView({
         ))}
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold text-slate-400">Experiment expectations</p>
+        <p className="text-xs font-semibold text-slate-500">Experiment expectations</p>
         {chain.experimentExpectations.map((expectation, index) => (
           <p
             key={`${expectation.question}-${index}`}
             className="text-xs"
             data-testid={`console-plan-experiment-expectation-${chain.planId}-${index}`}
           >
-            <span className="text-slate-300">{expectation.question}</span>
+            <span className="text-slate-700">{expectation.question}</span>
             <span className="text-slate-500"> — success: {expectation.successCriterion}</span>
           </p>
         ))}
@@ -104,17 +104,17 @@ export function StrategyDetailView({
   const { organization } = strategy;
   return (
     <div className="flex flex-col gap-3" data-testid={`console-strategy-detail-${strategy.strategyId}`}>
-      <p className="text-xs text-slate-300" data-testid={`console-strategy-source-${strategy.strategyId}`}>
+      <p className="text-xs text-slate-700" data-testid={`console-strategy-source-${strategy.strategyId}`}>
         compiled from plan{' '}
-        <span className="font-mono text-slate-200">
+        <span className="font-mono text-slate-800">
           {strategy.sourcePlan.planId}@v{strategy.sourcePlan.version}
         </span>{' '}
         — {strategy.missionSummary}
       </p>
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold text-slate-400">
+        <p className="text-xs font-semibold text-slate-500">
           Organization (§23) —{' '}
-          <span className="font-mono text-slate-200">{organization.name}</span>{' '}
+          <span className="font-mono text-slate-800">{organization.name}</span>{' '}
           <span className="text-slate-500">· topology {organization.topology}</span>
         </p>
         {organization.roles.map((role) => (
@@ -123,7 +123,7 @@ export function StrategyDetailView({
             className="text-xs"
             data-testid={`console-strategy-role-${strategy.strategyId}-${role.roleId}`}
           >
-            <span className="font-mono text-slate-200">{role.roleId}</span>
+            <span className="font-mono text-slate-800">{role.roleId}</span>
             <span className="text-slate-500">
               {' '}
               · {role.title} · {role.responsibilitiesCount} responsibilities · model{' '}
@@ -137,7 +137,7 @@ export function StrategyDetailView({
             className="text-xs"
             data-testid={`console-strategy-edge-${strategy.strategyId}-${edge.edgeId}`}
           >
-            <span className="font-mono text-slate-200">
+            <span className="font-mono text-slate-800">
               {edge.fromRoleId} → {edge.toRoleId}
             </span>
             <span className="text-slate-500">
@@ -152,7 +152,7 @@ export function StrategyDetailView({
             className="text-xs"
             data-testid={`console-strategy-phase-${strategy.strategyId}-${phase.phaseId}`}
           >
-            <span className="font-mono text-slate-200">{phase.phaseId}</span>
+            <span className="font-mono text-slate-800">{phase.phaseId}</span>
             <span className="text-slate-500">
               {' '}
               · {phase.kind} · role <span className="font-mono">{phase.roleId}</span>
@@ -173,14 +173,14 @@ export function StrategyDetailView({
         <span className="font-mono">{strategy.organizationValidation.authorityRecord}</span>
       </p>
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold text-slate-400">Declared comparators</p>
+        <p className="text-xs font-semibold text-slate-500">Declared comparators</p>
         {strategy.comparators.map((comparator) => (
           <p
             key={comparator.name}
             className="text-xs"
             data-testid={`console-strategy-comparator-${strategy.strategyId}-${comparator.name}`}
           >
-            <span className="font-mono text-slate-200">{comparator.name}</span>
+            <span className="font-mono text-slate-800">{comparator.name}</span>
             <span className="text-slate-500"> · {comparator.kind}</span>
           </p>
         ))}
@@ -192,7 +192,7 @@ export function StrategyDetailView({
         </p>
       ) : (
         <p className="text-xs" data-testid={`console-strategy-evd-${strategy.strategyId}`}>
-          <span className="font-semibold text-slate-400">Expected value of delay</span>
+          <span className="font-semibold text-slate-500">Expected value of delay</span>
           <span className="text-slate-500">
             {' '}
             · value {strategy.expectedValueOfDelay.value} · per-day delay cost{' '}
@@ -203,7 +203,7 @@ export function StrategyDetailView({
       )}
       <p className={META} data-testid={`console-strategy-forecasts-${strategy.strategyId}`}>
         {strategy.forecastsCount} forecasts ride this strategy — every one a{' '}
-        <span className="text-amber-300">counterfactual</span> forecast (§22), never measured
+        <span className="text-amber-700">counterfactual</span> forecast (§22), never measured
         evidence.
       </p>
     </div>
@@ -214,11 +214,11 @@ export function StrategyDetailView({
 export function RunDetailView({ run }: { readonly run: ConsoleRunView }) {
   return (
     <div className="flex flex-col gap-3" data-testid={`console-run-detail-${run.runId}`}>
-      <p className="text-xs text-slate-300" data-testid={`console-run-mission-${run.runId}`}>
+      <p className="text-xs text-slate-700" data-testid={`console-run-mission-${run.runId}`}>
         {run.missionSummary}
       </p>
       <p className={META} data-testid={`console-run-ledger-${run.runId}`}>
-        lifecycle <span className="font-mono text-slate-300">{run.lifecycle}</span> · budget ledger{' '}
+        lifecycle <span className="font-mono text-slate-700">{run.lifecycle}</span> · budget ledger{' '}
         {run.ledger.spent}/{run.ledger.ceiling} {run.ledger.currency} · steps {run.stepCount}/
         {run.maxSteps}
       </p>
@@ -229,14 +229,14 @@ export function RunDetailView({ run }: { readonly run: ConsoleRunView }) {
         </p>
       ) : (
         <div className="flex flex-col gap-1">
-          <p className="text-xs font-semibold text-slate-400">Publish actions</p>
+          <p className="text-xs font-semibold text-slate-500">Publish actions</p>
           {run.actions.map((action) => (
             <p
               key={action.actionId}
               className="text-xs"
               data-testid={`console-run-action-${run.runId}-${action.actionId}`}
             >
-              <span className="font-mono text-slate-200">{action.actionId}</span>
+              <span className="font-mono text-slate-800">{action.actionId}</span>
               <span className="text-slate-500">
                 {' '}
                 · {action.platformId} · {action.channel} · {action.status}
@@ -252,22 +252,22 @@ export function RunDetailView({ run }: { readonly run: ConsoleRunView }) {
         </p>
       ) : (
         <div className="flex flex-col gap-1">
-          <p className="text-xs font-semibold text-slate-400">Collected metrics (measured)</p>
+          <p className="text-xs font-semibold text-slate-500">Collected metrics (measured)</p>
           {run.collectedMetrics.map((metric) => (
             <p
               key={metric.metricId}
               className="text-xs"
               data-testid={`console-run-metric-${run.runId}-${metric.metricId}`}
             >
-              <span className="font-mono text-slate-200">{metric.metricId}</span>
+              <span className="font-mono text-slate-800">{metric.metricId}</span>
               <span className="text-slate-500"> = {metric.value}</span>
-              <span className="text-emerald-300"> (measured)</span>
+              <span className="text-emerald-700"> (measured)</span>
             </p>
           ))}
         </div>
       )}
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold text-slate-400">Audit trail (§30, verbatim)</p>
+        <p className="text-xs font-semibold text-slate-500">Audit trail (§30, verbatim)</p>
         {run.trail.map((event) => (
           <p
             key={event.eventId}
@@ -275,7 +275,7 @@ export function RunDetailView({ run }: { readonly run: ConsoleRunView }) {
             data-testid={`console-run-trail-${run.runId}-${event.eventId}`}
           >
             <span className="text-slate-500">{event.at}</span>{' '}
-            <span className="font-mono text-slate-300">{event.kind}</span>
+            <span className="font-mono text-slate-700">{event.kind}</span>
             <span className="text-slate-500"> — {event.detail}</span>
             {event.provenance !== null ? (
               <span className="text-slate-500">
@@ -302,7 +302,7 @@ export function RunDetailView({ run }: { readonly run: ConsoleRunView }) {
         </p>
       ) : null}
       {run.halt !== null ? (
-        <p className="text-xs text-amber-200/90" data-testid={`console-run-halt-${run.runId}`}>
+        <p className="text-xs text-amber-800" data-testid={`console-run-halt-${run.runId}`}>
           Halted — <span className="font-mono">{run.halt.reason}</span>: {run.halt.detail}
         </p>
       ) : null}

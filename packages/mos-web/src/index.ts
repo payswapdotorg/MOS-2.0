@@ -27,6 +27,8 @@ export type {
   AppShellLoadFailure,
   AppShellPort,
   AppShellView,
+  ShellMissionStatusView,
+  ShellRecentMissionView,
   ShellSectionId,
   ShellSectionView,
   SurfaceAvailabilityView,
@@ -347,10 +349,8 @@ export {
   LabSectionLoadingPanel,
   LabSectionUnavailablePanel,
 } from "./views/lab-workspace-shared.js";
-export { LabIntentForm } from "./views/lab-intent-form.js";
-export type { LabIntentFormField, LabIntentFormProps } from "./views/lab-intent-form.js";
-export { LabIntentOutcomePanel } from "./views/lab-intent-outcome-panel.js";
-export type { LabIntentOutcomePanelProps } from "./views/lab-intent-outcome-panel.js";
+export { LabIntentForm, type LabIntentFormField, type LabIntentFormProps } from "./views/lab-intent-form.js";
+export { LabIntentOutcomePanel, type LabIntentOutcomePanelProps } from "./views/lab-intent-outcome-panel.js";
 export { LabCalibrationStatusView } from "./views/lab-calibration-status.js";
 export { LabCalibrationDetailPanel } from "./views/lab-calibration-detail.js";
 export { ConnectionsView } from "./routes/connections-view.js";

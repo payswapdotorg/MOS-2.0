@@ -50,7 +50,7 @@ export interface ConsoleIntentFormProps {
 }
 
 const INPUT_CLASS =
-  'rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-400';
+  'rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mos-navy';
 
 function FieldControl({ field }: { readonly field: ConsoleIntentFormField }) {
   const id = `console-intent-field-${field.name}`;
@@ -118,13 +118,13 @@ export function ConsoleIntentForm({
 
   return (
     <details
-      className="rounded-lg border border-slate-800 bg-slate-900/40"
+      className="rounded-lg border border-slate-200 bg-white"
       data-testid={testId}
     >
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy">
         {summaryLabel}
       </summary>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 border-t border-slate-800 px-4 py-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 border-t border-slate-200 px-4 py-4">
         <p className="text-xs text-slate-500">
           Declaring this intent routes the fields below to the {routedTo} through the
           console-intents port. The shell records nothing and decides nothing — the authority
@@ -143,7 +143,7 @@ export function ConsoleIntentForm({
         </div>
         <button
           type="submit"
-          className="self-start rounded-md bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+          className="self-start rounded-md bg-mos-navy px-4 py-2 text-sm font-semibold text-white hover:bg-mos-navy-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
           data-testid={`${testId}-submit`}
         >
           Declare intent

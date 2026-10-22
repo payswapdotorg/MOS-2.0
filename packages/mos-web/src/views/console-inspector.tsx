@@ -24,8 +24,8 @@ function DirectInspector({ page }: { readonly page: Extract<ConsolePageData, { r
   const { mission, standings } = page.data;
   return (
     <div className="flex flex-col gap-3" data-testid="console-inspector-direct">
-      <InspectorHeading>Mission objective</InspectorHeading>
-      <p className="text-xs text-slate-300" data-testid="console-inspector-mission-objective">
+      <InspectorHeading>Goal</InspectorHeading>
+      <p className="text-xs text-slate-700" data-testid="console-inspector-mission-objective">
         {mission.objective === '' ? 'No mission selected.' : mission.objective}
       </p>
       {mission.successCriteria.length === 0 ? (
@@ -37,7 +37,7 @@ function DirectInspector({ page }: { readonly page: Extract<ConsolePageData, { r
           <InspectorHeading>Success criteria</InspectorHeading>
           {mission.successCriteria.map((criterion) => (
             <p key={criterion.metric} className="text-xs" data-testid={`console-inspector-criterion-${criterion.metric}`}>
-              <span className="font-mono text-slate-200">{criterion.metric}</span>
+              <span className="font-mono text-slate-800">{criterion.metric}</span>
               <span className="text-slate-500"> · {criterion.direction}</span>
             </p>
           ))}
@@ -52,7 +52,7 @@ function DirectInspector({ page }: { readonly page: Extract<ConsolePageData, { r
           <InspectorHeading>Constraints</InspectorHeading>
           {mission.constraints.map((constraint) => (
             <p key={constraint.kind} className="text-xs" data-testid={`console-inspector-constraint-${constraint.kind}`}>
-              <span className="text-slate-300">{constraint.kind}</span>
+              <span className="text-slate-700">{constraint.kind}</span>
               <span className="text-slate-500"> · {constraint.value}</span>
             </p>
           ))}
@@ -60,7 +60,7 @@ function DirectInspector({ page }: { readonly page: Extract<ConsolePageData, { r
       )}
       <div className="flex flex-col gap-1">
         <InspectorHeading>Workflow standings</InspectorHeading>
-        <p className="text-xs text-slate-400" data-testid="console-inspector-standings">
+        <p className="text-xs text-slate-500" data-testid="console-inspector-standings">
           {standings.plansCount} plans · {standings.strategiesCount} strategies ·{' '}
           {standings.runsCount} runs ({standings.runsAwaitingAuthorization} awaiting authorization ·{' '}
           {standings.runsArmed} armed)
@@ -107,10 +107,10 @@ function ResearchInspector({ page }: { readonly page: Extract<ConsolePageData, {
   return (
     <div className="flex flex-col gap-3" data-testid="console-inspector-research">
       <InspectorHeading>Citation basis</InspectorHeading>
-      <p className="text-xs text-slate-400" data-testid="console-inspector-citation-basis">
+      <p className="text-xs text-slate-500" data-testid="console-inspector-citation-basis">
         {intelligenceRecords.length} intelligence records ·{' '}
-        <span className="text-emerald-300">{cited} cited-evidence</span> ·{' '}
-        <span className="text-amber-300">{counterfactual} counterfactual-forecast</span>
+        <span className="text-emerald-700">{cited} cited-evidence</span> ·{' '}
+        <span className="text-amber-700">{counterfactual} counterfactual-forecast</span>
       </p>
       {intelligenceRecords.length === 0 ? (
         <p className={META} data-testid="console-inspector-research-empty">
@@ -119,7 +119,7 @@ function ResearchInspector({ page }: { readonly page: Extract<ConsolePageData, {
         </p>
       ) : null}
       <InspectorHeading>Rights status</InspectorHeading>
-      <p className="text-xs text-slate-400" data-testid="console-inspector-rights-status">
+      <p className="text-xs text-slate-500" data-testid="console-inspector-rights-status">
         {granted} of {intelligenceRecords.length} records recorded under a granted right
         {granted < intelligenceRecords.length
           ? ' — the rest carry their authority-reported status verbatim below'
@@ -129,7 +129,7 @@ function ResearchInspector({ page }: { readonly page: Extract<ConsolePageData, {
       <ul className="flex flex-col gap-1" data-testid="console-inspector-rights-records">
         {intelligenceRecords.map((record) => (
           <li key={`${record.recordId}-${record.version}`} className="text-xs">
-            <span className="font-mono text-slate-200">{record.recordId}@v{record.version}</span>
+            <span className="font-mono text-slate-800">{record.recordId}@v{record.version}</span>
             <span className="text-slate-500"> · {record.rightsStatus}</span>
           </li>
         ))}
@@ -169,12 +169,12 @@ function ControlInspector({ page }: { readonly page: Extract<ConsolePageData, { 
       ) : (
         <div className="flex flex-col gap-1" data-testid="console-inspector-pending">
           <p className="text-xs">
-            <span className="font-mono text-slate-200">{pending.runId}</span>
+            <span className="font-mono text-slate-800">{pending.runId}</span>
             <span className="text-slate-500"> · strategy </span>
             <span className="font-mono">{pending.strategyId}</span>
           </p>
           <p className={META}>compiled {pending.declaredAt}</p>
-          <p className="text-xs text-slate-400">{pending.missionSummary}</p>
+          <p className="text-xs text-slate-500">{pending.missionSummary}</p>
         </div>
       )}
       <InspectorHeading>Grants</InspectorHeading>
@@ -186,7 +186,7 @@ function ControlInspector({ page }: { readonly page: Extract<ConsolePageData, { 
         <ul className="flex flex-col gap-1" data-testid="console-inspector-grants">
           {rightsGrants.map((grant) => (
             <li key={grant.grantId} className="text-xs">
-              <span className="font-mono text-slate-200">{grant.grantId}</span>
+              <span className="font-mono text-slate-800">{grant.grantId}</span>
               <span className="text-slate-500">
                 {' '}
                 · {grant.action} · {grant.status}
@@ -204,13 +204,13 @@ export function ConsoleInspector({ page }: { readonly page: ConsolePageData }) {
   return (
     <details
       open
-      className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2"
+      className="rounded-lg border border-slate-200 bg-white px-3 py-2"
       data-testid="console-inspector"
     >
-      <summary className="cursor-pointer select-none text-xs font-semibold text-slate-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">
+      <summary className="cursor-pointer select-none text-xs font-semibold text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy">
         Contextual inspector — {page.mode} mode
       </summary>
-      <div className="mt-2 border-t border-slate-800 pt-2">
+      <div className="mt-2 border-t border-slate-200 pt-2">
         {page.mode === 'direct' ? (
           <DirectInspector page={page} />
         ) : page.mode === 'plan' ? (

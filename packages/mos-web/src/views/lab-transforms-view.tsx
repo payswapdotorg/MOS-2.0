@@ -34,24 +34,24 @@ function LabTransformDefinitionRow({
 }) {
   return (
     <li
-      className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+      className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
       data-testid={`lab-transform-def-${definition.definitionId}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-mono text-xs text-slate-200">{definition.definitionId}</span>
+        <span className="font-mono text-xs text-slate-800">{definition.definitionId}</span>
         <span className="text-xs text-slate-500">v{definition.version}</span>
-        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
           {definition.kind}
         </span>
         {definition.humanParticipation ? (
-          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
             human participation
           </span>
         ) : null}
       </span>
-      <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-400">
+      <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
         <span>
-          input <span className="font-mono text-slate-300">{definition.inputConstraint.name}</span>{' '}
+          input <span className="font-mono text-slate-700">{definition.inputConstraint.name}</span>{' '}
           ({definition.inputConstraint.acceptedTypes.join(', ')}) ·{' '}
           {definition.inputConstraint.minInputs}–{definition.inputConstraint.maxInputs} inputs ·
           modalities {definition.inputConstraint.acceptedModalities.join(', ')}
@@ -85,13 +85,13 @@ function LabTransformDefinitionRow({
 function LabTransformGraphRow({ graph }: { readonly graph: LabTransformGraphView }) {
   return (
     <li
-      className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+      className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
       data-testid={`lab-transform-graph-${graph.graphId}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-mono text-xs text-slate-200">{graph.graphId}</span>
+        <span className="font-mono text-xs text-slate-800">{graph.graphId}</span>
         <span className="text-xs text-slate-500">v{graph.version}</span>
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-slate-500">
           {graph.nodes.length} nodes · {graph.edges.length} artifact-flow edges
         </span>
       </span>
@@ -99,10 +99,10 @@ function LabTransformGraphRow({ graph }: { readonly graph: LabTransformGraphView
         {graph.nodes.map((node) => (
           <li
             key={node.nodeId}
-            className="flex flex-wrap gap-x-3 text-[11px] text-slate-400"
+            className="flex flex-wrap gap-x-3 text-[11px] text-slate-500"
             data-testid={`lab-graph-node-${node.nodeId}`}
           >
-            <span className="font-mono text-slate-300">{node.nodeId}</span>
+            <span className="font-mono text-slate-700">{node.nodeId}</span>
             <span>
               {node.definitionId}@v{node.definitionVersion}
             </span>
@@ -134,10 +134,10 @@ function LabGateStandingRow({
   const statusLabel = LAB_TRANSFORM_GATE_STATUS_LABELS[gate.status];
   const tone =
     gate.status === 'evidence-recorded'
-      ? 'border-emerald-900/50 bg-emerald-950/15 text-emerald-200/90'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
       : gate.status === 'evidence-stale'
-        ? 'border-amber-900/60 bg-amber-950/20 text-amber-200/90'
-        : 'border-slate-800 bg-slate-900/40 text-slate-400';
+        ? 'border-amber-300 bg-amber-50 text-amber-800'
+        : 'border-slate-200 bg-white text-slate-500';
   return (
     <li
       className={`flex flex-col gap-0.5 rounded-md border px-3 py-1.5 text-xs ${tone}`}
@@ -169,24 +169,24 @@ function LabTransformCandidateRow({
       <a
         href={`/lab?section=transforms&transform=${encodeURIComponent(candidate.candidateId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`lab-transform-candidate-row-${candidate.candidateId}`}
       >
         <span className="flex flex-wrap items-baseline gap-x-3">
-          <span className="font-mono text-sm text-slate-100">{candidate.candidateId}</span>
+          <span className="font-mono text-sm text-slate-900">{candidate.candidateId}</span>
           <span className="text-xs text-slate-500">v{candidate.version}</span>
-          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
             {candidate.origin}
           </span>
-          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
+          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
             {candidate.proposedKind}
           </span>
           {candidate.promoted ? (
-            <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+            <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
               promoted
             </span>
           ) : null}
@@ -220,7 +220,7 @@ function LabTransformCandidateDetailPanel({
 }) {
   return (
     <div className="flex flex-col gap-4" data-testid="lab-transform-candidate-detail">
-      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-sky-800/60 bg-sky-950/20 p-4">
+      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-mos-navy/30 bg-mos-navy/5 p-4">
         <LabFact label="candidate">
           {candidate.candidateId} v{candidate.version}
         </LabFact>
@@ -265,8 +265,8 @@ function LabTransformCandidateDetailPanel({
                 key={attempt.attempt}
                 className={`flex flex-col gap-0.5 rounded-md border px-3 py-1.5 text-xs ${
                   attempt.outcome === 'promoted'
-                    ? 'border-emerald-900/50 bg-emerald-950/15 text-emerald-200/90'
-                    : 'border-red-900/50 bg-red-950/15 text-red-200/90'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-red-300 bg-red-50 text-red-200/90'
                 }`}
                 data-testid={`lab-promotion-attempt-${attempt.attempt}`}
               >
@@ -317,7 +317,7 @@ export function LabTransformsSectionView({
   return (
     <div className="flex flex-col gap-6" data-testid="lab-transforms-section">
       <section aria-labelledby="lab-transform-defs-title">
-        <h3 id="lab-transform-defs-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-transform-defs-title" className="text-sm font-semibold text-slate-900">
           Transform definitions (LAB-011 — the thirteen frozen §5 kinds)
         </h3>
         <p className="mb-2 mt-1 text-xs text-slate-500">
@@ -337,7 +337,7 @@ export function LabTransformsSectionView({
       </section>
 
       <section aria-labelledby="lab-transform-graphs-title">
-        <h3 id="lab-transform-graphs-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-transform-graphs-title" className="text-sm font-semibold text-slate-900">
           Transform graphs (append-only declarative DAGs)
         </h3>
         {transformsError !== null ? (
@@ -356,7 +356,7 @@ export function LabTransformsSectionView({
       </section>
 
       <section aria-labelledby="lab-transform-candidates-title">
-        <h3 id="lab-transform-candidates-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-transform-candidates-title" className="text-sm font-semibold text-slate-900">
           §8 discovery candidates (LAB-012 — the seven promotion gates)
         </h3>
         <p className="mb-2 mt-1 text-xs text-slate-500" data-testid="lab-no-auto-production-note">
@@ -394,7 +394,7 @@ export function LabTransformsSectionView({
         <LabTransformCandidateDetailPanel candidate={selectedTransformCandidate} />
       ) : null}
 
-      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-200 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Declared lab-authority actions (read-only surface)
         </h4>

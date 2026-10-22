@@ -20,10 +20,10 @@ export function MosLoadingView({ label }: { readonly label: string }) {
       className="flex min-h-[40vh] items-center justify-center"
       data-testid="mos-loading"
     >
-      <p className="flex items-center gap-3 text-sm text-slate-400">
+      <p className="flex items-center gap-3 text-sm text-slate-500">
         <span
           aria-hidden="true"
-          className="inline-block h-4 w-4 animate-pulse rounded-full bg-sky-400"
+          className="inline-block h-4 w-4 animate-pulse rounded-full bg-mos-navy"
         />
         {label}
       </p>
@@ -43,21 +43,21 @@ export function MosBootstrapErrorView({
     <div
       role="alert"
       aria-labelledby="mos-bootstrap-error-title"
-      className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-950 px-4 text-center"
+      className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 px-4 text-center"
       data-testid="mos-bootstrap-error"
     >
-      <h1 id="mos-bootstrap-error-title" className="text-xl font-semibold text-red-300">
+      <h1 id="mos-bootstrap-error-title" className="text-xl font-semibold text-red-700">
         MOS failed to start
       </h1>
-      <p className="max-w-md text-sm text-red-200/80">
+      <p className="max-w-md text-sm text-red-700">
         The browser shell could not load its app configuration. This is an explicit failure — the
         shell does not continue with guessed data.
       </p>
-      <p className="max-w-md font-mono text-xs text-red-200/60">{message}</p>
+      <p className="max-w-md font-mono text-xs text-red-700">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-md bg-red-500/20 px-4 py-2 text-sm font-semibold text-red-100 hover:bg-red-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+        className="rounded-md bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
       >
         Retry
       </button>
@@ -80,18 +80,18 @@ export function MosAppErrorView({
       className="flex flex-col items-center gap-4 p-8 text-center"
       data-testid="mos-app-error"
     >
-      <h1 id="mos-app-error-title" className="text-lg font-semibold text-red-300">
+      <h1 id="mos-app-error-title" className="text-lg font-semibold text-red-700">
         This view failed to render
       </h1>
-      <p className="max-w-md text-sm text-red-200/80">
+      <p className="max-w-md text-sm text-red-700">
         An error occurred while rendering the MOS shell. The boundary caught it — nothing was
         guessed around the failure.
       </p>
-      <p className="max-w-md font-mono text-xs text-red-200/60">{message}</p>
+      <p className="max-w-md font-mono text-xs text-red-700">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-md bg-red-500/20 px-4 py-2 text-sm font-semibold text-red-100 hover:bg-red-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+        className="rounded-md bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
       >
         Reload the shell
       </button>

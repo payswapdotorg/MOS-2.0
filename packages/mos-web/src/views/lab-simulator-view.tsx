@@ -78,7 +78,7 @@ export function LabSimulatorSectionView({
   return (
     <div className="flex flex-col gap-6" data-testid="lab-simulator-section">
       <section aria-labelledby="lab-world-models-title">
-        <h3 id="lab-world-models-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-world-models-title" className="text-sm font-semibold text-slate-900">
           Social world models (LAB-004 — synthetic, disclosed)
         </h3>
         <ul className="mt-2 flex flex-col gap-2" data-testid="lab-world-models">
@@ -92,7 +92,7 @@ export function LabSimulatorSectionView({
       </section>
 
       <section aria-labelledby="lab-dynamics-title">
-        <h3 id="lab-dynamics-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-dynamics-title" className="text-sm font-semibold text-slate-900">
           Population-resolved dynamics models (LAB-005)
         </h3>
         <ul className="mt-2 flex flex-col gap-2" data-testid="lab-dynamics-models">
@@ -103,7 +103,7 @@ export function LabSimulatorSectionView({
       </section>
 
       <section aria-labelledby="lab-runs-title">
-        <h3 id="lab-runs-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-runs-title" className="text-sm font-semibold text-slate-900">
           Simulation runs (seed-required, counterfactual)
         </h3>
         <p className="mb-2 mt-1 text-xs text-slate-500">
@@ -126,13 +126,13 @@ export function LabSimulatorSectionView({
       </section>
 
       <section aria-labelledby="lab-time-machine-title">
-        <h3 id="lab-time-machine-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-time-machine-title" className="text-sm font-semibold text-slate-900">
           The Time Machine (LAB-006 — the three §20 modes)
         </h3>
         <div className="mt-2 flex flex-col gap-4">
-          <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
             <h4
-              className="text-xs font-semibold text-slate-300"
+              className="text-xs font-semibold text-slate-700"
               data-testid="lab-tm-historical-title"
             >
               {LAB_TIME_MACHINE_MODE_LABELS.historical}
@@ -148,9 +148,9 @@ export function LabSimulatorSectionView({
             </ul>
           </div>
 
-          <div className="rounded-lg border border-amber-900/50 bg-amber-950/10 p-4">
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
             <h4
-              className="text-xs font-semibold text-amber-200/90"
+              className="text-xs font-semibold text-amber-800"
               data-testid="lab-tm-delayed-title"
             >
               {LAB_TIME_MACHINE_MODE_LABELS.delayed}
@@ -169,7 +169,7 @@ export function LabSimulatorSectionView({
               ))}
             </ul>
             <p
-              className="mt-2 rounded-md border border-amber-900/60 bg-amber-950/20 px-3 py-2 text-[11px] text-amber-200/80"
+              className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-700"
               data-testid="lab-tm-leakage-pin"
             >
               LEAKAGE PIN — {timeMachine.delayed.withheldInWindow.count} appended observation
@@ -179,9 +179,9 @@ export function LabSimulatorSectionView({
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
             <h4
-              className="mb-2 text-xs font-semibold text-slate-300"
+              className="mb-2 text-xs font-semibold text-slate-700"
               data-testid="lab-tm-branches-title"
             >
               {LAB_TIME_MACHINE_MODE_LABELS.branches}
@@ -226,7 +226,7 @@ export function LabSimulatorSectionView({
         <LabBranchRecordsPanel records={selectedBranchRecords} />
       ) : null}
 
-      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-200 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Declared lab-authority actions (write-intent declarations)
         </h4>

@@ -16,5 +16,8 @@ html.mos-desktop-shell body {
 
 html.mos-desktop-shell,
 html.mos-desktop-shell body {
-  background: #020617;
+  /* Wave-24 target-design conversion: the shell is a LIGHT surface — the
+     pre-paint body matches the slate-50 page so the window never flashes
+     dark before the React bundle mounts. */
+  background: #f8fafc;
 }

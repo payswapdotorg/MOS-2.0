@@ -52,20 +52,20 @@ function LabStrategyCandidateRow({
       <a
         href={`/lab?section=strategy&candidate=${encodeURIComponent(candidate.candidateId)}`}
         aria-current={selected ? "page" : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy ${
           selected
-            ? "border-sky-600 bg-sky-500/10"
-            : "border-slate-800 bg-slate-900/40 hover:border-slate-700"
+            ? "border-mos-navy bg-mos-navy/5"
+            : "border-slate-200 bg-white hover:border-slate-300"
         }`}
         data-testid={`lab-strategy-row-${candidate.candidateId}`}
       >
         <span className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm text-slate-100">{candidate.candidateId}</span>
+          <span className="font-mono text-sm text-slate-900">{candidate.candidateId}</span>
           {candidate.label === null ? null : (
-            <span className="text-xs text-slate-400">{candidate.label}</span>
+            <span className="text-xs text-slate-500">{candidate.label}</span>
           )}
           <span
-            className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300"
+            className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700"
             title={LAB_CANDIDATE_ORIGIN_DESCRIPTIONS[candidate.origin]}
             data-testid={`lab-strategy-origin-${candidate.candidateId}`}
           >
@@ -73,7 +73,7 @@ function LabStrategyCandidateRow({
           </span>
           <LabCounterfactualBadge testId={`lab-strategy-counterfactual-${candidate.candidateId}`} />
         </span>
-        <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-400">
+        <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
           <span>
             action {candidate.action.kind} · {candidate.action.cadencePerWeek}×/week · novelty{" "}
             {candidate.action.novelty.toFixed(2)} · engagement{" "}
@@ -81,7 +81,7 @@ function LabStrategyCandidateRow({
           </span>
           <span className="font-mono text-slate-500">{candidate.action.strategyRef}</span>
         </span>
-        <span className="font-mono text-xs text-slate-300" data-testid="lab-strategy-expected">
+        <span className="font-mono text-xs text-slate-700" data-testid="lab-strategy-expected">
           {formatLabExpectedWithInterval(candidate.expectedReward, candidate.interval)} · horizon{" "}
           {candidate.horizonSteps} steps
         </span>
@@ -120,16 +120,16 @@ function LabRankedOrganizationRow({ ranked }: { readonly ranked: LabRankedOrgani
   const ood = LAB_OOD_PRESENTATION[ranked.ood.status];
   return (
     <li
-      className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+      className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
       data-testid={`lab-ranked-org-${ranked.organization.organizationId}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="text-xs font-semibold text-slate-200">#{ranked.rank}</span>
-        <span className="font-mono text-xs text-slate-300">
+        <span className="text-xs font-semibold text-slate-800">#{ranked.rank}</span>
+        <span className="font-mono text-xs text-slate-700">
           {ranked.organization.organizationId}
         </span>
         <span className="text-xs text-slate-500">v{ranked.organization.version}</span>
-        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
           {ranked.origin}
         </span>
         <LabCounterfactualBadge />
@@ -140,7 +140,7 @@ function LabRankedOrganizationRow({ ranked }: { readonly ranked: LabRankedOrgani
           {ood.label}
         </span>
       </span>
-      <span className="font-mono text-xs text-slate-300">
+      <span className="font-mono text-xs text-slate-700">
         {formatLabExpectedWithInterval(ranked.expectedReward, ranked.interval)} · disagreement ±
         {ranked.disagreementHalfWidth.toFixed(2)}
       </span>
@@ -189,13 +189,13 @@ function LabOrganizationSearchPanel({
 }) {
   return (
     <div
-      className="flex flex-col gap-3 rounded-lg border border-slate-800 bg-slate-900/30 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4"
       data-testid={`lab-org-search-${search.searchId}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-mono text-sm text-slate-100">{search.searchId}</span>
+        <span className="font-mono text-sm text-slate-900">{search.searchId}</span>
         <LabCounterfactualBadge testId={`lab-org-search-counterfactual-${search.searchId}`} />
-        <span className="text-xs text-slate-400">scenario {search.scenarioRef}</span>
+        <span className="text-xs text-slate-500">scenario {search.scenarioRef}</span>
         <span className="text-xs text-slate-500">
           ensemble {search.ensembleId} v{search.ensembleVersion}
         </span>
@@ -203,10 +203,10 @@ function LabOrganizationSearchPanel({
       </span>
 
       <div
-        className="rounded-md border border-sky-900/50 bg-sky-950/20 p-3"
+        className="rounded-md border border-mos-navy/30 bg-mos-navy/5 p-3"
         data-testid={`lab-org-comparison-${search.searchId}`}
       >
-        <h4 className="mb-2 text-xs font-semibold text-sky-200/90">
+        <h4 className="mb-2 text-xs font-semibold text-mos-navy/90">
           The §23 three-way comparison — always all three
         </h4>
         <div className="flex flex-col gap-2">
@@ -260,26 +260,26 @@ function LabOrganizationSearchPanel({
 function LabRewardObjectivePanel({ objective }: { readonly objective: LabRewardObjectiveView }) {
   return (
     <div
-      className="flex flex-col gap-2 rounded-lg border border-slate-800 bg-slate-900/40 p-4"
+      className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4"
       data-testid="lab-reward-objective"
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="text-sm font-semibold text-slate-100">
+        <span className="text-sm font-semibold text-slate-900">
           Declared reward objective (LAB-008/009)
         </span>
-        <span className="text-xs text-slate-400">scenario {objective.scenarioRef}</span>
+        <span className="text-xs text-slate-500">scenario {objective.scenarioRef}</span>
         <span className="text-xs text-slate-500">reward spec v{objective.rewardSpecVersion}</span>
       </span>
       <ul className="flex flex-col gap-1">
         {objective.terms.map((term) => (
           <li
             key={term.metric}
-            className="flex flex-col gap-0.5 rounded-md border border-slate-800 px-3 py-1.5"
+            className="flex flex-col gap-0.5 rounded-md border border-slate-200 px-3 py-1.5"
             data-testid={`lab-reward-term-${term.metric}`}
           >
             <span className="flex flex-wrap items-baseline gap-x-3 text-xs">
-              <span className="text-slate-200">{term.metric}</span>
-              <span className="text-slate-400">
+              <span className="text-slate-800">{term.metric}</span>
+              <span className="text-slate-500">
                 weight {term.weight} · {term.direction}
               </span>
               <span className="font-mono text-[11px] text-slate-500">
@@ -329,7 +329,7 @@ export function LabStrategySectionView({
   return (
     <div className="flex flex-col gap-6" data-testid="lab-strategy-section">
       <section aria-labelledby="lab-strategy-candidates-title">
-        <h3 id="lab-strategy-candidates-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-strategy-candidates-title" className="text-sm font-semibold text-slate-900">
           Strategy candidates ({strategyCandidates.length})
         </h3>
         <p className="mb-2 mt-1 text-xs text-slate-500">
@@ -361,7 +361,7 @@ export function LabStrategySectionView({
       ) : null}
 
       <section aria-labelledby="lab-org-searches-title">
-        <h3 id="lab-org-searches-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-org-searches-title" className="text-sm font-semibold text-slate-900">
           Agent-organization searches (LAB-010, §23)
         </h3>
         {strategyError !== null ? (
@@ -383,7 +383,7 @@ export function LabStrategySectionView({
       </section>
 
       <section aria-labelledby="lab-reward-title">
-        <h3 id="lab-reward-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="lab-reward-title" className="text-sm font-semibold text-slate-900">
           The declared objective this evaluation optimizes
         </h3>
         <p className="mb-2 mt-1 text-xs text-slate-500">
@@ -392,7 +392,7 @@ export function LabStrategySectionView({
         </p>
         {rewardObjective === null ? (
           <p
-            className="rounded-lg border border-dashed border-slate-800 p-4 text-xs text-slate-500"
+            className="rounded-lg border border-dashed border-slate-200 p-4 text-xs text-slate-500"
             data-testid="lab-reward-objective-unavailable"
           >
             No reward objective is visible: either no active scenario is pinned in this tenant

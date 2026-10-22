@@ -24,8 +24,8 @@ export function PlanModeContent({
   const { planChains, strategies } = page.data;
   return (
     <div className="flex flex-col gap-4" data-testid="console-mode-plan">
-      <section aria-labelledby="console-plans-title">
-        <h2 id="console-plans-title" className="text-base font-semibold text-slate-100">
+      <section aria-labelledby="console-plans-title" className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 id="console-plans-title" className="text-base font-semibold text-slate-900">
           Marketing plan chains (MARKETING-001)
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -34,7 +34,7 @@ export function PlanModeContent({
           full record.
         </p>
         {planChains.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-plans-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-plans-empty">
             No plans composed for this mission yet — declare a compose-plan intent from the Direct
             mode once the evidence base resolves.
           </p>
@@ -43,11 +43,11 @@ export function PlanModeContent({
             {planChains.map((chain) => (
               <li key={chain.planId}>
                 <details
-                  className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2"
                   data-testid={`console-plan-chain-${chain.planId}`}
                 >
-                  <summary className="cursor-pointer select-none text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">
-                    <span className="font-mono text-slate-200">{chain.planId}</span>
+                  <summary className="cursor-pointer select-none text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy">
+                    <span className="font-mono text-slate-800">{chain.planId}</span>
                     <span className="text-slate-500">
                       {' '}
                       · v{chain.latestVersion} · {chain.platforms.length} platforms ·{' '}
@@ -56,7 +56,7 @@ export function PlanModeContent({
                       {chain.composedAt}
                     </span>
                   </summary>
-                  <div className="mt-2 border-t border-slate-800 pt-2">
+                  <div className="mt-2 border-t border-slate-200 pt-2">
                     <PlanChainDetailView chain={chain} />
                   </div>
                 </details>
@@ -66,7 +66,7 @@ export function PlanModeContent({
         )}
       </section>
       <section aria-labelledby="console-strategies-title">
-        <h2 id="console-strategies-title" className="text-base font-semibold text-slate-100">
+        <h2 id="console-strategies-title" className="text-base font-semibold text-slate-900">
           Compiled strategies (PROD-003)
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -75,7 +75,7 @@ export function PlanModeContent({
           compile right.
         </p>
         {strategies.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-strategies-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-strategies-empty">
             No compiled strategies yet — a composed plan can be compiled into the organization,
             phases and comparators the engine runs.
           </p>
@@ -84,11 +84,11 @@ export function PlanModeContent({
             {strategies.map((strategy) => (
               <li key={strategy.strategyId}>
                 <details
-                  className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2"
                   data-testid={`console-strategy-${strategy.strategyId}`}
                 >
-                  <summary className="cursor-pointer select-none text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">
-                    <span className="font-mono text-slate-200">{strategy.strategyId}</span>
+                  <summary className="cursor-pointer select-none text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy">
+                    <span className="font-mono text-slate-800">{strategy.strategyId}</span>
                     <span className="text-slate-500">
                       {' '}
                       · plan {strategy.sourcePlan.planId}@v{strategy.sourcePlan.version} ·{' '}
@@ -98,7 +98,7 @@ export function PlanModeContent({
                       {strategy.comparators.length} comparators
                     </span>
                   </summary>
-                  <div className="mt-2 border-t border-slate-800 pt-2">
+                  <div className="mt-2 border-t border-slate-200 pt-2">
                     <StrategyDetailView strategy={strategy} />
                   </div>
                 </details>
@@ -110,7 +110,7 @@ export function PlanModeContent({
       {page.agentsError !== null ? (
         <aside
           role="alert"
-          className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-3 text-xs text-amber-200/90"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800"
           data-testid="console-agents-error"
         >
           The agents registry could not be loaded — the strategy compiler's organization validation
@@ -118,7 +118,7 @@ export function PlanModeContent({
         </aside>
       ) : page.agents !== null ? (
         <section aria-labelledby="console-agents-title" data-testid="console-agents-registry">
-          <h2 id="console-agents-title" className="text-sm font-semibold text-slate-300">
+          <h2 id="console-agents-title" className="text-sm font-semibold text-slate-700">
             The agents registry the compiler validates against
           </h2>
           {page.agents.agentBodies.map((body) => (
@@ -127,7 +127,7 @@ export function PlanModeContent({
               className="mt-1 text-xs"
               data-testid={`console-agent-body-${body.bodyId}`}
             >
-              <span className="font-mono text-slate-200">{body.bodyId}</span>
+              <span className="font-mono text-slate-800">{body.bodyId}</span>
               <span className="text-slate-500">
                 {' '}
                 · v{body.version} · role {body.role} · {body.capabilitiesCount} capabilities
@@ -146,7 +146,7 @@ export function PlanModeContent({
                 className="mt-1 text-xs"
                 data-testid={`console-agent-organization-${organization.organizationId}`}
               >
-                <span className="font-mono text-slate-200">{organization.organizationId}</span>
+                <span className="font-mono text-slate-800">{organization.organizationId}</span>
                 <span className="text-slate-500">
                   {' '}
                   · v{organization.version} · {organization.name} · topology{' '}

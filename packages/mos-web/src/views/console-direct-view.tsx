@@ -26,14 +26,18 @@ export function DirectModeContent({
   const missionSelected = missionId !== null && mission.missionId !== '';
   return (
     <div className="flex flex-col gap-4" data-testid="console-mode-direct">
-      <section aria-labelledby="console-direct-standings-title">
-        <h2 id="console-direct-standings-title" className="text-base font-semibold text-slate-100">
+      <section
+        aria-labelledby="console-direct-standings-title"
+        className="rounded-lg border border-slate-200 bg-white p-4"
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Work stream</p>
+        <h2 id="console-direct-standings-title" className="mt-1 text-base font-semibold text-slate-900">
           Where the mission stands
         </h2>
         <p className="mt-1 text-xs text-slate-500">
           Honest counts of the REAL records the authorities hold for{' '}
           {missionSelected ? (
-            <span className="font-mono text-slate-300">{mission.missionId}</span>
+            <span className="font-mono text-slate-700">{mission.missionId}</span>
           ) : (
             'the whole tenant — select a mission from the rail to scope this'
           )}
@@ -44,21 +48,21 @@ export function DirectModeContent({
           data-testid="console-direct-standings"
         >
           <dt className="text-slate-500">Plans composed</dt>
-          <dd className="font-mono text-slate-200">{standings.plansCount}</dd>
+          <dd className="font-mono text-slate-800">{standings.plansCount}</dd>
           <dt className="text-slate-500">Strategies compiled</dt>
-          <dd className="font-mono text-slate-200">{standings.strategiesCount}</dd>
+          <dd className="font-mono text-slate-800">{standings.strategiesCount}</dd>
           <dt className="text-slate-500">Runs</dt>
-          <dd className="font-mono text-slate-200">{standings.runsCount}</dd>
+          <dd className="font-mono text-slate-800">{standings.runsCount}</dd>
           <dt className="text-slate-500">Runs awaiting authorization</dt>
-          <dd className="font-mono text-slate-200">{standings.runsAwaitingAuthorization}</dd>
+          <dd className="font-mono text-slate-800">{standings.runsAwaitingAuthorization}</dd>
           <dt className="text-slate-500">Runs armed</dt>
-          <dd className="font-mono text-slate-200">{standings.runsArmed}</dd>
+          <dd className="font-mono text-slate-800">{standings.runsArmed}</dd>
           <dt className="text-slate-500">Runs in other lifecycle states</dt>
-          <dd className="font-mono text-slate-200">{standings.runsOther}</dd>
+          <dd className="font-mono text-slate-800">{standings.runsOther}</dd>
         </dl>
       </section>
       <section aria-labelledby="console-direct-readiness-title">
-        <h2 id="console-direct-readiness-title" className="text-base font-semibold text-slate-100">
+        <h2 id="console-direct-readiness-title" className="text-base font-semibold text-slate-900">
           The authorized path — what currently resolves
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -71,23 +75,25 @@ export function DirectModeContent({
           data-testid="console-direct-readiness"
         >
           <dt className="text-slate-500">Intelligence records</dt>
-          <dd className="font-mono text-slate-200">{readiness.intelligenceRecords}</dd>
+          <dd className="font-mono text-slate-800">{readiness.intelligenceRecords}</dd>
           <dt className="text-slate-500">Rights grants</dt>
-          <dd className="font-mono text-slate-200">{readiness.rightsGrants}</dd>
+          <dd className="font-mono text-slate-800">{readiness.rightsGrants}</dd>
           <dt className="text-slate-500">Experiments</dt>
-          <dd className="font-mono text-slate-200">{readiness.experiments}</dd>
+          <dd className="font-mono text-slate-800">{readiness.experiments}</dd>
           <dt className="text-slate-500">Plans</dt>
-          <dd className="font-mono text-slate-200">{readiness.plans}</dd>
+          <dd className="font-mono text-slate-800">{readiness.plans}</dd>
         </dl>
         {readiness.rightsGrants === 0 ? (
-          <p className="mt-2 text-xs text-amber-200/80" data-testid="console-direct-readiness-note">
+          <p className="mt-2 text-xs text-amber-700" data-testid="console-direct-readiness-note">
             No rights grant yet — recording intelligence is denied fail-closed until the Control
             mode's grant-analysis-rights intent executes.
           </p>
         ) : null}
       </section>
-      {missionSelected ? (
-        <ConsoleIntentForm
+      <section aria-labelledby="console-direct-direct-the-work-title" className="flex flex-col gap-3">
+        <p id="console-direct-direct-the-work-title" className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Direct the work</p>
+        {missionSelected ? (
+          <ConsoleIntentForm
           summaryLabel="Declare intent: compose the mission's marketing plan"
           routedTo="marketing-planner-authority"
           disclosureNote="The planner composes an evidence-linked, mission-cited plan from the declared platform choices and expectations; every citation must resolve through the product-intelligence authority."
@@ -106,7 +112,7 @@ export function DirectModeContent({
           onDeclareConsoleIntent={onDeclareConsoleIntent}
         />
       ) : (
-        <p className="text-xs text-slate-400" data-testid="console-direct-form-none">
+        <p className="text-xs text-slate-500" data-testid="console-direct-form-none">
           No mission selected — the compose-plan declaration needs a mission context. Select a
           mission from the rail, or create one from the Missions surface.
         </p>
@@ -115,6 +121,7 @@ export function DirectModeContent({
         After a plan composes, the Plan mode compiles it into the organization, phases and
         comparators the engine runs — and the Control mode owns the authorization gate.
       </p>
+      </section>
     </div>
   );
 }

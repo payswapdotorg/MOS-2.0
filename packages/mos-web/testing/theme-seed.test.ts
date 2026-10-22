@@ -23,7 +23,8 @@ test('stored preference wins over default and probe', () => {
 test("'system' resolves through the dark-mode probe", () => {
   assert.equal(resolveMosInitialTheme({ storedTheme: 'system', prefersDark: true }), 'dark');
   assert.equal(resolveMosInitialTheme({ storedTheme: 'system', prefersDark: false }), 'light');
-  // Probe default (unavailable) resolves dark, matching the MOS default.
+  // Probe default (unavailable) resolves dark (the probe is unavailable, so
+  // the conservative dark answer holds), even though the wave-24 default is light.
   assert.equal(resolveMosInitialTheme({ storedTheme: 'system' }), 'dark');
 });
 
@@ -36,7 +37,7 @@ test('missing, corrupt or foreign stored values fall back to the default', () =>
 
 test('the MOS theme tokens are the MOS naming, not the Zcode ones', () => {
   assert.equal(MOS_THEME_STORAGE_KEY, 'mos-theme');
-  assert.equal(MOS_DEFAULT_THEME, 'dark');
+  assert.equal(MOS_DEFAULT_THEME, 'light', 'the wave-24 target-design conversion made light the default');
 });
 
 test('readStoredMosTheme tolerates missing storage and storage failures', () => {

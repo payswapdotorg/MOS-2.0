@@ -76,31 +76,60 @@ test('a fresh composition starts with EMPTY tenant-scoped lab listings and no de
   assert.ok('error' in records && records.error === 'lab-calibration-not-found');
 });
 
-test('the availability verdicts are honest for this release', async () => {
+test('the availability verdicts are honest for this release (the wave-24 target-design rail)', async () => {
   const composition = createProductionMosWebComposition({ now: NOW });
   const shell = await composition.appShell.loadAppShell();
   assert.ok(!('error' in shell));
   const sections = shell.sections.map((section) => section.id);
-  assert.deepEqual(sections, [
-    'home',
-    'missions',
-    'console',
-    'studio',
-    'lab',
-    'connections',
-    'notifications',
-  ]);
+  assert.deepEqual(sections, ['home', 'missions', 'lab', 'console', 'studio', 'measurement']);
   const byId = new Map(shell.sections.map((section) => [section.id, section]));
-  for (const id of ['home', 'missions', 'console', 'lab'] as const) {
+  for (const id of ['home', 'missions', 'lab', 'console'] as const) {
     assert.deepEqual(byId.get(id)?.availability, { kind: 'available' }, `${id} is available`);
   }
-  for (const id of ['studio', 'connections', 'notifications'] as const) {
+  assert.equal(byId.get('lab')?.label, 'Research Lab', 'the target design\'s rail label');
+  for (const id of ['studio', 'measurement'] as const) {
     const availability = byId.get(id)?.availability;
     assert.equal(availability?.kind, 'not-yet-available', `${id} is honestly not-yet-available`);
     if (availability?.kind === 'not-yet-available') {
       assert.match(availability.dependsOn, /production MOS service transport/);
     }
   }
+});
+
+test('the mission badge and recent-missions rail read the REAL missions repository honestly', async () => {
+  const composition = createProductionMosWebComposition({ now: NOW });
+  const fresh = await composition.appShell.loadAppShell();
+  assert.ok(!('error' in fresh));
+  assert.deepEqual(fresh.missionStatus, { active: false }, 'a fresh composition holds no active mission');
+  assert.deepEqual(fresh.recentMissions, [], 'a fresh composition has no recent missions');
+
+  const seeded = composition.missionRepository.createMission({
+    scope: { tenantId: 'tenant-local' as never },
+    id: 'mission-wave-24' as never,
+    objective: {
+      statement: 'Launch the target-design conversion.',
+      targetMetrics: [{ metric: 'qualified-reach', target: '10000', unit: 'count', horizon: null }],
+      constraints: [],
+    } as never,
+    rewardSpec: {
+      version: 1,
+      terms: [
+        { metric: 'qualified-reach', weight: 1, direction: 'maximize', definition: 'Reach.' },
+      ],
+    } as never,
+  });
+  assert.ok(!('error' in seeded));
+  const activated = composition.missionRepository.activateMission(
+    { tenantId: 'tenant-local' as never },
+    'mission-wave-24' as never,
+  );
+  assert.ok(!('error' in activated));
+  const after = await composition.appShell.loadAppShell();
+  assert.ok(!('error' in after));
+  assert.deepEqual(after.missionStatus, { active: true }, 'one active mission flips the badge');
+  assert.equal(after.recentMissions.length, 1);
+  assert.equal(after.recentMissions[0]?.title, 'Launch the target-design conversion.');
+  assert.equal(after.recentMissions[0]?.route, '/console?mission=mission-wave-24');
 });
 
 test('the composition resolves a real tenant context from the real identity repository', async () => {

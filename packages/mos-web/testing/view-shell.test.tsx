@@ -17,7 +17,7 @@ import { MosAppShell } from '../dist/src/index.js';
 import { MISSION_DETAIL, missionsPage, noopConsoleIntent, noopIntent, noopLabIntent, SECTIONS, shellView, TENANT } from './view-fixtures.js';
 import { elementWithTestId, elementsWithTag, elementsWithAriaCurrent, linkHrefs, renderTreeText } from './render-tree.js';
 
-test('the shell renders the five sections with Home and Missions first', () => {
+test('the shell renders the target-design rail sections with Home and Missions first', () => {
   const tree = (
     <MosAppShell
       shellView={shellView(TENANT)}
@@ -31,7 +31,7 @@ test('the shell renders the five sections with Home and Missions first', () => {
   const nav = elementsWithTag(tree, 'nav')[0];
   assert.ok(nav, 'the shell carries a navigation landmark');
   const navText = renderTreeText(nav);
-  for (const label of ['Home', 'Missions', 'Studio', 'Lab', 'Connections']) {
+  for (const label of ['Home', 'Missions', 'Research Lab', 'Agent Console', 'Studio', 'Measurement', 'Connections']) {
     assert.equal(navText.includes(label), true, `nav must show ${label}`);
   }
 });
@@ -68,7 +68,7 @@ test('available sections are links; later surfaces are aria-disabled with their 
   assert.equal(lab?.props.href, '/lab');
   assert.equal(lab?.props['aria-disabled'], undefined);
 
-  for (const id of ['connections']) {
+  for (const id of ['measurement']) {
     const unavailable = elementWithTestId(tree, `nav-${id}-unavailable`);
     assert.ok(unavailable, `${id} is explicitly unavailable`);
     assert.equal(unavailable?.props['aria-disabled'], 'true');
@@ -225,11 +225,86 @@ test('images/icons carry accessible labels; tables declare column scopes', () =>
 });
 
 test('the section table the shell renders matches the port readiness verdicts', () => {
-  // The composition seam's section table (plan §2.2 readiness) is what the
-  // chrome presents; this pins the six sections and their verdict kinds.
+  // The composition seam's section table (the wave-24 target-design rail
+  // order) is what the chrome presents; this pins the eight sections and
+  // their verdict kinds.
   assert.deepEqual(
     SECTIONS.map((section) => section.id),
-    ['home', 'missions', 'console', 'studio', 'lab', 'connections', 'notifications'],
+    ['home', 'missions', 'lab', 'console', 'studio', 'measurement', 'connections', 'notifications'],
   );
-  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 6);
+  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 7);
+});
+
+test('the shell header presents the mission-activity badge honestly (wave-24 target design)', () => {
+  const tree = (
+    <MosAppShell
+      shellView={shellView(TENANT)}
+      routeView={{ kind: 'home' }}
+      onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
+      shellVersion="0.1.0-test"
+    />
+  );
+  const idle = elementWithTestId(tree, 'mission-status-idle');
+  assert.ok(idle, 'an inactive mission status renders the honest idle badge');
+  assert.equal(renderTreeText(idle).includes('No active mission'), true);
+
+  const activeTree = (
+    <MosAppShell
+      shellView={{ ...shellView(TENANT), missionStatus: { active: true } }}
+      routeView={{ kind: 'home' }}
+      onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
+      shellVersion="0.1.0-test"
+    />
+  );
+  const active = elementWithTestId(activeTree, 'mission-status-active');
+  assert.ok(active, 'an active mission status renders the mint badge');
+  assert.equal(renderTreeText(active).includes('Mission active'), true);
+
+  const nullTree = (
+    <MosAppShell
+      shellView={{ ...shellView(TENANT), missionStatus: null }}
+      routeView={{ kind: 'home' }}
+      onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
+      shellVersion="0.1.0-test"
+    />
+  );
+  assert.equal(elementWithTestId(nullTree, 'mission-status-active'), null);
+  assert.equal(elementWithTestId(nullTree, 'mission-status-idle'), null);
+});
+
+test('the shell rail lists recent missions and links them to the console workspace', () => {
+  const tree = (
+    <MosAppShell
+      shellView={shellView(TENANT)}
+      routeView={{ kind: 'home' }}
+      onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
+      shellVersion="0.1.0-test"
+    />
+  );
+  const rail = elementWithTestId(tree, 'shell-recent-missions');
+  assert.ok(rail, 'the recent-missions rail renders');
+  const railText = renderTreeText(rail);
+  assert.equal(railText.includes('Run the MOS demo mission end to end.'), true);
+  const hrefs = linkHrefs(rail);
+  assert.equal(hrefs.includes('/console?mission=mission_demo_1'), true);
+
+  const emptyTree = (
+    <MosAppShell
+      shellView={{ ...shellView(TENANT), recentMissions: [] }}
+      routeView={{ kind: 'home' }}
+      onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
+      shellVersion="0.1.0-test"
+    />
+  );
+  assert.ok(elementWithTestId(emptyTree, 'shell-recent-missions-empty'), 'empty is an honest state');
 });

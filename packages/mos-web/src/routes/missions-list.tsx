@@ -9,10 +9,10 @@ import type { MissionSummaryView } from '../ports/mission-catalog.js';
  */
 
 const LIFECYCLE_BADGE_CLASSES: Record<MissionSummaryView['lifecycleState'], string> = {
-  draft: 'bg-slate-700/60 text-slate-200',
-  active: 'bg-emerald-500/15 text-emerald-300',
-  completed: 'bg-sky-500/15 text-sky-300',
-  archived: 'bg-amber-500/15 text-amber-300',
+  draft: 'bg-slate-200 text-slate-800',
+  active: 'bg-emerald-100 text-emerald-700',
+  completed: 'bg-mos-navy/10 text-mos-navy',
+  archived: 'bg-amber-100 text-amber-700',
 };
 
 function MissionRow({
@@ -27,16 +27,16 @@ function MissionRow({
       <a
         href={`/missions?mission=${encodeURIComponent(mission.missionId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:flex-row sm:items-center sm:justify-between ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy sm:flex-row sm:items-center sm:justify-between ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`mission-row-${mission.missionId}`}
       >
         <span className="flex min-w-0 flex-col gap-1">
           <span className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold text-slate-100">{mission.title}</span>
+            <span className="truncate text-sm font-semibold text-slate-900">{mission.title}</span>
             <span
               className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                 LIFECYCLE_BADGE_CLASSES[mission.lifecycleState]
@@ -46,7 +46,7 @@ function MissionRow({
             </span>
           </span>
           <span className="font-mono text-xs text-slate-500">{mission.missionId}</span>
-          <span className="text-xs text-slate-400">{mission.rewardSpecSummary}</span>
+          <span className="text-xs text-slate-500">{mission.rewardSpecSummary}</span>
         </span>
         <span className="flex shrink-0 flex-col gap-0.5 text-right text-xs text-slate-500">
           <span>
@@ -74,7 +74,7 @@ export function MissionsListView({
   if (summaries.length === 0) {
     return (
       <p
-        className="rounded-lg border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500"
+        className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500"
         data-testid="missions-empty"
       >
         No missions are visible in this tenant scope. Either none exist yet, or the scope genuinely

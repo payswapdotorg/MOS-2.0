@@ -30,15 +30,15 @@ export const STUDIO_SESSION_LIFECYCLE_STATES: readonly StudioSessionLifecycleSta
 export const STUDIO_LIFECYCLE_BADGE_CLASSES: Readonly<
   Record<StudioSessionLifecycleStateView, string>
 > = Object.freeze({
-  requested: 'bg-slate-700/60 text-slate-200',
-  loading: 'bg-slate-700/60 text-slate-200',
-  capturing: 'bg-sky-500/15 text-sky-300',
-  processing: 'bg-sky-500/15 text-sky-300',
-  review: 'bg-amber-500/15 text-amber-300',
-  packaged: 'bg-emerald-500/15 text-emerald-300',
-  closed: 'bg-slate-600/40 text-slate-300',
-  abandoned: 'bg-slate-600/40 text-slate-300',
-  failed: 'bg-red-500/15 text-red-300',
+  requested: 'bg-slate-200 text-slate-800',
+  loading: 'bg-slate-200 text-slate-800',
+  capturing: 'bg-mos-navy/10 text-mos-navy',
+  processing: 'bg-mos-navy/10 text-mos-navy',
+  review: 'bg-amber-100 text-amber-700',
+  packaged: 'bg-emerald-100 text-emerald-700',
+  closed: 'bg-slate-300/40 text-slate-700',
+  abandoned: 'bg-slate-300/40 text-slate-700',
+  failed: 'bg-red-100 text-red-700',
 });
 
 /** One-line presentation of a lifecycle state. */
@@ -62,15 +62,15 @@ export const STUDIO_CONSENT_STATE_PRESENTATION: Readonly<
 > = Object.freeze({
   granted: {
     label: 'Consent granted',
-    badgeClass: 'bg-emerald-500/15 text-emerald-300',
+    badgeClass: 'bg-emerald-100 text-emerald-700',
   },
   pending: {
     label: 'Consent pending',
-    badgeClass: 'bg-amber-500/15 text-amber-300',
+    badgeClass: 'bg-amber-100 text-amber-700',
   },
   'consent-required': {
     label: 'Consent required',
-    badgeClass: 'bg-red-500/15 text-red-300',
+    badgeClass: 'bg-red-100 text-red-700',
   },
 });
 

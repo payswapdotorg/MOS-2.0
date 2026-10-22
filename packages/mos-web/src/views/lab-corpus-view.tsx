@@ -40,21 +40,21 @@ function LabCorpusSummaryRow({
       <a
         href={`/lab?section=corpus&corpus=${encodeURIComponent(corpus.corpusId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:flex-row sm:items-center sm:justify-between ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy sm:flex-row sm:items-center sm:justify-between ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`lab-corpus-row-${corpus.corpusId}`}
       >
         <span className="flex min-w-0 flex-col gap-1">
           <span className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-slate-100">{corpus.corpusId}</span>
-            <span className="text-xs text-slate-400">
+            <span className="text-sm font-semibold text-slate-900">{corpus.corpusId}</span>
+            <span className="text-xs text-slate-500">
               {corpus.niche} · {corpus.platform}
             </span>
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             chain v{corpus.latestVersion} · {corpus.versionCount} snapshot
             {corpus.versionCount === 1 ? '' : 's'} · {corpus.documentCount} documents ·{' '}
             {corpus.attachedBundleCount} attached feature bundle
@@ -80,7 +80,7 @@ function LabCorpusDetailPanel({ detail }: { readonly detail: LabCorpusDetailView
   const { summary, versions, documents, featureBundles, featureRequirements } = detail;
   return (
     <div className="flex flex-col gap-4" data-testid="lab-corpus-detail">
-      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-sky-800/60 bg-sky-950/20 p-4">
+      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-mos-navy/30 bg-mos-navy/5 p-4">
         <LabFact label="corpus">{summary.corpusId}</LabFact>
         <LabFact label="latest version">v{summary.latestVersion}</LabFact>
         <LabFact label="documents">{summary.documentCount}</LabFact>
@@ -96,9 +96,9 @@ function LabCorpusDetailPanel({ detail }: { readonly detail: LabCorpusDetailView
           {versions.map((version) => (
             <li
               key={version.version}
-              className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400"
+              className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500"
             >
-              <span className="font-mono text-slate-300">v{version.version}</span>
+              <span className="font-mono text-slate-700">v{version.version}</span>
               <span>{version.documentCount} documents</span>
               <span className="font-mono text-slate-500">{version.createdAt}</span>
               <span className="text-slate-500">{version.notes ?? '— no notes'}</span>
@@ -115,20 +115,20 @@ function LabCorpusDetailPanel({ detail }: { readonly detail: LabCorpusDetailView
           {documents.map((document) => (
             <li
               key={document.documentId}
-              className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+              className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
               data-testid={`lab-corpus-document-${document.documentId}`}
             >
               <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="font-mono text-xs text-slate-200">{document.documentId}</span>
+                <span className="font-mono text-xs text-slate-800">{document.documentId}</span>
                 <span className="text-xs text-slate-500">v{document.version}</span>
-                <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+                <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
                   {document.modality}
                 </span>
               </span>
-              <span className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-400">
+              <span className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
                 <span>
                   artifact{' '}
-                  <span className="font-mono text-slate-300" title={String(document.artifact.artifactId)}>
+                  <span className="font-mono text-slate-700" title={String(document.artifact.artifactId)}>
                     {String(document.artifact.artifactId)} ·{' '}
                     {formatLabDigestShort(String(document.artifact.digest))}
                   </span>
@@ -136,7 +136,7 @@ function LabCorpusDetailPanel({ detail }: { readonly detail: LabCorpusDetailView
                 <span>acquired {document.acquiredAt}</span>
               </span>
               <span className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
-                <span className="text-amber-300/70">rights {document.rightsRef}</span>
+                <span className="text-amber-700">rights {document.rightsRef}</span>
                 <span>provenance {document.provenanceRef}</span>
               </span>
               <span className="text-[11px] text-slate-500">
@@ -158,15 +158,15 @@ function LabCorpusDetailPanel({ detail }: { readonly detail: LabCorpusDetailView
             {featureBundles.map((bundle) => (
               <li
                 key={bundle.bundleId}
-                className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+                className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
                 data-testid={`lab-corpus-bundle-${bundle.bundleId}`}
               >
                 <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-mono text-xs text-slate-200">{bundle.bundleId}</span>
+                  <span className="font-mono text-xs text-slate-800">{bundle.bundleId}</span>
                   <span className="text-xs text-slate-500">v{bundle.version}</span>
-                  <span className="text-xs text-slate-400">over {bundle.documentId}</span>
+                  <span className="text-xs text-slate-500">over {bundle.documentId}</span>
                   {bundle.detachedAt === null ? null : (
-                    <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-300">
+                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">
                       detached {bundle.detachedAt}
                     </span>
                   )}
@@ -175,12 +175,12 @@ function LabCorpusDetailPanel({ detail }: { readonly detail: LabCorpusDetailView
                   {bundle.features.map((feature) => (
                     <li
                       key={feature.kind}
-                      className="flex flex-wrap gap-x-4 text-[11px] text-slate-400"
+                      className="flex flex-wrap gap-x-4 text-[11px] text-slate-500"
                     >
-                      <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+                      <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
                         {feature.kind}
                       </span>
-                      <span className="font-mono text-slate-300">
+                      <span className="font-mono text-slate-700">
                         {String(feature.artifact.artifactId)}
                       </span>
                       <span className="text-slate-500">
@@ -208,10 +208,10 @@ function LabCorpusDetailPanel({ detail }: { readonly detail: LabCorpusDetailView
           {featureRequirements.map((requirement) => (
             <li
               key={requirement.kind}
-              className="rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400"
+              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500"
             >
-              <span className="text-slate-200">{requirement.kind}</span> needs{' '}
-              <span className="font-mono text-slate-300">{requirement.capabilityId}</span> @
+              <span className="text-slate-800">{requirement.kind}</span> needs{' '}
+              <span className="font-mono text-slate-700">{requirement.capabilityId}</span> @
               v{requirement.capabilityVersion}
             </li>
           ))}
@@ -264,7 +264,7 @@ export function LabCorpusSectionView({
 
       {selectedCorpus !== null ? <LabCorpusDetailPanel detail={selectedCorpus} /> : null}
 
-      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-200 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Declared lab-authority actions (write-intent declarations)
         </h4>

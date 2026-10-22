@@ -26,14 +26,25 @@ import type {
 export const SECTIONS: readonly ShellSectionView[] = [
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
+  {
+    id: 'lab',
+    label: 'Research Lab',
+    route: '/lab',
+    availability: { kind: 'available' },
+  },
   { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
-  { id: 'lab', label: 'Lab', route: '/lab', availability: { kind: 'available' } },
+  {
+    id: 'measurement',
+    label: 'Measurement',
+    route: '/measurement',
+    availability: { kind: 'not-yet-available', dependsOn: 'UX-007 (measurement read models)' },
+  },
   {
     id: 'connections',
     label: 'Connections',
     route: '/connections',
-    availability: { kind: 'not-yet-available', dependsOn: 'UX-004 (PROD-001)' },
+    availability: { kind: 'available' },
   },
   {
     id: 'notifications',
@@ -57,6 +68,19 @@ export const noopConsoleIntent = (_declaration: ConsoleIntentDeclaration): void 
 export const shellView = (tenant: AppShellView['tenant']): AppShellView => ({
   sections: SECTIONS,
   tenant,
+  missionStatus: { active: false },
+  recentMissions: [
+    {
+      missionId: 'mission_demo_1',
+      title: 'Run the MOS demo mission end to end.',
+      route: '/console?mission=mission_demo_1',
+    },
+    {
+      missionId: 'mission_demo_2',
+      title: 'Measure the closed-loop improvement on the demo program.',
+      route: '/console?mission=mission_demo_2',
+    },
+  ],
 });
 
 export const MISSION_SUMMARY: MissionSummaryView = {

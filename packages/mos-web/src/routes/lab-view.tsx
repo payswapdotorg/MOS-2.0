@@ -52,7 +52,7 @@ function BenchmarkSelectionErrorPanel({
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid="lab-benchmark-selection-error"
     >
       {error === "lab-benchmark-not-found"
@@ -70,7 +70,7 @@ function CalibrationSelectionErrorPanel({
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid="lab-calibration-selection-error"
     >
       {error === "lab-calibration-not-found"
@@ -84,7 +84,7 @@ function CalibrationUnavailablePanel() {
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid="lab-calibration-unavailable"
     >
       The online-calibration status could not be loaded on this pass — the lab calibration service
@@ -102,10 +102,10 @@ function LabResearchContextStrip({ data }: { readonly data: LabPageData }) {
   const scenario = data.overview.activeScenario;
   return (
     <div
-      className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-slate-800 bg-slate-900/40 px-4 py-2 text-xs text-slate-400"
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs text-slate-500"
       data-testid="lab-research-context"
     >
-      <span className="font-semibold text-slate-300">Research context</span>
+      <span className="font-semibold text-slate-700">Research context</span>
       {scenario === null ? (
         <span data-testid="lab-research-context-no-scenario">
           No active scenario — the corpus/overview sections hold the standing evidence.
@@ -113,7 +113,7 @@ function LabResearchContextStrip({ data }: { readonly data: LabPageData }) {
       ) : (
         <>
           <span data-testid="lab-research-context-scenario">
-            <span className="font-semibold text-slate-300">{scenario.scenarioRef}</span>
+            <span className="font-semibold text-slate-700">{scenario.scenarioRef}</span>
             {" — "}
             {scenario.niche} / {scenario.platform}
           </span>
@@ -150,8 +150,8 @@ function LabWorkspaceNav({ current }: { readonly current: LabSectionId }) {
             aria-current={active ? "page" : undefined}
             className={
               active
-                ? "rounded-md border border-emerald-800/70 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-200"
-                : "rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                ? "rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800"
+                : "rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500 hover:border-slate-300 hover:text-slate-800"
             }
             data-testid={`lab-nav-${section}`}
           >
@@ -179,7 +179,7 @@ function LabBenchmarksSection({
   return (
     <div className="flex flex-col gap-6" data-testid="lab-benchmarks-section">
       <section aria-labelledby="lab-benchmarks-title">
-        <h2 id="lab-benchmarks-title" className="text-base font-semibold text-slate-100">
+        <h2 id="lab-benchmarks-title" className="text-base font-semibold text-slate-900">
           Benchmark record chains
         </h2>
         <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -205,7 +205,7 @@ function LabBenchmarksSection({
           id="ux005-lab-digest"
           defaultOpen
           summary={
-            <span className="text-sm font-semibold text-slate-200">
+            <span className="text-sm font-semibold text-slate-800">
               Benchmark digest — {data.selectedDigest.summary.benchmarkId} (the counterfactual badge
               stays visible here; expand for the full digest)
             </span>
@@ -233,7 +233,7 @@ function LabCalibrationSection({
       {data.calibrationError !== null ? <CalibrationUnavailablePanel /> : null}
       {data.calibrationChains !== null ? (
         <section aria-labelledby="lab-calibration-title">
-          <h2 id="lab-calibration-title" className="text-base font-semibold text-slate-100">
+          <h2 id="lab-calibration-title" className="text-base font-semibold text-slate-900">
             Online calibration
           </h2>
           <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -263,7 +263,7 @@ function LabCalibrationSection({
           id="ux005-lab-calibration-records"
           defaultOpen
           summary={
-            <span className="text-sm font-semibold text-slate-200">
+            <span className="text-sm font-semibold text-slate-800">
               Calibration records — {data.selectedCalibrationRecords[0]?.calibrationId} (append-only
               chain; expand for the full record list)
             </span>
@@ -378,10 +378,10 @@ export function LabView({
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-xl font-bold">Research Lab</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-slate-500">
           {LAB_LOOP_NARRATION.position} — {LAB_LOOP_NARRATION.summary}
         </p>
-        <p className="mt-1 text-xs text-amber-200/80" data-testid="lab-boundary-note">
+        <p className="mt-1 text-xs text-amber-700" data-testid="lab-boundary-note">
           {LAB_BOUNDARY_NOTE}
         </p>
       </header>
@@ -398,7 +398,7 @@ export function LabView({
 
       <LabIntentOutcomePanel outcome={data.intentOutcome} outcomeError={data.intentOutcomeError} />
 
-      <div className="border-t border-slate-800 pt-4">
+      <div className="border-t border-slate-200 pt-4">
         <LabSectionContent data={data} onDeclareLabIntent={onDeclareLabIntent} />
       </div>
     </div>

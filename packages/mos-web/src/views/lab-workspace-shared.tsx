@@ -15,7 +15,7 @@ import { LAB_COUNTERFACTUAL_LABEL, LAB_MEASURED_LABEL } from './lab-presentation
 export function LabCounterfactualBadge({ testId }: { readonly testId?: string }) {
   return (
     <span
-      className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-300"
+      className="rounded bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700"
       data-testid={testId}
       title={LAB_COUNTERFACTUAL_LABEL}
     >
@@ -28,7 +28,7 @@ export function LabCounterfactualBadge({ testId }: { readonly testId?: string })
 export function LabMeasuredBadge({ testId }: { readonly testId?: string }) {
   return (
     <span
-      className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300"
+      className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700"
       data-testid={testId}
       title={LAB_MEASURED_LABEL}
     >
@@ -54,7 +54,7 @@ export function LabDisclosureNote({ disclosure }: { readonly disclosure: string 
 export function LabSectionLoadingPanel({ section }: { readonly section: string }) {
   return (
     <p
-      className="rounded-lg border border-dashed border-slate-700 bg-slate-900/30 p-6 text-center text-sm text-slate-400"
+      className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500"
       data-testid={`lab-${section}-loading`}
     >
       The {section} data is still loading on this pass — the workspace renders it the moment the
@@ -68,7 +68,7 @@ export function LabSectionUnavailablePanel({ section }: { readonly section: stri
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid={`lab-${section}-unavailable`}
     >
       The {section} listing could not be loaded on this pass — the lab service failed explicitly.
@@ -87,7 +87,7 @@ export function LabSectionEmptyPanel({
 }) {
   return (
     <p
-      className="rounded-lg border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500"
+      className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500"
       data-testid={`lab-${section}-empty`}
     >
       No {what} are visible in this tenant scope. Either none exist yet, or the scope genuinely
@@ -110,7 +110,7 @@ export function LabSelectionErrorPanel({
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid={`lab-${section}-selection-error`}
     >
       {error === 'not-found'
@@ -143,7 +143,7 @@ export function LabDeclaredAffordance({
         aria-disabled="true"
         title={reason}
         data-testid={testId ?? 'lab-declared-affordance'}
-        className="w-fit cursor-not-allowed rounded-md border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-left text-xs font-medium text-slate-500"
+        className="w-fit cursor-not-allowed rounded-md border border-slate-300 bg-white px-3 py-1.5 text-left text-xs font-medium text-slate-500"
       >
         {action}
       </button>
@@ -164,9 +164,9 @@ export function LabFact({
   readonly children: unknown;
 }) {
   return (
-    <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-slate-400">
+    <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-slate-500">
       <span className="font-semibold text-slate-500">{label}</span>
-      <span className="text-slate-300">{children as never}</span>
+      <span className="text-slate-700">{children as never}</span>
     </span>
   );
 }

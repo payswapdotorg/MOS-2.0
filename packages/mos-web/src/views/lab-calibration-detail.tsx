@@ -24,54 +24,54 @@ import {
 function RecordPanel({ record }: { readonly record: LabCalibrationRecordView }) {
   return (
     <li
-      className="flex flex-col gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4"
       data-testid={`lab-calibration-record-${record.calibrationId}-v${record.version}`}
       aria-label={`Calibration record ${record.calibrationId} version ${record.version}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded bg-sky-500/15 px-2 py-0.5 text-xs font-semibold text-sky-300">
+        <span className="rounded bg-mos-navy/10 px-2 py-0.5 text-xs font-semibold text-mos-navy">
           v{record.version}
         </span>
         <span className="font-mono text-xs text-slate-500">{record.recordedAt}</span>
         <span
           className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
             record.integrity.status === 'intact'
-              ? 'bg-emerald-500/15 text-emerald-300'
-              : 'bg-red-500/15 text-red-300'
+              ? 'bg-emerald-100 text-emerald-700'
+              : 'bg-red-100 text-red-700'
           }`}
           data-testid={`lab-calibration-record-integrity-${record.calibrationId}-v${record.version}`}
         >
           {labIntegrityLabel(record.integrity.status)}
         </span>
-        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
           regime {record.regime}
         </span>
       </div>
 
       <div className="grid gap-3 text-xs sm:grid-cols-2">
         <div
-          className="rounded border border-fuchsia-900/50 bg-fuchsia-950/20 p-3"
+          className="rounded border border-fuchsia-300 bg-fuchsia-950/20 p-3"
           data-testid={`lab-calibration-prediction-${record.calibrationId}-v${record.version}`}
         >
           <p className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-300">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-700">
               Prediction (cited benchmark statement)
             </span>
             <span
-              className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-300"
+              className="rounded bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700"
               title={LAB_COUNTERFACTUAL_LABEL}
               data-testid={`lab-calibration-prediction-counterfactual-${record.calibrationId}-v${record.version}`}
             >
               Counterfactual — simulated
             </span>
           </p>
-          <p className="mt-2 font-mono text-sm text-slate-200">
+          <p className="mt-2 font-mono text-sm text-slate-800">
             {formatLabExpectedWithInterval(
               record.predicted.expectedReward,
               record.predicted.interval,
             )}
           </p>
-          <p className="mt-1 text-slate-400">
+          <p className="mt-1 text-slate-500">
             uncertainty {record.predicted.uncertaintyLevel} · benchmark{' '}
             {record.benchmarkRef.benchmarkId} v{record.benchmarkRef.benchmarkVersion} · candidate{' '}
             {record.benchmarkRef.candidateKey}
@@ -80,25 +80,25 @@ function RecordPanel({ record }: { readonly record: LabCalibrationRecordView }) 
         </div>
 
         <div
-          className="rounded border border-emerald-900/50 bg-emerald-950/20 p-3"
+          className="rounded border border-emerald-200 bg-emerald-50 p-3"
           data-testid={`lab-calibration-observed-${record.calibrationId}-v${record.version}`}
         >
           <p className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
               Observed (reality)
             </span>
             <span
-              className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300"
+              className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700"
               title={LAB_MEASURED_LABEL}
               data-testid={`lab-calibration-observed-measured-${record.calibrationId}-v${record.version}`}
             >
               Measured — boundary chain
             </span>
           </p>
-          <p className="mt-2 font-mono text-sm text-slate-200">
+          <p className="mt-2 font-mono text-sm text-slate-800">
             observed outcome {formatLabNumber(record.observed.outcome)}
           </p>
-          <p className="mt-1 text-slate-400" data-testid="lab-calibration-observations">
+          <p className="mt-1 text-slate-500" data-testid="lab-calibration-observations">
             {record.observed.observations.length} historical observation
             {record.observed.observations.length === 1 ? '' : 's'} (§24 boundary chain):
             {record.observed.observations
@@ -116,7 +116,7 @@ function RecordPanel({ record }: { readonly record: LabCalibrationRecordView }) 
         </div>
       </div>
 
-      <dl className="grid gap-x-4 gap-y-1 text-xs text-slate-400 sm:grid-cols-2">
+      <dl className="grid gap-x-4 gap-y-1 text-xs text-slate-500 sm:grid-cols-2">
         <div className="flex flex-wrap gap-1">
           <dt className="text-slate-500">Error functional:</dt>
           <dd data-testid={`lab-calibration-functional-${record.calibrationId}-v${record.version}`}>
@@ -159,7 +159,7 @@ function RecordPanel({ record }: { readonly record: LabCalibrationRecordView }) 
         </div>
       </dl>
 
-      <p className="text-[11px] text-amber-200/70" data-testid="lab-calibration-labonly">
+      <p className="text-[11px] text-amber-700" data-testid="lab-calibration-labonly">
         {record.labOnly}
       </p>
     </li>
@@ -178,7 +178,7 @@ export function LabCalibrationDetailPanel({
       className="flex flex-col gap-3"
       data-testid="lab-calibration-detail"
     >
-      <h3 id="lab-calibration-detail-title" className="text-base font-semibold text-slate-100">
+      <h3 id="lab-calibration-detail-title" className="text-base font-semibold text-slate-900">
         Calibration records — {records[0]?.calibrationId} ({records.length} append-only version
         {records.length === 1 ? '' : 's'}, oldest first — history is never rewritten)
       </h3>

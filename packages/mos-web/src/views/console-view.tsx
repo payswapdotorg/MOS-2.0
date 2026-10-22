@@ -6,14 +6,16 @@ import { ConsoleViewModeContent } from './console-mode-views.js';
 import { ConsoleInspector } from './console-inspector.js';
 
 /**
- * The Agent Console workspace view (the CONSOLE wave, Worker B deepening):
- * the mission-first layout the FINAL TL HANDOFF §4 defines — LEFT mission
- * rail (mission switching), CENTER mission banner + working modes + the
- * write-intent outcome, RIGHT contextual inspector (content follows the
- * active mode). At the lg: breakpoint the three regions sit side by side;
- * below it the rail and inspector stack around the preserved center (the
- * 375px smoke target keeps the mission banner, mode rail and primary
- * controls).
+ * The Agent Console workspace view (the CONSOLE wave, Worker B deepening;
+ * wave-24 target-design conversion): the mission-first layout the FINAL TL
+ * HANDOFF §4 defines, wearing the supplied MOS Agent Console target
+ * design — LEFT mission rail (mission switching), CENTER the current
+ * mission card (the mockup's gray "CURRENT MISSION" panel) + working
+ * modes + the write-intent outcome, RIGHT the mission-context panel (the
+ * mockup's right rail). At the lg: breakpoint the three regions sit side
+ * by side; below it the rail and inspector stack around the preserved
+ * center (the 375px smoke target keeps the mission banner, mode rail and
+ * primary controls).
  *
  * Presentation-only: every value renders from the page model; every write
  * is a DECLARED intent through the console-intents port; nothing executes
@@ -49,14 +51,14 @@ function MissionRail({
 }) {
   if (data.scope === null) {
     return (
-      <aside aria-label="Mission rail" className="text-xs text-slate-400" data-testid="console-mission-rail-no-tenant">
+      <aside aria-label="Mission rail" className="text-xs text-slate-500" data-testid="console-mission-rail-no-tenant">
         No tenant context resolved — the console cannot list missions.
       </aside>
     );
   }
   if (data.missionsError !== null) {
     return (
-      <aside aria-label="Mission rail" className="text-xs text-amber-200/90" data-testid="console-mission-rail-error">
+      <aside aria-label="Mission rail" className="text-xs text-amber-700" data-testid="console-mission-rail-error">
         The mission directory failed to load — the missions authority failed explicitly.
       </aside>
     );
@@ -65,10 +67,10 @@ function MissionRail({
   if (missions.length === 0) {
     return (
       <aside aria-label="Mission rail" className="flex flex-col gap-2" data-testid="console-mission-rail-empty">
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           No missions yet — create one from the Missions surface to start directing work.
         </p>
-        <a href="/missions" className="text-xs text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">
+        <a href="/missions" className="text-xs text-mos-navy underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy">
           Go to Missions
         </a>
       </aside>
@@ -81,14 +83,14 @@ function MissionRail({
           key={mission.missionId}
           href={missionHref(mission.missionId, mode)}
           aria-current={mission.missionId === selectedMissionId ? 'page' : undefined}
-          className={`rounded-md px-2 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
+          className={`rounded-md px-2.5 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy ${
             mission.missionId === selectedMissionId
-              ? 'bg-sky-500/15 text-sky-200'
-              : 'text-slate-300 hover:bg-slate-800/60'
+              ? 'bg-mos-navy text-white'
+              : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <span className="block font-medium">{mission.title}</span>
-          <span className="block text-[10px] text-slate-500">
+          <span className={`block font-medium ${mission.missionId === selectedMissionId ? 'text-white' : 'text-slate-700'}`}>{mission.title}</span>
+          <span className={`block text-[10px] ${mission.missionId === selectedMissionId ? 'text-white/70' : 'text-slate-400'}`}>
             {mission.lifecycleState} · v{mission.recordVersion}
           </span>
         </a>
@@ -105,9 +107,10 @@ function MissionBanner({
   const mission = page.data.mission;
   if (mission.missionId === '') {
     return (
-      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4" data-testid="console-banner-none">
-        <p className="text-sm font-semibold text-slate-200">No mission selected</p>
-        <p className="text-xs text-slate-400">
+      <div className="rounded-lg bg-slate-100 p-4" data-testid="console-banner-none">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Current mission</p>
+        <p className="mt-1 text-base font-semibold text-slate-900">No mission selected</p>
+        <p className="mt-1 text-sm text-slate-600">
           Select a mission from the rail, or create one from the Missions surface — the console
           directs work in a mission context.
         </p>
@@ -115,15 +118,22 @@ function MissionBanner({
     );
   }
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4" data-testid="console-banner">
-      <p className="text-sm font-semibold text-slate-100">{mission.title}</p>
-      <p className="mt-1 text-xs text-slate-400">{mission.objective}</p>
-      <p className="mt-2 text-[10px] uppercase tracking-wide text-slate-500">
-        {mission.status} · record v{mission.recordVersion}
-        {mission.successCriteria.length > 0
-          ? ` · ${mission.successCriteria.length} success criteria`
-          : ''}
-        {mission.constraints.length > 0 ? ` · ${mission.constraints.length} constraints` : ''}
+    <div className="rounded-lg bg-slate-100 p-4" data-testid="console-banner">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Current mission</p>
+      <p className="mt-1 text-lg font-bold tracking-tight text-slate-900">{mission.title}</p>
+      <p className="mt-1 text-sm text-slate-600">{mission.objective}</p>
+      <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-white">
+          {mission.status}
+        </span>
+        <span>
+          {' '}
+          · record v{mission.recordVersion}
+          {mission.successCriteria.length > 0
+            ? ` · ${mission.successCriteria.length} success criteria`
+            : ''}
+          {mission.constraints.length > 0 ? ` · ${mission.constraints.length} constraints` : ''}
+        </span>
       </p>
     </div>
   );
@@ -143,10 +153,10 @@ function ModeRail({
           key={entry.id}
           href={modeHref(missionId, entry.id)}
           aria-current={entry.id === mode ? 'page' : undefined}
-          className={`rounded-md px-3 py-1.5 text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
+          className={`rounded-md px-3 py-1.5 text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy ${
             entry.id === mode
-              ? 'bg-sky-500/15 text-sky-200'
-              : 'text-slate-300 hover:bg-slate-800/60'
+              ? 'bg-mos-navy text-white'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
           {entry.label}
@@ -156,7 +166,7 @@ function ModeRail({
   );
 }
 
-/** The Agent Console workspace (the FINAL TL HANDOFF §4 layout). */
+/** The Agent Console workspace (the FINAL TL HANDOFF §4 layout, target design). */
 export function ConsoleView({
   data,
   onDeclareConsoleIntent,
@@ -168,8 +178,8 @@ export function ConsoleView({
   return (
     <div className="flex flex-col gap-4" data-testid="console-workspace">
       <header>
-        <h1 className="text-xl font-bold">Agent Console</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Agent Console</h1>
+        <p className="mt-1 text-sm text-slate-600">
           The mission-first orchestration workspace — select a mission, then work the authorized
           path: research the evidence, compose the plan, compile the strategy, create the run, and
           authorize it.
@@ -185,7 +195,7 @@ export function ConsoleView({
           data-testid="console-left-region"
           aria-label="Mission rail region"
         >
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Missions</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Missions</p>
           <MissionRail data={data} selectedMissionId={data.selectedMissionId} mode={mode} />
         </div>
         <section
@@ -207,7 +217,7 @@ export function ConsoleView({
           data-testid="console-right-region"
           aria-label="Contextual inspector region"
         >
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Inspector</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Mission context</p>
           <ConsoleInspector page={data.page} />
         </aside>
       </div>

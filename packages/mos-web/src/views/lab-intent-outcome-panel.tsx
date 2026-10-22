@@ -27,20 +27,20 @@ export interface LabIntentOutcomePanelProps {
 function ExecutedReceiptView({ receipt }: { readonly receipt: LabIntentReceipt }) {
   return (
     <div className="flex flex-col gap-1" data-testid="lab-intent-outcome-receipt">
-      <p className="text-sm font-semibold text-emerald-300">
+      <p className="text-sm font-semibold text-emerald-700">
         Executed by {receipt.routedTo}
       </p>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-500">
         Intent <span className="font-mono">{receipt.intentId}</span> declared at{' '}
         <span className="font-mono">{receipt.declaredAt}</span>
       </p>
       <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-[max-content_1fr]">
         <dt className="text-slate-500">Record</dt>
-        <dd className="font-mono text-slate-200">{receipt.authorityEcho.recordId}</dd>
+        <dd className="font-mono text-slate-800">{receipt.authorityEcho.recordId}</dd>
         <dt className="text-slate-500">Version</dt>
-        <dd className="font-mono text-slate-200">{receipt.authorityEcho.recordVersion}</dd>
+        <dd className="font-mono text-slate-800">{receipt.authorityEcho.recordVersion}</dd>
         <dt className="text-slate-500">Authority summary</dt>
-        <dd className="text-slate-300">{receipt.authorityEcho.summary}</dd>
+        <dd className="text-slate-700">{receipt.authorityEcho.summary}</dd>
       </dl>
     </div>
   );
@@ -56,14 +56,14 @@ function RejectionView({
   }
   return (
     <div className="flex flex-col gap-1" data-testid="lab-intent-outcome-rejection">
-      <p className="text-sm font-semibold text-amber-300">
+      <p className="text-sm font-semibold text-amber-700">
         Rejected by {record.routedTo} — <span className="font-mono">{record.outcome.error}</span>
       </p>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-500">
         Intent <span className="font-mono">{record.intentId}</span> declared at{' '}
         <span className="font-mono">{record.declaredAt}</span>
       </p>
-      <p className="text-xs text-amber-200/90">
+      <p className="text-xs text-amber-800">
         The authority's message, verbatim:{' '}
         <span className="font-mono">{record.outcome.message}</span>
       </p>
@@ -86,7 +86,7 @@ export function LabIntentOutcomePanel({
     return (
       <aside
         role="status"
-        className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+        className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
         data-testid="lab-intent-outcome-unresolved"
       >
         {outcomeError === 'lab-intent-not-found'
@@ -99,7 +99,7 @@ export function LabIntentOutcomePanel({
     <aside
       role="status"
       aria-label="Lab write-intent outcome"
-      className="rounded-lg border border-slate-800 bg-slate-900/40 p-4"
+      className="rounded-lg border border-slate-200 bg-white p-4"
       data-testid="lab-intent-outcome"
     >
       {'error' in outcome.outcome ? (

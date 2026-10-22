@@ -71,15 +71,15 @@ export const LAB_OOD_PRESENTATION: Readonly<
 > = Object.freeze({
   'in-coverage': {
     label: 'In declared coverage',
-    badgeClass: 'bg-emerald-500/15 text-emerald-300',
+    badgeClass: 'bg-emerald-100 text-emerald-700',
   },
   'out-of-declared-coverage': {
     label: 'Out of declared coverage',
-    badgeClass: 'bg-red-500/15 text-red-300',
+    badgeClass: 'bg-red-100 text-red-700',
   },
   'partially-undeclared': {
     label: 'Partially undeclared coverage',
-    badgeClass: 'bg-amber-500/15 text-amber-300',
+    badgeClass: 'bg-amber-100 text-amber-700',
   },
 });
 

@@ -26,8 +26,8 @@ export function ControlModeContent({
   const { awaitingAuthorization, authorized, rightsGrants } = page.data;
   return (
     <div className="flex flex-col gap-4" data-testid="console-mode-control">
-      <section aria-labelledby="console-queue-title">
-        <h2 id="console-queue-title" className="text-base font-semibold text-slate-100">
+      <section aria-labelledby="console-queue-title" className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 id="console-queue-title" className="text-base font-semibold text-slate-900">
           Awaiting authorization
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -35,7 +35,7 @@ export function ControlModeContent({
           rights verdict and experiment-binding check pass.
         </p>
         {awaitingAuthorization.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-queue-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-queue-empty">
             No runs awaiting authorization — the approval queue is honest about being empty.
           </p>
         ) : (
@@ -43,11 +43,11 @@ export function ControlModeContent({
             {awaitingAuthorization.map((run) => (
               <li
                 key={run.runId}
-                className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-3 text-xs"
+                className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs"
                 data-testid={`console-queue-run-${run.runId}`}
               >
-                <p className="font-mono text-slate-200">{run.runId}</p>
-                <p className="mt-1 text-slate-400">{run.missionSummary}</p>
+                <p className="font-mono text-slate-800">{run.runId}</p>
+                <p className="mt-1 text-slate-500">{run.missionSummary}</p>
                 <p className="mt-1 text-[10px] text-slate-500">
                   compiled {run.declaredAt} · strategy <span className="font-mono">{run.strategyId}</span>
                 </p>
@@ -57,7 +57,7 @@ export function ControlModeContent({
         )}
       </section>
       <section aria-labelledby="console-authorized-title">
-        <h2 id="console-authorized-title" className="text-base font-semibold text-slate-100">
+        <h2 id="console-authorized-title" className="text-base font-semibold text-slate-900">
           Authorized runs
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -65,7 +65,7 @@ export function ControlModeContent({
           (the disclosed P2 boundary). The console never simulates their execution.
         </p>
         {authorized.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-authorized-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-authorized-empty">
             No armed runs yet — an armed run appears here with the experiment it bound.
           </p>
         ) : (
@@ -73,10 +73,10 @@ export function ControlModeContent({
             {authorized.map((run) => (
               <li
                 key={run.runId}
-                className="rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2 text-xs"
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs"
                 data-testid={`console-authorized-run-${run.runId}`}
               >
-                <span className="font-mono text-slate-200">{run.runId}</span>{' '}
+                <span className="font-mono text-slate-800">{run.runId}</span>{' '}
                 <span className="text-slate-500">· armed {run.authorizedAt}</span>
                 <span className="block text-[10px] text-slate-500">
                   experiment <span className="font-mono">{run.experimentId}</span> · waiting on the
@@ -88,7 +88,7 @@ export function ControlModeContent({
         )}
       </section>
       <section aria-labelledby="console-grants-title">
-        <h2 id="console-grants-title" className="text-base font-semibold text-slate-100">
+        <h2 id="console-grants-title" className="text-base font-semibold text-slate-900">
           Rights grants
         </h2>
         <p className="mt-1 text-xs text-slate-500">
@@ -96,7 +96,7 @@ export function ControlModeContent({
           path's recording gate resolves against these.
         </p>
         {rightsGrants.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-400" data-testid="console-grants-empty">
+          <p className="mt-2 text-xs text-slate-500" data-testid="console-grants-empty">
             No rights grants in this tenant — the evidence path (intelligence recording) needs one.
           </p>
         ) : (
@@ -104,10 +104,10 @@ export function ControlModeContent({
             {rightsGrants.map((grant) => (
               <li
                 key={grant.grantId}
-                className="text-slate-400"
+                className="text-slate-500"
                 data-testid={`console-grant-${grant.grantId}`}
               >
-                <span className="font-mono text-slate-200">{grant.grantId}</span> · {grant.action}{' '}
+                <span className="font-mono text-slate-800">{grant.grantId}</span> · {grant.action}{' '}
                 · {grant.status} · holder <span className="font-mono">{grant.rightsHolderId}</span>
               </li>
             ))}

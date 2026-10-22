@@ -40,11 +40,15 @@ const SHELL_VIEW: AppShellView = {
     workspaceId: 'ws_demo' as never,
     workspaceDisplayName: 'Demo Workspace',
   },
+  missionStatus: { active: false },
+  recentMissions: [],
 };
 
 const TENANTLESS_SHELL_VIEW: AppShellView = {
   sections: SHELL_SECTIONS,
   tenant: null,
+  missionStatus: { active: false },
+  recentMissions: [],
 };
 
 const missionsRoute = (query: {
@@ -147,6 +151,8 @@ test('a section id absent from the chrome is an unknown route, never a guess', a
   const absentShellView: AppShellView = {
     sections: SHELL_SECTIONS_WITHOUT_CONNECTIONS,
     tenant: SHELL_VIEW.tenant,
+    missionStatus: { active: false },
+    recentMissions: [],
   };
   const routeView = await loadMosRouteView(
     composition,

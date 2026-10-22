@@ -29,7 +29,7 @@ export function LabStrategyIntentForms({
   readonly onDeclareLabIntent: (declaration: LabIntentDeclaration) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-800 p-4">
+    <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-200 p-4">
       <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
         Declared lab-authority actions (write-intent declarations)
       </h4>

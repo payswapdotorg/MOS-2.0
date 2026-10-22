@@ -161,8 +161,15 @@ export function createProductionMosWebComposition(
     }
   }
 
+  const scope: TenantScope =
+    workspaceId === null
+      ? { tenantId: tenantId as never }
+      : { tenantId: tenantId as never, workspaceId: workspaceId as never };
+
   const appShell = createProductionAppShellPort({
     identityRepository,
+    missionRepository,
+    scope,
     tenantId,
     workspaceId,
   });
@@ -175,10 +182,6 @@ export function createProductionMosWebComposition(
   // authorities, the lab surface's runtime stack carries the benchmark and
   // calibration authorities, and the composition's tenant scope scopes
   // every declaration + ledger read.
-  const scope: TenantScope =
-    workspaceId === null
-      ? { tenantId: tenantId as never }
-      : { tenantId: tenantId as never, workspaceId: workspaceId as never };
   const labIntents = createProductionLabIntents({
     scope,
     labWorkspaceRuntime: labWorkspace.labWorkspaceRuntime,

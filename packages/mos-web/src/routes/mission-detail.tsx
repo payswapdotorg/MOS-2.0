@@ -10,14 +10,14 @@ import type { MissionDetailView, RewardTermView } from '../ports/mission-catalog
 
 function RewardTermRow({ term }: { readonly term: RewardTermView }) {
   return (
-    <li className="flex flex-col gap-0.5 border-l-2 border-slate-800 pl-3">
-      <span className="text-xs font-semibold text-slate-200">
+    <li className="flex flex-col gap-0.5 border-l-2 border-slate-200 pl-3">
+      <span className="text-xs font-semibold text-slate-800">
         {term.metric}
         <span className="ml-2 font-mono text-[10px] font-normal text-slate-500">
           {term.direction} · weight {term.weight}
         </span>
       </span>
-      <span className="text-xs text-slate-400">{term.definition}</span>
+      <span className="text-xs text-slate-500">{term.definition}</span>
     </li>
   );
 }
@@ -29,7 +29,7 @@ function RewardSpecVersions({
 }) {
   return (
     <section aria-labelledby="mission-reward-versions-title" className="mt-6">
-      <h3 id="mission-reward-versions-title" className="text-sm font-semibold text-slate-100">
+      <h3 id="mission-reward-versions-title" className="text-sm font-semibold text-slate-900">
         Reward spec versions
       </h3>
       <p className="mt-1 text-xs text-slate-500">
@@ -38,8 +38,8 @@ function RewardSpecVersions({
       </p>
       <ol className="mt-3 flex flex-col gap-3" data-testid="mission-reward-versions">
         {versions.map((version) => (
-          <li key={version.specVersion} className="rounded-lg border border-slate-800 p-3">
-            <p className="text-xs font-semibold text-slate-300">Spec v{version.specVersion}</p>
+          <li key={version.specVersion} className="rounded-lg border border-slate-200 p-3">
+            <p className="text-xs font-semibold text-slate-700">Spec v{version.specVersion}</p>
             <ul className="mt-2 flex flex-col gap-2">
               {version.terms.map((term) => (
                 <RewardTermRow key={`${version.specVersion}-${term.metric}`} term={term} />
@@ -59,7 +59,7 @@ function TransitionHistory({
 }) {
   return (
     <section aria-labelledby="mission-transitions-title" className="mt-6">
-      <h3 id="mission-transitions-title" className="text-sm font-semibold text-slate-100">
+      <h3 id="mission-transitions-title" className="text-sm font-semibold text-slate-900">
         Lifecycle transitions
       </h3>
       <p className="mt-1 text-xs text-slate-500">
@@ -70,9 +70,9 @@ function TransitionHistory({
         {transitions.map((transition) => (
           <li
             key={`${transition.recordVersion}-${transition.to}`}
-            className="flex items-center gap-2 text-xs text-slate-300"
+            className="flex items-center gap-2 text-xs text-slate-700"
           >
-            <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">
+            <span className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
               v{transition.recordVersion}
             </span>
             <span>
@@ -93,19 +93,19 @@ export function MissionDetailPanel({ detail }: { readonly detail: MissionDetailV
   return (
     <article
       aria-labelledby="mission-detail-title"
-      className="rounded-lg border border-slate-800 bg-slate-900/40 p-5"
+      className="rounded-lg border border-slate-200 bg-white p-5"
       data-testid="mission-detail"
     >
       <header className="flex flex-wrap items-center gap-2">
-        <h2 id="mission-detail-title" className="text-base font-semibold text-slate-100">
+        <h2 id="mission-detail-title" className="text-base font-semibold text-slate-900">
           {summary.title}
         </h2>
-        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
           {summary.lifecycleState}
         </span>
         <a
           href="/missions"
-          className="ml-auto text-xs text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+          className="ml-auto text-xs text-mos-navy underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
         >
           Back to the list
         </a>
@@ -116,10 +116,10 @@ export function MissionDetailPanel({ detail }: { readonly detail: MissionDetailV
       </p>
 
       <section aria-labelledby="mission-objective-title" className="mt-4">
-        <h3 id="mission-objective-title" className="text-sm font-semibold text-slate-100">
+        <h3 id="mission-objective-title" className="text-sm font-semibold text-slate-900">
           Objective
         </h3>
-        <p className="mt-1 text-sm leading-relaxed text-slate-300">{objectiveStatement}</p>
+        <p className="mt-1 text-sm leading-relaxed text-slate-700">{objectiveStatement}</p>
         {targetMetrics.length > 0 ? (
           <table className="mt-3 w-full text-left text-xs" data-testid="mission-target-metrics">
             <thead>
@@ -130,9 +130,9 @@ export function MissionDetailPanel({ detail }: { readonly detail: MissionDetailV
                 <th scope="col" className="py-1 font-medium">Horizon</th>
               </tr>
             </thead>
-            <tbody className="text-slate-300">
+            <tbody className="text-slate-700">
               {targetMetrics.map((metric) => (
-                <tr key={`${metric.metric}-${metric.target}`} className="border-t border-slate-800">
+                <tr key={`${metric.metric}-${metric.target}`} className="border-t border-slate-200">
                   <td className="py-1.5 pr-4">{metric.metric}</td>
                   <td className="py-1.5 pr-4 font-mono">{metric.target}</td>
                   <td className="py-1.5 pr-4">{metric.unit}</td>
@@ -145,8 +145,8 @@ export function MissionDetailPanel({ detail }: { readonly detail: MissionDetailV
         {constraints.length > 0 ? (
           <ul className="mt-3 flex flex-col gap-1" data-testid="mission-constraints">
             {constraints.map((constraint) => (
-              <li key={`${constraint.kind}-${constraint.description}`} className="text-xs text-slate-400">
-                <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">
+              <li key={`${constraint.kind}-${constraint.description}`} className="text-xs text-slate-500">
+                <span className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
                   {constraint.kind}
                 </span>{' '}
                 {constraint.description}
@@ -161,12 +161,12 @@ export function MissionDetailPanel({ detail }: { readonly detail: MissionDetailV
 
       {strategyRefs.length > 0 ? (
         <section aria-labelledby="mission-strategies-title" className="mt-6">
-          <h3 id="mission-strategies-title" className="text-sm font-semibold text-slate-100">
+          <h3 id="mission-strategies-title" className="text-sm font-semibold text-slate-900">
             Associated strategies
           </h3>
           <ul className="mt-2 flex flex-col gap-1" data-testid="mission-strategy-refs">
             {strategyRefs.map((ref) => (
-              <li key={ref} className="font-mono text-xs text-slate-400">
+              <li key={ref} className="font-mono text-xs text-slate-500">
                 {ref}
               </li>
             ))}

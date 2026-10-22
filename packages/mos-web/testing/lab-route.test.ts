@@ -35,9 +35,16 @@ const SHELL_VIEW: AppShellView = {
     workspaceId: 'ws_demo' as never,
     workspaceDisplayName: 'Demo Workspace',
   },
+  missionStatus: { active: false },
+  recentMissions: [],
 };
 
-const TENANTLESS_SHELL_VIEW: AppShellView = { sections: SHELL_SECTIONS, tenant: null };
+const TENANTLESS_SHELL_VIEW: AppShellView = {
+  sections: SHELL_SECTIONS,
+  tenant: null,
+  missionStatus: { active: false },
+  recentMissions: [],
+};
 
 const labRoute = (query: {
   readonly benchmark?: string;

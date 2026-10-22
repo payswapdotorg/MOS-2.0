@@ -43,18 +43,18 @@ function LabIdeaNodeRow({
       <a
         href={`/lab?section=idea-graph&node=${encodeURIComponent(node.nodeId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`lab-idea-row-${node.nodeId}`}
       >
         <span className="flex flex-wrap items-baseline gap-x-3">
-          <span className="font-mono text-xs text-slate-300">{node.nodeId}</span>
+          <span className="font-mono text-xs text-slate-700">{node.nodeId}</span>
           <span className="text-xs text-slate-500">v{node.version}</span>
         </span>
-        <span className="text-sm text-slate-100">{node.statement}</span>
+        <span className="text-sm text-slate-900">{node.statement}</span>
         <span className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
           <span>
             derives from {node.derivation.documentCount} document
@@ -76,23 +76,23 @@ function LabIdeaEdgeRow({ edge }: { readonly edge: LabIdeaEdgeView }) {
   const signed = edge.weight > 0 ? `+${edge.weight.toFixed(2)}` : edge.weight.toFixed(2);
   return (
     <li
-      className="flex flex-wrap items-baseline gap-x-3 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400"
+      className="flex flex-wrap items-baseline gap-x-3 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500"
       data-testid={`lab-idea-edge-${edge.edgeId}`}
     >
-      <span className="font-mono text-slate-300">{edge.edgeId}</span>
-      <span className="font-mono text-slate-400">{edge.fromNodeId}</span>
+      <span className="font-mono text-slate-700">{edge.edgeId}</span>
+      <span className="font-mono text-slate-500">{edge.fromNodeId}</span>
       <span
         className={`font-semibold ${
           edge.kind === 'contradicts'
-            ? 'text-red-300'
+            ? 'text-red-700'
             : edge.kind === 'supports'
-              ? 'text-emerald-300'
-              : 'text-slate-300'
+              ? 'text-emerald-700'
+              : 'text-slate-700'
         }`}
       >
         {EDGE_KIND_LABELS[edge.kind]} ({signed})
       </span>
-      <span className="font-mono text-slate-400">{edge.toNodeId}</span>
+      <span className="font-mono text-slate-500">{edge.toNodeId}</span>
       <span className="text-slate-500">v{edge.version}</span>
     </li>
   );
@@ -101,30 +101,30 @@ function LabIdeaEdgeRow({ edge }: { readonly edge: LabIdeaEdgeView }) {
 function LabDerivationStepRow({ step }: { readonly step: LabDerivationStepView }) {
   return (
     <li
-      className="flex flex-wrap items-baseline gap-x-3 rounded-md border border-dashed border-slate-800 px-3 py-1.5 text-xs text-slate-400"
+      className="flex flex-wrap items-baseline gap-x-3 rounded-md border border-dashed border-slate-200 px-3 py-1.5 text-xs text-slate-500"
       data-testid={`lab-derivation-${step.kind}`}
     >
       {step.kind === 'idea' ? (
         <>
-          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
             idea
           </span>
-          <span className="font-mono text-slate-300">{step.nodeId}</span>
+          <span className="font-mono text-slate-700">{step.nodeId}</span>
         </>
       ) : step.kind === 'feature-bundle' ? (
         <>
-          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
             feature bundle
           </span>
-          <span className="font-mono text-slate-300">{step.bundleId}</span>
+          <span className="font-mono text-slate-700">{step.bundleId}</span>
           <span className="text-slate-500">over document {step.documentId}</span>
         </>
       ) : (
         <>
-          <span className="rounded bg-emerald-900/40 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300">
+          <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-emerald-700">
             corpus document
           </span>
-          <span className="font-mono text-slate-300">{step.documentId}</span>
+          <span className="font-mono text-slate-700">{step.documentId}</span>
           <span className="font-mono text-slate-500">
             artifact {String(step.artifact.artifactId)} ·{' '}
             {formatLabDigestShort(String(step.artifact.digest))}
@@ -140,14 +140,14 @@ function LabIdeaDetailPanel({ detail }: { readonly detail: LabIdeaDetailView }) 
   return (
     <div className="flex flex-col gap-4" data-testid="lab-idea-detail">
       <div
-        className="flex flex-col gap-1 rounded-lg border border-sky-800/60 bg-sky-950/20 p-4"
+        className="flex flex-col gap-1 rounded-lg border border-mos-navy/30 bg-mos-navy/5 p-4"
         data-testid="lab-idea-detail-header"
       >
         <span className="flex flex-wrap items-baseline gap-x-3">
-          <span className="font-mono text-xs text-slate-300">{node.nodeId}</span>
+          <span className="font-mono text-xs text-slate-700">{node.nodeId}</span>
           <span className="text-xs text-slate-500">v{node.version}</span>
         </span>
-        <span className="text-sm text-slate-100">{node.statement}</span>
+        <span className="text-sm text-slate-900">{node.statement}</span>
         <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
           <span>provenance {node.provenanceRef}</span>
           <span>created {node.createdAt}</span>
@@ -163,10 +163,10 @@ function LabIdeaDetailPanel({ detail }: { readonly detail: LabIdeaDetailView }) 
           {neighborhood.nodes.map((neighbor) => (
             <li
               key={neighbor.nodeId}
-              className="flex flex-wrap items-baseline gap-x-3 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs"
+              className="flex flex-wrap items-baseline gap-x-3 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs"
             >
-              <span className="font-mono text-slate-300">{neighbor.nodeId}</span>
-              <span className="truncate text-slate-200">{neighbor.statement}</span>
+              <span className="font-mono text-slate-700">{neighbor.nodeId}</span>
+              <span className="truncate text-slate-800">{neighbor.statement}</span>
             </li>
           ))}
         </ul>
@@ -245,7 +245,7 @@ export function LabIdeaGraphSectionView({
 
       {selectedIdea !== null ? <LabIdeaDetailPanel detail={selectedIdea} /> : null}
 
-      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-dashed border-slate-800 p-4">
+      <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-dashed border-slate-200 p-4">
         <LabFact label="graph">
           {ideaGraph.nodes.length} nodes · {ideaGraph.edges.length} edges · tenant{' '}
           {ideaGraph.tenantId}

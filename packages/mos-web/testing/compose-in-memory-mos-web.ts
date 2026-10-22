@@ -215,6 +215,11 @@ export function createInMemoryMosWebComposition(
 
   const appShell = createInMemoryAppShellPort({
     identityRepository,
+    missionRepository,
+    scope:
+      workspaceId === null
+        ? { tenantId: tenantId as never }
+        : { tenantId: tenantId as never, workspaceId: workspaceId as never },
     tenantId,
     workspaceId,
   });

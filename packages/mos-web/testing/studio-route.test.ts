@@ -26,9 +26,16 @@ const SHELL_VIEW: AppShellView = {
     workspaceId: 'ws_demo' as never,
     workspaceDisplayName: 'Demo Workspace',
   },
+  missionStatus: { active: false },
+  recentMissions: [],
 };
 
-const TENANTLESS_SHELL_VIEW: AppShellView = { sections: SHELL_VIEW.sections, tenant: null };
+const TENANTLESS_SHELL_VIEW: AppShellView = {
+  sections: SHELL_VIEW.sections,
+  tenant: null,
+  missionStatus: { active: false },
+  recentMissions: [],
+};
 
 const studioRoute = (query: { readonly session?: string; readonly package?: string }) => ({
   kind: 'studio' as const,

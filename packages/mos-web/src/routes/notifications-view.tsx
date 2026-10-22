@@ -147,7 +147,7 @@ export function NotificationsSurfaceView({ data }: { readonly data: Notification
         <p data-testid="notif-tenant" className="text-xs text-slate-500">
           {renderTenantHeader(data.tenant)}
         </p>
-        <p className="text-xs text-slate-400">{DEDUP_LAW_LINE}</p>
+        <p className="text-xs text-slate-500">{DEDUP_LAW_LINE}</p>
       </header>
       {data.availability.kind === 'unavailable' ? (
         <div

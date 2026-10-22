@@ -51,8 +51,8 @@ function MissionIntentTermRow({
   readonly required: boolean;
 }) {
   return (
-    <fieldset className="grid gap-2 rounded-lg border border-slate-800 p-3 sm:grid-cols-2">
-      <legend className="px-1 text-xs font-semibold text-slate-400">
+    <fieldset className="grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-2">
+      <legend className="px-1 text-xs font-semibold text-slate-500">
         Reward term {row + 1}
         {required ? ' (at least the first term is required)' : ' (optional — blank rows are dropped)'}
       </legend>
@@ -63,7 +63,7 @@ function MissionIntentTermRow({
           name={MISSION_INTENT_FORM_FIELDS.termMetric}
           required={required}
           defaultValue=""
-          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-400"
+          className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mos-navy"
         >
           <option value="" disabled>
             Select a metric…
@@ -82,7 +82,7 @@ function MissionIntentTermRow({
           name={MISSION_INTENT_FORM_FIELDS.termDirection}
           required={required}
           defaultValue="maximize"
-          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-400"
+          className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mos-navy"
         >
           <option value="maximize">maximize (value term)</option>
           <option value="minimize">minimize (cost/risk term)</option>
@@ -97,7 +97,7 @@ function MissionIntentTermRow({
           step="any"
           required={required}
           defaultValue={required ? '1' : ''}
-          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-400"
+          className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mos-navy"
         />
       </label>
       <label htmlFor={termRowId(row, 'definition')} className="flex flex-col gap-1 text-xs sm:col-span-2">
@@ -107,7 +107,7 @@ function MissionIntentTermRow({
           name={MISSION_INTENT_FORM_FIELDS.termDefinition}
           required={required}
           rows={2}
-          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-400"
+          className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mos-navy"
         />
       </label>
     </fieldset>
@@ -139,13 +139,13 @@ export function MissionIntentForm({
   };
 
   return (
-    <details className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40" data-testid="mission-intent-form">
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">
+    <details className="mt-6 rounded-lg border border-slate-200 bg-white" data-testid="mission-intent-form">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy">
         Declare the intent to create a mission
       </summary>
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 border-t border-slate-800 px-4 py-4"
+        className="flex flex-col gap-4 border-t border-slate-200 px-4 py-4"
       >
         <p className="text-xs text-slate-500">
           Declaring intent routes the objective and reward terms to the Missions authority
@@ -161,7 +161,7 @@ export function MissionIntentForm({
             required
             rows={2}
             placeholder="e.g. Grow qualified reach of the developer audience in Q3 without fatigue or rights risk"
-            className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-400"
+            className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mos-navy"
           />
         </label>
         {Array.from({ length: TERM_ROW_COUNT }, (_, row) => (
@@ -174,7 +174,7 @@ export function MissionIntentForm({
         ))}
         <button
           type="submit"
-          className="self-start rounded-md bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+          className="self-start rounded-md bg-mos-navy px-4 py-2 text-sm font-semibold text-white hover:bg-mos-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
           data-testid="mission-intent-submit"
         >
           Declare intent

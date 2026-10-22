@@ -36,11 +36,11 @@ function ConsentStateBadge({ state }: { readonly state: StudioParticipantView['c
 function ParticipantRow({ participant }: { readonly participant: StudioParticipantView }) {
   return (
     <li
-      className="flex flex-col gap-1 rounded-lg border border-slate-800 bg-slate-900/40 p-3"
+      className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white p-3"
       data-testid={`studio-participant-${participant.participantId}`}
     >
       <span className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-xs text-slate-300">{participant.identityRef}</span>
+        <span className="font-mono text-xs text-slate-700">{participant.identityRef}</span>
         <ConsentStateBadge state={participant.consentState} />
       </span>
       <span className="text-xs text-slate-500">
@@ -62,18 +62,18 @@ function ConsentRequirementPanel({ requirement }: { readonly requirement: Studio
   return (
     <li
       role="alert"
-      className="rounded-lg border border-red-900/60 bg-red-950/20 p-3"
+      className="rounded-lg border border-red-300 bg-red-50 p-3"
       data-testid={`studio-consent-required-${requirement.subjectIdentityRef}`}
     >
-      <p className="text-xs font-semibold text-red-300">
+      <p className="text-xs font-semibold text-red-700">
         Consent required — {requirement.subjectKind === 'participant' ? 'participant' : 'imported source holder'}{' '}
         <span className="font-mono">{requirement.subjectIdentityRef}</span>
       </p>
-      <p className="mt-1 text-xs text-red-200/80">{requirement.message}</p>
-      <p className="mt-1 font-mono text-[11px] text-red-200/60">
+      <p className="mt-1 text-xs text-red-700">{requirement.message}</p>
+      <p className="mt-1 font-mono text-[11px] text-red-700">
         artifact {requirement.artifactId} · consent {requirement.consentRefs.join(' · ')}
       </p>
-      <p className="mt-1 text-[11px] text-red-200/60">
+      <p className="mt-1 text-[11px] text-red-700">
         Forward-moving operator actions are refused fail-closed (§15) until consent is restored. The
         consent change itself belongs to the rights authority — this surface only shows the verdict.
       </p>
@@ -84,15 +84,15 @@ function ConsentRequirementPanel({ requirement }: { readonly requirement: Studio
 function ReviewRow({ review }: { readonly review: StudioReviewRecordView }) {
   return (
     <li
-      className="flex flex-col gap-1 rounded-lg border border-slate-800 bg-slate-900/40 p-3"
+      className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white p-3"
       data-testid="studio-review-record"
     >
       <span className="flex flex-wrap items-center gap-2">
-        <span className="rounded bg-slate-700/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-200">
+        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-800">
           {review.outcome}
         </span>
-        <span className="text-xs text-slate-400">
-          decided by <span className="font-semibold text-slate-300">{studioDecisionActorLabel(review.decidedBy)}</span>
+        <span className="text-xs text-slate-500">
+          decided by <span className="font-semibold text-slate-700">{studioDecisionActorLabel(review.decidedBy)}</span>
         </span>
         <span className="font-mono text-[11px] text-slate-600">{review.decidedAt}</span>
       </span>
@@ -103,8 +103,8 @@ function ReviewRow({ review }: { readonly review: StudioReviewRecordView }) {
         <span
           className={`rounded px-1.5 py-0.5 text-[11px] ${
             review.rejection.kind === 'quality-rejection'
-              ? 'bg-amber-500/15 text-amber-300'
-              : 'bg-red-500/15 text-red-300'
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-red-100 text-red-700'
           }`}
           data-testid="studio-review-rejection"
         >
@@ -120,7 +120,7 @@ function ReviewRow({ review }: { readonly review: StudioReviewRecordView }) {
 
 function TransitionRow({ transition }: { readonly transition: StudioSessionTransitionView }) {
   return (
-    <li className="flex flex-wrap items-baseline gap-2 text-xs text-slate-400">
+    <li className="flex flex-wrap items-baseline gap-2 text-xs text-slate-500">
       <span className="font-mono">
         <span className={STUDIO_LIFECYCLE_BADGE_CLASSES[transition.from]}>
           {transition.from}
@@ -141,14 +141,14 @@ export function StudioSessionDetailPanel({ detail }: { readonly detail: StudioSe
   return (
     <article
       aria-labelledby="studio-session-detail-title"
-      className="flex flex-col gap-5 rounded-lg border border-slate-800 bg-slate-900/30 p-4 sm:p-6"
+      className="flex flex-col gap-5 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-6"
       data-testid="studio-session-detail"
     >
       <header className="flex flex-col gap-1">
-        <h3 id="studio-session-detail-title" className="text-base font-semibold text-slate-100">
+        <h3 id="studio-session-detail-title" className="text-base font-semibold text-slate-900">
           Session <span className="font-mono">{summary.sessionId}</span>
         </h3>
-        <p className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+        <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <span
             className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
               STUDIO_LIFECYCLE_BADGE_CLASSES[summary.lifecycleState]
@@ -166,13 +166,13 @@ export function StudioSessionDetailPanel({ detail }: { readonly detail: StudioSe
             No artifact package yet — packaging happens at review acceptance.
           </p>
         ) : (
-          <p className="text-xs text-slate-400" data-testid="studio-detail-package">
+          <p className="text-xs text-slate-500" data-testid="studio-detail-package">
             Artifact package{' '}
             <a
               href={`/studio?session=${encodeURIComponent(summary.sessionId)}&package=${encodeURIComponent(
                 summary.artifactPackageRef.packageId,
               )}`}
-              className="text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+              className="text-mos-navy underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
             >
               {summary.artifactPackageRef.packageId} (chain)
             </a>{' '}
@@ -182,7 +182,7 @@ export function StudioSessionDetailPanel({ detail }: { readonly detail: StudioSe
       </header>
 
       <section aria-labelledby="studio-session-transitions-title">
-        <h4 id="studio-session-transitions-title" className="text-sm font-semibold text-slate-200">
+        <h4 id="studio-session-transitions-title" className="text-sm font-semibold text-slate-800">
           Lifecycle history (append-only)
         </h4>
         {detail.transitions.length === 0 ? (
@@ -199,7 +199,7 @@ export function StudioSessionDetailPanel({ detail }: { readonly detail: StudioSe
       </section>
 
       <section aria-labelledby="studio-session-participants-title">
-        <h4 id="studio-session-participants-title" className="text-sm font-semibold text-slate-200">
+        <h4 id="studio-session-participants-title" className="text-sm font-semibold text-slate-800">
           Participants (§15 multi-account — identity, account boundary and consent stay separate)
         </h4>
         {detail.participants.length === 0 ? (
@@ -217,7 +217,7 @@ export function StudioSessionDetailPanel({ detail }: { readonly detail: StudioSe
 
       {detail.consentRequirements.length === 0 ? null : (
         <section aria-labelledby="studio-consent-requirements-title">
-          <h4 id="studio-consent-requirements-title" className="text-sm font-semibold text-red-300">
+          <h4 id="studio-consent-requirements-title" className="text-sm font-semibold text-red-700">
             Consent required (§15 live re-resolution)
           </h4>
           <ul className="mt-2 flex flex-col gap-2" data-testid="studio-consent-requirements">
@@ -232,7 +232,7 @@ export function StudioSessionDetailPanel({ detail }: { readonly detail: StudioSe
       )}
 
       <section aria-labelledby="studio-session-reviews-title">
-        <h4 id="studio-session-reviews-title" className="text-sm font-semibold text-slate-200">
+        <h4 id="studio-session-reviews-title" className="text-sm font-semibold text-slate-800">
           Review records (§30-attributable, append-only)
         </h4>
         {detail.reviews.length === 0 ? (

@@ -26,7 +26,8 @@ export type ShellSectionId =
   | 'studio'
   | 'lab'
   | 'connections'
-  | 'notifications';
+  | 'notifications'
+  | 'measurement';
 
 /**
  * Availability of a product surface in this shell build. Unavailable is a
@@ -56,12 +57,43 @@ export interface TenantContextView {
   readonly workspaceDisplayName: string | null;
 }
 
+/**
+ * Mission-activity status for the shell header's mission badge (the wave-24
+ * target-design conversion): `active` is TRUE exactly when at least one
+ * mission in the presented scope is in the `active` lifecycle state — a
+ * derived read of what the missions authority holds, never a wish.
+ */
+export interface ShellMissionStatusView {
+  readonly active: boolean;
+}
+
+/**
+ * One recent mission as presented by the shell rail's "Recent missions"
+ * list (the wave-24 target-design conversion). View-shaped: id, title, and
+ * the app-internal route that opens the mission's console workspace.
+ */
+export interface ShellRecentMissionView {
+  readonly missionId: string;
+  /** Presentation title (the mission objective statement). */
+  readonly title: string;
+  /** App-internal route (`/console?mission=…`). */
+  readonly route: string;
+}
+
 /** Everything the app shell chrome needs. */
 export interface AppShellView {
   /** Navigation sections in display order; Home and Missions come first. */
   readonly sections: readonly ShellSectionView[];
   /** Tenant context, or `null` when no tenant context is resolved. */
   readonly tenant: TenantContextView | null;
+  /**
+   * Mission-activity status for the header badge, or `null` when the
+   * missions read failed (the badge is then honestly omitted, never
+   * guessed).
+   */
+  readonly missionStatus: ShellMissionStatusView | null;
+  /** Recent missions (most recent first); empty is a REAL state, not an error. */
+  readonly recentMissions: readonly ShellRecentMissionView[];
 }
 
 /** Typed failure shape for {@link AppShellPort.loadAppShell}. */

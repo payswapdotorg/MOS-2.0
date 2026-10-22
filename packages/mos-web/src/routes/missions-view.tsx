@@ -24,17 +24,17 @@ function IntentReceiptPanel({
   return (
     <aside
       aria-labelledby="intent-receipt-title"
-      className="rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-4"
+      className="rounded-lg border border-emerald-200 bg-emerald-50 p-4"
       data-testid="intent-receipt"
     >
-      <h2 id="intent-receipt-title" className="text-sm font-semibold text-emerald-300">
+      <h2 id="intent-receipt-title" className="text-sm font-semibold text-emerald-700">
         Create-mission intent recorded
       </h2>
-      <p className="mt-1 text-xs text-emerald-200/80">
+      <p className="mt-1 text-xs text-emerald-700">
         The declaration was routed to <span className="font-mono">{receipt.routedTo}</span> at{' '}
         {receipt.declaredAt}. {receipt.note}
       </p>
-      <p className="mt-1 font-mono text-xs text-emerald-200/70">intent {receipt.intentId}</p>
+      <p className="mt-1 font-mono text-xs text-emerald-600">intent {receipt.intentId}</p>
     </aside>
   );
 }
@@ -44,20 +44,20 @@ function IntentErrorPanel({ code }: { readonly code: string }) {
     <aside
       role="alert"
       aria-labelledby="intent-error-title"
-      className="rounded-lg border border-red-900/60 bg-red-950/20 p-4"
+      className="rounded-lg border border-red-300 bg-red-50 p-4"
       data-testid="intent-error"
     >
-      <h2 id="intent-error-title" className="text-sm font-semibold text-red-300">
+      <h2 id="intent-error-title" className="text-sm font-semibold text-red-700">
         The intent could not be declared
       </h2>
-      <p className="mt-1 text-xs text-red-200/80">
+      <p className="mt-1 text-xs text-red-700">
         The Missions authority refused the declaration
         (<span className="font-mono">{code}</span>). Nothing was created — the failure is
         explicit, not papered over.
       </p>
       <a
         href="/missions"
-        className="mt-2 inline-flex text-xs text-red-200 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+        className="mt-2 inline-flex text-xs text-red-200 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
       >
         Back to the mission list
       </a>
@@ -78,13 +78,13 @@ function ReceiptUnavailablePanel() {
     <aside
       role="status"
       aria-labelledby="intent-receipt-unavailable-title"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4"
       data-testid="intent-receipt-unavailable"
     >
-      <h2 id="intent-receipt-unavailable-title" className="text-sm font-semibold text-amber-300">
+      <h2 id="intent-receipt-unavailable-title" className="text-sm font-semibold text-amber-700">
         The intent receipt is not available on this load
       </h2>
-      <p className="mt-1 text-xs text-amber-200/80">
+      <p className="mt-1 text-xs text-amber-700">
         The catalog has no receipt for this intent id. The declaration itself was accepted when it
         was made — what is missing is the receipt read-back: this shell build runs the disclosed
         per-load in-memory composition, so state recorded on a previous load is not visible to
@@ -92,7 +92,7 @@ function ReceiptUnavailablePanel() {
       </p>
       <a
         href="/missions"
-        className="mt-2 inline-flex text-xs text-amber-200 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+        className="mt-2 inline-flex text-xs text-amber-800 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
       >
         Back to the mission list
       </a>
@@ -104,7 +104,7 @@ function SelectionErrorPanel({ error }: { readonly error: 'mission-not-found' | 
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid="mission-selection-error"
     >
       {error === 'mission-not-found'
@@ -141,7 +141,7 @@ export function MissionsView({
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-xl font-bold">Missions</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-slate-500">
           Declared objectives with versioned, mission-specific reward specs — the front door of
           the complete loop. List reads and intent declarations only; lifecycle and reward rules
           live in the Missions authority.
@@ -180,7 +180,7 @@ export function MissionsView({
           id="ux005-mission-detail"
           defaultOpen
           summary={
-            <span className="text-sm font-semibold text-slate-200">
+            <span className="text-sm font-semibold text-slate-800">
               Mission detail — {data.selected.summary.missionId} (expand for the objective,
               reward spec and lifecycle record)
             </span>

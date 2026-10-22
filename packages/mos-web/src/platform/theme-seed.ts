@@ -2,7 +2,9 @@
  * MOS theme seed (WEB-001) — the pre-paint theme resolution pattern ported
  * from the audited Zcode web shell (`packages/web/src/webThemeSeed.ts`, UX
  * substrate audit KEEP table) with MOS tokens: storage key `mos-theme`,
- * themes `light` / `dark`, default `dark`.
+ * themes `light` / `dark`, default `light` since the wave-24 target-design
+ * conversion (the supplied MOS Agent Console mockups are a light design;
+ * the persisted seed still honors an explicit `dark` preference).
  *
  * `index.html` inlines a mirror of this resolution so the first paint is
  * themed before the JS bundle executes (the same duplication the audited
@@ -11,7 +13,7 @@
 
 export type MosThemeSeed = 'light' | 'dark' | 'system';
 
-export const MOS_DEFAULT_THEME: MosThemeSeed = 'dark';
+export const MOS_DEFAULT_THEME: MosThemeSeed = 'light';
 
 export const MOS_THEME_STORAGE_KEY = 'mos-theme';
 

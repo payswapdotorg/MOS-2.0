@@ -34,19 +34,19 @@ function LoopStage({
     <li className="relative pl-10" data-testid={`loop-stage-${index}`}>
       <span
         aria-hidden="true"
-        className="absolute left-0 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-sky-300"
+        className="absolute left-0 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-mos-navy"
       >
         {index}
       </span>
-      <h3 className="text-base font-semibold text-slate-100">{title}</h3>
-      <p className="text-sm leading-relaxed text-slate-300">{description}</p>
+      <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+      <p className="text-sm leading-relaxed text-slate-700">{description}</p>
       <p className="mt-2 text-xs text-slate-500">
-        Owned by <span className="font-semibold text-slate-400">{owner}</span>
+        Owned by <span className="font-semibold text-slate-500">{owner}</span>
         {sectionLink === undefined ? ' — surface arrives with its wave' : ' · '}
         {sectionLink !== undefined ? (
           <a
             href={sectionLink.href}
-            className="ml-1 text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+            className="ml-1 text-mos-navy underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
           >
             open the {sectionLink.label} surface
           </a>
@@ -67,20 +67,20 @@ export function HomeView() {
   return (
     <div className="flex flex-col gap-10">
       <section aria-labelledby="mos-home-title">
-        <p className="text-xs font-semibold uppercase tracking-widest text-sky-400">
+        <p className="text-xs font-semibold uppercase tracking-widest text-mos-navy">
           Marketing-engineering operating system
         </p>
         <h1 id="mos-home-title" className="mt-2 max-w-3xl text-2xl font-bold leading-snug sm:text-3xl">
           {MOS_PRODUCT_THESIS}
         </h1>
-        <p className="mt-3 max-w-2xl text-sm text-slate-400">
+        <p className="mt-3 max-w-2xl text-sm text-slate-500">
           One complete loop, four cooperating loops, every authority named. Start from a declared
           mission; the system discovers, simulates, produces, tests, measures and improves the
           marketing program around it.
         </p>
         <a
           href="/missions"
-          className="mt-5 inline-flex items-center rounded-md bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+          className="mt-5 inline-flex items-center rounded-md bg-mos-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-mos-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
           data-testid="home-cta-missions"
         >
           Go to Missions
@@ -91,10 +91,10 @@ export function HomeView() {
         <h2 id="mos-home-loop-title" className="text-lg font-semibold">
           The complete loop
         </h2>
-        <p className="mt-1 max-w-2xl text-sm text-slate-400">
+        <p className="mt-1 max-w-2xl text-sm text-slate-500">
           What one run around the system looks like (spec §2), stage by stage:
         </p>
-        <ol className="relative mt-6 flex flex-col gap-6 border-l border-slate-800 pl-0">
+        <ol className="relative mt-6 flex flex-col gap-6 border-l border-slate-200 pl-0">
           {MOS_COMPLETE_LOOP_STAGES.map((stage, index) => (
             <LoopStage
               key={stage.id}
@@ -112,7 +112,7 @@ export function HomeView() {
         <h2 id="mos-home-orientation-title" className="text-lg font-semibold">
           The loop at a glance
         </h2>
-        <p className="mt-1 max-w-2xl text-sm text-slate-400">
+        <p className="mt-1 max-w-2xl text-sm text-slate-500">
           The complete loop as one compact strip (UX-005 progressive disclosure):
           each stage expands to its paragraph and links to the surface that owns
           it — the same narration as above, layered for scanning.
@@ -122,12 +122,12 @@ export function HomeView() {
             <li key={stage.id}>
               <DisclosureItem
                 id={stage.id}
-                summary={<span className="text-sm font-semibold text-slate-200">{stage.stage}</span>}
+                summary={<span className="text-sm font-semibold text-slate-800">{stage.stage}</span>}
               >
-                <p className="text-sm leading-relaxed text-slate-300">{stage.paragraph}</p>
+                <p className="text-sm leading-relaxed text-slate-700">{stage.paragraph}</p>
                 <a
                   href={stage.ownerHref}
-                  className="mt-2 inline-block text-sm text-sky-400 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+                  className="mt-2 inline-block text-sm text-mos-navy underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
                 >
                   Go to {stage.ownerLabel}
                 </a>
@@ -145,10 +145,10 @@ export function HomeView() {
           {MOS_COOPERATING_LOOPS.map((loop) => (
             <li
               key={loop.id}
-              className="rounded-lg border border-slate-800 bg-slate-900/40 p-4"
+              className="rounded-lg border border-slate-200 bg-white p-4"
             >
-              <h3 className="text-sm font-semibold text-slate-100">{loop.title}</h3>
-              <p className="mt-1 text-xs text-slate-400">{loop.summary}</p>
+              <h3 className="text-sm font-semibold text-slate-900">{loop.title}</h3>
+              <p className="mt-1 text-xs text-slate-500">{loop.summary}</p>
             </li>
           ))}
         </ul>

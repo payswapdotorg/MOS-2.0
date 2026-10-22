@@ -1,8 +1,11 @@
 import type { IdentityRepository, TenantId, WorkspaceId } from '@mos/identity';
+import type { MissionRepository } from '@mos/missions';
+import type { TenantScope } from '@mos/contracts';
 import type {
   AppShellLoadFailure,
   AppShellPort,
   AppShellView,
+  ShellRecentMissionView,
   ShellSectionId,
   ShellSectionView,
   SurfaceAvailabilityView,
@@ -36,6 +39,14 @@ export interface InMemoryAppShellPortOptions {
   /** The REAL identity repository the view models are derived from. */
   readonly identityRepository: IdentityRepository;
   /**
+   * The REAL missions repository the rail's recent-missions list and the
+   * header's mission-activity status are derived from (wave-24 target-design
+   * conversion).
+   */
+  readonly missionRepository: MissionRepository;
+  /** The tenant scope the mission reads are scoped to. */
+  readonly scope: TenantScope;
+  /**
    * The tenant/workspace the shell presents (spec §31 — the shell itself
    * never picks a default tenant; the composition decides what is resolved).
    */
@@ -51,9 +62,23 @@ const SECTION_TABLE: readonly {
 }[] = [
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
+  {
+    id: 'lab',
+    label: 'Research Lab',
+    route: '/lab',
+    availability: { kind: 'available' },
+  },
   { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
-  { id: 'lab', label: 'Lab', route: '/lab', availability: { kind: 'available' } },
+  {
+    id: 'measurement',
+    label: 'Measurement',
+    route: '/measurement',
+    availability: {
+      kind: 'not-yet-available',
+      dependsOn: 'UX-007 — no measurement read models are bound in any composition yet',
+    },
+  },
   {
     id: 'connections',
     label: 'Connections',
@@ -67,6 +92,31 @@ const SECTION_TABLE: readonly {
     availability: { kind: 'available' },
   },
 ];
+
+/** How many recent missions the shell rail presents. */
+const RECENT_MISSIONS_LIMIT = 5;
+
+/**
+ * Derive the rail's recent-missions list from the REAL repository: most
+ * recently mutated first, view-shaped. A read failure returns an empty
+ * list — the rail then honestly shows "No recent missions".
+ */
+function recentMissionsOf(
+  missionRepository: MissionRepository,
+  scope: TenantScope,
+): readonly ShellRecentMissionView[] {
+  try {
+    const missions = [...missionRepository.listMissions(scope)];
+    missions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
+    return missions.slice(0, RECENT_MISSIONS_LIMIT).map((mission) => ({
+      missionId: String(mission.id),
+      title: mission.objective.statement,
+      route: `/console?mission=${encodeURIComponent(String(mission.id))}`,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Build the in-memory app-shell port over a REAL `IdentityRepository`.
@@ -105,9 +155,21 @@ export function createInMemoryAppShellPort(
 
   return {
     async loadAppShell(): Promise<AppShellView | AppShellLoadFailure> {
+      let missionStatus: { readonly active: boolean } | null;
+      try {
+        missionStatus = {
+          active: options.missionRepository
+            .listMissions(options.scope)
+            .some((mission) => mission.status === 'active'),
+        };
+      } catch {
+        missionStatus = null;
+      }
       return {
         sections,
         tenant: tenantContext(),
+        missionStatus,
+        recentMissions: recentMissionsOf(options.missionRepository, options.scope),
       };
     },
   };

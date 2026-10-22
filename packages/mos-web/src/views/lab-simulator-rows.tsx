@@ -34,15 +34,15 @@ export function LabWorldModelRow({
 }) {
   return (
     <li
-      className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+      className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
       data-testid={`lab-world-model-${world.worldModelId}-v${world.worldModelVersion}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-mono text-xs text-slate-200">{world.worldModelId}</span>
+        <span className="font-mono text-xs text-slate-800">{world.worldModelId}</span>
         <span className="text-xs text-slate-500">v{world.worldModelVersion}</span>
         <LabCounterfactualBadge />
       </span>
-      <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-400">
+      <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
         <span>audience {world.state.baseAudience.toLocaleString()}</span>
         <span>fatigue {world.state.fatigue.toFixed(2)}</span>
         <span>competitor share {world.state.competitorShare.toFixed(2)}</span>
@@ -64,11 +64,11 @@ export function LabDynamicsModelRow({
 }) {
   return (
     <li
-      className="flex flex-col gap-1 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2"
+      className="flex flex-col gap-1 rounded-md border border-slate-200 bg-white px-3 py-2"
       data-testid={`lab-dynamics-model-${model.dynamicsModelId}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-mono text-xs text-slate-200">{model.dynamicsModelId}</span>
+        <span className="font-mono text-xs text-slate-800">{model.dynamicsModelId}</span>
         <span className="text-xs text-slate-500">v{model.version}</span>
         <LabCounterfactualBadge />
       </span>
@@ -76,13 +76,13 @@ export function LabDynamicsModelRow({
         {model.populations.map((segment) => (
           <li
             key={segment.segmentId}
-            className="flex flex-wrap gap-x-3 text-[11px] text-slate-400"
+            className="flex flex-wrap gap-x-3 text-[11px] text-slate-500"
             data-testid={`lab-dynamics-segment-${segment.segmentId}`}
           >
-            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
+            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
               {segment.kind}
             </span>
-            <span className="text-slate-300">{segment.label}</span>
+            <span className="text-slate-700">{segment.label}</span>
             <span>share {(segment.share * 100).toFixed(0)}%</span>
             <span>fatigue-sens {segment.fatigueSensitivity.toFixed(2)}</span>
             <span>novelty {segment.noveltySeeking.toFixed(2)}</span>
@@ -107,19 +107,19 @@ export function LabSimulationRunRow({
       <a
         href={`/lab?section=simulator&run=${encodeURIComponent(run.runId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:flex-row sm:items-center sm:justify-between ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy sm:flex-row sm:items-center sm:justify-between ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`lab-run-row-${run.runId}`}
       >
         <span className="flex min-w-0 flex-col gap-1">
           <span className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm text-slate-100">{run.runId}</span>
+            <span className="font-mono text-sm text-slate-900">{run.runId}</span>
             <LabCounterfactualBadge testId={`lab-run-counterfactual-${run.runId}`} />
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             scenario {run.scenarioRef} · seed {run.seed} (determinism) · step {run.step}
           </span>
         </span>
@@ -142,17 +142,17 @@ export function LabObservationRow({
 }) {
   return (
     <li
-      className="flex flex-col gap-1 rounded-md border border-emerald-900/40 bg-emerald-950/10 px-3 py-2"
+      className="flex flex-col gap-1 rounded-md border border-emerald-900/40 bg-emerald-50 px-3 py-2"
       data-testid={`lab-observation-${observation.observationId}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-mono text-xs text-slate-200">{observation.observationId}</span>
+        <span className="font-mono text-xs text-slate-800">{observation.observationId}</span>
         <LabMeasuredBadge testId={`lab-observation-measured-${observation.observationId}`} />
       </span>
-      <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-400">
+      <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
         {observation.metrics.map((metric) => (
           <span key={metric.metric}>
-            {metric.metric} <span className="font-mono text-slate-300">{metric.value}</span>{' '}
+            {metric.metric} <span className="font-mono text-slate-700">{metric.value}</span>{' '}
             {metric.unit}
           </span>
         ))}
@@ -181,19 +181,19 @@ export function LabBranchRow({
       <a
         href={`/lab?section=simulator&branch=${encodeURIComponent(branch.branchId)}`}
         aria-current={selected ? 'page' : undefined}
-        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
+        className={`flex flex-col gap-1 rounded-lg border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy ${
           selected
-            ? 'border-sky-600 bg-sky-500/10'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            ? 'border-mos-navy bg-mos-navy/5'
+            : 'border-slate-200 bg-white hover:border-slate-300'
         }`}
         data-testid={`lab-branch-row-${branch.branchId}`}
       >
         <span className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm text-slate-100">{branch.branchId}</span>
+          <span className="font-mono text-sm text-slate-900">{branch.branchId}</span>
           <span className="text-xs text-slate-500">v{branch.version}</span>
           <LabCounterfactualBadge testId={`lab-branch-counterfactual-${branch.branchId}`} />
         </span>
-        <span className="text-xs text-slate-300">{branch.intervention.description}</span>
+        <span className="text-xs text-slate-700">{branch.intervention.description}</span>
         <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
           <span className="font-mono">forked at {branch.forkPoint}</span>
           <span>
@@ -218,11 +218,11 @@ export function LabRunDetailPanel({ detail }: { readonly detail: LabSimulationRu
   return (
     <div className="flex flex-col gap-4" data-testid="lab-run-detail">
       <div
-        className="flex flex-col gap-1 rounded-lg border border-sky-800/60 bg-sky-950/20 p-4"
+        className="flex flex-col gap-1 rounded-lg border border-mos-navy/30 bg-mos-navy/5 p-4"
         data-testid="lab-run-detail-header"
       >
         <span className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm text-slate-100">{summary.runId}</span>
+          <span className="font-mono text-sm text-slate-900">{summary.runId}</span>
           <LabCounterfactualBadge testId="lab-run-detail-counterfactual" />
         </span>
         <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
@@ -246,11 +246,11 @@ export function LabRunDetailPanel({ detail }: { readonly detail: LabSimulationRu
           {metrics.map((metric) => (
             <li
               key={metric.metric}
-              className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs"
+              className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs"
               data-testid={`lab-run-metric-${metric.metric}`}
             >
-              <span className="text-slate-200">{metric.metric}</span>
-              <span className="font-mono text-slate-300">
+              <span className="text-slate-800">{metric.metric}</span>
+              <span className="font-mono text-slate-700">
                 {formatLabExpectedWithInterval(metric.expectedValue, metric.interval)}{' '}
                 {metric.unit}
               </span>
@@ -270,10 +270,10 @@ export function LabRunDetailPanel({ detail }: { readonly detail: LabSimulationRu
             deltas.map((delta) => (
               <li
                 key={delta.metric}
-                className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs"
+                className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs"
               >
-                <span className="text-slate-200">Δ {delta.metric}</span>
-                <span className="font-mono text-slate-300">
+                <span className="text-slate-800">Δ {delta.metric}</span>
+                <span className="font-mono text-slate-700">
                   expected Δ {delta.expectedDelta.toFixed(2)} · interval [
                   {delta.interval.lower.toFixed(2)}, {delta.interval.upper.toFixed(2)}]{' '}
                   {delta.unit}
@@ -284,11 +284,11 @@ export function LabRunDetailPanel({ detail }: { readonly detail: LabSimulationRu
         </ul>
       </div>
 
-      <div className="flex flex-col gap-1 rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+      <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white p-4">
         <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Next world state (synthetic)
         </span>
-        <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-400">
+        <span className="flex flex-wrap gap-x-4 text-[11px] text-slate-500">
           <span>audience {nextWorldState.baseAudience.toLocaleString()}</span>
           <span>fatigue {nextWorldState.fatigue.toFixed(2)}</span>
           <span>competitor share {nextWorldState.competitorShare.toFixed(2)}</span>

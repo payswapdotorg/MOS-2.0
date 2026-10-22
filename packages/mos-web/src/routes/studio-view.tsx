@@ -26,7 +26,7 @@ function SelectionErrorPanel({ error }: { readonly error: 'studio-session-not-fo
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid="studio-session-selection-error"
     >
       {error === 'studio-session-not-found'
@@ -40,7 +40,7 @@ function ChainErrorPanel({ error }: { readonly error: 'studio-package-not-found'
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid="studio-chain-error"
     >
       {error === 'studio-package-not-found'
@@ -54,7 +54,7 @@ function LibraryUnavailablePanel() {
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-xs text-amber-200/90"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800"
       data-testid="studio-library-unavailable"
     >
       The package library could not be loaded on this pass — the studio package service failed
@@ -89,7 +89,7 @@ export function StudioView({ data }: { readonly data: StudioPageData }) {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-xl font-bold">Studio</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-slate-500">
           {STUDIO_LOOP_NARRATION.position} — {STUDIO_LOOP_NARRATION.summary}
         </p>
         <p className="mt-1 text-xs text-slate-500" data-testid="studio-handoff-note">
@@ -105,7 +105,7 @@ export function StudioView({ data }: { readonly data: StudioPageData }) {
       />
 
       <section aria-labelledby="studio-directory-title">
-        <h2 id="studio-directory-title" className="text-base font-semibold text-slate-100">
+        <h2 id="studio-directory-title" className="text-base font-semibold text-slate-900">
           Session directory
         </h2>
         <p className="mb-3 mt-1 text-xs text-slate-500">
@@ -124,7 +124,7 @@ export function StudioView({ data }: { readonly data: StudioPageData }) {
           id="ux005-studio-session"
           defaultOpen
           summary={
-            <span className="text-sm font-semibold text-slate-200">
+            <span className="text-sm font-semibold text-slate-800">
               Session detail — {data.selected.summary.sessionId} (§14 labels and consent states
               render inside; expand for the full record)
             </span>
@@ -135,7 +135,7 @@ export function StudioView({ data }: { readonly data: StudioPageData }) {
       ) : null}
 
       <section aria-labelledby="studio-packages-title">
-        <h2 id="studio-packages-title" className="text-base font-semibold text-slate-100">
+        <h2 id="studio-packages-title" className="text-base font-semibold text-slate-900">
           Artifact packages
         </h2>
         <p className="mb-3 mt-1 text-xs text-slate-500">
