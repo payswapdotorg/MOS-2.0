@@ -84,15 +84,15 @@ test('the availability verdicts are honest for this release (the §5 target-desi
   const shell = await composition.appShell.loadAppShell();
   assert.ok(!('error' in shell));
   const sections = shell.sections.map((section) => section.id);
-  // The §5 target rail order (the Social Media slot between Agent Console
-  // and Studio is the UXR social wave's to add here): home, missions, lab,
-  // console, [social], studio, distribution, experiments, measurement,
-  // connections, notifications.
+  // The §5 target rail order (social between Agent Console and Studio from
+  // the UXR social wave): home, missions, lab, console, social, studio,
+  // distribution, experiments, measurement, connections, notifications.
   assert.deepEqual(sections, [
     'home',
     'missions',
     'lab',
     'console',
+    'social',
     'studio',
     'distribution',
     'experiments',
@@ -101,7 +101,7 @@ test('the availability verdicts are honest for this release (the §5 target-desi
     'notifications',
   ]);
   const byId = new Map(shell.sections.map((section) => [section.id, section]));
-  for (const id of ['home', 'missions', 'lab', 'console'] as const) {
+  for (const id of ['home', 'missions', 'lab', 'console', 'social'] as const) {
     assert.deepEqual(byId.get(id)?.availability, { kind: 'available' }, `${id} is available`);
   }
   assert.equal(byId.get('lab')?.label, 'Research Lab', 'the target design\'s rail label');
@@ -120,6 +120,12 @@ test('the availability verdicts are honest for this release (the §5 target-desi
       `${id} is an available route in the rail`,
     );
   }
+  assert.equal(byId.get('social')?.label, 'Social Media', 'the §8 social workspace rail label');
+  assert.equal(
+    typeof composition.social.loadSocialWorkspace,
+    'function',
+    'the social workspace port is bound',
+  );
   assert.equal(byId.get('notifications')?.label, 'Activity & Approvals');
   for (const id of ['studio', 'measurement'] as const) {
     const availability = byId.get(id)?.availability;

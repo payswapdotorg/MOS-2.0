@@ -90,7 +90,7 @@ const expectShellView = async (port: ReturnType<typeof createInMemoryAppShellPor
 
 test('the shell loads its chrome as a view model (async port contract)', async () => {
   const shellView = await expectShellView(makeShell('tenant-a'));
-  assert.equal(shellView.sections.length, 10);
+  assert.equal(shellView.sections.length, 11);
 });
 
 test('the §5 target-design rail order holds: lab third, console fourth, then the not-yet group, then the promoted routes', async () => {
@@ -103,6 +103,7 @@ test('the §5 target-design rail order holds: lab third, console fourth, then th
       'missions',
       'lab',
       'console',
+      'social',
       'studio',
       'distribution',
       'experiments',
@@ -110,13 +111,14 @@ test('the §5 target-design rail order holds: lab third, console fourth, then th
       'connections',
       'notifications',
     ],
-    'Home and Missions first (UX-001), Research Lab third and Agent Console fourth (the target-design rail order), Studio fifth, then the honest not-yet-available group (Distribution + Experiments are NEW rows, §5 UXR-WC), Measurement & Learning relabeled, and the promoted Connections + Activity & Approvals routes last',
+    'Home and Missions first (UX-001), Research Lab third and Agent Console fourth (the target-design rail order), Social Media fifth (the §8 social workspace), Studio sixth, then the honest not-yet-available group (Distribution + Experiments are NEW rows, §5 UXR-WC), Measurement & Learning relabeled, and the promoted Connections + Activity & Approvals routes last',
   );
   const home = shellView.sections[0];
   const missions = shellView.sections[1];
   const lab = shellView.sections[2];
   const consoleSection = shellView.sections[3];
-  const studio = shellView.sections[4];
+  const social = shellView.sections[4];
+  const studio = shellView.sections[5];
   assert.equal(home?.route, '/');
   assert.deepEqual(home?.availability, { kind: 'available' });
   assert.equal(missions?.route, '/missions');
@@ -130,6 +132,9 @@ test('the §5 target-design rail order holds: lab third, console fourth, then th
     { kind: 'available' },
     'the CONSOLE wave turned the Agent Console section on — the operational center',
   );
+  assert.equal(social?.label, 'Social Media');
+  assert.equal(social?.route, '/social');
+  assert.deepEqual(social?.availability, { kind: 'available' }, 'the §8 social workspace is on');
   assert.equal(studio?.route, '/studio');
   assert.deepEqual(
     studio?.availability,
