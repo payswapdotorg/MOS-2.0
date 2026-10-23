@@ -53,6 +53,14 @@ import {
   declareConsoleIntentThroughPort,
   consoleIntentOutcomeHref,
 } from './routes/console-intent-declaration.js';
+import { missionScopeFromTenantContext } from './routes/route-scope.js';
+import { installMosComposerHotkey } from './shell/composer-hotkey.js';
+import { subscribeMosComposerOpen } from './shell/composer-bridge.js';
+import {
+  composerConfirmPlan,
+  composerReducer,
+  initialComposerState,
+} from './shell/composer-state.js';
 import { MosAppErrorBoundary } from './shell/error-boundary.jsx';
 import { MosAppShell } from './shell/mos-app-shell.js';
 import { MosBootstrapErrorView } from './shell/status-views.js';
@@ -110,8 +118,62 @@ function bootMosWebShell() {
   // re-resolves the page model against the SAME shell view without a
   // document reload.
   const shellViewRef = { current: null };
+  // The current route-view bundle — the composer re-renders the shell in
+  // place when its overlay state changes (the entries own the composer's
+  // module-level UI state; the components stay hook-free).
+  let currentRouteViewBundle = null;
+
+  // THE UNIVERSAL AGENT COMPOSER (§6 P0, UXR-WC): the entry owns the
+  // composer's UI state (the PURE reducer in shell/composer-state.ts) and
+  // re-mounts the shell on every event — the same render-only remount the
+  // soft navigations use. The `confirm` event is consumed HERE: the plan's
+  // declaration is built by the EXISTING form parsers over the SAME field
+  // names and routed through the EXISTING onDeclare* callbacks; when a
+  // callback returns its outcome promise (console/lab), the authority's
+  // verdict folds back into the receipt card. The composer never executes
+  // anything itself.
+  let composerState = initialComposerState();
+  const remountForComposer = () => {
+    if (currentRouteViewBundle !== null && shellViewRef.current !== null) {
+      mountShell(currentRouteViewBundle);
+    }
+  };
+  const dispatchComposerEvent = (event) => {
+    if (event.kind === 'confirm') {
+      const tenant = shellViewRef.current === null ? null : shellViewRef.current.tenant;
+      const plan = composerConfirmPlan(composerState, missionScopeFromTenantContext(tenant));
+      composerState = composerReducer(composerState, plan.followUp);
+      remountForComposer();
+      if (plan.declaration === null || plan.declareRoute === null) {
+        return;
+      }
+      const declare =
+        plan.declareRoute === 'mission'
+          ? onDeclareMissionIntent
+          : plan.declareRoute === 'console'
+            ? onDeclareConsoleIntent
+            : onDeclareLabIntent;
+      const result = declare(plan.declaration);
+      if (result !== undefined && result !== null && typeof result.then === 'function') {
+        result.then((outcome) => {
+          const view =
+            plan.declareRoute === 'console'
+              ? { kind: 'console', record: outcome.record }
+              : plan.declareRoute === 'lab'
+                ? { kind: 'lab', record: outcome.record }
+                : { kind: 'mission', outcome };
+          composerState = composerReducer(composerState, { kind: 'outcome', outcome: view });
+          remountForComposer();
+        });
+      }
+      return;
+    }
+    composerState = composerReducer(composerState, event);
+    remountForComposer();
+  };
 
   const mountShell = (routeView) => {
+    currentRouteViewBundle = routeView;
     const element = (
       <StrictMode>
         <MosAppErrorBoundary onError={(error) => console.error('[mos-web]', error)}>
@@ -121,6 +183,7 @@ function bootMosWebShell() {
             onDeclareMissionIntent={routeView.onDeclareMissionIntent}
             onDeclareLabIntent={onDeclareLabIntent}
             onDeclareConsoleIntent={onDeclareConsoleIntent}
+            composer={{ state: composerState, onEvent: dispatchComposerEvent }}
             shellVersion={SHELL_VERSION}
           />
         </MosAppErrorBoundary>
@@ -148,8 +211,9 @@ function bootMosWebShell() {
     // page model is re-resolved and remounted (the in-process runtimes and
     // the intent ledger are per-load; a hard navigation would wipe the very
     // records the declaration just wrote — the testing seam's composition
-    // included).
-    declareLabIntentThroughPort(composition, declaration).then((outcome) => {
+    // included). The outcome is RETURNED so the Ask MOS composer can render
+    // the authority's verdict in its receipt card (UXR-WC).
+    return declareLabIntentThroughPort(composition, declaration).then((outcome) => {
       const win = globalThis.window;
       const href = labIntentOutcomeHref(outcome);
       if (win && win.history && typeof win.history.replaceState === 'function') {
@@ -170,6 +234,7 @@ function bootMosWebShell() {
             onDeclareConsoleIntent,
           });
         });
+      return outcome;
     });
   };
 
@@ -178,7 +243,9 @@ function bootMosWebShell() {
     // routes through the composition's console-intents port, and the refresh
     // after the declaration is SOFT for the same reason as the lab flow —
     // the per-load authority records (plans, strategies, runs, the ledger)
-    // the declaration just wrote survive the mode navigation.
+    // the declaration just wrote survive the mode navigation. The outcome is
+    // RETURNED so the Ask MOS composer can render the authority's verdict in
+    // its receipt card (UXR-WC).
     const currentRoute = parseMosRoute(globalThis.location.pathname, globalThis.location.search);
     const missionId =
       declaration.action === 'compose-plan'
@@ -186,7 +253,7 @@ function bootMosWebShell() {
         : currentRoute.kind === 'console'
           ? currentRoute.missionId
           : null;
-    declareConsoleIntentThroughPort(composition, declaration).then((outcome) => {
+    return declareConsoleIntentThroughPort(composition, declaration).then((outcome) => {
       const win = globalThis.window;
       const href = consoleIntentOutcomeHref(outcome, missionId);
       if (win && win.history && typeof win.history.replaceState === 'function') {
@@ -207,6 +274,7 @@ function bootMosWebShell() {
             onDeclareConsoleIntent,
           });
         });
+      return outcome;
     });
   };
 
@@ -286,6 +354,12 @@ function bootMosWebShell() {
     return () => doc.removeEventListener('click', handler, true);
   };
   installSoftLinkNavigation();
+
+  // THE COMPOSER ENTRY POINTS (§6 P0, UXR-WC): the global Ctrl+J toggle and
+  // the action-aware open bridge (views call openMosComposer from their
+  // affordance buttons; the composer overlay itself is shell-owned).
+  installMosComposerHotkey(() => dispatchComposerEvent({ kind: 'toggle' }));
+  subscribeMosComposerOpen((entry) => dispatchComposerEvent({ kind: 'open', entry }));
 
   // 2. Bootstrap: load the app-shell read model first…
   composition.appShell

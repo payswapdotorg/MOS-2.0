@@ -192,9 +192,9 @@ function ComposerVerdict({ outcome }: { readonly outcome: ComposerOutcomeView })
         <EchoRow label="intent" value={record.intentId} />
         <EchoRow label="record" value={echo.recordId} />
         <EchoRow label="record version" value={String(echo.recordVersion)} />
-        {echo.lifecycleState === null ? null : (
+        {'lifecycleState' in echo && echo.lifecycleState !== null ? (
           <EchoRow label="lifecycle state" value={echo.lifecycleState} />
-        )}
+        ) : null}
         <p className="text-xs text-slate-600">{echo.summary}</p>
       </div>
     );

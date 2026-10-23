@@ -314,7 +314,7 @@ export type { MosWebPlatform } from "./platform/web-platform.js";
 //      future `@mos/desktop` shell mounts the same tree through the
 //      platform port pattern) ----
 export { MosAppShell } from "./shell/mos-app-shell.js";
-export type { MosAppShellProps } from "./shell/mos-app-shell.js";
+export type { MosAppShellProps, ComposerChromeProps } from "./shell/mos-app-shell.js";
 export { MosBootstrapErrorView, MosLoadingView, MosAppErrorView } from "./shell/status-views.js";
 export {
   MosNoTenantContextView,
@@ -322,6 +322,56 @@ export {
   MosSectionNotAvailableView,
   MosUnknownRouteView,
 } from "./shell/route-fallbacks.js";
+
+// ---- Universal agent composer (the §6 P0 universal-composer wave, UXR-WC:
+//      the shell-owned Ask MOS overlay — hotkey, open bridge, action
+//      catalog, pure state machine, hook-free overlay views) ----
+export {
+  MOS_COMPOSER_HOTKEY,
+  composerHotkeyMatches,
+  composerHotkeyPlatform,
+  installMosComposerHotkey,
+} from "./shell/composer-hotkey.js";
+export type { ComposerHotkeyEvent, ComposerHotkeyPlatform } from "./shell/composer-hotkey.js";
+export {
+  openMosComposer,
+  subscribeMosComposerOpen,
+} from "./shell/composer-bridge.js";
+export type { ComposerActionEntry, ComposerOpenHandler } from "./shell/composer-bridge.js";
+export {
+  COMPOSER_ACTIONS,
+  COMPOSER_ACTIONS_BY_ID,
+  COMPOSER_ACTION_CATEGORIES,
+  composerActionSurfaceHref,
+  composerActionSurfaceLabel,
+} from "./shell/composer-actions.js";
+export type {
+  ComposerAction,
+  ComposerActionCategory,
+  ComposerActionField,
+  ComposerActionId,
+  ComposerDeclareRoute,
+} from "./shell/composer-actions.js";
+export {
+  composerConfirmPlan,
+  composerReducer,
+  initialComposerState,
+} from "./shell/composer-state.js";
+export type {
+  ComposerConfirmPlan,
+  ComposerDeclaration,
+  ComposerOutcomeView,
+  ComposerPhase,
+  ComposerUiEvent,
+  ComposerUiState,
+} from "./shell/composer-state.js";
+export { MosComposerOverlay, ComposerFieldControl } from "./shell/mos-composer.js";
+export { COMPOSER_SESSION_DISCLOSURE, COMPOSER_VOICE_UNAVAILABLE_NOTE } from "./shell/mos-composer.js";
+export {
+  ComposerConfirmSummary,
+  ComposerResultCard,
+  ComposerWaiting,
+} from "./shell/composer-receipt.js";
 export { HomeView } from "./routes/home-view.js";
 export { MissionsView } from "./routes/missions-view.js";
 export { MissionsListView } from "./routes/missions-list.js";
