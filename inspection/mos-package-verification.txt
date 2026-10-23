@@ -1,0 +1,8 @@
+Package: packages/desktop/dist/MOS-3.14.3-linux-amd64.deb
+dpkg package: mos
+Version: 3.14.3
+Architecture: amd64
+Package status: install ok installed
+SHA-256: be0434648fca83a8ca23a4ce71d52384dfe12660e5e8dd729e2a9cf1c5320774
+Installed executable: /opt/MOS/mos
+Desktop launcher: /usr/share/applications/mos.desktop (Name=MOS)

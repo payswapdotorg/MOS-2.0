@@ -1,0 +1,26 @@
+2026-10-23T07:09:46+00:00 $HOST 3461[<pid>]: Started mos-desktop-x11.service - [systemd-run] /usr/bin/env -u WAYLAND_DISPLAY /opt/MOS/mos --ozone-platform=x11 --enable-logging=stderr.
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:47.721] [pid:108594] [main] [crash-capture] configured remoteCrashReporterEnabled=true stagingDir=$HOME/.zcode/v2/crash/live archiveDir=$HOME/.zcode/v2/crash/archive
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:47.804] [pid:108594] [main] [deep-link] 注册协议成功 { scheme: 'zcode' }
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:47.827] [pid:108594] [main] [deep-link] Linux 用户级协议注册成功 {
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]:   desktopFilePath: '$HOME/.local/share/applications/zcode.desktop',
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]:   executablePath: '/opt/MOS/mos',
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]:   args: [],
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]:   changed: false,
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]:   systemDesktopEntryPath: undefined
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]: }
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]: (node:108594) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+2026-10-23T07:09:47+00:00 $HOST 108594[<pid>]: (Use `mos --trace-warnings ...` to show where the warning was created)
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.312] [pid:108594] [main] [startup] runtime process env prepared asynchronously id=1 in 583ms
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.419] [pid:108594] [main] [desktop-network] renderer proxy mode=direct bypass=disabled customCa=disabled insecureCerts=rejected
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.419] [pid:108594] [main] [desktop-network] renderer proxy mode=system bypass=disabled customCa=disabled insecureCerts=rejected
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.421] [pid:108594] [main] [auto-update] initializing, current version: 3.14.3
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.421] [pid:108594] [main] [auto-update] service manifest provider applied platform=linux-x86_64
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.423] [pid:108594] [main] [resource] sampling started interval=10000ms report=300000ms
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.424] [pid:108594] [main] [network] reporting started interval=300000ms
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.425] [pid:108594] [main] Checking for update
+2026-10-23T07:09:48+00:00 $HOST 108594[<pid>]: [2026-10-23 07:09:48.425] [pid:108594] [main] [auto-update] checking for update...
+2026-10-23T07:09:49+00:00 $HOST 108906[<pid>]: [108906:1023/070949.730568:ERROR:media/gpu/vaapi/vaapi_wrapper.cc:1640] vaInitialize failed: unknown libva error
+2026-10-23T07:09:49+00:00 $HOST 108906[<pid>]: [108906:1023/070949.751016:WARNING:sandbox/policy/linux/sandbox_linux.cc:405] InitializeSandbox() called with multiple threads in process gpu-process.
+2026-10-23T07:09:54+00:00 $HOST 108906[<pid>]: [108906:1023/070954.302696:ERROR:ui/gl/gl_surface_presentation_helper.cc:260] GetVSyncParametersIfAvailable() failed for 1 times!
+2026-10-23T07:09:59+00:00 $HOST 108906[<pid>]: [108906:1023/070959.109242:ERROR:ui/gl/gl_surface_presentation_helper.cc:260] GetVSyncParametersIfAvailable() failed for 2 times!
+2026-10-23T07:11:01+00:00 $HOST 108906[<pid>]: [108906:1023/071101.932904:ERROR:ui/gl/gl_surface_presentation_helper.cc:260] GetVSyncParametersIfAvailable() failed for 3 times!

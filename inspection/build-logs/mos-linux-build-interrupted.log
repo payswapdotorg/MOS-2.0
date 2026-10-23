@@ -1,0 +1,34 @@
+npm warn Unknown project config "node-linker". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> zcode@3.14.3 bundle:desktop $REPO
+> pnpm --filter @zcode/desktop run bundle -- -- --os linux --arch x64
+
+apps/zcode-cli                           |  WARN  Unsupported engine: wanted: {"node":"24.14.0"} (current: {"node":"v24.19.0","pnpm":"10.33.2"})
+
+> @zcode/desktop@ bundle $REPO/packages/desktop
+> node scripts/bundle.mjs -- -- --os linux --arch x64
+
+[bundle] target=linux/x64
+[bundle] skipPrepare=false skipBuild=false
+[bundle] > pnpm prepare:runtime-assets
+../../apps/zcode-cli                     |  WARN  Unsupported engine: wanted: {"node":"24.14.0"} (current: {"node":"v24.19.0","pnpm":"10.33.2"})
+
+> @zcode/desktop@ prepare:runtime-assets $REPO/packages/desktop
+> node scripts/prepare-runtime-assets.mjs
+
+[ci][timer] prepare-runtime-assets:prepare:remote-assets start
+../../apps/zcode-cli                     |  WARN  Unsupported engine: wanted: {"node":"24.14.0"} (current: {"node":"v24.19.0","pnpm":"10.33.2"})
+
+> @zcode/desktop@ prepare:remote-assets $REPO/packages/desktop
+> node ../../scripts/prepare-prebuilds.mjs
+
+==> Preparing mock CDN release in $REPO/packages/desktop/mock-cdn/releases/3.14.3
+  [download] https://cdn.npmmirror.com/binaries/node/v22.16.0/node-v22.16.0-linux-arm64.tar.xz
+  [ok] mock-cdn node/linux-arm64
+  [download] https://cdn.npmmirror.com/binaries/node/v22.16.0/node-v22.16.0-linux-x64.tar.xz
+ ELIFECYCLE  Command failed.
+$REPO/packages/desktop:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @zcode/desktop@ bundle: `node scripts/bundle.mjs -- -- --os linux --arch x64`
+Command failed with signal "SIGTERM"
+ ELIFECYCLE  Command failed.
+ ELIFECYCLE  Command failed.

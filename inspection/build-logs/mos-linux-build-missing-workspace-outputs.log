@@ -1,0 +1,679 @@
+npm warn Unknown project config "node-linker". This will stop working in the next major version of npm.
+
+> zcode@3.14.3 bundle:desktop $REPO
+> pnpm --filter @zcode/desktop run bundle -- -- --os linux --arch x64
+
+
+> @zcode/desktop@ bundle $REPO/packages/desktop
+> node scripts/bundle.mjs -- -- --os linux --arch x64
+
+[bundle] target=linux/x64
+[bundle] skipPrepare=false skipBuild=false
+[bundle] > pnpm prepare:runtime-assets
+
+> @zcode/desktop@ prepare:runtime-assets $REPO/packages/desktop
+> node scripts/prepare-runtime-assets.mjs
+
+[ci][timer] prepare-runtime-assets:prepare:remote-assets start
+
+> @zcode/desktop@ prepare:remote-assets $REPO/packages/desktop
+> node ../../scripts/prepare-prebuilds.mjs
+
+==> Preparing mock CDN release in $REPO/packages/desktop/mock-cdn/releases/3.14.3
+  [skip] mock-cdn node/linux-arm64 already exists
+  [download] https://cdn.npmmirror.com/binaries/node/v22.16.0/node-v22.16.0-linux-x64.tar.xz
+  [warn] download attempt 1/3 failed: https://cdn.npmmirror.com/binaries/node/v22.16.0/node-v22.16.0-linux-x64.tar.xz
+  [warn] retry reason: TypeError: terminated
+  [ok] mock-cdn node/linux-x64
+  [download] https://cdn.npmmirror.com/binaries/node/v22.16.0/node-v22.16.0-darwin-arm64.tar.xz
+  [ok] mock-cdn node/darwin-arm64
+  [download] https://cdn.npmmirror.com/binaries/node/v22.16.0/node-v22.16.0-darwin-x64.tar.xz
+  [ok] mock-cdn node/darwin-x64
+==> Building server bundle
+
+> @zcode/server@ build:remote $REPO/packages/server
+> tsx build-remote.ts
+
+Built dist/remote/zcode-server.cjs
+  [ok] mock-cdn server/zcode-server.cjs
+==> Copying node-pty prebuilds from @lydell/node-pty
+  [ok] mock-cdn node-pty/linux-arm64 (copied from @lydell/node-pty-linux-arm64)
+  [ok] mock-cdn node-pty/linux-x64 (copied from @lydell/node-pty-linux-x64)
+  [ok] mock-cdn node-pty/darwin-arm64 (copied from @lydell/node-pty-darwin-arm64)
+  [ok] mock-cdn node-pty/darwin-x64 (copied from @lydell/node-pty-darwin-x64)
+==> Building zcode-cli bundle for remote agents
+
+> @zcode/shared-types@0.1.0 build $REPO/apps/zcode-cli/packages/shared-types
+> tsc
+
+
+> @zcode/contracts@0.1.0 build $REPO/apps/zcode-cli/packages/contracts
+> tsc
+
+
+> @zcode/dynamic-workflow@0.1.0 build $REPO/apps/zcode-cli/packages/dynamic-workflow
+> node scripts/generate-libs.mjs && tsc
+
+generate-libs: wrote 57 lib files for typescript@5.9.3
+
+> @zcode/dynamic-workflow-runtime@0.1.0 build $REPO/apps/zcode-cli/packages/dynamic-workflow-runtime
+> tsc
+
+
+> @zcode/core@0.1.0 build $REPO/apps/zcode-cli/packages/core
+> tsc
+
+
+> @zcode/adapters@0.1.0 build $REPO/apps/zcode-cli/packages/adapters
+> tsc
+
+
+> @zcode/i18n@0.1.0 build $REPO/apps/zcode-cli/packages/i18n
+> tsc
+
+
+> @zcode/telemetry@0.1.0 build $REPO/apps/zcode-cli/packages/telemetry
+> tsc
+
+
+> @zcode/bootstrap@0.1.0 build $REPO/apps/zcode-cli/packages/bootstrap
+> tsc
+
+
+> @zcode/node-repl-host@0.6.0 build $REPO/apps/zcode-cli/packages/node-repl-host
+> tsc && node scripts/build.mjs
+
+[node-repl-host] $REPO/apps/zcode-cli/packages/node-repl-host/dist/mcp/server.js
+
+> @zcode/browser-use-plugin@0.5.1 build $REPO/apps/zcode-cli/packages/browser-use-plugin
+> tsc && node scripts/build.mjs
+
+
+> @zcode/cli@0.1.0 build:desktop-agent $REPO/apps/zcode-cli/packages/cli
+> node scripts/build.mjs --desktop-agent
+
+
+  dist/zcode.cjs  16.0mb ⚠️
+
+⚡ Done in 5615ms
+[stage:agent-bundle] staged $REPO/packages/desktop/bundled-agents/linux-x64/glm/zcode.cjs
+==> Building remote official plugin runtime: @zcode/browser-use-plugin
+
+> @zcode/browser-use-plugin@0.5.1 build $REPO/apps/zcode-cli/packages/browser-use-plugin
+> tsc && node scripts/build.mjs
+
+==> Building remote official plugin runtime: @zcode/node-repl-host
+
+> @zcode/node-repl-host@0.6.0 build $REPO/apps/zcode-cli/packages/node-repl-host
+> tsc && node scripts/build.mjs
+
+[node-repl-host] $REPO/apps/zcode-cli/packages/node-repl-host/dist/mcp/server.js
+  [ok] mock-cdn glm official plugin packages/browser-use-plugin
+  [ok] mock-cdn glm official plugin packages/node-repl-host
+  [ok] mock-cdn glm bundled skill pack packages/bundled-skills
+  [ok] mock-cdn glm/linux-arm64/zcode.cjs
+  [ok] mock-cdn glm official plugin packages/browser-use-plugin
+  [ok] mock-cdn glm official plugin packages/node-repl-host
+  [ok] mock-cdn glm bundled skill pack packages/bundled-skills
+  [ok] mock-cdn glm/linux-x64/zcode.cjs
+  [ok] mock-cdn glm official plugin packages/browser-use-plugin
+  [ok] mock-cdn glm official plugin packages/node-repl-host
+  [ok] mock-cdn glm bundled skill pack packages/bundled-skills
+  [ok] mock-cdn glm/darwin-arm64/zcode.cjs
+  [ok] mock-cdn glm official plugin packages/browser-use-plugin
+  [ok] mock-cdn glm official plugin packages/node-repl-host
+  [ok] mock-cdn glm bundled skill pack packages/bundled-skills
+  [ok] mock-cdn glm/darwin-x64/zcode.cjs
+==> Preparing local native search binaries for remote platforms
+==> Preparing native search tools from repository archives
+    platform: linux-arm64
+    target:   $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/linux-arm64
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/bfs-v4.1.1-2/bfs-v4.1.1-2-aarch64-unknown-linux-gnu.tar.gz
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/ugrep-v7.8.4-1/ugrep-v7.8.4-1-aarch64-unknown-linux-gnu.tar.gz
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/ripgrep-v14.1.1-1/ripgrep-v14.1.1-1-aarch64-unknown-linux-musl.tar.gz
+==> Done! native search tools (linux-arm64) -> $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/linux-arm64
+==> Preparing native search tools from repository archives
+    platform: linux-x64
+    target:   $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/linux-x64
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/bfs-v4.1.1-2/bfs-v4.1.1-2-x86_64-unknown-linux-gnu.tar.gz
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/ugrep-v7.8.4-1/ugrep-v7.8.4-1-x86_64-unknown-linux-gnu.tar.gz
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/ripgrep-v14.1.1-1/ripgrep-v14.1.1-1-x86_64-unknown-linux-musl.tar.gz
+==> Done! native search tools (linux-x64) -> $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/linux-x64
+==> Preparing native search tools from repository archives
+    platform: darwin-arm64
+    target:   $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/darwin-arm64
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/ripgrep-v13.0.0-10/ripgrep-v13.0.0-10-aarch64-apple-darwin.tar.gz
+==> Done! native search tools (darwin-arm64) -> $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/darwin-arm64
+==> Preparing native search tools from repository archives
+    platform: darwin-x64
+    target:   $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/darwin-x64
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/ripgrep-v13.0.0-10/ripgrep-v13.0.0-10-x86_64-apple-darwin.tar.gz
+==> Done! native search tools (darwin-x64) -> $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/darwin-x64
+==> Packaging component artifacts and manifests
+  [component] server-bundle linux-arm64 -> components/linux-arm64/server-bundle/v3.14.3+c12b4b6c5d52.tar.gz
+  [component] node-runtime linux-arm64 -> components/linux-arm64/node-runtime/v22.16.0+baf32c8acb92.tar.gz
+  [component] node-pty linux-arm64 -> components/linux-arm64/node-pty/v1.2.0-beta.10+5b0ea9537f2c.tar.gz
+  [component] glm linux-arm64 -> components/linux-arm64/glm/v0.13.3+b05c264891fb.tar.gz
+  [component] bfs linux-arm64 -> components/linux-arm64/bfs/v4.1.1-2+e8797b8abea8.tar.gz
+  [component] ripgrep linux-arm64 -> components/linux-arm64/ripgrep/v14.1.1-1+0b773d547533.tar.gz
+  [component] ugrep linux-arm64 -> components/linux-arm64/ugrep/v7.8.4-1+9314532eb7ba.tar.gz
+  [ok] mock-cdn releases/3.14.3/manifest-linux-arm64.json
+  [component] server-bundle linux-x64 -> components/linux-x64/server-bundle/v3.14.3+c12b4b6c5d52.tar.gz
+  [component] node-runtime linux-x64 -> components/linux-x64/node-runtime/v22.16.0+09fafeec368a.tar.gz
+  [component] node-pty linux-x64 -> components/linux-x64/node-pty/v1.2.0-beta.10+f9eaffafde51.tar.gz
+  [component] glm linux-x64 -> components/linux-x64/glm/v0.13.3+b05c264891fb.tar.gz
+  [component] bfs linux-x64 -> components/linux-x64/bfs/v4.1.1-2+82f8234ad393.tar.gz
+  [component] ripgrep linux-x64 -> components/linux-x64/ripgrep/v14.1.1-1+ea62892f45cd.tar.gz
+  [component] ugrep linux-x64 -> components/linux-x64/ugrep/v7.8.4-1+cbce02b6dfaa.tar.gz
+  [ok] mock-cdn releases/3.14.3/manifest-linux-x64.json
+  [component] server-bundle darwin-arm64 -> components/darwin-arm64/server-bundle/v3.14.3+c12b4b6c5d52.tar.gz
+  [component] node-runtime darwin-arm64 -> components/darwin-arm64/node-runtime/v22.16.0+b2357ac3ed08.tar.gz
+  [component] node-pty darwin-arm64 -> components/darwin-arm64/node-pty/v1.2.0-beta.10+fd5ad8b084bd.tar.gz
+  [component] glm darwin-arm64 -> components/darwin-arm64/glm/v0.13.3+b05c264891fb.tar.gz
+  [component] ripgrep darwin-arm64 -> components/darwin-arm64/ripgrep/v13.0.0-10+df16ee3012b6.tar.gz
+  [ok] mock-cdn releases/3.14.3/manifest-darwin-arm64.json
+  [component] server-bundle darwin-x64 -> components/darwin-x64/server-bundle/v3.14.3+c12b4b6c5d52.tar.gz
+  [component] node-runtime darwin-x64 -> components/darwin-x64/node-runtime/v22.16.0+3a183dc3afab.tar.gz
+  [component] node-pty darwin-x64 -> components/darwin-x64/node-pty/v1.2.0-beta.10+0651917a3afd.tar.gz
+  [component] glm darwin-x64 -> components/darwin-x64/glm/v0.13.3+b05c264891fb.tar.gz
+  [component] ripgrep darwin-x64 -> components/darwin-x64/ripgrep/v13.0.0-10+b8d8a68a82b6.tar.gz
+  [ok] mock-cdn releases/3.14.3/manifest-darwin-x64.json
+==> Done! Mock CDN release ready at $REPO/packages/desktop/mock-cdn/releases/3.14.3
+[ci][timer] prepare-runtime-assets:prepare:remote-assets end duration_ms=1062896
+[ci][timer] prepare-runtime-assets:prepare:agent-bundle start
+
+> @zcode/desktop@ prepare:agent-bundle $REPO/packages/desktop
+> node scripts/prepare-agent-node-bundle.mjs
+
+[prepare:agent-bundle] building zcode-cli app-server bundle ...
+
+> @zcode/shared-types@0.1.0 build $REPO/apps/zcode-cli/packages/shared-types
+> tsc
+
+
+> @zcode/contracts@0.1.0 build $REPO/apps/zcode-cli/packages/contracts
+> tsc
+
+
+> @zcode/dynamic-workflow@0.1.0 build $REPO/apps/zcode-cli/packages/dynamic-workflow
+> node scripts/generate-libs.mjs && tsc
+
+
+> @zcode/dynamic-workflow-runtime@0.1.0 build $REPO/apps/zcode-cli/packages/dynamic-workflow-runtime
+> tsc
+
+
+> @zcode/core@0.1.0 build $REPO/apps/zcode-cli/packages/core
+> tsc
+
+
+> @zcode/adapters@0.1.0 build $REPO/apps/zcode-cli/packages/adapters
+> tsc
+
+
+> @zcode/i18n@0.1.0 build $REPO/apps/zcode-cli/packages/i18n
+> tsc
+
+
+> @zcode/telemetry@0.1.0 build $REPO/apps/zcode-cli/packages/telemetry
+> tsc
+
+
+> @zcode/bootstrap@0.1.0 build $REPO/apps/zcode-cli/packages/bootstrap
+> tsc
+
+
+> @zcode/node-repl-host@0.6.0 build $REPO/apps/zcode-cli/packages/node-repl-host
+> tsc && node scripts/build.mjs
+
+[node-repl-host] $REPO/apps/zcode-cli/packages/node-repl-host/dist/mcp/server.js
+
+> @zcode/browser-use-plugin@0.5.1 build $REPO/apps/zcode-cli/packages/browser-use-plugin
+> tsc && node scripts/build.mjs
+
+
+> @zcode/cli@0.1.0 build:desktop-agent $REPO/apps/zcode-cli/packages/cli
+> node scripts/build.mjs --desktop-agent
+
+
+  dist/zcode.cjs  16.0mb ⚠️
+
+⚡ Done in 1946ms
+[stage:agent-bundle] staged $REPO/packages/desktop/bundled-agents/linux-x64/glm/zcode.cjs
+[prepare:agent-bundle] building @zcode/browser-use-plugin runtime ...
+
+> @zcode/browser-use-plugin@0.5.1 build $REPO/apps/zcode-cli/packages/browser-use-plugin
+> tsc && node scripts/build.mjs
+
+[prepare:agent-bundle] building @zcode/node-repl-host runtime ...
+
+> @zcode/node-repl-host@0.6.0 build $REPO/apps/zcode-cli/packages/node-repl-host
+> tsc && node scripts/build.mjs
+
+[node-repl-host] $REPO/apps/zcode-cli/packages/node-repl-host/dist/mcp/server.js
+[stage:agent-bundle] staged $REPO/packages/desktop/bundled-agents/linux-x64/glm/zcode.cjs
+[prepare:agent-bundle] staged official plugin packages/browser-use-plugin
+[prepare:agent-bundle] staged official plugin packages/node-repl-host
+[prepare:agent-bundle] staged bundled skill pack packages/bundled-skills
+[ci][timer] prepare-runtime-assets:prepare:agent-bundle end duration_ms=113880
+[ci][timer] prepare-runtime-assets:prepare:native-search start
+
+> @zcode/desktop@ prepare:native-search $REPO/packages/desktop
+> node ../../scripts/prepare-native-search-tools.mjs
+
+==> Preparing native search tools from repository archives
+    platform: linux-x64
+    target:   $REPO/packages/desktop/bundled-tools/linux-x64
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/bfs-v4.1.1-2/bfs-v4.1.1-2-x86_64-unknown-linux-gnu.tar.gz
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/ugrep-v7.8.4-1/ugrep-v7.8.4-1-x86_64-unknown-linux-gnu.tar.gz
+    [extract] $REPO/apps/zcode-cli/dependencies/native-search/ripgrep-v14.1.1-1/ripgrep-v14.1.1-1-x86_64-unknown-linux-musl.tar.gz
+==> Done! native search tools (linux-x64) -> $REPO/packages/desktop/bundled-tools/linux-x64
+[ci][timer] prepare-runtime-assets:prepare:native-search end duration_ms=3320
+[bundle] > pnpm build
+
+> @zcode/desktop@ build $REPO/packages/desktop
+> pnpm prepare:runtime-assets && pnpm run build:no-runtime-assets
+
+
+> @zcode/desktop@ prepare:runtime-assets $REPO/packages/desktop
+> node scripts/prepare-runtime-assets.mjs
+
+[ci][timer] prepare-runtime-assets:prepare:remote-assets start
+
+> @zcode/desktop@ prepare:remote-assets $REPO/packages/desktop
+> node ../../scripts/prepare-prebuilds.mjs
+
+==> Preparing mock CDN release in $REPO/packages/desktop/mock-cdn/releases/3.14.3
+  [skip] mock-cdn node/linux-arm64 already exists
+  [skip] mock-cdn node/linux-x64 already exists
+  [skip] mock-cdn node/darwin-arm64 already exists
+  [skip] mock-cdn node/darwin-x64 already exists
+==> Building server bundle
+
+> @zcode/server@ build:remote $REPO/packages/server
+> tsx build-remote.ts
+
+Built dist/remote/zcode-server.cjs
+  [ok] mock-cdn server/zcode-server.cjs
+==> Copying node-pty prebuilds from @lydell/node-pty
+  [skip] mock-cdn node-pty/linux-arm64 already exists
+  [skip] mock-cdn node-pty/linux-x64 already exists
+  [skip] mock-cdn node-pty/darwin-arm64 already exists
+  [skip] mock-cdn node-pty/darwin-x64 already exists
+==> Building zcode-cli bundle for remote agents
+
+> @zcode/shared-types@0.1.0 build $REPO/apps/zcode-cli/packages/shared-types
+> tsc
+
+
+> @zcode/contracts@0.1.0 build $REPO/apps/zcode-cli/packages/contracts
+> tsc
+
+
+> @zcode/dynamic-workflow@0.1.0 build $REPO/apps/zcode-cli/packages/dynamic-workflow
+> node scripts/generate-libs.mjs && tsc
+
+
+> @zcode/dynamic-workflow-runtime@0.1.0 build $REPO/apps/zcode-cli/packages/dynamic-workflow-runtime
+> tsc
+
+
+> @zcode/core@0.1.0 build $REPO/apps/zcode-cli/packages/core
+> tsc
+
+
+> @zcode/adapters@0.1.0 build $REPO/apps/zcode-cli/packages/adapters
+> tsc
+
+
+> @zcode/i18n@0.1.0 build $REPO/apps/zcode-cli/packages/i18n
+> tsc
+
+
+> @zcode/telemetry@0.1.0 build $REPO/apps/zcode-cli/packages/telemetry
+> tsc
+
+
+> @zcode/bootstrap@0.1.0 build $REPO/apps/zcode-cli/packages/bootstrap
+> tsc
+
+
+> @zcode/node-repl-host@0.6.0 build $REPO/apps/zcode-cli/packages/node-repl-host
+> tsc && node scripts/build.mjs
+
+[node-repl-host] $REPO/apps/zcode-cli/packages/node-repl-host/dist/mcp/server.js
+
+> @zcode/browser-use-plugin@0.5.1 build $REPO/apps/zcode-cli/packages/browser-use-plugin
+> tsc && node scripts/build.mjs
+
+
+> @zcode/cli@0.1.0 build:desktop-agent $REPO/apps/zcode-cli/packages/cli
+> node scripts/build.mjs --desktop-agent
+
+
+  dist/zcode.cjs  16.0mb ⚠️
+
+⚡ Done in 2477ms
+[stage:agent-bundle] staged $REPO/packages/desktop/bundled-agents/linux-x64/glm/zcode.cjs
+==> Building remote official plugin runtime: @zcode/browser-use-plugin
+
+> @zcode/browser-use-plugin@0.5.1 build $REPO/apps/zcode-cli/packages/browser-use-plugin
+> tsc && node scripts/build.mjs
+
+==> Building remote official plugin runtime: @zcode/node-repl-host
+
+> @zcode/node-repl-host@0.6.0 build $REPO/apps/zcode-cli/packages/node-repl-host
+> tsc && node scripts/build.mjs
+
+[node-repl-host] $REPO/apps/zcode-cli/packages/node-repl-host/dist/mcp/server.js
+  [ok] mock-cdn glm official plugin packages/browser-use-plugin
+  [ok] mock-cdn glm official plugin packages/node-repl-host
+  [ok] mock-cdn glm bundled skill pack packages/bundled-skills
+  [ok] mock-cdn glm/linux-arm64/zcode.cjs
+  [ok] mock-cdn glm official plugin packages/browser-use-plugin
+  [ok] mock-cdn glm official plugin packages/node-repl-host
+  [ok] mock-cdn glm bundled skill pack packages/bundled-skills
+  [ok] mock-cdn glm/linux-x64/zcode.cjs
+  [ok] mock-cdn glm official plugin packages/browser-use-plugin
+  [ok] mock-cdn glm official plugin packages/node-repl-host
+  [ok] mock-cdn glm bundled skill pack packages/bundled-skills
+  [ok] mock-cdn glm/darwin-arm64/zcode.cjs
+  [ok] mock-cdn glm official plugin packages/browser-use-plugin
+  [ok] mock-cdn glm official plugin packages/node-repl-host
+  [ok] mock-cdn glm bundled skill pack packages/bundled-skills
+  [ok] mock-cdn glm/darwin-x64/zcode.cjs
+==> Preparing local native search binaries for remote platforms
+==> Preparing native search tools from repository archives
+    platform: linux-arm64
+    target:   $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/linux-arm64
+    [skip] bfs v4.1.1-2 已存在
+    [skip] ugrep v7.8.4-1 已存在
+    [skip] ripgrep v14.1.1-1 已存在
+==> Done! native search tools (linux-arm64) -> $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/linux-arm64
+==> Preparing native search tools from repository archives
+    platform: linux-x64
+    target:   $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/linux-x64
+    [skip] bfs v4.1.1-2 已存在
+    [skip] ugrep v7.8.4-1 已存在
+    [skip] ripgrep v14.1.1-1 已存在
+==> Done! native search tools (linux-x64) -> $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/linux-x64
+==> Preparing native search tools from repository archives
+    platform: darwin-arm64
+    target:   $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/darwin-arm64
+    [skip] ripgrep v13.0.0-10 已存在
+==> Done! native search tools (darwin-arm64) -> $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/darwin-arm64
+==> Preparing native search tools from repository archives
+    platform: darwin-x64
+    target:   $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/darwin-x64
+    [skip] ripgrep v13.0.0-10 已存在
+==> Done! native search tools (darwin-x64) -> $REPO/packages/desktop/mock-cdn/releases/3.14.3/tools/darwin-x64
+==> Packaging component artifacts and manifests
+  [skip] component server-bundle linux-arm64 unchanged
+  [skip] component node-runtime linux-arm64 unchanged
+  [skip] component node-pty linux-arm64 unchanged
+  [skip] component glm linux-arm64 unchanged
+  [skip] component bfs linux-arm64 unchanged
+  [skip] component ripgrep linux-arm64 unchanged
+  [skip] component ugrep linux-arm64 unchanged
+  [ok] mock-cdn releases/3.14.3/manifest-linux-arm64.json
+  [skip] component server-bundle linux-x64 unchanged
+  [skip] component node-runtime linux-x64 unchanged
+  [skip] component node-pty linux-x64 unchanged
+  [skip] component glm linux-x64 unchanged
+  [skip] component bfs linux-x64 unchanged
+  [skip] component ripgrep linux-x64 unchanged
+  [skip] component ugrep linux-x64 unchanged
+  [ok] mock-cdn releases/3.14.3/manifest-linux-x64.json
+  [skip] component server-bundle darwin-arm64 unchanged
+  [skip] component node-runtime darwin-arm64 unchanged
+  [skip] component node-pty darwin-arm64 unchanged
+  [skip] component glm darwin-arm64 unchanged
+  [skip] component ripgrep darwin-arm64 unchanged
+  [ok] mock-cdn releases/3.14.3/manifest-darwin-arm64.json
+  [skip] component server-bundle darwin-x64 unchanged
+  [skip] component node-runtime darwin-x64 unchanged
+  [skip] component node-pty darwin-x64 unchanged
+  [skip] component glm darwin-x64 unchanged
+  [skip] component ripgrep darwin-x64 unchanged
+  [ok] mock-cdn releases/3.14.3/manifest-darwin-x64.json
+==> Done! Mock CDN release ready at $REPO/packages/desktop/mock-cdn/releases/3.14.3
+[ci][timer] prepare-runtime-assets:prepare:remote-assets end duration_ms=168786
+[ci][timer] prepare-runtime-assets:prepare:agent-bundle start
+
+> @zcode/desktop@ prepare:agent-bundle $REPO/packages/desktop
+> node scripts/prepare-agent-node-bundle.mjs
+
+[prepare:agent-bundle] building zcode-cli app-server bundle ...
+
+> @zcode/shared-types@0.1.0 build $REPO/apps/zcode-cli/packages/shared-types
+> tsc
+
+
+> @zcode/contracts@0.1.0 build $REPO/apps/zcode-cli/packages/contracts
+> tsc
+
+
+> @zcode/dynamic-workflow@0.1.0 build $REPO/apps/zcode-cli/packages/dynamic-workflow
+> node scripts/generate-libs.mjs && tsc
+
+
+> @zcode/dynamic-workflow-runtime@0.1.0 build $REPO/apps/zcode-cli/packages/dynamic-workflow-runtime
+> tsc
+
+
+> @zcode/core@0.1.0 build $REPO/apps/zcode-cli/packages/core
+> tsc
+
+
+> @zcode/adapters@0.1.0 build $REPO/apps/zcode-cli/packages/adapters
+> tsc
+
+
+> @zcode/i18n@0.1.0 build $REPO/apps/zcode-cli/packages/i18n
+> tsc
+
+
+> @zcode/telemetry@0.1.0 build $REPO/apps/zcode-cli/packages/telemetry
+> tsc
+
+
+> @zcode/bootstrap@0.1.0 build $REPO/apps/zcode-cli/packages/bootstrap
+> tsc
+
+
+> @zcode/node-repl-host@0.6.0 build $REPO/apps/zcode-cli/packages/node-repl-host
+> tsc && node scripts/build.mjs
+
+[node-repl-host] $REPO/apps/zcode-cli/packages/node-repl-host/dist/mcp/server.js
+
+> @zcode/browser-use-plugin@0.5.1 build $REPO/apps/zcode-cli/packages/browser-use-plugin
+> tsc && node scripts/build.mjs
+
+
+> @zcode/cli@0.1.0 build:desktop-agent $REPO/apps/zcode-cli/packages/cli
+> node scripts/build.mjs --desktop-agent
+
+
+  dist/zcode.cjs  16.0mb ⚠️
+
+⚡ Done in 2669ms
+[stage:agent-bundle] staged $REPO/packages/desktop/bundled-agents/linux-x64/glm/zcode.cjs
+[prepare:agent-bundle] building @zcode/browser-use-plugin runtime ...
+
+> @zcode/browser-use-plugin@0.5.1 build $REPO/apps/zcode-cli/packages/browser-use-plugin
+> tsc && node scripts/build.mjs
+
+[prepare:agent-bundle] building @zcode/node-repl-host runtime ...
+
+> @zcode/node-repl-host@0.6.0 build $REPO/apps/zcode-cli/packages/node-repl-host
+> tsc && node scripts/build.mjs
+
+[node-repl-host] $REPO/apps/zcode-cli/packages/node-repl-host/dist/mcp/server.js
+[stage:agent-bundle] staged $REPO/packages/desktop/bundled-agents/linux-x64/glm/zcode.cjs
+[prepare:agent-bundle] staged official plugin packages/browser-use-plugin
+[prepare:agent-bundle] staged official plugin packages/node-repl-host
+[prepare:agent-bundle] staged bundled skill pack packages/bundled-skills
+[ci][timer] prepare-runtime-assets:prepare:agent-bundle end duration_ms=153202
+[ci][timer] prepare-runtime-assets:prepare:native-search start
+
+> @zcode/desktop@ prepare:native-search $REPO/packages/desktop
+> node ../../scripts/prepare-native-search-tools.mjs
+
+==> Preparing native search tools from repository archives
+    platform: linux-x64
+    target:   $REPO/packages/desktop/bundled-tools/linux-x64
+    [skip] bfs v4.1.1-2 已存在
+    [skip] ugrep v7.8.4-1 已存在
+    [skip] ripgrep v14.1.1-1 已存在
+==> Done! native search tools (linux-x64) -> $REPO/packages/desktop/bundled-tools/linux-x64
+[ci][timer] prepare-runtime-assets:prepare:native-search end duration_ms=728
+
+> @zcode/desktop@ build:no-runtime-assets $REPO/packages/desktop
+> pnpm prepare:build-meta && node scripts/run-production-build.mjs
+
+
+> @zcode/desktop@ prepare:build-meta $REPO/packages/desktop
+> node scripts/build-metadata.mjs
+
+[build-meta] wrote $REPO/packages/desktop/out/metadata/build-meta.json
+[build-meta] commit=c2ffc458 time=2026-10-23T06:42:58.485Z
+[tsup] ZCODE_ENV=production ZCODE_PRODUCT_FLAVOR=production
+[MAIN] CLI Building entry: {"main/index":"src/main/index.ts","main/browserWebmRecorder":"src/main/browserView/electronBrowserWebmRecorder.ts","main/zcodeDataSizeWorker":"src/main/zcodeDataSizeWorker.ts","main/storageScanWorker":"src/main/storageScanWorker.ts"}
+[MAIN] CLI Using tsconfig: tsconfig.json
+[PRELOAD] CLI Building entry: {"preload/embeddedBrowserJavaScriptDialog":"src/preload/embeddedBrowserJavaScriptDialog.ts","preload/codingPlanWebview":"src/preload/codingPlanWebview.ts","preload/browserVideoRecorder":"src/preload/browserVideoRecorder.ts","preload/index":"src/preload/index.ts","preload/resourceManager":"src/preload/resourceManager.ts","preload/cuaPermissionPanel":"src/preload/cuaPermissionPanel.ts"}
+[PRELOAD] CLI Using tsconfig: tsconfig.json
+[HOST] CLI Building entry: {"host/index":"src/host/index.ts","host/tasksStorageWorker":"src/host/tasksStorageWorker.ts"}
+[HOST] CLI Using tsconfig: tsconfig.json
+[SCHEDULER] CLI Building entry: {"scheduler/index":"src/scheduler/index.ts"}
+[SCHEDULER] CLI Using tsconfig: tsconfig.json
+[MAIN] CLI tsup v8.5.1
+[MAIN] CLI Using tsup config: $REPO/packages/desktop/tsup.config.ts
+[PRELOAD] CLI tsup v8.5.1
+[PRELOAD] CLI Using tsup config: $REPO/packages/desktop/tsup.config.ts
+[HOST] CLI tsup v8.5.1
+[HOST] CLI Using tsup config: $REPO/packages/desktop/tsup.config.ts
+[SCHEDULER] CLI tsup v8.5.1
+[SCHEDULER] CLI Using tsup config: $REPO/packages/desktop/tsup.config.ts
+[MAIN] CLI Target: node22
+[MAIN] ESM Build start
+[PRELOAD] CLI Target: node22
+[PRELOAD] CJS Build start
+[HOST] CLI Target: node22
+[HOST] ESM Build start
+[SCHEDULER] CLI Target: node22
+[SCHEDULER] ESM Build start
+[PRELOAD] CJS out/preload/browserVideoRecorder.cjs            140.00 B
+[PRELOAD] CJS out/preload/embeddedBrowserJavaScriptDialog.cjs 669.04 KB
+[PRELOAD] CJS out/preload/codingPlanWebview.cjs               668.53 KB
+[PRELOAD] CJS out/preload/index.cjs                           685.98 KB
+[PRELOAD] CJS out/preload/resourceManager.cjs                 667.47 KB
+[PRELOAD] CJS out/preload/cuaPermissionPanel.cjs              666.55 KB
+[PRELOAD] CJS ⚡️ Build success in 1646ms
+[SCHEDULER] ESM out/scheduler/chunk-PAMVIACU.js 107.00 B
+[SCHEDULER] ESM out/scheduler/chunk-MOVGSCYQ.js 1.43 KB
+[SCHEDULER] ESM out/scheduler/index.js          948.19 KB
+[SCHEDULER] ESM ⚡️ Build success in 2220ms
+[HOST] ESM out/host/tasksStorageWorker.js 616.00 B
+[HOST] ESM out/host/chunk-YM73KTJJ.js     156.73 KB
+[HOST] ESM out/host/chunk-B45ORG4E.js     140.00 B
+[HOST] ESM out/host/chunk-GOVIVXYI.js     1.38 KB
+[HOST] ESM out/host/chunk-5AJAOD42.js     202.00 B
+[HOST] ESM out/host/chunk-4UCPYIIM.js     96.55 KB
+[HOST] ESM out/host/chunk-VX7P3VUC.js     152.00 B
+[HOST] ESM out/host/chunk-27UIVCAP.js     857.00 B
+[HOST] ESM out/host/chunk-QV7YQXI6.js     10.67 KB
+[HOST] ESM out/host/chunk-43P5H4LK.js     107.93 KB
+[HOST] ESM out/host/chunk-VGZV7KBJ.js     11.88 KB
+[HOST] ESM out/host/chunk-L4X5TBCR.js     572.00 B
+[HOST] ESM out/host/chunk-6A3RDH7Q.js     872.00 B
+[HOST] ESM out/host/chunk-OAWVEIS4.js     6.48 KB
+[HOST] ESM out/host/chunk-XPU7OCSY.js     17.67 KB
+[HOST] ESM out/host/chunk-6IUWV5UR.js     734.00 B
+[HOST] ESM out/host/chunk-TXFZ4H42.js     737.88 KB
+[HOST] ESM out/host/index.js              1.30 MB
+[HOST] ESM ⚡️ Build success in 2304ms
+[MAIN] ESM out/main/chunk-F47NWQJG.js      96.55 KB
+[MAIN] ESM out/main/browserWebmRecorder.js 153.00 B
+[MAIN] ESM out/main/chunk-NYUAABO3.js      1.86 KB
+[MAIN] ESM out/main/zcodeDataSizeWorker.js 319.00 B
+[MAIN] ESM out/main/storageScanWorker.js   813.00 B
+[MAIN] ESM out/main/chunk-OEEAMZIK.js      11.66 KB
+[MAIN] ESM out/main/chunk-2JA4U3KR.js      203.80 KB
+[MAIN] ESM out/main/chunk-2ZIDXWNO.js      48.58 KB
+[MAIN] ESM out/main/chunk-FHCRRJEU.js      140.00 B
+[MAIN] ESM out/main/chunk-WTTTLDYY.js      10.67 KB
+[MAIN] ESM out/main/chunk-DEXJ73SM.js      981.00 B
+[MAIN] ESM out/main/chunk-P3MR3E2C.js      572.00 B
+[MAIN] ESM out/main/chunk-LUGE5S6M.js      6.48 KB
+[MAIN] ESM out/main/chunk-IBXZ4LOM.js      11.51 KB
+[MAIN] ESM out/main/chunk-W5HUUFNC.js      872.00 B
+[MAIN] ESM out/main/chunk-W3WB5B7R.js      734.00 B
+[MAIN] ESM out/main/chunk-3WLLXY4Q.js      11.87 KB
+[MAIN] ESM out/main/index.js               664.40 KB
+[MAIN] ESM out/main/chunk-CKUUTMI6.js      714.51 KB
+[MAIN] ESM out/main/chunk-YKK45TIV.js      202.00 B
+[MAIN] ESM out/main/chunk-7WFYERIM.js      152.00 B
+[MAIN] ESM ⚡️ Build success in 2348ms
+vite v8.0.8 building client environment for production...
+
+transforming...[PLUGIN_TIMINGS] Warning: Your build spent significant time in plugin `vite:resolve-builtin:get-environment`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+✓ 7824 modules transformed.
+✗ Build failed in 38.52s
+error during build:
+Build failed with 2 errors:
+
+[UNRESOLVED_IMPORT] Error: Could not resolve '../../mos-identity/dist/index.js' in ../mos-desktop/composition/compose-production-mos-web.ts
+   ╭─[ ../mos-desktop/composition/compose-production-mos-web.ts:1:50 ]
+   │
+ 1 │ import { createInMemoryIdentityRepository } from "../../mos-identity/dist/index.js";
+   │                                                  ─────────────────┬────────────────
+   │                                                                   ╰────────────────── Module not found.
+   │
+   │ Help: '../mos-desktop/composition/compose-production-mos-web.ts' is imported by the following path:
+   │         - ../mos-desktop/composition/compose-production-mos-web.ts
+   │         - ../mos-desktop/mos-desktop-entry.jsx
+   │         - src/renderer/src/main.tsx
+   │         - src/renderer/index.html
+───╯
+
+[UNRESOLVED_IMPORT] Error: Could not resolve '../../mos-missions/dist/index.js' in ../mos-desktop/composition/compose-production-mos-web.ts
+   ╭─[ ../mos-desktop/composition/compose-production-mos-web.ts:2:49 ]
+   │
+ 2 │ import { createInMemoryMissionRepository } from "../../mos-missions/dist/index.js";
+   │                                                 ─────────────────┬────────────────
+   │                                                                  ╰────────────────── Module not found.
+   │
+   │ Help: '../mos-desktop/composition/compose-production-mos-web.ts' is imported by the following path:
+   │         - ../mos-desktop/composition/compose-production-mos-web.ts
+   │         - ../mos-desktop/mos-desktop-entry.jsx
+   │         - src/renderer/src/main.tsx
+   │         - src/renderer/index.html
+───╯
+
+    at aggregateBindingErrorsIntoJsError (file://$REPO/node_modules/rolldown/dist/shared/error-w0u7biK-.mjs:48:18)
+    at unwrapBindingResult (file://$REPO/node_modules/rolldown/dist/shared/error-w0u7biK-.mjs:18:128)
+    at #build (file://$REPO/node_modules/rolldown/dist/shared/rolldown-build-DtGk-m96.mjs:3313:34)
+    at async buildEnvironment (file://$REPO/node_modules/vite/dist/node/chunks/node.js:32954:64)
+    at async Object.build (file://$REPO/node_modules/vite/dist/node/chunks/node.js:33376:19)
+    at async Object.buildApp (file://$REPO/node_modules/vite/dist/node/chunks/node.js:33373:153)
+    at async CAC.<anonymous> (file://$REPO/node_modules/vite/dist/node/cli.js:778:3) {
+  errors: [Getter/Setter]
+}
+file://$REPO/packages/desktop/scripts/run-production-build.mjs:84
+      rejectRun(new Error(`${step.command} ${step.args.join(" ")} failed with ${reason}`));
+                ^
+
+Error: pnpm exec vite build failed with code 1
+    at ChildProcess.<anonymous> (file://$REPO/packages/desktop/scripts/run-production-build.mjs:84:17)
+    at ChildProcess.emit (node:events:508:28)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12)
+
+Node.js v24.14.0
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.
+[bundle] pnpm build failed with code 1
+$REPO/packages/desktop:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @zcode/desktop@ bundle: `node scripts/bundle.mjs -- -- --os linux --arch x64`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
