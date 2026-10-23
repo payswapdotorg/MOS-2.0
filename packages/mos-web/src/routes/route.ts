@@ -210,12 +210,28 @@ export interface ConsoleRoute {
   readonly intentReceiptId: string | null;
 }
 
+/**
+ * The Social Media workspace route (the UXR social wave): `/social` with an
+ * optional platform selection (`?platform=<slug>`, e.g. `youtube` — the
+ * composition's default applies when absent) and an optional guided-setup
+ * step anchor (`?step=<1..5>`, a deep-link hint that never marks a step
+ * complete — step state is DERIVED from real completion signals only).
+ */
+export interface SocialRoute {
+  readonly kind: 'social';
+  /** Selected platform slug (`?platform=<slug>`); `null` = the default platform. */
+  readonly platform: string | null;
+  /** Guided-setup step anchor (`?step=<n>`, 1..5), when given. */
+  readonly step: number | null;
+}
+
 export type MosRoute =
   | { readonly kind: 'home' }
   | MissionsRoute
   | StudioRoute
   | LabRoute
   | ConsoleRoute
+  | SocialRoute
   | ConnectionsRoute
   | NotificationsRoute
   | { readonly kind: 'section'; readonly sectionId: ShellSectionId }
@@ -313,6 +329,15 @@ export function parseMosRoute(pathname: string, search: string): MosRoute {
     };
   }
 
+  if (cleanPath === '/social') {
+    const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    return {
+      kind: 'social',
+      platform: firstParam(params, 'platform'),
+      step: versionParam(params, 'step'),
+    };
+  }
+
   if (cleanPath === '/connections') {
     const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
     return {
@@ -385,6 +410,10 @@ export function mosRouteTitle(route: MosRoute): string {
           ? null
           : route.mode;
       return detail === null ? 'MOS — Agent Console' : `MOS — Agent Console · ${detail}`;
+    }
+    case 'social': {
+      const detail = route.platform !== null ? `platform · ${route.platform}` : null;
+      return detail === null ? 'MOS — Social Media' : `MOS — Social Media · ${detail}`;
     }
     case 'connections':
       return route.providerId !== null && route.bindingId !== null

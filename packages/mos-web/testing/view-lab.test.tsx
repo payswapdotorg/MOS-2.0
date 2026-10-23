@@ -677,15 +677,23 @@ test("the ONLY operator controls on the Lab surface are intent-form DECLARE subm
       onDeclareLabIntent={NOOP_ON_DECLARE_LAB_INTENT}
     />,
   ];
+  // The §6 universal-composer wave (UXR-WC) adds exactly ONE more control
+  // per owning section: the "Ask MOS — <action>" entry. It is a DECLARE-path
+  // affordance, not an execution control — it opens the shell-owned composer
+  // whose confirm routes the SAME declaration (built by the SAME parser)
+  // through the SAME onDeclareLabIntent callback (pinned in
+  // view-composer.test.tsx).
   for (const tree of sectionPages) {
     for (const button of elementsWithTag(tree, "button")) {
       const testId = button.props["data-testid"];
       const isIntentSubmit = typeof testId === "string" && testId.endsWith("-submit");
       const isDisabledAffordance = button.props.disabled === true;
+      const isComposerEntry =
+        typeof testId === "string" && testId.startsWith("lab-ask-mos-");
       assert.equal(
-        isIntentSubmit || isDisabledAffordance,
+        isIntentSubmit || isDisabledAffordance || isComposerEntry,
         true,
-        `every button declares an intent or stays a disabled affordance: ${String(testId)}`,
+        `every button declares an intent, opens the composer, or stays a disabled affordance: ${String(testId)}`,
       );
       if (isIntentSubmit) {
         assert.equal(button.props.type, "submit", "the intent control is a form submit");

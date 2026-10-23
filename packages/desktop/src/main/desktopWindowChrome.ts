@@ -18,6 +18,7 @@ import {
   PlatformChannels,
 } from "@zcode/shared";
 import { loadWindow, type WindowBootstrapOptions } from "./desktopHostProcess.js";
+import { resolveDesktopWindowVisualOptions, resolveAutoHideMenuBar } from "./desktopWindowVisualOptions.js";
 import {
   buildWindowsTitleBarOverlayForZoomLevel,
   hasCustomWindowsControls,
@@ -134,37 +135,16 @@ function isLinuxDesktopWindow() {
 }
 
 function buildDesktopWindowVisualOptions() {
+  // The per-platform visual POLICY lives in the electron-free pure module
+  // (desktopWindowVisualOptions.ts) so it is unit-testable under plain
+  // `node --test`; on darwin the canonical overlay position from
+  // desktopWindowButtonPosition.ts is merged over the pure default so the
+  // overlay geometry keeps a single source of truth.
+  const options = resolveDesktopWindowVisualOptions(process.platform);
   if (process.platform === "darwin") {
-    return {
-      backgroundColor: "#00000000",
-      titleBarStyle: "hidden" as const,
-      trafficLightPosition: MACOS_TRAFFIC_LIGHT_BASE_POSITION,
-      vibrancy: "under-window" as const,
-      visualEffectState: "active" as const,
-    };
+    return { ...options, trafficLightPosition: MACOS_TRAFFIC_LIGHT_BASE_POSITION };
   }
-
-  if (process.platform === "win32") {
-    return {
-      backgroundColor: "#00000000",
-      // Windows 窗口操作由 renderer 绘制，禁用原生标题栏，避免出现两套按钮。
-      frame: false,
-      backgroundMaterial: "acrylic" as const,
-    };
-  }
-
-  return {
-    // 不透明 BrowserWindow 会把 renderer 的圆角裁切重新填成直角黑底，
-    // Linux 外壳无法与内层 12px 面板形成同心圆弧。透明底只负责露出四角，
-    // renderer 根面仍使用不透明 token，避免桌面底色混入侧栏。
-    backgroundColor: "#00000000",
-    transparent: true,
-    // Linux 原生标题栏会和 renderer 自绘顶部菜单重复，隐藏 frame 后统一用自定义窗口控制。
-    frame: false,
-    // Linux 部分窗口管理器会给 frameless 窗口绘制额外外侧阴影/描边，
-    // 用户看到的是窗口外缘黑线。只在 Linux 禁用系统阴影，避免影响 macOS/Windows 的原生材质。
-    hasShadow: false,
-  };
+  return options;
 }
 
 export function applyAppIcon(iconPath: string) {
@@ -577,7 +557,8 @@ export function createBrowserWindow(options: {
     title: options.title,
     icon: options.iconPath,
     // Linux frameless 后部分桌面环境仍可能显示 Electron 原生菜单栏，自动隐藏避免顶部出现两套菜单。
-    autoHideMenuBar: isLinuxDesktopWindow(),
+    // (policy extracted to the pure module — pinned by test)
+    autoHideMenuBar: resolveAutoHideMenuBar(process.platform),
     ...buildDesktopWindowVisualOptions(),
     webPreferences: {
       preload: options.preloadPath,

@@ -30,17 +30,23 @@ import {
   MosAppShell,
   MosBootstrapErrorView,
   applyMosThemeToDocument,
+  composerConfirmPlan,
+  composerReducer,
   declareConsoleIntentThroughPort,
   consoleIntentOutcomeHref,
   declareLabIntentThroughPort,
   declareMissionIntentThroughPort,
+  initialComposerState,
+  installMosComposerHotkey,
   labIntentOutcomeHref,
   loadMosRouteView,
   missionIntentOutcomeHref,
+  missionScopeFromTenantContext,
   mosRouteTitle,
   probePrefersDark,
   readStoredMosTheme,
   resolveMosInitialTheme,
+  subscribeMosComposerOpen,
 } from '@mos/web';
 import {
   createDesktopMosPlatform,
@@ -142,6 +148,56 @@ export function bootMosDesktopShell(options) {
   // The shell read model ref — the soft refresh paths (below) re-resolve the
   // page model against the SAME shell view without a document reload.
   const shellViewRef = { current: null };
+  // The current route-view bundle — the composer re-renders the shell in
+  // place when its overlay state changes (the entries own the composer's
+  // module-level UI state; the components stay hook-free). Mirrors
+  // @mos/web's src/main.jsx composer wiring verbatim (UXR-WC).
+  let currentRouteViewBundle = null;
+  // THE UNIVERSAL AGENT COMPOSER (§6 P0, UXR-WC): the entry owns the
+  // composer's UI state (the PURE reducer) and re-mounts the shell on every
+  // event; the `confirm` event is consumed HERE — the plan's declaration is
+  // built by the EXISTING form parsers and routed through the EXISTING
+  // onDeclare* callbacks, and a returned outcome promise folds the
+  // authority's verdict back into the receipt card.
+  let composerState = initialComposerState();
+  const remountForComposer = () => {
+    if (currentRouteViewBundle !== null && shellViewRef.current !== null) {
+      mountShell(currentRouteViewBundle);
+    }
+  };
+  const dispatchComposerEvent = (event) => {
+    if (event.kind === 'confirm') {
+      const tenant = shellViewRef.current === null ? null : shellViewRef.current.tenant;
+      const plan = composerConfirmPlan(composerState, missionScopeFromTenantContext(tenant));
+      composerState = composerReducer(composerState, plan.followUp);
+      remountForComposer();
+      if (plan.declaration === null || plan.declareRoute === null) {
+        return;
+      }
+      const declare =
+        plan.declareRoute === 'mission'
+          ? onDeclareMissionIntent
+          : plan.declareRoute === 'console'
+            ? onDeclareConsoleIntent
+            : onDeclareLabIntent;
+      const result = declare(plan.declaration);
+      if (result !== undefined && result !== null && typeof result.then === 'function') {
+        result.then((outcome) => {
+          const view =
+            plan.declareRoute === 'console'
+              ? { kind: 'console', record: outcome.record }
+              : plan.declareRoute === 'lab'
+                ? { kind: 'lab', record: outcome.record }
+                : { kind: 'mission', outcome };
+          composerState = composerReducer(composerState, { kind: 'outcome', outcome: view });
+          remountForComposer();
+        });
+      }
+      return;
+    }
+    composerState = composerReducer(composerState, event);
+    remountForComposer();
+  };
   // The loading surface shown while a soft refresh resolves.
   const loadingRouteView = () => ({
     shellView: shellViewRef.current,
@@ -198,8 +254,14 @@ export function bootMosDesktopShell(options) {
   // page model in place instead of reloading the document.
   installDesktopShellLinkNavigation((href) => softNavigateTo(href));
 
+  // THE COMPOSER ENTRY POINTS (§6 P0, UXR-WC): the global Ctrl+J toggle and
+  // the action-aware open bridge — mirrored from @mos/web's src/main.jsx.
+  installMosComposerHotkey(() => dispatchComposerEvent({ kind: 'toggle' }));
+  subscribeMosComposerOpen((entry) => dispatchComposerEvent({ kind: 'open', entry }));
+
   let committed = false;
   const mountShell = (routeView) => {
+    currentRouteViewBundle = routeView;
     const element = (
       <StrictMode>
         <MosDesktopErrorBoundary onError={(error) => console.error('[mos-desktop]', error)}>
@@ -217,6 +279,7 @@ export function bootMosDesktopShell(options) {
             onDeclareMissionIntent={routeView.onDeclareMissionIntent}
             onDeclareLabIntent={routeView.onDeclareLabIntent}
             onDeclareConsoleIntent={routeView.onDeclareConsoleIntent}
+            composer={{ state: composerState, onEvent: dispatchComposerEvent }}
             shellVersion={shellVersion}
           />
         </MosDesktopErrorBoundary>
@@ -244,8 +307,11 @@ export function bootMosDesktopShell(options) {
   // wrote. A deep link to a receipt id from a PREVIOUS load resolves to
   // the outcome panel's honest not-found state.
   const onDeclareLabIntent = (declaration) => {
-    declareLabIntentThroughPort(composition, declaration).then((outcome) => {
+    // The outcome is RETURNED so the Ask MOS composer can render the
+    // authority's verdict in its receipt card (UXR-WC).
+    return declareLabIntentThroughPort(composition, declaration).then((outcome) => {
       softNavigateTo(labIntentOutcomeHref(outcome));
+      return outcome;
     });
   };
 
@@ -256,11 +322,14 @@ export function bootMosDesktopShell(options) {
   // declaration is SOFT for the same reason as the lab flow — the
   // per-load authority records the declaration just wrote survive.
   const onDeclareConsoleIntent = (declaration) => {
+    // The outcome is RETURNED so the Ask MOS composer can render the
+    // authority's verdict in its receipt card (UXR-WC).
     const currentRoute = desktopRouteFromSearch(globalThis.location.search);
     const missionId =
       currentRoute.kind === 'console' ? currentRoute.missionId : null;
-    declareConsoleIntentThroughPort(composition, declaration).then((outcome) => {
+    return declareConsoleIntentThroughPort(composition, declaration).then((outcome) => {
       softNavigateTo(consoleIntentOutcomeHref(outcome, missionId));
+      return outcome;
     });
   };
 

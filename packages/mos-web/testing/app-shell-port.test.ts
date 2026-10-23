@@ -90,22 +90,35 @@ const expectShellView = async (port: ReturnType<typeof createInMemoryAppShellPor
 
 test('the shell loads its chrome as a view model (async port contract)', async () => {
   const shellView = await expectShellView(makeShell('tenant-a'));
-  assert.equal(shellView.sections.length, 8);
+  assert.equal(shellView.sections.length, 11);
 });
 
-test('the target-design rail order holds: Research Lab third, Agent Console fourth, Studio fifth, Measurement sixth', async () => {
+test('the §5 target-design rail order holds: lab third, console fourth, then the not-yet group, then the promoted routes', async () => {
   const shellView = await expectShellView(makeShell('tenant-a'));
 
   assert.deepEqual(
     shellView.sections.map((section) => section.id),
-    ['home', 'missions', 'lab', 'console', 'studio', 'measurement', 'connections', 'notifications'],
-    'Home and Missions first (UX-001), Research Lab third and Agent Console fourth (the wave-24 target-design rail order), Studio fifth, Measurement sixth (honest not-yet-available), Connections and Notifications last (still exercisable surfaces in this composition)',
+    [
+      'home',
+      'missions',
+      'lab',
+      'console',
+      'social',
+      'studio',
+      'distribution',
+      'experiments',
+      'measurement',
+      'connections',
+      'notifications',
+    ],
+    'Home and Missions first (UX-001), Research Lab third and Agent Console fourth (the target-design rail order), Social Media fifth (the §8 social workspace), Studio sixth, then the honest not-yet-available group (Distribution + Experiments are NEW rows, §5 UXR-WC), Measurement & Learning relabeled, and the promoted Connections + Activity & Approvals routes last',
   );
   const home = shellView.sections[0];
   const missions = shellView.sections[1];
   const lab = shellView.sections[2];
   const consoleSection = shellView.sections[3];
-  const studio = shellView.sections[4];
+  const social = shellView.sections[4];
+  const studio = shellView.sections[5];
   assert.equal(home?.route, '/');
   assert.deepEqual(home?.availability, { kind: 'available' });
   assert.equal(missions?.route, '/missions');
@@ -119,6 +132,9 @@ test('the target-design rail order holds: Research Lab third, Agent Console four
     { kind: 'available' },
     'the CONSOLE wave turned the Agent Console section on — the operational center',
   );
+  assert.equal(social?.label, 'Social Media');
+  assert.equal(social?.route, '/social');
+  assert.deepEqual(social?.availability, { kind: 'available' }, 'the §8 social workspace is on');
   assert.equal(studio?.route, '/studio');
   assert.deepEqual(
     studio?.availability,
@@ -127,12 +143,12 @@ test('the target-design rail order holds: Research Lab third, Agent Console four
   );
 });
 
-test('Measurement is an explicit not-yet-available verdict naming its dependency', async () => {
+test('Measurement & Learning is an explicit not-yet-available verdict naming its dependency', async () => {
   const shellView = await expectShellView(makeShell('tenant-a'));
 
   const measurement = shellView.sections.find((section) => section.id === 'measurement');
   assert.ok(measurement, 'the target design\'s Measurement section is presented');
-  assert.equal(measurement?.label, 'Measurement');
+  assert.equal(measurement?.label, 'Measurement & Learning');
   assert.equal(measurement?.availability.kind, 'not-yet-available');
   assert.equal(
     typeof measurement?.availability.kind === 'string' && measurement.availability.kind === 'not-yet-available'
@@ -141,6 +157,23 @@ test('Measurement is an explicit not-yet-available verdict naming its dependency
     true,
     'the unavailable verdict names what it waits on',
   );
+});
+
+test('the NEW Distribution and Experiments rail rows are honest not-yet-available verdicts (§5, no dead links)', async () => {
+  const shellView = await expectShellView(makeShell('tenant-a'));
+
+  for (const id of ['distribution', 'experiments'] as const) {
+    const section = shellView.sections.find((candidate) => candidate.id === id);
+    assert.ok(section, `${id} is presented in the rail`);
+    assert.equal(section?.availability.kind, 'not-yet-available', `${id} is not yet available`);
+    if (section?.availability.kind === 'not-yet-available') {
+      assert.equal(
+        section.availability.dependsOn.includes('no') && section.availability.dependsOn.includes('read models'),
+        true,
+        `${id}'s verdict names the unbound read models`,
+      );
+    }
+  }
 });
 
 test('tenant context is derived from the REAL identity records', async () => {

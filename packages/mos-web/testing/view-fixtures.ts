@@ -35,8 +35,26 @@ export const SECTIONS: readonly ShellSectionView[] = [
   { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
   {
+    id: 'distribution',
+    label: 'Distribution',
+    route: '/distribution',
+    availability: {
+      kind: 'not-yet-available',
+      dependsOn: 'the MOS service transport — no distribution read models are bound in this release',
+    },
+  },
+  {
+    id: 'experiments',
+    label: 'Experiments',
+    route: '/experiments',
+    availability: {
+      kind: 'not-yet-available',
+      dependsOn: 'the MOS service transport — no standalone experiments read models are bound in this release (the Agent Console carries the experiment path)',
+    },
+  },
+  {
     id: 'measurement',
-    label: 'Measurement',
+    label: 'Measurement & Learning',
     route: '/measurement',
     availability: { kind: 'not-yet-available', dependsOn: 'UX-007 (measurement read models)' },
   },
@@ -48,7 +66,7 @@ export const SECTIONS: readonly ShellSectionView[] = [
   },
   {
     id: 'notifications',
-    label: 'Notifications',
+    label: 'Activity & Approvals',
     route: '/notifications',
     availability: { kind: 'available' },
   },

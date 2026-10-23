@@ -154,14 +154,20 @@ module.exports.runLabSuite = async function runLabSuite(page, baseUrl, check) {
       'OUTSIDE',
     ),
   );
-  // The wave-21 write-intent transport: the ONLY operator controls on the
-  // Lab surface are intent-form DECLARE submits (the read-only pin's spirit,
-  // restated for the transport era — any OTHER button is a dead control).
-  const labButtons = await page.locator('main button:not([data-testid$="-submit"])').count();
+  // The desktop-UX rescue (§6.1): the Lab surface's operator controls are
+  // intent-form DECLARE submits PLUS the action-aware Ask MOS entries (the
+  // UXR wave mounts one owning action per Lab section — corpus/simulator/
+  // strategy/benchmarks/calibration — through the composer open bridge).
+  // The transport-era pin is RESTATED for the rescue era: any OTHER button
+  // (one that is neither a declare submit nor an Ask MOS entry) is a dead
+  // control and fails this check.
+  const labButtons = await page
+    .locator('main button:not([data-testid$="-submit"]):not([data-testid^="lab-ask-mos-"])')
+    .count();
   check(
-    'the ONLY Lab buttons are intent-form DECLARE submits (the pin, transport era)',
+    'the only Lab buttons are declare submits and Ask MOS entries (the pin, rescue era)',
     labButtons === 0,
-    `found ${labButtons} non-submit buttons`,
+    `found ${labButtons} non-submit non-ask buttons`,
   );
 };
 

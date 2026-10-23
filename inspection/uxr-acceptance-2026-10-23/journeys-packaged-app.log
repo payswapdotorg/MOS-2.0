@@ -1,0 +1,82 @@
+PASS [window] the renderer is hosted in a real X11 window (viewport follows X11 ConfigureWindow)
+
+===== JOURNEY A: window management + responsive matrix =====
+PASS [resize] baseline-1200x800 applied via real X11 ConfigureWindow — got 1200x800
+PASS [resize] short-laptop-1366x768 applied via real X11 ConfigureWindow — got 1366x768
+PASS [resize] narrow-1024x768 applied via real X11 ConfigureWindow — got 1024x768
+PASS [resize] small-restored-800x640 applied via real X11 ConfigureWindow — got 800x640
+PASS [window] maximize-analog (full screen bounds) applies — 1440x900
+PASS [window] restore-from-maximize returns to normal bounds — 1200x800
+PASS [window] minimize→restore analog (X11 unmap→map) keeps the window usable — 1200x800
+
+----- scroll matrix at 1200x800 -----
+PASS [scroll] home: page scrolls to bottom — sh=2413 ch=800 maxY=1613
+PASS [scroll] home: returns to top — topY=0
+PASS [clip] home: no horizontal window overflow — overflowX=0px
+PASS [clip] home: last action reachable at bottom (not covered) — last="open the Missions surface" covered=false
+PASS [scroll] missions: page scrolls to bottom — sh=800 ch=800 maxY=0
+PASS [scroll] missions: returns to top — topY=0
+PASS [clip] missions: no horizontal window overflow — overflowX=0px
+PASS [clip] missions: last action reachable at bottom (not covered) — last="Create a mission — ask MOS" covered=false
+PASS [scroll] lab: page scrolls to bottom — sh=1405 ch=800 maxY=605
+PASS [scroll] lab: returns to top — topY=0
+PASS [clip] lab: no horizontal window overflow — overflowX=0px
+PASS [clip] lab: last action reachable at bottom (not covered) — last="Next Steps" covered=false
+PASS [scroll] console: page scrolls to bottom — sh=1326 ch=800 maxY=526
+PASS [scroll] console: returns to top — topY=0
+PASS [clip] console: no horizontal window overflow — overflowX=0px
+PASS [clip] console: last action reachable at bottom (not covered) — last="Control" covered=false
+PASS [scroll] social: page scrolls to bottom — sh=3757 ch=800 maxY=2957
+PASS [scroll] social: returns to top — topY=0
+PASS [clip] social: no horizontal window overflow — overflowX=0px
+PASS [clip] social: last action reachable at bottom (not covered) — last="Continue setup →" covered=false
+PASS [scroll] connections: page scrolls to bottom — sh=800 ch=800 maxY=0
+PASS [scroll] connections: returns to top — topY=0
+PASS [clip] connections: no horizontal window overflow — overflowX=0px
+PASS [scroll] activity-approvals: page scrolls to bottom — sh=800 ch=800 maxY=0
+PASS [scroll] activity-approvals: returns to top — topY=0
+PASS [clip] activity-approvals: no horizontal window overflow — overflowX=0px
+
+----- resize-while-open checks -----
+PASS [resize-open] console @1024: no horizontal clipping — h1="Agent Console" overflowX=0
+PASS [resize-open] console @1366: no horizontal clipping — h1="Agent Console" overflowX=0
+PASS [resize-open] social @1024: no horizontal clipping — h1="Set up your YouTube workspace" overflowX=0
+PASS [resize-open] social @1366: no horizontal clipping — h1="Set up your YouTube workspace" overflowX=0
+PASS [resize-open] lab @1024: no horizontal clipping — h1="Research Lab" overflowX=0
+PASS [resize-open] lab @1366: no horizontal clipping — h1="Research Lab" overflowX=0
+
+===== JOURNEY B: discoverability =====
+PASS the §5 nav rail renders all 11 entries (7 routes + 4 honest soon rows) — rail rows=11 links=7
+PASS unimplemented surfaces honestly carry soon badges — soon occurrences=4
+PASS [discover] home renders a page title — "A marketing-engineering operating system: it takes a declared business"
+PASS [discover] missions renders a page title — "Missions"
+PASS [discover] lab renders a page title — "Research Lab"
+PASS [discover] console renders a page title — "Agent Console"
+PASS [discover] social renders a page title — "Set up your YouTube workspace"
+PASS [discover] connections renders a page title — "Connections"
+PASS [discover] activity-approvals renders a page title — "Notifications"
+PASS back navigation keeps the app on a valid route — route=/social
+
+===== JOURNEY C: universal composer (Ctrl+J → clarify → confirm → receipt) =====
+PASS [composer] the Ask MOS header control renders on Home
+PASS [composer] Ctrl+J toggles the composer overlay — overlay nodes=23
+PASS [composer] the flow reaches a confirm/receipt surface — flow text present
+PASS [composer] toggling away keeps the route surface intact — h1="A marketing-engineering operating system: it takes a declared business or social goal and can discover, simulate, produce, test, measure and improve a marketing program."
+
+===== JOURNEY D: social → YouTube guided setup =====
+PASS [social] the YouTube workspace heading renders
+PASS [social] the connect-vs-simulate distinction renders
+PASS [social] the platform picker lists five platforms — links=5
+PASS [social] capability verdicts render (three-state honesty)
+PASS [social] connect verdict is honestly unavailable
+PASS [social] the SIMULATION sandbox labels render
+PASS [social] no live publish in setup flow
+PASS [social] TikTok renders its own workspace heading
+PASS [social] the setup form declares the mission intent (receipt or the disclosed per-load honest-miss panel) — disclosed per-load honest-miss panel route=/missions
+
+===== JOURNEY E: Research Lab =====
+PASS [lab] the Lab workspace renders its sections
+PASS [lab] counterfactual output is labelled simulated
+PASS [lab] page title present — "Research Lab"
+
+===== ACCEPTANCE SUMMARY: 66/66 passed =====

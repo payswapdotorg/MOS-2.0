@@ -7,10 +7,13 @@ import type { MosRouteView } from '../routes/route-loading.js';
 import type { CreateMissionIntentDeclaration } from '../ports/mission-catalog.js';
 import type { LabIntentDeclaration } from '../ports/lab-intents.js';
 import type { ConsoleIntentDeclaration } from '../ports/console-intents.js';
+import type { ComposerUiEvent, ComposerUiState } from './composer-state.js';
+import { MosComposerOverlay } from './mos-composer.js';
 import { HomeView } from '../routes/home-view.js';
 import { LabView } from '../routes/lab-view.js';
 import { ConsoleView } from '../views/console-view.js';
 import { ConnectionsView } from '../routes/connections-view.js';
+import { SocialView } from '../routes/social-view.js';
 import { NotificationsSurfaceView } from '../routes/notifications-view.js';
 import { MissionsView } from '../routes/missions-view.js';
 import { StudioView } from '../routes/studio-view.js';
@@ -37,6 +40,22 @@ import {
  * holds no state, owns no authority and computes nothing.
  */
 
+/**
+ * The shell-owned Ask MOS composer chrome (the §6 P0 universal-composer
+ * wave — UXR-WC): the entries own the {@link ComposerUiState} value (the
+ * composer state machine is PURE — `shell/composer-state.ts`) and pass its
+ * projection in as this prop, exactly like every other shell read model;
+ * every composer interaction leaves through the single `onEvent` callback
+ * and the entry folds it through the reducer. Absent ⇒ no composer chrome
+ * (the shell renders exactly what it is given).
+ */
+export interface ComposerChromeProps {
+  /** The composer's current UI state (a plain value; the entry owns it). */
+  readonly state: ComposerUiState;
+  /** The single event sink the composer chrome emits through. */
+  readonly onEvent: (event: ComposerUiEvent) => void;
+}
+
 export interface MosAppShellProps {
   readonly shellView: AppShellView;
   readonly routeView: MosRouteView;
@@ -61,6 +80,12 @@ export interface MosAppShellProps {
   readonly onDeclareConsoleIntent: (declaration: ConsoleIntentDeclaration) => void;
   /** Shell build version shown in the footer. */
   readonly shellVersion: string;
+  /**
+   * The Ask MOS composer chrome (optional): the header control + the
+   * fixed bottom-right overlay dock. Presentation-only — state arrives via
+   * this prop, commands leave through `onEvent` (the entry routes them).
+   */
+  readonly composer?: ComposerChromeProps;
 }
 
 function TenantContextBadge({ tenant }: { tenant: AppShellView['tenant'] }) {
@@ -132,8 +157,11 @@ const SECTION_ICON_PATHS: Record<string, readonly string[]> = {
   lab: ['M9.5 3h5', 'M10 3v5.5L4.8 18.2A1.8 1.8 0 0 0 6.4 21h11.2a1.8 1.8 0 0 0 1.6-2.8L14 8.5V3', 'M7.5 15h9'],
   console: ['M21 12a9 9 0 1 1-9-9c2.4 0 4.7 1 6.4 2.6L21 8', 'M21 3v5h-5'],
   studio: ['M2 8.5A1.5 1.5 0 0 1 3.5 7h11A1.5 1.5 0 0 1 16 8.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 15.5z', 'M16 10.5 22 7v10l-6-3.5'],
+  distribution: ['M12 15V4', 'M7 9l5-5 5 5', 'M5 20h14'],
+  experiments: ['M9 3h6', 'M10 3v5.5L5.8 17A2.5 2.5 0 0 0 8 21h8a2.5 2.5 0 0 0 2.2-4L14 8.5V3'],
   measurement: ['M3 3v16a2 2 0 0 0 2 2h16', 'M7 15v-4', 'M12 15V7', 'M17 15v-2'],
   connections: ['M9.5 13.5a4 4 0 0 0 6 .5l2.5-2.5a4 4 0 0 0-5.7-5.7l-1.4 1.4', 'M14.5 10.5a4 4 0 0 0-6-.5L6 12.5a4 4 0 0 0 5.7 5.7l1.4-1.4'],
+  social: ['M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z', 'M10 9l6 3-6 3z'],
   notifications: ['M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9', 'M10.3 21a1.94 1.94 0 0 0 3.4 0'],
 };
 
@@ -226,7 +254,7 @@ function ShellNav({
         </p>
         <ul className="flex flex-row flex-wrap gap-1 lg:flex-col">
           {sections.map((section) => (
-            <li key={section.id} className="lg:w-full">
+            <li key={section.id} className="max-w-full lg:w-full">
               <SectionNavItem section={section} active={section.route === activeRoute} />
             </li>
           ))}
@@ -243,10 +271,10 @@ function ShellNav({
         ) : (
           <ul className="flex flex-row flex-wrap gap-1 lg:flex-col" data-testid="shell-recent-missions">
             {recentMissions.map((mission) => (
-              <li key={mission.missionId} className="lg:w-full">
+              <li key={mission.missionId} className="max-w-full lg:w-full">
                 <a
                   href={mission.route}
-                  className="block truncate rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+                  className="block max-w-full truncate rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
                   data-testid={`shell-recent-mission-${mission.missionId}`}
                   title={mission.title}
                 >
@@ -263,11 +291,13 @@ function ShellNav({
 
 function RouteSurface({
   routeView,
+  shellView,
   onDeclareMissionIntent,
   onDeclareLabIntent,
   onDeclareConsoleIntent,
 }: {
   readonly routeView: MosRouteView;
+  readonly shellView: AppShellView;
   readonly onDeclareMissionIntent: MosAppShellProps['onDeclareMissionIntent'];
   readonly onDeclareLabIntent: MosAppShellProps['onDeclareLabIntent'];
   readonly onDeclareConsoleIntent: MosAppShellProps['onDeclareConsoleIntent'];
@@ -276,7 +306,10 @@ function RouteSurface({
     case 'loading':
       return <MosLoadingView label={routeView.label} />;
     case 'home':
-      return <HomeView />;
+      // The Home empty state (§5 discoverability): the rail's recent-missions
+      // read decides onboarding vs overview — the same read model, never a
+      // second missions query.
+      return <HomeView recentMissions={shellView.recentMissions} />;
     case 'missions':
       return (
         <MissionsView data={routeView.data} onDeclareMissionIntent={onDeclareMissionIntent} />
@@ -291,6 +324,8 @@ function RouteSurface({
       );
     case 'connections':
       return <ConnectionsView data={routeView.data} />;
+    case 'social':
+      return <SocialView data={routeView.data} onDeclareMissionIntent={onDeclareMissionIntent} />;
     case 'notifications':
       return <NotificationsSurfaceView data={routeView.data} />;
     case 'route-error':
@@ -316,6 +351,7 @@ export function MosAppShell({
   onDeclareLabIntent,
   onDeclareConsoleIntent,
   shellVersion,
+  composer,
 }: MosAppShellProps) {
   const activeRoute =
     routeView.kind === 'missions'
@@ -328,11 +364,18 @@ export function MosAppShell({
             ? '/console'
             : routeView.kind === 'connections'
               ? '/connections'
-              : routeView.kind === 'notifications'
-                ? '/notifications'
-                : routeView.kind === 'home'
-                  ? '/'
-                  : '';
+              : routeView.kind === 'social'
+                ? '/social'
+                : routeView.kind === 'notifications'
+                  ? '/notifications'
+                  : routeView.kind === 'home'
+                    ? '/'
+                    : '';
+  const composerRouteLabel =
+    activeRoute === ''
+      ? 'MOS'
+      : shellView.sections.find((section) => section.route === activeRoute)?.label ?? 'MOS';
+  const composerActiveMissionTitle = shellView.recentMissions[0]?.title ?? null;
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <a
@@ -365,6 +408,22 @@ export function MosAppShell({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
+            {composer === undefined ? null : (
+              <button
+                type="button"
+                onClick={() => composer.onEvent({ kind: 'toggle' })}
+                title="Ask MOS (Ctrl+J — or Cmd+J on macOS)"
+                aria-keyshortcuts="Control+J"
+                aria-expanded={composer.state.open}
+                className="inline-flex items-center gap-2 rounded-md bg-mos-navy px-4 py-2 text-sm font-semibold text-white hover:bg-mos-navy-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+                data-testid="composer-ask-mos-button"
+              >
+                Ask MOS
+                <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium" aria-hidden="true">
+                  Ctrl+J
+                </span>
+              </button>
+            )}
             <MissionStatusBadge status={shellView.missionStatus} />
             <TenantContextBadge tenant={shellView.tenant} />
           </div>
@@ -379,6 +438,7 @@ export function MosAppShell({
         <main id="mos-main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 lg:px-8 lg:py-8">
           <RouteSurface
             routeView={routeView}
+            shellView={shellView}
             onDeclareMissionIntent={onDeclareMissionIntent}
             onDeclareLabIntent={onDeclareLabIntent}
             onDeclareConsoleIntent={onDeclareConsoleIntent}
@@ -392,6 +452,14 @@ export function MosAppShell({
           holds no business authority.
         </p>
       </footer>
+      {composer === undefined ? null : (
+        <MosComposerOverlay
+          state={composer.state}
+          routeLabel={composerRouteLabel}
+          activeMissionTitle={composerActiveMissionTitle}
+          onEvent={composer.onEvent}
+        />
+      )}
     </div>
   );
 }

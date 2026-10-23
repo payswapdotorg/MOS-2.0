@@ -25,9 +25,12 @@ export type ShellSectionId =
   | 'console'
   | 'studio'
   | 'lab'
+  | 'social'
   | 'connections'
   | 'notifications'
-  | 'measurement';
+  | 'measurement'
+  | 'distribution'
+  | 'experiments';
 
 /**
  * Availability of a product surface in this shell build. Unavailable is a

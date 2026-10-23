@@ -92,7 +92,7 @@ test('connections view renders the ux005 summary layer with the UX-004 honesty s
 });
 
 test('home view renders the §2 orientation strip with all five stages', () => {
-  const tree = HomeView();
+  const tree = HomeView({ recentMissions: [] });
   const strip = elementWithTestId(tree, 'ux005-orientation-strip');
   assert.ok(strip !== null, 'orientation strip present');
   const stages = flattenRenderTree(strip).filter((el) => typeof el.type === 'string' && el.type === 'details');
@@ -216,7 +216,7 @@ test('loopOwnerRoute maps each stage href to its route kind', () => {
 });
 
 test('rendered orientation strip links resolve to owning surfaces', () => {
-  const tree = HomeView();
+  const tree = HomeView({ recentMissions: [] });
   const hrefs = linkHrefs(tree);
   for (const s of LOOP_STAGES) {
     assert.ok(hrefs.includes(s.ownerHref), `missing link ${s.ownerHref}`);

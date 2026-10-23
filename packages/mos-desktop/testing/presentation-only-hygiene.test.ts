@@ -114,8 +114,12 @@ test('the composition seam imports domain runtimes only by relative built-dist s
       }
       // Package-name imports of domain runtimes are not executable in node
       // (their exports point at untranspiled src) — the seam discipline is
-      // the relative built-dist sibling path.
-      if (!/^(\.\.\/)+mos-[a-z-]+\/dist\/(index|[^/]+)\.js$/.test(specifier)) {
+      // the relative built-dist sibling path. Subpaths under dist/ are the
+      // SAME discipline when the sibling's own exports map sanctions them
+      // (@mos/distribution's provider subpaths declare dist entries, e.g.
+      // dist/adapters/providers/youtube/index.js — the provider-neutral
+      // root index deliberately carries no provider specifics).
+      if (!/^(\.\.\/)+mos-[a-z-]+\/dist\/[a-z0-9/-]+\.js$/.test(specifier)) {
         offenders.push(`${file}: ${specifier}`);
       }
     }

@@ -16,6 +16,7 @@ import type { AgentConsolePort } from './agent-console.js';
 import type { ConsoleIntentsPort } from './console-intents.js';
 import type { ConnectionsViewPort } from './connections-views.js';
 import type { NotificationsViewPort } from './notifications-views.js';
+import type { SocialWorkspacePort } from './social-workspace.js';
 
 /**
  * The composition the browser shell runs on (WEB-001).
@@ -84,6 +85,13 @@ export interface MosWebComposition {
   readonly consoleIntents: ConsoleIntentsPort;
   /** The Connections surface (UX-004, over PROD-001): read-only. */
   readonly connections: ConnectionsViewPort;
+  /**
+   * The Social Media workspace (the UXR social wave, over the frozen
+   * SOCIAL-002..006 provider profiles): read-only — the workspace's only
+   * write-shaped action declares a create-mission INTENT through the
+   * existing `missionCatalog` transport.
+   */
+  readonly social: SocialWorkspacePort;
   /** The Notifications consumer surface (NOTIFY-CS, over NOTIFY-001): read-only. */
   readonly notifications: NotificationsViewPort;
 }

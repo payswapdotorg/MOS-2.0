@@ -666,14 +666,26 @@ test('all 7 intent forms render across the modes with their submits (the complet
   }
 });
 
-test('the ONLY operator controls on the console surface are intent-form DECLARE submits', () => {
+test('the ONLY operator controls on the console surface are intent-form DECLARE submits (+ the Ask MOS composer entry)', () => {
+  // The §6 universal-composer wave (UXR-WC) adds exactly ONE more control:
+  // the direct-mode "Direct the work — ask MOS" entry. It is a DECLARE-path
+  // affordance, not an execution control — it opens the shell-owned composer
+  // whose confirm routes the SAME declaration through the SAME
+  // onDeclareConsoleIntent callback (pinned in view-composer.test.tsx).
   for (const [, page] of MODE_PAGES) {
     const tree = <ConsoleView data={page} onDeclareConsoleIntent={NOOP_ON_DECLARE_CONSOLE_INTENT} />;
     for (const button of elementsWithTag(tree, 'button')) {
       const testId = button.props['data-testid'];
       const isIntentSubmit = typeof testId === 'string' && testId.endsWith('-submit');
-      assert.equal(isIntentSubmit, true, `every button is an intent submit: ${String(testId)}`);
-      assert.equal(button.props.type, 'submit', 'the intent control is a form submit');
+      const isComposerEntry = testId === 'console-ask-mos';
+      assert.equal(
+        isIntentSubmit || isComposerEntry,
+        true,
+        `every button declares an intent or opens the composer: ${String(testId)}`,
+      );
+      if (isIntentSubmit) {
+        assert.equal(button.props.type, 'submit', 'the intent control is a form submit');
+      }
     }
   }
 });

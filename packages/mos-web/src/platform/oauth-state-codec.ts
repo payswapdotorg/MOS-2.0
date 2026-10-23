@@ -29,7 +29,7 @@ export interface ResolveSafeMosAppReturnToOptions {
   readonly currentOrigin?: string;
 }
 
-const MOS_APP_RETURN_TO_PREFIXES = ['/', '/missions', '/studio', '/lab', '/connections'];
+const MOS_APP_RETURN_TO_PREFIXES = ['/', '/missions', '/studio', '/lab', '/social', '/connections'];
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
