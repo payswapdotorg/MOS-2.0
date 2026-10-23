@@ -218,8 +218,11 @@ export function createProductionSocialWorkspacePort(
     } catch {
       missions = [];
     }
-    missions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
-    const recent = missions[0];
+    // (UXR-WC recovery note: this line did not compile under the composition
+    // project's strict tsconfig — `readonly` arrays carry no in-place sort.
+    // Copied to a mutable array, the identical most-recent-first derivation.)
+    const sorted = [...missions].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+    const recent = sorted[0];
     const missionContext =
       recent === undefined
         ? null
