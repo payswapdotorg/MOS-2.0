@@ -3,10 +3,14 @@
 // pattern: vite build + serve, then drive the shell headlessly and record
 // what rendered). The per-surface assertions live in the disclosed sibling
 // suites: `smoke-studio-suite.cjs` (home chrome + the UX-002 Studio
-// regression pass) and `smoke-lab-suite.cjs` (the UX-003 Lab pass: the
+// regression pass), `smoke-lab-suite.cjs` (the UX-003 Lab pass: the
 // benchmark digest with uncertainty intervals + counterfactual labels, the
 // no-op baseline, OOD flags, calibration pending/active states, and the
-// prediction-vs-measured separation) — split so each suite stays within
+// prediction-vs-measured separation) and `smoke-social-suite.cjs` (the
+// UXR social wave pass: the five-platform picker, the three-state
+// capability verdicts, the guided browser's honest non-Electron fallback,
+// the SANDBOX labels and the setup form's mission-intent declaration) —
+// split so each suite stays within
 // the 400-line managed-file discipline while later UX waves extend their
 // own suite.
 //
@@ -38,6 +42,7 @@ const { runConnectionsSuite } = require('./smoke-connections-suite.cjs');
 const { runUx005Suite } = require('./smoke-ux005-suite.cjs');
 const { runUx006 } = require('./smoke-ux006-suite.cjs');
 const { runConsoleSuite } = require('./smoke-console-suite.cjs');
+const { runSocialSuite } = require('./smoke-social-suite.cjs');
 
 const PACKAGE_ROOT = join(__dirname, '..');
 const DIST_WEB = join(PACKAGE_ROOT, 'dist', 'web');
@@ -208,6 +213,7 @@ async function main() {
     await runUx005Suite(page, BASE_URL, check);
     await runUx006(page, BASE_URL, check);
     await runConsoleSuite(page, BASE_URL, check);
+    await runSocialSuite(page, BASE_URL, check);
     await runResponsiveSuite(browser, BASE_URL, check);
 
     // Console state.

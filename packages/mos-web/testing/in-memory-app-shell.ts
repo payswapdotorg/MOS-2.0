@@ -69,6 +69,12 @@ const SECTION_TABLE: readonly {
     availability: { kind: 'available' },
   },
   { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
+  {
+    id: 'social',
+    label: 'Social Media',
+    route: '/social',
+    availability: { kind: 'available' },
+  },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
   {
     id: 'measurement',

@@ -1,6 +1,7 @@
 import type { ConsoleIntentDeclaration } from '../ports/console-intents.js';
 import type { ConsoleRoutePageModel, ConsolePageData } from '../routes/console-page-loading.js';
 import type { ConsoleModeId } from '../routes/route.js';
+import { openMosComposer } from '../shell/composer-bridge.js';
 import { ConsoleIntentOutcomePanel } from './console-intent-outcome-panel.js';
 import { ConsoleViewModeContent } from './console-mode-views.js';
 import { ConsoleInspector } from './console-inspector.js';
@@ -188,6 +189,22 @@ export function ConsoleView({
           The console declares intent and renders what the authorities hold — it never executes,
           never fabricates, and shows waiting states as waiting states.
         </p>
+        {mode === 'direct' ? (
+          <button
+            type="button"
+            onClick={() =>
+              openMosComposer({
+                actionId: 'compose-plan',
+                contextLabel: 'Agent Console · Direct mode',
+              })
+            }
+            className="self-start rounded-md bg-mos-navy px-4 py-2 text-sm font-semibold text-white hover:bg-mos-navy-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+            title="Opens the Ask MOS composer preloaded with the compose-plan action (also Ctrl+J anywhere)"
+            data-testid="console-ask-mos"
+          >
+            Direct the work — ask MOS
+          </button>
+        ) : null}
       </header>
       <div className="flex flex-col gap-4 lg:flex-row">
         <div

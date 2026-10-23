@@ -28,6 +28,7 @@ import {
   createUnavailableStudioDirectory,
   createUnavailableStudioPackages,
 } from './unavailable-surfaces.js';
+import { createProductionSocialWorkspacePort } from './production-social.js';
 
 /**
  * PRODUCTION composition root for the MOS desktop shell (MOS v2.0, registry
@@ -202,6 +203,16 @@ export function createProductionMosWebComposition(
     labBenchmark: labSurface.labRuntime.benchmark,
   });
 
+  // The Social Media workspace (the UXR social wave): the REAL frozen
+  // provider profile DATA (SOCIAL-002..006) behind the workspace read
+  // model, guided-setup states derived from the REAL mission repository
+  // and the bound Lab overview read — verdicts verbatim, unknowns kept.
+  const socialWorkspace = createProductionSocialWorkspacePort({
+    missionRepository,
+    scope,
+    labOverview: labWorkspace.labOverview,
+  });
+
   // The notifications binding presents the REAL tenant context (§31).
   const tenant = identityRepository.getTenant(tenantId as never);
   const notifications = createUnavailableNotifications({
@@ -232,6 +243,7 @@ export function createProductionMosWebComposition(
     agentConsole: consoleBinding.agentConsole,
     consoleIntents: consoleBinding.consoleIntents,
     connections: createUnavailableConnections(),
+    social: socialWorkspace,
     notifications,
     identityRepository,
     missionRepository,

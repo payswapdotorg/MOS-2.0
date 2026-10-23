@@ -17,6 +17,7 @@ import {
 } from './in-memory-console-double.js';
 import { connectionsCompositionDouble } from './connections-composition-double.js';
 import { createInMemoryNotificationsViewPort } from './notifications-composition-double.js';
+import { createInMemorySocialWorkspacePort } from './social-composition-double.js';
 
 /**
  * DISCLOSED in-memory composition for the MOS browser shell (WEB-001 /
@@ -90,6 +91,8 @@ export interface InMemoryMosWebComposition extends MosWebComposition {
   readonly connectionsSurface: typeof connectionsCompositionDouble;
   /** The disclosed Notifications surface double (NOTIFY-CS observability). */
   readonly notificationsSurface: ReturnType<typeof createInMemoryNotificationsViewPort>;
+  /** The disclosed Social workspace double (the UXR social wave observability). */
+  readonly socialSurface: ReturnType<typeof createInMemorySocialWorkspacePort>;
   /** The disclosed Console double state (the CONSOLE wave observability). */
   readonly consoleDoubleState: ReturnType<typeof createConsoleDoubleState>;
 }
@@ -275,6 +278,7 @@ export function createInMemoryMosWebComposition(
   const labWorkspace = createInMemoryLabWorkspace();
 
   const notificationsPort = createInMemoryNotificationsViewPort();
+  const socialWorkspace = createInMemorySocialWorkspacePort();
 
   // The Agent Console double (the CONSOLE wave): the shared state the read
   // projections and the intent executions ride, over the REAL mission
@@ -315,6 +319,7 @@ export function createInMemoryMosWebComposition(
     agentConsole,
     consoleIntents,
     connections: connectionsCompositionDouble,
+    social: socialWorkspace,
     notifications: notificationsPort,
     identityRepository,
     missionRepository,
@@ -325,6 +330,7 @@ export function createInMemoryMosWebComposition(
     labWorkspace,
     connectionsSurface: connectionsCompositionDouble,
     notificationsSurface: notificationsPort,
+    socialSurface: socialWorkspace,
     consoleDoubleState,
   };
 }

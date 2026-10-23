@@ -2,11 +2,12 @@
  * Composition tests for the PRODUCTION composition root
  * (composition/compose-production-mos-web.ts) — the node-side battery:
  *
- *  - the composition implements ALL EIGHT ports of `MosWebComposition`;
+ *  - the composition implements every port of `MosWebComposition`;
  *  - a fresh composition starts with ZERO missions (no demo seeds), EMPTY
  *    tenant-scoped lab listings, and the honest calibration-pending
  *    context state (`null`, never a fabricated context);
- *  - the availability verdicts are HONEST: Home/Missions/Lab available,
+ *  - the availability verdicts are HONEST: Home/Missions/Lab/Console/Social
+ *    available,
  *    Studio/Connections/Notifications explicitly not-yet-available naming
  *    the production MOS service transport they wait on;
  *  - the create-mission intent declaration flows through the real
@@ -47,6 +48,7 @@ test('the production composition implements all eight ports of MosWebComposition
   assert.equal(typeof composition.labCalibration.loadCalibrationRecords, 'function');
   assert.equal(typeof composition.labCalibration.loadCalibrationContext, 'function');
   assert.equal(typeof composition.connections.getConnectionsViewData, 'function');
+  assert.equal(typeof composition.social.loadSocialWorkspace, 'function');
   assert.equal(typeof composition.notifications.getNotificationsViewData, 'function');
 });
 
@@ -81,12 +83,14 @@ test('the availability verdicts are honest for this release (the wave-24 target-
   const shell = await composition.appShell.loadAppShell();
   assert.ok(!('error' in shell));
   const sections = shell.sections.map((section) => section.id);
-  assert.deepEqual(sections, ['home', 'missions', 'lab', 'console', 'studio', 'measurement']);
+  assert.deepEqual(sections, ['home', 'missions', 'lab', 'console', 'social', 'studio', 'measurement']);
   const byId = new Map(shell.sections.map((section) => [section.id, section]));
-  for (const id of ['home', 'missions', 'lab', 'console'] as const) {
+  for (const id of ['home', 'missions', 'lab', 'console', 'social'] as const) {
     assert.deepEqual(byId.get(id)?.availability, { kind: 'available' }, `${id} is available`);
   }
   assert.equal(byId.get('lab')?.label, 'Research Lab', 'the target design\'s rail label');
+  assert.equal(byId.get('social')?.label, 'Social Media', 'the UXR social wave\'s rail label');
+  assert.equal(byId.get('social')?.route, '/social');
   for (const id of ['studio', 'measurement'] as const) {
     const availability = byId.get(id)?.availability;
     assert.equal(availability?.kind, 'not-yet-available', `${id} is honestly not-yet-available`);
@@ -94,6 +98,118 @@ test('the availability verdicts are honest for this release (the wave-24 target-
       assert.match(availability.dependsOn, /production MOS service transport/);
     }
   }
+});
+
+test('the Social workspace binds the five REAL frozen provider profiles with verdicts verbatim', async () => {
+  const composition = createProductionMosWebComposition({ now: NOW });
+  const workspace = await composition.social.loadSocialWorkspace();
+  assert.ok(!('error' in workspace), 'the workspace read model loads');
+  const platforms = workspace.platforms;
+  assert.deepEqual(
+    platforms.map((platform) => platform.slug),
+    ['youtube', 'instagram', 'facebook-pages', 'tiktok', 'x'],
+  );
+  const youtube = platforms[0];
+  assert.equal(youtube.providerId, 'provider:youtube');
+  assert.equal(youtube.displayName, 'YouTube');
+  assert.equal(youtube.selected, true, 'YouTube is the composition\'s default selection');
+  assert.deepEqual(
+    youtube.capabilityVerdicts,
+    [
+      {
+        operation: 'publish',
+        support: 'supported',
+        note: 'publicly-documented video upload API surface (video uploads)',
+      },
+      {
+        operation: 'schedule',
+        support: 'supported',
+        note: 'publicly-documented scheduled-publish parameter on video uploads',
+      },
+      {
+        operation: 'read-observations',
+        support: 'supported',
+        note: 'publicly-documented analytics/reporting API surface (video metrics)',
+      },
+      {
+        operation: 'delete',
+        support: 'supported',
+        note: 'publicly-documented video deletion API surface',
+      },
+      {
+        operation: 'list-restrictions',
+        support: 'unknown',
+        note: 'no publicly-known per-channel restriction-listing surface — observation-pending',
+      },
+    ],
+    'the YouTube verdicts render the frozen profile VERBATIM (unknown stays unknown)',
+  );
+  assert.deepEqual(youtube.authFlows, ['authorization-code', 'device']);
+  assert.equal(youtube.authModelKind, 'oauth2');
+  // every platform's list-restrictions verdict is the profile's own unknown
+  for (const platform of platforms) {
+    const restrictions = platform.capabilityVerdicts.find(
+      (verdict) => verdict.operation === 'list-restrictions',
+    );
+    assert.equal(restrictions?.support, 'unknown', `${platform.slug} list-restrictions stays unknown`);
+    assert.equal(
+      platform.connectVerdict.kind,
+      'unavailable',
+      `${platform.slug} honestly reports no live connect action`,
+    );
+    if (platform.connectVerdict.kind === 'unavailable') {
+      assert.match(platform.connectVerdict.reason, /no credentials exist anywhere/);
+    }
+  }
+  // a fresh composition reports every guided step not-started, honestly
+  for (const platform of platforms) {
+    for (const step of platform.guidedSetup.guidedSteps) {
+      assert.equal(step.state, 'not-started', `${platform.slug} step ${step.position} is not-started`);
+    }
+    assert.equal(platform.guidedSetup.missionContext, null, 'no mission context on a fresh composition');
+    assert.equal(
+      platform.guidedSetup.simulationSandbox.boundary,
+      'No live publish • no invented analytics • no account changes',
+    );
+  }
+});
+
+test('a mission existing in the tenant scope advances guided step 1 with a real mission context', async () => {
+  const composition = createProductionMosWebComposition({ now: NOW });
+  const scope = scopeOf(composition.scope.tenantId);
+  const created = composition.missionRepository.createMission({
+    scope,
+    id: 'mission_social_1' as never,
+    objective: {
+      statement: 'Qualified leads for the spring line.',
+      targetMetrics: [],
+      constraints: [],
+    },
+    rewardSpec: {
+      version: 1,
+      terms: [
+        {
+          metric: 'qualified-reach',
+          weight: 1,
+          direction: 'maximize',
+          definition: 'Reach among the declared audience.',
+        },
+      ],
+    },
+  });
+  assert.ok(!('error' in created));
+  const workspace = await composition.social.loadSocialWorkspace();
+  assert.ok(!('error' in workspace));
+  const youtube = workspace.platforms[0];
+  const steps = youtube.guidedSetup.guidedSteps;
+  assert.equal(steps[0]?.state, 'complete', 'step 1 completes on the REAL mission record');
+  assert.equal(steps[1]?.state, 'not-started', 'step 2 stays not-started (connect unavailable)');
+  assert.equal(steps[2]?.state, 'in-progress', 'step 3 is in-progress (the declared objective exists)');
+  assert.ok(youtube.guidedSetup.missionContext !== null);
+  assert.equal(
+    youtube.guidedSetup.missionContext?.route,
+    '/console?mission=mission_social_1',
+  );
 });
 
 test('the mission badge and recent-missions rail read the REAL missions repository honestly', async () => {

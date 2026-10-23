@@ -112,6 +112,7 @@ test('the home route resolves to the home view with no port calls', async () => 
       labBenchmark: null as never,
       labCalibration: null as never,
       connections: null as never,
+      social: null as never,
       notifications: null as never,
     } satisfies Record<string, unknown>),
     appShell: {

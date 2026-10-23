@@ -226,13 +226,14 @@ test('images/icons carry accessible labels; tables declare column scopes', () =>
 
 test('the section table the shell renders matches the port readiness verdicts', () => {
   // The composition seam's section table (the wave-24 target-design rail
-  // order) is what the chrome presents; this pins the eight sections and
-  // their verdict kinds.
+  // order, extended by the UXR social wave's Social Media row between
+  // Agent Console and Studio) is what the chrome presents; this pins the
+  // nine sections and their verdict kinds.
   assert.deepEqual(
     SECTIONS.map((section) => section.id),
-    ['home', 'missions', 'lab', 'console', 'studio', 'measurement', 'connections', 'notifications'],
+    ['home', 'missions', 'lab', 'console', 'social', 'studio', 'measurement', 'connections', 'notifications'],
   );
-  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 7);
+  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 8);
 });
 
 test('the shell header presents the mission-activity badge honestly (wave-24 target design)', () => {

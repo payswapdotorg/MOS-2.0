@@ -7,6 +7,8 @@ import type { MosRouteView } from '../routes/route-loading.js';
 import type { CreateMissionIntentDeclaration } from '../ports/mission-catalog.js';
 import type { LabIntentDeclaration } from '../ports/lab-intents.js';
 import type { ConsoleIntentDeclaration } from '../ports/console-intents.js';
+import type { ComposerUiEvent, ComposerUiState } from './composer-state.js';
+import { MosComposerOverlay } from './mos-composer.js';
 import { HomeView } from '../routes/home-view.js';
 import { LabView } from '../routes/lab-view.js';
 import { ConsoleView } from '../views/console-view.js';
@@ -38,6 +40,22 @@ import {
  * holds no state, owns no authority and computes nothing.
  */
 
+/**
+ * The shell-owned Ask MOS composer chrome (the §6 P0 universal-composer
+ * wave — UXR-WC): the entries own the {@link ComposerUiState} value (the
+ * composer state machine is PURE — `shell/composer-state.ts`) and pass its
+ * projection in as this prop, exactly like every other shell read model;
+ * every composer interaction leaves through the single `onEvent` callback
+ * and the entry folds it through the reducer. Absent ⇒ no composer chrome
+ * (the shell renders exactly what it is given).
+ */
+export interface ComposerChromeProps {
+  /** The composer's current UI state (a plain value; the entry owns it). */
+  readonly state: ComposerUiState;
+  /** The single event sink the composer chrome emits through. */
+  readonly onEvent: (event: ComposerUiEvent) => void;
+}
+
 export interface MosAppShellProps {
   readonly shellView: AppShellView;
   readonly routeView: MosRouteView;
@@ -62,6 +80,12 @@ export interface MosAppShellProps {
   readonly onDeclareConsoleIntent: (declaration: ConsoleIntentDeclaration) => void;
   /** Shell build version shown in the footer. */
   readonly shellVersion: string;
+  /**
+   * The Ask MOS composer chrome (optional): the header control + the
+   * fixed bottom-right overlay dock. Presentation-only — state arrives via
+   * this prop, commands leave through `onEvent` (the entry routes them).
+   */
+  readonly composer?: ComposerChromeProps;
 }
 
 function TenantContextBadge({ tenant }: { tenant: AppShellView['tenant'] }) {
@@ -320,6 +344,7 @@ export function MosAppShell({
   onDeclareLabIntent,
   onDeclareConsoleIntent,
   shellVersion,
+  composer,
 }: MosAppShellProps) {
   const activeRoute =
     routeView.kind === 'missions'
@@ -339,6 +364,11 @@ export function MosAppShell({
                   : routeView.kind === 'home'
                     ? '/'
                     : '';
+  const composerRouteLabel =
+    activeRoute === ''
+      ? 'MOS'
+      : shellView.sections.find((section) => section.route === activeRoute)?.label ?? 'MOS';
+  const composerActiveMissionTitle = shellView.recentMissions[0]?.title ?? null;
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <a
@@ -371,6 +401,22 @@ export function MosAppShell({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
+            {composer === undefined ? null : (
+              <button
+                type="button"
+                onClick={() => composer.onEvent({ kind: 'toggle' })}
+                title="Ask MOS (Ctrl+J — or Cmd+J on macOS)"
+                aria-keyshortcuts="Control+J"
+                aria-expanded={composer.state.open}
+                className="inline-flex items-center gap-2 rounded-md bg-mos-navy px-4 py-2 text-sm font-semibold text-white hover:bg-mos-navy-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+                data-testid="composer-ask-mos-button"
+              >
+                Ask MOS
+                <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium" aria-hidden="true">
+                  Ctrl+J
+                </span>
+              </button>
+            )}
             <MissionStatusBadge status={shellView.missionStatus} />
             <TenantContextBadge tenant={shellView.tenant} />
           </div>
@@ -398,6 +444,14 @@ export function MosAppShell({
           holds no business authority.
         </p>
       </footer>
+      {composer === undefined ? null : (
+        <MosComposerOverlay
+          state={composer.state}
+          routeLabel={composerRouteLabel}
+          activeMissionTitle={composerActiveMissionTitle}
+          onEvent={composer.onEvent}
+        />
+      )}
     </div>
   );
 }

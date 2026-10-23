@@ -24,9 +24,12 @@ import type {
  * availability verdicts are HONEST for this release:
  *
  *  - `home`, `missions`, `lab` (presented as "Research Lab", the target
- *    design's label) and `console` are AVAILABLE (real read models bound:
- *    identity tenant context, the REAL mission repository, the REAL
- *    LAB-017/LAB-018 runtimes, the REAL console authority chain);
+ *    design's label), `console` and `social` (the UXR social wave — the
+ *    frozen provider profiles behind the Social Media workspace's read
+ *    model) are AVAILABLE (real read models bound: identity tenant
+ *    context, the REAL mission repository, the REAL LAB-017/LAB-018
+ *    runtimes, the REAL console authority chain, the REAL SOCIAL-002..006
+ *    provider profile DATA);
  *  - `studio` and `measurement` are NOT-YET-AVAILABLE: this composition
  *    binds NO read models for them — the verdict names the production MOS
  *    service transport they wait on, per the first-class
@@ -92,6 +95,12 @@ const SECTION_TABLE: readonly {
     availability: { kind: 'available' },
   },
   { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
+  {
+    id: 'social',
+    label: 'Social Media',
+    route: '/social',
+    availability: { kind: 'available' },
+  },
   {
     id: 'studio',
     label: 'Studio',
