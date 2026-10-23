@@ -25,7 +25,8 @@
     "postinstall": "node scripts/node-pty-rebuild.mjs",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "typecheck": "tsc -b tsconfig.renderer.json"
+    "typecheck": "tsc -b tsconfig.renderer.json",
+    "test": "node --test 'test/**/*.test.ts'"
   },
   "dependencies": {
     "@arms/rum-electron": "^0.0.3",

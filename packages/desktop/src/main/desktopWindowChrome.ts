@@ -18,6 +18,7 @@ import {
   PlatformChannels,
 } from "@zcode/shared";
 import { loadWindow, type WindowBootstrapOptions } from "./desktopHostProcess.js";
+import { resolveDesktopWindowVisualOptions, resolveAutoHideMenuBar } from "./desktopWindowVisualOptions.js";
 import {
   buildWindowsTitleBarOverlayForZoomLevel,
   hasCustomWindowsControls,
@@ -134,41 +135,16 @@ function isLinuxDesktopWindow() {
 }
 
 function buildDesktopWindowVisualOptions() {
+  // The per-platform visual POLICY lives in the electron-free pure module
+  // (desktopWindowVisualOptions.ts) so it is unit-testable under plain
+  // `node --test`; on darwin the canonical overlay position from
+  // desktopWindowButtonPosition.ts is merged over the pure default so the
+  // overlay geometry keeps a single source of truth.
+  const options = resolveDesktopWindowVisualOptions(process.platform);
   if (process.platform === "darwin") {
-    return {
-      backgroundColor: "#00000000",
-      titleBarStyle: "hidden" as const,
-      trafficLightPosition: MACOS_TRAFFIC_LIGHT_BASE_POSITION,
-      vibrancy: "under-window" as const,
-      visualEffectState: "active" as const,
-    };
+    return { ...options, trafficLightPosition: MACOS_TRAFFIC_LIGHT_BASE_POSITION };
   }
-
-  if (process.platform === "win32") {
-    return {
-      backgroundColor: "#00000000",
-      // Windows 窗口操作由 renderer 绘制，禁用原生标题栏，避免出现两套按钮。
-      frame: false,
-      backgroundMaterial: "acrylic" as const,
-    };
-  }
-
-  return {
-    // LINUX (the desktop-UX rescue, §4.1): the shipped MOS shell draws NO
-    // custom titlebar and NO window controls, so a frameless window left the
-    // owner with no visible/native way to minimize, maximize, close or
-    // drag-resize the app ("a website forced into a desktop wrapper").
-    // The MOS shell is the whole product surface now — it does not need the
-    // rounded-corner transparency the old coding shell used, and
-    // `transparent: true` on Linux additionally breaks repaint-on-resize
-    // (content appeared clipped). Native frame + opaque background restore
-    // full window-manager behavior: decorated title bar, min/max/close
-    // buttons, keyboard Super+arrow tiling, drag-resize edges/corners.
-    backgroundColor: "#f8fafc",
-    frame: true,
-    // Native shadow follows the window manager's decoration.
-    hasShadow: true,
-  };
+  return options;
 }
 
 export function applyAppIcon(iconPath: string) {
@@ -581,7 +557,8 @@ export function createBrowserWindow(options: {
     title: options.title,
     icon: options.iconPath,
     // Linux frameless 后部分桌面环境仍可能显示 Electron 原生菜单栏，自动隐藏避免顶部出现两套菜单。
-    autoHideMenuBar: isLinuxDesktopWindow(),
+    // (policy extracted to the pure module — pinned by test)
+    autoHideMenuBar: resolveAutoHideMenuBar(process.platform),
     ...buildDesktopWindowVisualOptions(),
     webPreferences: {
       preload: options.preloadPath,

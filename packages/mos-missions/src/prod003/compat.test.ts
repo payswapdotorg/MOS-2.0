@@ -11,8 +11,22 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as agentsAuthority from '@mos/agents';
 import * as jobsAuthority from '@mos/jobs';
-import * as experimentsAuthority from '../../../mos-experiments/dist/index.js';
 import * as missionsBase from '../index.js';
+
+// BRIDGE-003 edge, loaded through a NON-LITERAL specifier on purpose: a
+// literal import would pull @mos/experiments' emitted declarations into this
+// package's compilation, and those declarations (through their own relative
+// dist imports) re-import THIS package's dist — a self-collision the
+// composite build rejects as TS5055 ("would overwrite input file") whenever
+// the missions ↔ experiments reference pair is rebuilt together. The
+// non-literal specifier keeps the compile-time declaration graph acyclic
+// while the runtime assertion below still exercises the REAL built dist
+// artifact of the experiments authority (node resolves the same path).
+const experimentsAuthoritySpecifier = '../../../mos-experiments/dist/index.js';
+const experimentsAuthority = (await import(experimentsAuthoritySpecifier)) as Record<
+  string,
+  unknown
+>;
 
 function runtimeSurface(ns: object): string[] {
   return Object.keys(ns)

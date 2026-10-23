@@ -254,7 +254,7 @@ function ShellNav({
         </p>
         <ul className="flex flex-row flex-wrap gap-1 lg:flex-col">
           {sections.map((section) => (
-            <li key={section.id} className="lg:w-full">
+            <li key={section.id} className="max-w-full lg:w-full">
               <SectionNavItem section={section} active={section.route === activeRoute} />
             </li>
           ))}
@@ -271,10 +271,10 @@ function ShellNav({
         ) : (
           <ul className="flex flex-row flex-wrap gap-1 lg:flex-col" data-testid="shell-recent-missions">
             {recentMissions.map((mission) => (
-              <li key={mission.missionId} className="lg:w-full">
+              <li key={mission.missionId} className="max-w-full lg:w-full">
                 <a
                   href={mission.route}
-                  className="block truncate rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+                  className="block max-w-full truncate rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
                   data-testid={`shell-recent-mission-${mission.missionId}`}
                   title={mission.title}
                 >
