@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+<title id="title">MOS desktop shell and Agent Console target layout</title>
+<desc id="desc">Illustrative desktop UX map showing a native window titlebar, global search and agent composer toggle, scrollable MOS navigation, mission-first work area, collapsible inspector, and durable task activity.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071426"/><stop offset="1" stop-color="#0b1f38"/></linearGradient>
+  <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#102945"/><stop offset="1" stop-color="#0a1d33"/></linearGradient>
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#2563eb"/><stop offset="1" stop-color="#06b6d4"/></linearGradient>
+  <style>
+    .t{font-family:Inter,ui-sans-serif,system-ui,sans-serif;fill:#e6f0ff}.m{font-family:Inter,ui-sans-serif,system-ui,sans-serif;fill:#a7bfdc}.s{font-family:Inter,ui-sans-serif,system-ui,sans-serif;fill:#6f8eaf}.h{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-weight:700;fill:#f4f8ff}.tiny{font-size:12px}.small{font-size:14px}.body{font-size:16px}.title{font-size:24px;font-weight:700}.line{stroke:#203d5c;stroke-width:1}.card{fill:#102640;stroke:#254767;stroke-width:1}.active{fill:#123e7f;stroke:#3489ff}
+  </style>
+</defs>
+<rect width="1600" height="1000" rx="18" fill="url(#bg)"/>
+<!-- OS-managed titlebar -->
+<rect width="1600" height="42" rx="18" fill="#07111e"/>
+<rect y="24" width="1600" height="18" fill="#07111e"/>
+<rect x="18" y="12" width="18" height="18" rx="5" fill="url(#accent)"/>
+<path d="M22 15h5l3 4-3 6h-5l3-6z" fill="#fff" opacity=".9"/>
+<text x="48" y="26" class="t small">MOS — Marketing Operating System</text>
+<text x="1480" y="26" class="m small">—</text><rect x="1507" y="12" width="13" height="13" rx="1.5" fill="none" stroke="#9eb6d1"/><path d="M1548 13l12 12m0-12-12 12" stroke="#c0d2e5" stroke-width="1.4"/>
+<line x1="0" y1="42" x2="1600" y2="42" class="line"/>
+<!-- global header -->
+<rect y="43" width="1600" height="82" fill="#0a1b2e"/>
+<path d="M32 62l12 0 11 18-11 18H32l12-18z" fill="#4ba8ff"/><path d="M53 62h11L53 80l11 18H53L42 80z" fill="#7c78ff"/>
+<text x="76" y="81" class="h title">MOS</text><text x="76" y="101" class="s tiny">Marketing Operating System</text>
+<rect x="305" y="60" width="760" height="46" rx="12" fill="#102945" stroke="#2b4d70"/>
+<circle cx="329" cy="82" r="8" fill="none" stroke="#80addd" stroke-width="2"/><line x1="335" y1="88" x2="341" y2="94" stroke="#80addd" stroke-width="2"/>
+<text x="353" y="87" class="m body">Search missions, research, tasks — or ask MOS…</text>
+<rect x="1090" y="60" width="215" height="46" rx="12" fill="#123d78" stroke="#3d8eff"/><path d="M1112 75v17m-8-8h16" stroke="#eaf4ff" stroke-width="2"/><text x="1135" y="88" class="t small">Ask MOS</text><text x="1247" y="88" class="s tiny">Ctrl+J</text>
+<circle cx="1351" cy="82" r="16" fill="#163d61" stroke="#347ab0"/><path d="M1344 83q7-14 14 0M1343 87q8 7 16 0" fill="none" stroke="#bfe4ff" stroke-width="1.5"/><text x="1376" y="78" class="t small">Ready</text><text x="1376" y="96" class="s tiny">Tasks & approvals</text>
+<!-- left sidebar -->
+<rect x="0" y="125" width="270" height="875" fill="#08192b"/>
+<line x1="270" y1="125" x2="270" y2="1000" class="line"/>
+<text x="28" y="160" class="s tiny" letter-spacing="2">WORKSPACE</text>
+<g class="m body">
+<text x="62" y="203">Home</text><text x="62" y="249">Missions</text><text x="62" y="295">Research Lab</text><text x="62" y="341">Agent Console</text><text x="62" y="387">Social Media</text><text x="62" y="433">Studio</text><text x="62" y="479">Distribution</text><text x="62" y="525">Experiments</text><text x="62" y="571">Measurement & Learning</text><text x="62" y="617">Connections</text><text x="62" y="663">Activity & Approvals</text>
+</g>
+<rect x="15" y="318" width="240" height="38" rx="9" class="active"/>
+<g fill="none" stroke="#8fc9ff" stroke-width="1.8"><path d="M30 337a9 9 0 1 1 6 8M30 328v9h9"/><path d="M30 384h15m-12-5v10m5-14v14"/></g>
+<line x1="20" y1="696" x2="250" y2="696" class="line"/>
+<text x="28" y="724" class="s tiny" letter-spacing="2">RECENT MISSIONS</text>
+<circle cx="31" cy="755" r="5" fill="#39d9b1"/><text x="46" y="760" class="m small">YouTube growth strategy</text>
+<circle cx="31" cy="786" r="5" fill="#5d9cff"/><text x="46" y="791" class="m small">Launch campaign</text>
+<rect x="16" y="936" width="238" height="45" rx="8" class="card"/><circle cx="31" cy="958" r="4" fill="#35d5aa"/><text x="43" y="954" class="t tiny">Desktop services ready</text><text x="43" y="970" class="s tiny">No task state is fabricated</text>
+<!-- center workspace -->
+<rect x="290" y="145" width="870" height="125" rx="14" fill="url(#panel)" stroke="#244567"/>
+<rect x="312" y="166" width="54" height="54" rx="15" fill="url(#accent)"/><path d="M324 195a15 15 0 1 1 9 13M324 177v12h12M340 179v8m-4-4h8" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round"/>
+<text x="386" y="176" class="s tiny">ACTIVE WORKSPACE / MISSION</text><text x="386" y="203" class="h title">YouTube content strategy</text><text x="386" y="229" class="m small">Research audience needs, compare candidate formats, then simulate before approval.</text>
+<rect x="925" y="165" width="91" height="30" rx="15" fill="#0c604f"/><circle cx="943" cy="180" r="4" fill="#49e8b1"/><text x="955" y="184" class="t tiny">In progress</text>
+<rect x="1024" y="165" width="117" height="30" rx="8" fill="#153656" stroke="#345876"/><text x="1038" y="184" class="m tiny">View mission ↗</text>
+<!-- mode tabs -->
+<rect x="290" y="284" width="870" height="54" rx="12" fill="#0e2540" stroke="#274867"/>
+<rect x="301" y="291" width="111" height="40" rx="8" fill="#164b90" stroke="#438af1"/><text x="328" y="316" class="t small">Overview</text>
+<text x="444" y="316" class="m small">Plan</text><text x="535" y="316" class="m small">Research</text><text x="641" y="316" class="m small">Simulation</text><text x="761" y="316" class="m small">Results</text><text x="850" y="316" class="m small">Control</text><text x="1004" y="316" class="s tiny">All routes scroll</text>
+<!-- work stream -->
+<rect x="290" y="352" width="548" height="584" rx="14" fill="url(#panel)" stroke="#244567"/>
+<text x="315" y="386" class="h" font-size="20">Work stream</text><text x="315" y="408" class="s small">Mission-aware conversation and real task events</text>
+<rect x="315" y="429" width="440" height="83" rx="10" class="card"/><circle cx="338" cy="451" r="10" fill="#2161a5"/><text x="356" y="454" class="t small">MOS research agent</text><text x="335" y="478" class="m small">I can compare audience questions, content formats and</text><text x="335" y="497" class="m small">cadence. Do you want source research or simulation first?</text>
+<rect x="405" y="530" width="402" height="65" rx="10" fill="#153f79" stroke="#3478cb"/><text x="423" y="553" class="t small">Start with evidence, then simulate 3 strategies.</text><text x="423" y="575" class="s tiny">User instruction • 10:24</text>
+<rect x="315" y="613" width="490" height="139" rx="12" fill="#102d4b" stroke="#2a5277"/><circle cx="338" cy="637" r="10" fill="#2a9f9a"/><text x="358" y="640" class="t small">Research task · JT-1048</text><rect x="671" y="626" width="112" height="23" rx="11" fill="#164d43"/><text x="690" y="642" class="t tiny">Running</text><text x="334" y="674" class="m small">✓ Sources indexed and provenance attached</text><text x="334" y="698" class="m small">◉ Strategy candidates being evaluated</text><text x="334" y="722" class="m small">○ Next: compare against no-op baseline</text><text x="334" y="741" class="s tiny">Updates from durable task state, not guessed percentages</text>
+<rect x="315" y="773" width="490" height="75" rx="10" fill="#0b1c2f" stroke="#33516e"/><text x="332" y="796" class="m small">Type an instruction, attach evidence, or use voice…</text><path d="M338 813h12m-6-6v12M375 808q8-8 16 0v9q-8 8-16 0z" fill="none" stroke="#75a8d3" stroke-width="1.7"/><circle cx="762" cy="815" r="17" fill="url(#accent)"/><path d="M756 815h12m-5-5 5 5-5 5" fill="none" stroke="#fff" stroke-width="1.7"/><text x="316" y="874" class="s tiny">Enter sends · Shift+Enter adds a line · Voice is optional</text>
+<!-- right inspector -->
+<rect x="858" y="352" width="302" height="278" rx="14" fill="url(#panel)" stroke="#244567"/>
+<text x="880" y="385" class="h" font-size="19">Mission context</text><text x="880" y="417" class="s tiny">GOAL</text><text x="880" y="440" class="t small">Improve qualified views and leads</text><text x="880" y="470" class="s tiny">CONSTRAINTS</text><text x="880" y="493" class="m small">• Market: Ghana</text><text x="880" y="515" class="m small">• Language: English</text><text x="880" y="537" class="m small">• No publication without approval</text><line x1="880" y1="554" x2="1138" y2="554" class="line"/><text x="880" y="580" class="s tiny">SELECTED OBJECT</text><text x="880" y="603" class="t small">Research task JT-1048 ↗</text>
+<rect x="858" y="646" width="302" height="290" rx="14" fill="url(#panel)" stroke="#244567"/>
+<text x="880" y="679" class="h" font-size="19">Task activity</text>
+<circle cx="886" cy="713" r="6" fill="#37d8ad"/><text x="904" y="717" class="t small">Evidence collection</text><text x="904" y="737" class="s tiny">Complete • source-linked</text>
+<circle cx="886" cy="767" r="6" fill="#58a4ff"/><text x="904" y="771" class="t small">Strategy comparison</text><text x="904" y="791" class="s tiny">Running · Job-backed</text>
+<circle cx="886" cy="821" r="6" fill="#c4a0ff"/><text x="904" y="825" class="t small">Approval checkpoint</text><text x="904" y="845" class="s tiny">Not requested yet</text>
+<rect x="880" y="876" width="258" height="39" rx="8" fill="#123f7d" stroke="#3979bb"/><text x="904" y="900" class="t small">Open task history ↗</text>
+<!-- notes -->
+<text x="290" y="971" class="s tiny">Reference only • window controls are native/functional • pages scroll • task cards bind to real MOS records</text>
+</svg>
