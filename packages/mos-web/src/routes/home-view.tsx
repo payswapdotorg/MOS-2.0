@@ -5,6 +5,8 @@ import {
 } from '../views/home-loop.js';
 import { LOOP_STAGES } from '../views/disclosure/loop-orientation.js';
 import { DisclosureItem } from '../views/disclosure/disclosure-primitive.js';
+import type { ShellRecentMissionView } from '../ports/app-shell.js';
+import { openMosComposer } from '../shell/composer-bridge.js';
 
 /**
  * The Home surface (UX-001): the product's front door, narrating the §2
@@ -62,11 +64,71 @@ const SECTION_LINKS: Readonly<Record<string, { readonly href: string; readonly l
   studio: { href: '/studio', label: 'Studio' },
 };
 
+/**
+ * The empty-workspace onboarding hero (the §5 discoverability wave, UXR-WC):
+ * when the presented scope holds ZERO missions the front door teaches the
+ * first move instead of assuming one — one sentence on what MOS is, the
+ * primary next action ("Create your first mission", preloading the Ask MOS
+ * composer with the create-mission action through the open bridge), and the
+ * secondary "Explore the Research Lab" link. Honest by construction: the
+ * composer only DECLARES the intent; the Missions authority validates and
+ * creates the mission when the declared intent executes.
+ */
+function HomeEmptyOnboardingHero() {
+  return (
+    <section aria-labelledby="mos-home-onboarding-title" data-testid="home-empty-onboarding">
+      <p className="text-xs font-semibold uppercase tracking-widest text-mos-navy">
+        Welcome to MOS
+      </p>
+      <h1 id="mos-home-onboarding-title" className="mt-2 max-w-3xl text-2xl font-bold leading-snug sm:text-3xl">
+        {MOS_PRODUCT_THESIS}
+      </h1>
+      <p className="mt-3 max-w-2xl text-sm text-slate-500">
+        This workspace holds no missions yet. Start by declaring what you want to achieve — or
+        explore the research surfaces first.
+      </p>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() =>
+            openMosComposer({ actionId: 'create-mission', contextLabel: 'Home surface' })
+          }
+          className="inline-flex items-center gap-2 rounded-md bg-mos-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-mos-navy-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+          title="Opens the Ask MOS composer preloaded with the create-mission action (also Ctrl+J anywhere)"
+          data-testid="home-create-first-mission"
+        >
+          Create your first mission
+        </button>
+        <a
+          href="/lab"
+          className="inline-flex items-center rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+          data-testid="home-explore-lab"
+        >
+          Explore the Research Lab
+        </a>
+      </div>
+      <p className="mt-3 text-xs text-slate-500">
+        Declaring an intent is not executing it — the owning authority validates, records and
+        versions the mission; nothing consequential happens before you confirm the structured
+        intent.
+      </p>
+    </section>
+  );
+}
+
 /** The MOS Home view: thesis headline, the complete loop, the four loops. */
-export function HomeView() {
+export function HomeView({
+  recentMissions,
+}: {
+  /** The rail's recent-missions read — empty is the onboarding signal (§5). */
+  readonly recentMissions: readonly ShellRecentMissionView[];
+}) {
   return (
     <div className="flex flex-col gap-10">
-      <section aria-labelledby="mos-home-title">
+      {recentMissions.length === 0 ? (
+        <HomeEmptyOnboardingHero />
+      ) : (
+        <section aria-labelledby="mos-home-title">
         <p className="text-xs font-semibold uppercase tracking-widest text-mos-navy">
           Marketing-engineering operating system
         </p>
@@ -86,6 +148,7 @@ export function HomeView() {
           Go to Missions
         </a>
       </section>
+      )}
 
       <section aria-labelledby="mos-home-loop-title">
         <h2 id="mos-home-loop-title" className="text-lg font-semibold">

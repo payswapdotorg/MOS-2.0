@@ -31,8 +31,20 @@ import { MISSION_DETAIL, MISSION_SUMMARY, missionsPage, noopIntent } from './vie
 // Home
 // ---------------------------------------------------------------------------
 
+/**
+ * The Home overview's missions-present read (the §5 empty-state signal is
+ * derived from the SAME recent-missions read model the shell rail uses).
+ */
+const DEMO_RECENT_MISSIONS = [
+  {
+    missionId: 'mission_demo_1',
+    title: 'Run the MOS demo mission end to end.',
+    route: '/console?mission=mission_demo_1',
+  },
+] as const;
+
 test('Home narrates the ten §2 stages in order with their owners', () => {
-  const tree = <HomeView />;
+  const tree = <HomeView recentMissions={DEMO_RECENT_MISSIONS} />;
   const expectedStages = [
     'Mission',
     'Lab',
@@ -58,7 +70,7 @@ test('Home narrates the ten §2 stages in order with their owners', () => {
 });
 
 test('Home links into the Missions surface (the loop\'s front door) and the Studio stage into UX-002', () => {
-  const tree = <HomeView />;
+  const tree = <HomeView recentMissions={DEMO_RECENT_MISSIONS} />;
   const cta = elementWithTestId(tree, 'home-cta-missions');
   assert.equal(cta?.type, 'a');
   assert.equal(cta?.props.href, '/missions');
@@ -79,13 +91,54 @@ test('Home links into the Missions surface (the loop\'s front door) and the Stud
 });
 
 test('Home summarizes the four cooperating loops', () => {
-  const tree = <HomeView />;
+  const tree = <HomeView recentMissions={DEMO_RECENT_MISSIONS} />;
   const loops = elementWithTestId(tree, 'cooperating-loops');
   assert.ok(loops);
   const text = renderTreeText(loops);
   for (const phrase of ['Mission loop', 'Production loop', 'Learning loop', 'Engine loop']) {
     assert.equal(text.includes(phrase), true);
   }
+});
+
+test('Home with ZERO missions renders the honest onboarding block instead of the overview CTA (§5, UXR-WC)', () => {
+  const tree = <HomeView recentMissions={[]} />;
+  const onboarding = elementWithTestId(tree, 'home-empty-onboarding');
+  assert.ok(onboarding, 'the empty workspace renders the onboarding block');
+  const text = renderTreeText(onboarding);
+  // One sentence on what MOS is (the product thesis):
+  assert.equal(
+    text.includes('A marketing-engineering operating system'),
+    true,
+    'the onboarding block explains what MOS is in one sentence',
+  );
+  assert.equal(text.includes('no missions yet'), true, 'the block says the workspace is empty');
+  // Primary next action: Create your first mission — opens the composer
+  // preloaded with create-mission (the bridge call is asserted in
+  // view-composer.test.tsx; here the affordance + honest disclosure pin).
+  const create = elementWithTestId(tree, 'home-create-first-mission');
+  assert.ok(create, 'the Create your first mission action renders');
+  assert.equal(create?.type, 'button');
+  assert.equal(renderTreeText(create).includes('Create your first mission'), true);
+  // Secondary action: Explore the Research Lab.
+  const lab = elementWithTestId(tree, 'home-explore-lab');
+  assert.equal(lab?.type, 'a');
+  assert.equal(lab?.props.href, '/lab');
+  // The overview's Missions CTA is NOT rendered in the empty state:
+  assert.equal(elementWithTestId(tree, 'home-cta-missions'), null);
+  // Honest boundary: declaring is not executing.
+  assert.equal(
+    text.includes('Declaring an intent is not executing it'),
+    true,
+    'the onboarding block discloses the declare-vs-execute boundary',
+  );
+  // The loop narration below stays (orientation content for a new operator):
+  assert.equal(elementWithTestId(tree, 'loop-stage-1') !== null, true);
+});
+
+test('Home with missions present keeps the current overview (no onboarding block)', () => {
+  const tree = <HomeView recentMissions={DEMO_RECENT_MISSIONS} />;
+  assert.equal(elementWithTestId(tree, 'home-empty-onboarding'), null);
+  assert.ok(elementWithTestId(tree, 'home-cta-missions'), 'the Missions CTA stands');
 });
 
 // ---------------------------------------------------------------------------

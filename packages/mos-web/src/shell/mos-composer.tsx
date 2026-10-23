@@ -273,6 +273,11 @@ export function MosComposerOverlay({
       role="dialog"
       aria-label="Ask MOS"
       tabIndex={-1}
+      // Focus management without hooks: the dialog container takes focus on
+      // mount (the overlay mounts fresh every open — it renders null while
+      // closed), so keyboard users land inside the dock and Escape (below)
+      // is reachable without a focus-trap library.
+      autoFocus
       onKeyDown={onKeyDown}
       className="fixed bottom-4 right-4 z-50 flex max-h-[70vh] w-[min(28rem,calc(100vw-2rem))] flex-col gap-3 overflow-y-auto rounded-xl border border-slate-300 bg-white p-4 shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
       data-testid="mos-composer-overlay"

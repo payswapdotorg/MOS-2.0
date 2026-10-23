@@ -157,6 +157,8 @@ const SECTION_ICON_PATHS: Record<string, readonly string[]> = {
   lab: ['M9.5 3h5', 'M10 3v5.5L4.8 18.2A1.8 1.8 0 0 0 6.4 21h11.2a1.8 1.8 0 0 0 1.6-2.8L14 8.5V3', 'M7.5 15h9'],
   console: ['M21 12a9 9 0 1 1-9-9c2.4 0 4.7 1 6.4 2.6L21 8', 'M21 3v5h-5'],
   studio: ['M2 8.5A1.5 1.5 0 0 1 3.5 7h11A1.5 1.5 0 0 1 16 8.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 15.5z', 'M16 10.5 22 7v10l-6-3.5'],
+  distribution: ['M12 15V4', 'M7 9l5-5 5 5', 'M5 20h14'],
+  experiments: ['M9 3h6', 'M10 3v5.5L5.8 17A2.5 2.5 0 0 0 8 21h8a2.5 2.5 0 0 0 2.2-4L14 8.5V3'],
   measurement: ['M3 3v16a2 2 0 0 0 2 2h16', 'M7 15v-4', 'M12 15V7', 'M17 15v-2'],
   connections: ['M9.5 13.5a4 4 0 0 0 6 .5l2.5-2.5a4 4 0 0 0-5.7-5.7l-1.4 1.4', 'M14.5 10.5a4 4 0 0 0-6-.5L6 12.5a4 4 0 0 0 5.7 5.7l1.4-1.4'],
   social: ['M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z', 'M10 9l6 3-6 3z'],
@@ -289,11 +291,13 @@ function ShellNav({
 
 function RouteSurface({
   routeView,
+  shellView,
   onDeclareMissionIntent,
   onDeclareLabIntent,
   onDeclareConsoleIntent,
 }: {
   readonly routeView: MosRouteView;
+  readonly shellView: AppShellView;
   readonly onDeclareMissionIntent: MosAppShellProps['onDeclareMissionIntent'];
   readonly onDeclareLabIntent: MosAppShellProps['onDeclareLabIntent'];
   readonly onDeclareConsoleIntent: MosAppShellProps['onDeclareConsoleIntent'];
@@ -302,7 +306,10 @@ function RouteSurface({
     case 'loading':
       return <MosLoadingView label={routeView.label} />;
     case 'home':
-      return <HomeView />;
+      // The Home empty state (§5 discoverability): the rail's recent-missions
+      // read decides onboarding vs overview — the same read model, never a
+      // second missions query.
+      return <HomeView recentMissions={shellView.recentMissions} />;
     case 'missions':
       return (
         <MissionsView data={routeView.data} onDeclareMissionIntent={onDeclareMissionIntent} />
@@ -431,6 +438,7 @@ export function MosAppShell({
         <main id="mos-main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 lg:px-8 lg:py-8">
           <RouteSurface
             routeView={routeView}
+            shellView={shellView}
             onDeclareMissionIntent={onDeclareMissionIntent}
             onDeclareLabIntent={onDeclareLabIntent}
             onDeclareConsoleIntent={onDeclareConsoleIntent}

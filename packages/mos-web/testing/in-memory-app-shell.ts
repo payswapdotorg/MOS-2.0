@@ -25,13 +25,17 @@ import type {
  * touching the port or any view component.
  *
  * The section table mirrors the shell-replacement plan's route readiness
- * (BROWSER-SHELL-REPLACEMENT-PLAN §2.2): Home, Missions (UX-001), Studio
- * (UX-002, over the delivered STUDIO-014 standalone studio product) and Lab
- * (UX-003, over the delivered LAB-017 robust benchmark + LAB-018 online
- * calibration) are available in this build, as are Connections (UX-004, over
- * the delivered PROD-001 distribution/integrations machinery) and
- * Notifications (NOTIFY-CS, over the delivered NOTIFY-001 notification
- * plane). The shell never renders placeholder surfaces.
+ * (BROWSER-SHELL-REPLACEMENT-PLAN §2.2) and the §5 target-design rail order
+ * (UXR-WC; the Social Media slot between Agent Console and Studio is the
+ * UXR social wave's to add here): Home, Missions (UX-001), Studio (UX-002,
+ * over the delivered STUDIO-014 standalone studio product) and Lab (UX-003,
+ * over the delivered LAB-017 robust benchmark + LAB-018 online calibration)
+ * are available in this build, as are Connections (UX-004, over the
+ * delivered PROD-001 distribution/integrations machinery) and Notifications
+ * (NOTIFY-CS, over the delivered NOTIFY-001 notification plane — the target
+ * label "Activity & Approvals"). Distribution and Experiments are NEW rail
+ * rows with honest `not-yet-available` verdicts — no demo read models bind
+ * them either. The shell never renders placeholder surfaces.
  */
 
 /** Options for {@link createInMemoryAppShellPort}. */
@@ -71,8 +75,26 @@ const SECTION_TABLE: readonly {
   { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
   {
+    id: 'distribution',
+    label: 'Distribution',
+    route: '/distribution',
+    availability: {
+      kind: 'not-yet-available',
+      dependsOn: 'the MOS service transport — no distribution read models are bound in this release',
+    },
+  },
+  {
+    id: 'experiments',
+    label: 'Experiments',
+    route: '/experiments',
+    availability: {
+      kind: 'not-yet-available',
+      dependsOn: 'the MOS service transport — no standalone experiments read models are bound in this release (the Agent Console carries the experiment path)',
+    },
+  },
+  {
     id: 'measurement',
-    label: 'Measurement',
+    label: 'Measurement & Learning',
     route: '/measurement',
     availability: {
       kind: 'not-yet-available',
@@ -87,7 +109,7 @@ const SECTION_TABLE: readonly {
   },
   {
     id: 'notifications',
-    label: 'Notifications',
+    label: 'Activity & Approvals',
     route: '/notifications',
     availability: { kind: 'available' },
   },

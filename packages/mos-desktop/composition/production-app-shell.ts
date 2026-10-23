@@ -15,7 +15,7 @@ import type {
 /**
  * PRODUCTION app-shell adapter over the REAL `@mos/identity` and
  * `@mos/missions` repositories (MOS v2.0 desktop shell; wave-24
- * target-design conversion).
+ * target-design conversion; the §5 discoverability rail, UXR-WC).
  *
  * Composition seam (OUTSIDE `src/`, the @mos/web discipline): adapts the
  * real identity + missions read models into the shell's presentation-shaped
@@ -27,18 +27,24 @@ import type {
  *    design's label) and `console` are AVAILABLE (real read models bound:
  *    identity tenant context, the REAL mission repository, the REAL
  *    LAB-017/LAB-018 runtimes, the REAL console authority chain);
- *  - `studio` and `measurement` are NOT-YET-AVAILABLE: this composition
- *    binds NO read models for them — the verdict names the production MOS
- *    service transport they wait on, per the first-class
- *    `not-yet-available` vocabulary. The shell never renders placeholder
- *    content for a surface it cannot honestly show.
+ *  - `connections` and `notifications` are AVAILABLE AS ROUTES (§5, UXR-WC):
+ *    both routes exist and render their own explicit honest states — the
+ *    Connections surface presents the two authorities' `unavailable`
+ *    verdicts, and the Notifications surface presents the NOTIFY-CS
+ *    `unavailable` verdict with the real tenant context. A rail entry that
+ *    opens an honest state is not a dead control.
+ *  - `studio`, `distribution`, `experiments` and `measurement` are
+ *    NOT-YET-AVAILABLE: this composition binds NO read models for them — the
+ *    verdict names the production MOS service transport they wait on, per
+ *    the first-class `not-yet-available` vocabulary. The shell never renders
+ *    placeholder content for a surface it cannot honestly show.
  *
- * The wave-24 target-design conversion also moved the shell chrome to the
- * supplied MOS Agent Console mockups' information architecture: the primary
- * navigation rail carries the mockup's six sections. The `connections` and
- * `notifications` ROUTES remain in the route model (deep-linkable, with
- * their own honest unavailable verdicts through their ports) but are no
- * longer primary navigation in the shipped desktop rail.
+ * The target-design rail order (§5 / the mos-desktop-shell-target SVG's
+ * 11-item WORKSPACE rail) is mirrored here minus the Social Media row — the
+ * UXR social wave owns that slot and adds it to this table. `distribution`
+ * and `experiments` are NEW rail rows with honest `not-yet-available`
+ * verdicts (no dead links); `measurement` carries the target label
+ * "Measurement & Learning".
  *
  * The composition — not the shell — decides what tenant context is
  * resolved (spec §31). The desktop composition resolves the device-local
@@ -71,11 +77,14 @@ export interface ProductionAppShellPortOptions {
 }
 
 /**
- * The availability verdict table for this release (the target design's six
- * primary sections). Home, Missions, Research Lab and Agent Console are
- * available; the surfaces whose read models this composition does not bind
- * carry the honest `not-yet-available` verdict naming what they wait on
- * (the port vocabulary's `dependsOn`).
+ * The availability verdict table for this release (the target design's rail
+ * order, §5 UXR-WC — the Social Media slot between Agent Console and Studio
+ * is the UXR social wave's to add). Home, Missions, Research Lab and Agent
+ * Console are available; Connections and Activity & Approvals are available
+ * as routes presenting their own honest states; the surfaces whose read
+ * models this composition does not bind carry the honest
+ * `not-yet-available` verdict naming what they wait on (the port
+ * vocabulary's `dependsOn`).
  */
 const SECTION_TABLE: readonly {
   readonly id: ShellSectionId;
@@ -102,13 +111,43 @@ const SECTION_TABLE: readonly {
     },
   },
   {
+    id: 'distribution',
+    label: 'Distribution',
+    route: '/distribution',
+    availability: {
+      kind: 'not-yet-available',
+      dependsOn: 'the MOS service transport — no distribution read models are bound in this release',
+    },
+  },
+  {
+    id: 'experiments',
+    label: 'Experiments',
+    route: '/experiments',
+    availability: {
+      kind: 'not-yet-available',
+      dependsOn: 'the MOS service transport — no standalone experiments read models are bound in this release (the Agent Console carries the experiment path)',
+    },
+  },
+  {
     id: 'measurement',
-    label: 'Measurement',
+    label: 'Measurement & Learning',
     route: '/measurement',
     availability: {
       kind: 'not-yet-available',
       dependsOn: 'the production MOS service transport — this release binds no measurement read models',
     },
+  },
+  {
+    id: 'connections',
+    label: 'Connections',
+    route: '/connections',
+    availability: { kind: 'available' },
+  },
+  {
+    id: 'notifications',
+    label: 'Activity & Approvals',
+    route: '/notifications',
+    availability: { kind: 'available' },
   },
 ];
 

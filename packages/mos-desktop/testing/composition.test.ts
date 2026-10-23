@@ -6,9 +6,12 @@
  *  - a fresh composition starts with ZERO missions (no demo seeds), EMPTY
  *    tenant-scoped lab listings, and the honest calibration-pending
  *    context state (`null`, never a fabricated context);
- *  - the availability verdicts are HONEST: Home/Missions/Lab available,
- *    Studio/Connections/Notifications explicitly not-yet-available naming
- *    the production MOS service transport they wait on;
+ *  - the availability verdicts are HONEST: Home/Missions/Lab/Console
+ *    available, Connections + Activity & Approvals available as routes (their
+ *    pages render their own explicit unavailable verdicts), and
+ *    Studio/Distribution/Experiments/Measurement explicitly
+ *    not-yet-available naming the production MOS service transport they wait
+ *    on;
  *  - the create-mission intent declaration flows through the real
  *    repository-backed catalog: a receipt is recorded (routed nominally to
  *    the missions authority), loadable afterwards, tenant-scoped — and it
@@ -76,22 +79,63 @@ test('a fresh composition starts with EMPTY tenant-scoped lab listings and no de
   assert.ok('error' in records && records.error === 'lab-calibration-not-found');
 });
 
-test('the availability verdicts are honest for this release (the wave-24 target-design rail)', async () => {
+test('the availability verdicts are honest for this release (the §5 target-design rail, UXR-WC)', async () => {
   const composition = createProductionMosWebComposition({ now: NOW });
   const shell = await composition.appShell.loadAppShell();
   assert.ok(!('error' in shell));
   const sections = shell.sections.map((section) => section.id);
-  assert.deepEqual(sections, ['home', 'missions', 'lab', 'console', 'studio', 'measurement']);
+  // The §5 target rail order (the Social Media slot between Agent Console
+  // and Studio is the UXR social wave's to add here): home, missions, lab,
+  // console, [social], studio, distribution, experiments, measurement,
+  // connections, notifications.
+  assert.deepEqual(sections, [
+    'home',
+    'missions',
+    'lab',
+    'console',
+    'studio',
+    'distribution',
+    'experiments',
+    'measurement',
+    'connections',
+    'notifications',
+  ]);
   const byId = new Map(shell.sections.map((section) => [section.id, section]));
   for (const id of ['home', 'missions', 'lab', 'console'] as const) {
     assert.deepEqual(byId.get(id)?.availability, { kind: 'available' }, `${id} is available`);
   }
   assert.equal(byId.get('lab')?.label, 'Research Lab', 'the target design\'s rail label');
+  assert.equal(
+    byId.get('measurement')?.label,
+    'Measurement & Learning',
+    'the §5 target label',
+  );
+  // §5 (UXR-WC): Connections and Activity & Approvals are promoted into the
+  // rail as AVAILABLE ROUTES — their pages render their own explicit
+  // honest-unavailable verdicts (pinned below), never dead controls.
+  for (const id of ['connections', 'notifications'] as const) {
+    assert.deepEqual(
+      byId.get(id)?.availability,
+      { kind: 'available' },
+      `${id} is an available route in the rail`,
+    );
+  }
+  assert.equal(byId.get('notifications')?.label, 'Activity & Approvals');
   for (const id of ['studio', 'measurement'] as const) {
     const availability = byId.get(id)?.availability;
     assert.equal(availability?.kind, 'not-yet-available', `${id} is honestly not-yet-available`);
     if (availability?.kind === 'not-yet-available') {
       assert.match(availability.dependsOn, /production MOS service transport/);
+    }
+  }
+  // The NEW §5 rows (UXR-WC): Distribution and Experiments are honest
+  // not-yet-available verdicts naming the unbound read models — no dead links.
+  for (const id of ['distribution', 'experiments'] as const) {
+    const availability = byId.get(id)?.availability;
+    assert.equal(availability?.kind, 'not-yet-available', `${id} is honestly not-yet-available`);
+    if (availability?.kind === 'not-yet-available') {
+      assert.match(availability.dependsOn, /MOS service transport/);
+      assert.match(availability.dependsOn, /read models/);
     }
   }
 });

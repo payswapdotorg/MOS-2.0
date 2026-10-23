@@ -28,7 +28,9 @@ export type ShellSectionId =
   | 'social'
   | 'connections'
   | 'notifications'
-  | 'measurement';
+  | 'measurement'
+  | 'distribution'
+  | 'experiments';
 
 /**
  * Availability of a product surface in this shell build. Unavailable is a

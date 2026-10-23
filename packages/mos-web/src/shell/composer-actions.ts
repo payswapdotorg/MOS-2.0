@@ -3,7 +3,6 @@ import type { LabIntentActionId, LabIntentAuthorityId } from '../ports/lab-inten
 import type { ConsoleIntentFormParse } from '../views/console-intent-form-data.js';
 import type { LabIntentFormParse } from '../views/lab-intent-form-data.js';
 import { CONSOLE_INTENT_FORM_FIELDS } from '../views/console-intent-form-data.js';
-import { LAB_INTENT_FORM_FIELDS } from '../views/lab-intent-form-data.js';
 import { MISSION_INTENT_FORM_FIELDS } from '../views/mission-intent-form-data.js';
 import { CONSOLE_INTENT_MODE_BY_ACTION } from '../routes/console-intent-declaration.js';
 import { LAB_INTENT_SECTION_BY_ACTION } from '../routes/lab-intent-declaration.js';
@@ -16,16 +15,7 @@ import {
   grantAnalysisRightsDeclarationFromFormData,
   recordIntelligenceDeclarationFromFormData,
 } from '../views/console-intent-form-data.js';
-import {
-  ingestDeclarationFromFormData,
-  learnStrategyDeclarationFromFormData,
-  recordCalibrationErrorDeclarationFromFormData,
-  registerWorldModelDeclarationFromFormData,
-  runBenchmarkDeclarationFromFormData,
-  searchOrganizationsDeclarationFromFormData,
-  simulateStepDeclarationFromFormData,
-  snapshotDeclarationFromFormData,
-} from '../views/lab-intent-form-data.js';
+import { LAB_COMPOSER_ACTIONS } from './composer-actions-lab.js';
 
 /**
  * The composer's STATIC action catalog (the §6 P0 universal-composer wave —
@@ -42,6 +32,10 @@ import {
  * parallel vocabulary. No Pay action exists here: no payment authority
  * exists in MOS-2.0, so no Pay entry is rendered (the parity matrix records
  * the absence; nothing is invented).
+ *
+ * File split note: the eight Research Lab entries live in
+ * composer-actions-lab.ts (the ≤400-line managed-file discipline); this file
+ * keeps the types, the Mission + Console groups and the lookup helpers.
  */
 
 /** Every declared action id the composer may preload or pick. */
@@ -94,7 +88,6 @@ export interface ComposerAction {
 }
 
 const F = CONSOLE_INTENT_FORM_FIELDS;
-const L = LAB_INTENT_FORM_FIELDS;
 const M = MISSION_INTENT_FORM_FIELDS;
 
 /** The catalog (16 actions — every declared write-intent the shell exposes). */
@@ -262,149 +255,9 @@ export const COMPOSER_ACTIONS: readonly ComposerAction[] = [
       { name: F.principalText, label: 'Principal (run right holder)', kind: 'text', required: true, placeholder: 'e.g. identity-operator' },
     ],
   },
-  {
-    actionId: 'ingest-reference-document',
-    label: 'Acquire a reference document',
-    oneLinePurpose:
-      'Acquisition requires an explicit, active, tenant-matching rights grant — with none registered the authority DENIES and the rejection says so.',
-    routedTo: 'lab-corpus-authority',
-    declareRoute: 'lab',
-    category: 'Research Lab',
-    parse: ingestDeclarationFromFormData,
-    fields: [
-      { name: L.documentId, label: 'Document id', kind: 'text', required: true, placeholder: 'e.g. doc-refs-001' },
-      { name: L.niche, label: 'Niche', kind: 'text', required: true, placeholder: 'e.g. developer-marketing' },
-      { name: L.platform, label: 'Platform', kind: 'text', required: true, placeholder: 'e.g. mastodon' },
-      { name: L.modality, label: 'Modality (authority vocabulary)', kind: 'text', required: true, placeholder: 'e.g. text' },
-      { name: L.artifactId, label: 'Artifact id', kind: 'text', required: true },
-      { name: L.sourceRefsText, label: 'Source refs (comma-separated)', kind: 'text', required: false },
-      { name: L.acquiredAt, label: 'Acquired at (ISO-8601)', kind: 'text', required: true, placeholder: 'e.g. 2026-10-21T12:00:00Z' },
-      { name: L.rightsRef, label: 'Rights ref (the acquisition gate resolves this)', kind: 'text', required: true },
-      { name: L.provenanceRef, label: 'Provenance ref', kind: 'text', required: true },
-    ],
-  },
-  {
-    actionId: 'snapshot-corpus-version',
-    label: 'Snapshot a corpus version',
-    oneLinePurpose:
-      'The snapshot\u2019s membership is the declared document refs — duplicates are the authority\u2019s to reject by name; an empty set is a valid version.',
-    routedTo: 'lab-corpus-authority',
-    declareRoute: 'lab',
-    category: 'Research Lab',
-    parse: snapshotDeclarationFromFormData,
-    fields: [
-      { name: L.documentRefsText, label: 'Document refs (comma-separated membership set)', kind: 'text', required: false },
-    ],
-  },
-  {
-    actionId: 'register-world-model',
-    label: 'Register a world-model version',
-    oneLinePurpose:
-      'Registration appends to the model\u2019s append-only chain; the declared state becomes the new version and prior versions stay citable.',
-    routedTo: 'lab-simulator-authority',
-    declareRoute: 'lab',
-    category: 'Research Lab',
-    parse: registerWorldModelDeclarationFromFormData,
-    fields: [
-      { name: L.worldModelId, label: 'World model id', kind: 'text', required: true, placeholder: 'e.g. wm-social-reach' },
-      { name: L.niche, label: 'Niche', kind: 'text', required: true, placeholder: 'e.g. developer-marketing' },
-      { name: L.platform, label: 'Platform', kind: 'text', required: true, placeholder: 'e.g. mastodon' },
-      { name: L.notesText, label: 'Notes (optional)', kind: 'long-text', required: false },
-      { name: L.stateJson, label: 'World-model state (declared JSON)', kind: 'json', required: true },
-    ],
-  },
-  {
-    actionId: 'simulate-step',
-    label: 'Step the simulation once',
-    oneLinePurpose:
-      'The step runs against the exact declared world-model version; the recorded run is counterfactual-labeled evidence over the pinned model — never presented as a measured outcome.',
-    routedTo: 'lab-simulator-authority',
-    declareRoute: 'lab',
-    category: 'Research Lab',
-    parse: simulateStepDeclarationFromFormData,
-    fields: [
-      { name: L.worldModelId, label: 'World model id', kind: 'text', required: true, placeholder: 'e.g. wm-social-reach' },
-      { name: L.worldModelVersion, label: 'World model version (exact pin)', kind: 'number', required: true },
-      { name: L.seed, label: 'Seed (determinism pin)', kind: 'number', required: true },
-      { name: L.step, label: 'Step (time horizon)', kind: 'number', required: true },
-      { name: L.scenarioJson, label: 'Scenario (declared JSON)', kind: 'json', required: true, placeholder: 'the full LabScenario JSON — version pins + objective + budget' },
-      { name: L.candidateJson, label: 'Candidate action (declared JSON)', kind: 'json', required: true },
-    ],
-  },
-  {
-    actionId: 'search-organizations',
-    label: 'Run an organization search',
-    oneLinePurpose:
-      'The search requires a FROZEN ensemble under the declared id+version; the §23 three-way comparison (generalist baseline + hand-designed + generated) is recorded by the authority, never composed here.',
-    routedTo: 'lab-organization-search-authority',
-    declareRoute: 'lab',
-    category: 'Research Lab',
-    parse: searchOrganizationsDeclarationFromFormData,
-    fields: [
-      { name: L.ensembleId, label: 'Ensemble id (frozen)', kind: 'text', required: true, placeholder: 'e.g. ensemble-reach-primary' },
-      { name: L.ensembleVersion, label: 'Ensemble version (frozen pin)', kind: 'number', required: true },
-      { name: L.seed, label: 'Seed (determinism pin)', kind: 'number', required: true },
-      { name: L.scenarioJson, label: 'Scenario (declared JSON)', kind: 'json', required: true, placeholder: 'the full LabScenario JSON — version pins + objective + budget' },
-      { name: L.rewardSpecJson, label: 'Reward spec (declared JSON)', kind: 'json', required: true },
-      { name: L.candidatesJson, label: 'Candidate set (declared JSON)', kind: 'json', required: true },
-      { name: L.policyJson, label: 'Search policy (declared JSON)', kind: 'json', required: true },
-    ],
-  },
-  {
-    actionId: 'learn-strategy',
-    label: 'Learn a strategy candidate',
-    oneLinePurpose:
-      'Learning iterates under the declared stopping policy and records its full trace; the resulting candidate is counterfactual-labeled with its evaluation provenance — never presented as a measured outcome.',
-    routedTo: 'lab-strategy-learning-authority',
-    declareRoute: 'lab',
-    category: 'Research Lab',
-    parse: learnStrategyDeclarationFromFormData,
-    fields: [
-      { name: L.ensembleId, label: 'Ensemble id (frozen)', kind: 'text', required: true, placeholder: 'e.g. ensemble-reach-primary' },
-      { name: L.ensembleVersion, label: 'Ensemble version (frozen pin)', kind: 'number', required: true },
-      { name: L.seed, label: 'Seed (determinism pin)', kind: 'number', required: true },
-      { name: L.scenarioJson, label: 'Scenario (declared JSON)', kind: 'json', required: true, placeholder: 'the full LabScenario JSON — version pins + objective + budget' },
-      { name: L.rewardSpecJson, label: 'Reward spec (declared JSON)', kind: 'json', required: true },
-      { name: L.initialProgramJson, label: 'Initial program (declared JSON)', kind: 'json', required: true },
-      { name: L.stoppingPolicyJson, label: 'Stopping policy (declared JSON)', kind: 'json', required: true },
-    ],
-  },
-  {
-    actionId: 'run-benchmark',
-    label: 'Run a robust benchmark',
-    oneLinePurpose:
-      'The benchmark authority evaluates the declared candidate set over the declared seeds under the declared robustness policy; every number it records is counterfactual-labeled, never measured.',
-    routedTo: 'lab-benchmark-authority',
-    declareRoute: 'lab',
-    category: 'Research Lab',
-    parse: runBenchmarkDeclarationFromFormData,
-    fields: [
-      { name: L.benchmarkId, label: 'Benchmark id', kind: 'text', required: true, placeholder: 'e.g. bench-reach-v1' },
-      { name: L.seedsText, label: 'Seeds (comma-separated determinism pins)', kind: 'text', required: true, placeholder: 'e.g. 1, 2, 3' },
-      { name: L.scenarioJson, label: 'Scenario (declared JSON)', kind: 'json', required: true, placeholder: 'the full LabScenario JSON — version pins + objective + budget' },
-      { name: L.candidatesJson, label: 'Candidate set (declared JSON)', kind: 'json', required: true, placeholder: '[] is valid — the no-op baseline still runs' },
-      { name: L.rewardSpecJson, label: 'Reward spec (declared JSON)', kind: 'json', required: true },
-      { name: L.policyJson, label: 'Robustness policy (declared JSON)', kind: 'json', required: true },
-    ],
-  },
-  {
-    actionId: 'record-calibration-error',
-    label: 'Record a calibration error',
-    oneLinePurpose:
-      'Recording resolves the DECLARED prediction against a frozen LAB-017 benchmark record; the joined observations are measured boundary-chain reality — never lab-simulated data.',
-    routedTo: 'lab-calibration-authority',
-    declareRoute: 'lab',
-    category: 'Research Lab',
-    parse: recordCalibrationErrorDeclarationFromFormData,
-    fields: [
-      { name: L.calibrationId, label: 'Calibration id', kind: 'text', required: true, placeholder: 'e.g. calib-reach-1' },
-      { name: L.predictionJson, label: 'Prediction (declared JSON)', kind: 'json', required: true },
-      { name: L.observationRefsJson, label: 'Observation refs (declared JSON)', kind: 'json', required: true, placeholder: 'JSON array of observation refs — at least one, distinct' },
-      { name: L.rewardSpecJson, label: 'Reward spec (declared JSON)', kind: 'json', required: true },
-      { name: L.functionalJson, label: 'Error functional (declared JSON)', kind: 'json', required: true },
-      { name: L.noteText, label: 'Note (optional)', kind: 'long-text', required: false },
-    ],
-  },
+  // The eight Research Lab entries (verbatim Lab form configs + parsers) —
+  // composer-actions-lab.ts (the ≤400-line file discipline).
+  ...LAB_COMPOSER_ACTIONS,
 ];
 
 /** The catalog indexed by action id (every id exactly once). */

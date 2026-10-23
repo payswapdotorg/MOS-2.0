@@ -31,7 +31,18 @@ test('the shell renders the target-design rail sections with Home and Missions f
   const nav = elementsWithTag(tree, 'nav')[0];
   assert.ok(nav, 'the shell carries a navigation landmark');
   const navText = renderTreeText(nav);
-  for (const label of ['Home', 'Missions', 'Research Lab', 'Agent Console', 'Studio', 'Measurement', 'Connections']) {
+  for (const label of [
+    'Home',
+    'Missions',
+    'Research Lab',
+    'Agent Console',
+    'Studio',
+    'Distribution',
+    'Experiments',
+    'Measurement & Learning',
+    'Connections',
+    'Activity & Approvals',
+  ]) {
     assert.equal(navText.includes(label), true, `nav must show ${label}`);
   }
 });
@@ -68,16 +79,29 @@ test('available sections are links; later surfaces are aria-disabled with their 
   assert.equal(lab?.props.href, '/lab');
   assert.equal(lab?.props['aria-disabled'], undefined);
 
-  for (const id of ['measurement']) {
+  for (const id of ['measurement', 'distribution', 'experiments']) {
     const unavailable = elementWithTestId(tree, `nav-${id}-unavailable`);
     assert.ok(unavailable, `${id} is explicitly unavailable`);
     assert.equal(unavailable?.props['aria-disabled'], 'true');
     assert.equal(
-      typeof unavailable?.props.title === 'string' && unavailable.props.title.includes('UX-'),
+      typeof unavailable?.props.title === 'string' && unavailable.props.title.length > 0,
       true,
       'the unavailable title names what it waits for',
     );
+    const chipText = renderTreeText(unavailable);
+    assert.equal(chipText.includes('soon'), true, `${id} carries the soon chip idiom`);
   }
+
+  // §5 (UXR-WC): Connections and Activity & Approvals are PROMOTED into the
+  // rail as real routes — the pages they open render their own honest
+  // unavailable verdicts (never dead controls).
+  const connections = elementWithTestId(tree, 'nav-connections');
+  assert.equal(connections?.type, 'a');
+  assert.equal(connections?.props.href, '/connections');
+  const activity = elementWithTestId(tree, 'nav-notifications');
+  assert.equal(activity?.type, 'a');
+  assert.equal(activity?.props.href, '/notifications');
+  assert.equal(renderTreeText(activity).includes('Activity & Approvals'), true);
 });
 
 test('the active section is marked aria-current="page" (keyboard/AT navigation pin)', () => {
@@ -225,12 +249,24 @@ test('images/icons carry accessible labels; tables declare column scopes', () =>
 });
 
 test('the section table the shell renders matches the port readiness verdicts', () => {
-  // The composition seam's section table (the wave-24 target-design rail
-  // order) is what the chrome presents; this pins the eight sections and
-  // their verdict kinds.
+  // The composition seam's section table (the §5 target-design rail order,
+  // UXR-WC — the Social Media slot between Agent Console and Studio is the
+  // UXR social wave's to add) is what the chrome presents; this pins the ten
+  // sections and their verdict kinds.
   assert.deepEqual(
     SECTIONS.map((section) => section.id),
-    ['home', 'missions', 'lab', 'console', 'studio', 'measurement', 'connections', 'notifications'],
+    [
+      'home',
+      'missions',
+      'lab',
+      'console',
+      'studio',
+      'distribution',
+      'experiments',
+      'measurement',
+      'connections',
+      'notifications',
+    ],
   );
   assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 7);
 });
