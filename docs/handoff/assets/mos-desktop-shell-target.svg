@@ -26,13 +26,13 @@
 <circle cx="329" cy="82" r="8" fill="none" stroke="#80addd" stroke-width="2"/><line x1="335" y1="88" x2="341" y2="94" stroke="#80addd" stroke-width="2"/>
 <text x="353" y="87" class="m body">Search missions, research, tasks — or ask MOS…</text>
 <rect x="1090" y="60" width="215" height="46" rx="12" fill="#123d78" stroke="#3d8eff"/><path d="M1112 75v17m-8-8h16" stroke="#eaf4ff" stroke-width="2"/><text x="1135" y="88" class="t small">Ask MOS</text><text x="1247" y="88" class="s tiny">Ctrl+J</text>
-<circle cx="1351" cy="82" r="16" fill="#163d61" stroke="#347ab0"/><path d="M1344 83q7-14 14 0M1343 87q8 7 16 0" fill="none" stroke="#bfe4ff" stroke-width="1.5"/><text x="1376" y="78" class="t small">Ready</text><text x="1376" y="96" class="s tiny">Tasks & approvals</text>
+<circle cx="1351" cy="82" r="16" fill="#163d61" stroke="#347ab0"/><path d="M1344 83q7-14 14 0M1343 87q8 7 16 0" fill="none" stroke="#bfe4ff" stroke-width="1.5"/><text x="1376" y="78" class="t small">Ready</text><text x="1376" y="96" class="s tiny">Tasks &amp; approvals</text>
 <!-- left sidebar -->
 <rect x="0" y="125" width="270" height="875" fill="#08192b"/>
 <line x1="270" y1="125" x2="270" y2="1000" class="line"/>
 <text x="28" y="160" class="s tiny" letter-spacing="2">WORKSPACE</text>
 <g class="m body">
-<text x="62" y="203">Home</text><text x="62" y="249">Missions</text><text x="62" y="295">Research Lab</text><text x="62" y="341">Agent Console</text><text x="62" y="387">Social Media</text><text x="62" y="433">Studio</text><text x="62" y="479">Distribution</text><text x="62" y="525">Experiments</text><text x="62" y="571">Measurement & Learning</text><text x="62" y="617">Connections</text><text x="62" y="663">Activity & Approvals</text>
+<text x="62" y="203">Home</text><text x="62" y="249">Missions</text><text x="62" y="295">Research Lab</text><text x="62" y="341">Agent Console</text><text x="62" y="387">Social Media</text><text x="62" y="433">Studio</text><text x="62" y="479">Distribution</text><text x="62" y="525">Experiments</text><text x="62" y="571">Measurement &amp; Learning</text><text x="62" y="617">Connections</text><text x="62" y="663">Activity &amp; Approvals</text>
 </g>
 <rect x="15" y="318" width="240" height="38" rx="9" class="active"/>
 <g fill="none" stroke="#8fc9ff" stroke-width="1.8"><path d="M30 337a9 9 0 1 1 6 8M30 328v9h9"/><path d="M30 384h15m-12-5v10m5-14v14"/></g>
