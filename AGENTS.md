@@ -21,7 +21,10 @@ Read:
 14. docs/handoff/WORKER-CONTRACT-V2.0.md
 15. docs/handoff/EXECUTION-PLAN-V2.0.md
 16. docs/handoff/FINAL-TECH-LEAD-HANDOFF-V2.0.md
-17. the exact assigned Work Item.
+17. docs/handoff/FINAL-DESKTOP-UX-RESCUE-HANDOFF-2026-10-23.md when assigned desktop UX, desktop productization, social-media UX, intent-console, or related acceptance work.
+18. The exact assigned Work Item.
+
+The desktop UX rescue handoff is an implementation brief, not a replacement for frozen architecture, module ownership, Work Items, or acceptance evidence.
 
 ## Authority
 
