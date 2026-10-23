@@ -154,16 +154,20 @@ function buildDesktopWindowVisualOptions() {
   }
 
   return {
-    // 不透明 BrowserWindow 会把 renderer 的圆角裁切重新填成直角黑底，
-    // Linux 外壳无法与内层 12px 面板形成同心圆弧。透明底只负责露出四角，
-    // renderer 根面仍使用不透明 token，避免桌面底色混入侧栏。
-    backgroundColor: "#00000000",
-    transparent: true,
-    // Linux 原生标题栏会和 renderer 自绘顶部菜单重复，隐藏 frame 后统一用自定义窗口控制。
-    frame: false,
-    // Linux 部分窗口管理器会给 frameless 窗口绘制额外外侧阴影/描边，
-    // 用户看到的是窗口外缘黑线。只在 Linux 禁用系统阴影，避免影响 macOS/Windows 的原生材质。
-    hasShadow: false,
+    // LINUX (the desktop-UX rescue, §4.1): the shipped MOS shell draws NO
+    // custom titlebar and NO window controls, so a frameless window left the
+    // owner with no visible/native way to minimize, maximize, close or
+    // drag-resize the app ("a website forced into a desktop wrapper").
+    // The MOS shell is the whole product surface now — it does not need the
+    // rounded-corner transparency the old coding shell used, and
+    // `transparent: true` on Linux additionally breaks repaint-on-resize
+    // (content appeared clipped). Native frame + opaque background restore
+    // full window-manager behavior: decorated title bar, min/max/close
+    // buttons, keyboard Super+arrow tiling, drag-resize edges/corners.
+    backgroundColor: "#f8fafc",
+    frame: true,
+    // Native shadow follows the window manager's decoration.
+    hasShadow: true,
   };
 }
 

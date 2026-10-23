@@ -2,22 +2,49 @@
  *
  * The desktop renderer retains the ZCode UI stylesheet for the substrate
  * surfaces that still render in this release (the database-startup
- * admission screen and the update-status window), and that stylesheet sets
- * `body { overflow: hidden }` for its own app-shell layout. The MOS shell
- * is a normal scrolling document (`min-h-screen` flex column that grows
- * with content), so the entry scopes this override to the main window
- * (it adds the `mos-desktop-shell` class to <html> at boot — the
- * update-status window never mounts the MOS entry).
+ * admission screen and the update-status window). That stylesheet sets a
+ * fixed-viewport app-shell layout:
+ *
+ *   html, body, #root { height: 100% }
+ *   body              { overflow: hidden }
+ *   #root             { height: 100dvh; overflow: hidden }
+ *
+ * The old override below only restored `body { overflow: auto }` — but
+ * `#root` STILL clipped everything taller than one viewport
+ * (`height: 100dvh; overflow: hidden`), so the MOS shell (a
+ * `min-h-screen` flex column that grows with content) had its lower
+ * content cut off and no scrollbar anywhere: exactly the owner-reported
+ * "no usable scrolling" + "pages are clipped/cropped" (the UX-rescue
+ * handoff §4.2 warned not to blindly repeat the body declaration).
+ *
+ * The MOS shell is a normal scrolling document: html/body/#root grow with
+ * content, #root never clips, and the document scrollbar carries the
+ * overflow. The entry adds the `mos-desktop-shell` class to <html> at
+ * boot — the update-status window never mounts the MOS entry, so the
+ * substrate layout is untouched there.
  */
 
 html.mos-desktop-shell body {
   overflow: auto;
 }
 
+/* Undo the substrate's fixed-viewport constraints for the MOS document. */
 html.mos-desktop-shell,
 html.mos-desktop-shell body {
+  height: auto;
+  min-height: 100%;
   /* Wave-24 target-design conversion: the shell is a LIGHT surface — the
      pre-paint body matches the slate-50 page so the window never flashes
-     dark before the React bundle mounts. */
-  background: #f8fafc;
+     dark before the React bundle mounts. The substrate stylesheet's
+     `background: transparent !important` needs an important here to win. */
+  background: #f8fafc !important;
+}
+
+html.mos-desktop-shell #root {
+  height: auto;
+  min-height: 100dvh;
+  /* #root must never clip the shell column (the substrate sets
+     `overflow: hidden` on it for its own app-shell layout). */
+  overflow: visible;
+  background: #f8fafc !important;
 }
