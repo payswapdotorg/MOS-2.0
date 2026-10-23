@@ -3,6 +3,7 @@ import type { CreateMissionIntentDeclaration } from '../ports/mission-catalog.js
 import { MissionsListView } from './missions-list.js';
 import { MissionDetailPanel } from './mission-detail.js';
 import { MissionIntentForm } from './mission-intent-form.js';
+import { openMosComposer } from '../shell/composer-bridge.js';
 import { SummaryLayer, DisclosureItem } from '../views/disclosure/disclosure-primitive.js';
 import { buildMissionsSummary } from '../views/disclosure/surface-summaries.js';
 import { MosNoTenantContextView } from '../shell/route-fallbacks.js';
@@ -146,6 +147,17 @@ export function MissionsView({
           the complete loop. List reads and intent declarations only; lifecycle and reward rules
           live in the Missions authority.
         </p>
+        <button
+          type="button"
+          onClick={() =>
+            openMosComposer({ actionId: 'create-mission', contextLabel: 'Missions surface' })
+          }
+          className="mt-3 inline-flex items-center gap-2 rounded-md bg-mos-navy px-4 py-2 text-sm font-semibold text-white hover:bg-mos-navy-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+          title="Opens the Ask MOS composer preloaded with the create-mission action (also Ctrl+J anywhere)"
+          data-testid="missions-ask-mos"
+        >
+          Create a mission — ask MOS
+        </button>
       </header>
 
       <SummaryLayer

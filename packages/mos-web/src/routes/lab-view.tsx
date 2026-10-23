@@ -19,6 +19,9 @@ import {
   LAB_SECTION_LABELS,
 } from "../views/lab-presentation.js";
 import { MosNoTenantContextView } from "../shell/route-fallbacks.js";
+import { openMosComposer } from "../shell/composer-bridge.js";
+import type { ComposerActionId } from "../shell/composer-actions.js";
+import { COMPOSER_ACTIONS_BY_ID } from "../shell/composer-actions.js";
 import { DisclosureItem, SummaryLayer } from "../views/disclosure/disclosure-primitive.js";
 import { buildLabSummary } from "../views/disclosure/surface-summaries.js";
 import {
@@ -93,6 +96,20 @@ function CalibrationUnavailablePanel() {
     </aside>
   );
 }
+
+/**
+ * The per-section Ask MOS affordance (UXR-WC §6.1 action-aware composer): one
+ * owning action per Lab section — preloaded into the composer when the
+ * operator asks from that section. Sections whose write paths are declared
+ * affordances (no matching catalog action) render NO button.
+ */
+const LAB_SECTION_ASK_MOS: Readonly<Partial<Record<LabSectionId, ComposerActionId>>> = {
+  corpus: "ingest-reference-document",
+  simulator: "simulate-step",
+  strategy: "search-organizations",
+  benchmarks: "run-benchmark",
+  calibration: "record-calibration-error",
+};
 
 /** The workspace's persistent research-context strip (every section). */
 function LabResearchContextStrip({ data }: { readonly data: LabPageData }) {
@@ -384,6 +401,22 @@ export function LabView({
         <p className="mt-1 text-xs text-amber-700" data-testid="lab-boundary-note">
           {LAB_BOUNDARY_NOTE}
         </p>
+        {LAB_SECTION_ASK_MOS[data.section] !== undefined ? (
+          <button
+            type="button"
+            onClick={() =>
+              openMosComposer({
+                actionId: LAB_SECTION_ASK_MOS[data.section] as ComposerActionId,
+                contextLabel: `Research Lab · ${LAB_SECTION_LABELS[data.section]}`,
+              })
+            }
+            className="self-start rounded-md bg-mos-navy px-4 py-2 text-sm font-semibold text-white hover:bg-mos-navy-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mos-navy"
+            title="Opens the Ask MOS composer preloaded with this section's owning action (also Ctrl+J anywhere)"
+            data-testid={`lab-ask-mos-${data.section}`}
+          >
+            Ask MOS — {COMPOSER_ACTIONS_BY_ID[LAB_SECTION_ASK_MOS[data.section] as ComposerActionId].label}
+          </button>
+        ) : null}
       </header>
 
       <SummaryLayer
