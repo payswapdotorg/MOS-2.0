@@ -25,6 +25,7 @@ export type ShellSectionId =
   | 'console'
   | 'studio'
   | 'lab'
+  | 'social'
   | 'connections'
   | 'notifications'
   | 'measurement';

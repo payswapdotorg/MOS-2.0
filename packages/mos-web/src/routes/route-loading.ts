@@ -24,6 +24,7 @@ import type {
 } from '../ports/studio-packages.js';
 import type { ConnectionsViewData } from '../ports/connections-views.js';
 import type { NotificationsViewData } from '../ports/notifications-views.js';
+import type { SocialWorkspaceView } from '../ports/social-workspace.js';
 import { loadNotificationsPage } from './notifications-route.js';
 import type { AppShellView, ShellSectionView } from '../ports/app-shell.js';
 
@@ -94,6 +95,20 @@ export interface ConnectionsPageData {
   readonly selectedBindingId: string | null;
 }
 
+/** Fully loaded Social workspace page model (the UXR social wave). */
+export interface SocialPageData {
+  /** The workspace read model (platform rail + guided setup), from the port. */
+  readonly data: SocialWorkspaceView;
+  /** Selected platform slug (`?platform=<slug>`); `null` = the composition default. */
+  readonly selectedPlatformSlug: string | null;
+  /** Guided-setup step anchor (`?step=<n>`), when given. */
+  readonly step: number | null;
+  /** Tenant scope for the setup form's mission declaration, or `null` (honest absence). */
+  readonly scope: TenantScope | null;
+  /** Reward metric vocabulary for the setup form (empty when unavailable). */
+  readonly metricVocabulary: readonly RewardMetricOptionView[];
+}
+
 /** The resolved page model for the current route. */
 export type MosRouteView =
   /** Pre-load surface while the page model resolves (mounted by the boot). */
@@ -104,6 +119,7 @@ export type MosRouteView =
   | { readonly kind: 'lab'; readonly data: LabPageData }
   | { readonly kind: 'console'; readonly data: ConsoleRoutePageModel }
   | { readonly kind: 'connections'; readonly data: ConnectionsPageData }
+  | { readonly kind: 'social'; readonly data: SocialPageData }
   | { readonly kind: 'notifications'; readonly data: NotificationsViewData }
   | {
       readonly kind: 'route-error';
@@ -129,9 +145,11 @@ function retryHrefFor(route: MosRoute): string {
           ? '/console'
           : route.kind === 'connections'
             ? '/connections'
-            : route.kind === 'notifications'
-              ? '/notifications'
-              : `/${route.kind === 'section' ? route.sectionId : ''}`;
+            : route.kind === 'social'
+              ? '/social'
+              : route.kind === 'notifications'
+                ? '/notifications'
+                : `/${route.kind === 'section' ? route.sectionId : ''}`;
 }
 
 /**
@@ -162,6 +180,10 @@ export async function loadMosRouteView(
 
   if (route.kind === 'connections') {
     return loadConnectionsPage(composition, route, retryHrefFor(route));
+  }
+
+  if (route.kind === 'social') {
+    return loadSocialPage(composition, route, shellView, retryHrefFor(route));
   }
 
   if (route.kind === 'notifications') {
@@ -345,6 +367,58 @@ async function loadMissionsPage(
       intentError,
     },
   };
+}
+
+/**
+ * Load the Social workspace page model (the UXR social wave): one honest
+ * read of the workspace port, the tenant scope for the setup form's mission
+ * declaration, and the reward-metric vocabulary (degrading to empty when
+ * the catalog read fails — the form then honestly refuses to declare). A
+ * thrown failure of the workspace read itself is a route error — never a
+ * placeholder surface.
+ */
+async function loadSocialPage(
+  composition: MosWebComposition,
+  route: MosRoute & { readonly kind: 'social' },
+  shellView: AppShellView,
+  retryHref: string,
+): Promise<MosRouteView> {
+  try {
+    const data = await composition.social.loadSocialWorkspace();
+    if ('error' in data) {
+      return {
+        kind: 'route-error',
+        code: data.error,
+        message: data.message,
+        retryHref,
+      };
+    }
+    const scope = MissionScope.fromTenantContext(shellView.tenant);
+    const vocabulary: RewardMetricOptionView[] = [];
+    if (scope !== null) {
+      const vocabularyResult = await composition.missionCatalog.loadRewardMetricVocabulary();
+      if (!('error' in vocabularyResult)) {
+        vocabulary.push(...vocabularyResult);
+      }
+    }
+    return {
+      kind: 'social',
+      data: {
+        data,
+        selectedPlatformSlug: route.platform,
+        step: route.step,
+        scope,
+        metricVocabulary: vocabulary,
+      },
+    };
+  } catch (error) {
+    return {
+      kind: 'route-error',
+      code: 'social-workspace-load-failed',
+      message: error instanceof Error ? error.message : String(error),
+      retryHref,
+    };
+  }
 }
 
 /**

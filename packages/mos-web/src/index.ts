@@ -401,6 +401,47 @@ export type { ConnectionsRenderState } from "./views/connections/connections-vie
 export { wireConnections } from "./platform/connections-wiring.js";
 export type { ConnectionsWiring } from "./platform/connections-wiring.js";
 
+// ---- Social Media workspace (the UXR social wave — the frozen provider
+//       profiles' honest capability matrix + the guided-setup read model) ----
+export type {
+  SocialCapabilitySupportView,
+  SocialCapabilityVerdictView,
+  SocialConnectVerdictView,
+  SocialGuidedSetupView,
+  SocialGuidedStepState,
+  SocialGuidedStepView,
+  SocialPlatformView,
+  SocialSandboxStatusRowView,
+  SocialSimulationSandboxView,
+  SocialWorkspaceLoadFailure,
+  SocialWorkspacePort,
+  SocialWorkspaceView,
+} from "./ports/social-workspace.js";
+export type { SocialRoute } from "./routes/route.js";
+export type { SocialPageData } from "./routes/route-loading.js";
+export { SocialView } from "./routes/social-view.js";
+export { SocialPlatformRail } from "./views/social-platform-rail.js";
+export { SocialCapabilityMatrix } from "./views/social-capability-matrix.js";
+export { SocialGuidedSetupPanel } from "./views/social-guided-setup.js";
+export { SocialGuidedBrowser } from "./views/social-guided-browser.js";
+export { SocialSandboxPanel, SocialTaskPathsPanel } from "./views/social-task-paths.js";
+export { SocialSetupForm } from "./views/social-setup-form.js";
+export type { SocialSetupFormProps } from "./views/social-setup-form.js";
+export {
+  SOCIAL_SETUP_FORM_FIELDS,
+  socialSetupMissionDeclarationFromFormData,
+  socialSetupObjectiveStatement,
+} from "./views/social-setup-form-data.js";
+export type { SocialSetupFormError } from "./views/social-setup-form-data.js";
+export {
+  SOCIAL_DISTINCTION_TITLE,
+  SOCIAL_SANDBOX_BOUNDARY,
+  SOCIAL_SANDBOX_TITLE,
+  SOCIAL_VERDICT_LABELS,
+  socialDistinctionBody,
+  socialRailCapabilitySummary,
+} from "./views/social-presentation.js";
+
 // ---- NOTIFY-CS notification consumer surface ----
 export { NotificationsSurfaceView } from "./routes/notifications-view.js";
 export type { NotificationsRoute } from "./routes/route.js";

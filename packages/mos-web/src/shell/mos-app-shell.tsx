@@ -11,6 +11,7 @@ import { HomeView } from '../routes/home-view.js';
 import { LabView } from '../routes/lab-view.js';
 import { ConsoleView } from '../views/console-view.js';
 import { ConnectionsView } from '../routes/connections-view.js';
+import { SocialView } from '../routes/social-view.js';
 import { NotificationsSurfaceView } from '../routes/notifications-view.js';
 import { MissionsView } from '../routes/missions-view.js';
 import { StudioView } from '../routes/studio-view.js';
@@ -134,6 +135,7 @@ const SECTION_ICON_PATHS: Record<string, readonly string[]> = {
   studio: ['M2 8.5A1.5 1.5 0 0 1 3.5 7h11A1.5 1.5 0 0 1 16 8.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 15.5z', 'M16 10.5 22 7v10l-6-3.5'],
   measurement: ['M3 3v16a2 2 0 0 0 2 2h16', 'M7 15v-4', 'M12 15V7', 'M17 15v-2'],
   connections: ['M9.5 13.5a4 4 0 0 0 6 .5l2.5-2.5a4 4 0 0 0-5.7-5.7l-1.4 1.4', 'M14.5 10.5a4 4 0 0 0-6-.5L6 12.5a4 4 0 0 0 5.7 5.7l1.4-1.4'],
+  social: ['M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z', 'M10 9l6 3-6 3z'],
   notifications: ['M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9', 'M10.3 21a1.94 1.94 0 0 0 3.4 0'],
 };
 
@@ -291,6 +293,8 @@ function RouteSurface({
       );
     case 'connections':
       return <ConnectionsView data={routeView.data} />;
+    case 'social':
+      return <SocialView data={routeView.data} onDeclareMissionIntent={onDeclareMissionIntent} />;
     case 'notifications':
       return <NotificationsSurfaceView data={routeView.data} />;
     case 'route-error':
@@ -328,11 +332,13 @@ export function MosAppShell({
             ? '/console'
             : routeView.kind === 'connections'
               ? '/connections'
-              : routeView.kind === 'notifications'
-                ? '/notifications'
-                : routeView.kind === 'home'
-                  ? '/'
-                  : '';
+              : routeView.kind === 'social'
+                ? '/social'
+                : routeView.kind === 'notifications'
+                  ? '/notifications'
+                  : routeView.kind === 'home'
+                    ? '/'
+                    : '';
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <a
