@@ -26,6 +26,7 @@ MOS is rebuilt from the fork of `zai-org/zcode`. The inherited ZCode codebase is
 14. `docs/handoff/WORKER-CONTRACT-V2.0.md`
 15. `docs/handoff/EXECUTION-PLAN-V2.0.md`
 16. `docs/handoff/FINAL-TECH-LEAD-HANDOFF-V2.0.md`
+17. `docs/handoff/FINAL-DESKTOP-UX-RESCUE-HANDOFF-2026-10-23.md` when working on desktop product UX, agent intent flows, Social Media, or Research Lab onboarding.
 
 The conversation that created this architecture is deliberately not required for implementation.
 
