@@ -380,6 +380,14 @@ function initializeBusinessRoot(port: MessagePort): void {
         onRequestSubstrateSurface: (surface) => {
           substrateHost.showSubstrateSurface(surface);
         },
+        // The return handoff: MOS-side navigation to a NON-workbench route
+        // (rail clicks while the substrate shows, composer intents, link
+        // bridges) dismisses the substrate so the title never lies about
+        // which surface is visible. Idempotent — a no-op when the MOS
+        // surface is already showing (the common case).
+        onRequestMosSurface: () => {
+          substrateHost.ensureMosSurfaceVisible();
+        },
       });
     },
     (error: unknown) => {

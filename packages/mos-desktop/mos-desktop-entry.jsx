@@ -127,6 +127,20 @@ export function bootMosDesktopShell(options) {
       onRequestSubstrateSurface(surface);
     }
   };
+  // The return handoff: the host's idempotent ensure-MOS-visible callback.
+  // Called on EVERY non-workbench soft navigation so MOS-side navigation
+  // (rail clicks while the substrate shows, composer intents, link bridges)
+  // dismisses the substrate instead of leaving it visually on top of the
+  // freshly-resolved MOS route with a stale title. No-op when the MOS
+  // surface already shows — and NEVER re-drives the MOS shell (the
+  // navigation below is already doing that), so it cannot loop with the
+  // host's back-control flow.
+  const onRequestMosSurface = options.onRequestMosSurface ?? null;
+  const ensureMosSurfaceVisible = () => {
+    if (onRequestMosSurface !== null) {
+      onRequestMosSurface();
+    }
+  };
   const workbenchTitleFor = (surface) =>
     surface === 'new-task'
       ? 'MOS — Agent Workbench · New Task'
@@ -254,6 +268,7 @@ export function bootMosDesktopShell(options) {
       requestSubstrateSurface(workbenchSurface);
       return;
     }
+    ensureMosSurfaceVisible();
     lastMosAppHref = appHref;
     const query = desktopQueryFromAppHref(appHref);
     if (win && win.history && typeof win.history.replaceState === 'function') {

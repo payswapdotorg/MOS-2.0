@@ -269,6 +269,14 @@ export interface SubstrateSurfaceHost {
   showSubstrateSurface(surface: WorkbenchSurface): void;
   /** Hides the substrate surface and re-applies the MOS document policy. */
   hideSubstrateSurface(): void;
+  /**
+   * Idempotent return-to-MOS for MOS-side navigation: hides the substrate
+   * ONLY when it is showing (no-op otherwise). Unlike the back control's
+   * hideSubstrateSurface + resumeMosSurface flow, this NEVER re-drives the
+   * MOS shell — the caller (the entry's softNavigateTo) is already
+   * navigating, so invoking it mid-navigation is safe and loop-free.
+   */
+  ensureMosSurfaceVisible(): void;
 }
 
 /**
@@ -354,9 +362,19 @@ export function createSubstrateSurfaceHost(
     applyDocumentPolicy();
   };
 
+  const ensureMosSurfaceVisible = (): void => {
+    // MOS-side navigation (the entry's softNavigateTo to a non-workbench
+    // route) must not leave the substrate visually on top with a stale
+    // title — dismiss it iff it is actually showing.
+    if (substrateVisible) {
+      hideSubstrateSurface();
+    }
+  };
+
   return {
     mosSurfaceElement: mosSurface,
     showSubstrateSurface,
     hideSubstrateSurface,
+    ensureMosSurfaceVisible,
   };
 }
