@@ -1,5 +1,11 @@
 import { parseMosRoute } from '@mos/web';
 import type { MosRoute } from '@mos/web';
+// The workbench route helper lives in its own dependency-free module so
+// the node test runner can consume it directly through the built dist.
+export {
+  workbenchSurfaceFromAppPath,
+  type WorkbenchSurface,
+} from './workbench-route.js';
 
 /**
  * Desktop route bridging (registry module `desktop`, presentation-only).

@@ -54,6 +54,7 @@ import {
   desktopRouteFromSearch,
   installDesktopShellLinkNavigation,
   navigateDesktopAppHref,
+  workbenchSurfaceFromAppPath,
 } from './src/index.js';
 import { createProductionMosWebComposition } from './composition/compose-production-mos-web.js';
 import './mos-desktop-shell.css';
@@ -114,6 +115,24 @@ export function bootMosDesktopShell(options) {
   }
   const shellVersion = options.shellVersion ?? DEFAULT_SHELL_VERSION;
   const onFirstReactCommit = options.onFirstReactCommit ?? (() => undefined);
+  // The AGENT WORKBENCH handoff (build-ON-ZCode): the host renderer's
+  // callback for the substrate surfaces (`/workbench*` routes). The entry
+  // NEVER resolves a MOS page model for those routes — it rewrites the
+  // route query (the URL stays the route truth), sets the workbench title,
+  // and hands the surface request to the host, which mounts the substrate
+  // UI behind the MOS chrome (the host owns both surface containers).
+  const onRequestSubstrateSurface = options.onRequestSubstrateSurface ?? null;
+  const requestSubstrateSurface = (surface) => {
+    if (onRequestSubstrateSurface !== null) {
+      onRequestSubstrateSurface(surface);
+    }
+  };
+  const workbenchTitleFor = (surface) =>
+    surface === 'automations'
+      ? 'MOS — Agent Workbench · Automations'
+      : surface === 'settings'
+        ? 'MOS — Agent Workbench · Settings'
+        : 'MOS — Agent Workbench';
   // Hosts pass their own React root (the desktop renderer pre-creates one
   // for the database-startup admission screen); otherwise this entry owns
   // the root.
@@ -220,6 +239,20 @@ export function bootMosDesktopShell(options) {
    */
   const softNavigateTo = (appHref) => {
     const win = globalThis.window;
+    // The AGENT WORKBENCH routes: hand the surface to the host instead of
+    // resolving a MOS page model (the substrate UI mounts behind the MOS
+    // chrome; the query still records the route truth for reload boot).
+    const workbenchSurface = workbenchSurfaceFromAppPath(appHref);
+    if (workbenchSurface !== null) {
+      const query = desktopQueryFromAppHref(appHref);
+      if (win && win.history && typeof win.history.replaceState === 'function') {
+        win.history.replaceState(null, '', query);
+      }
+      platform.setDocumentTitle(workbenchTitleFor(workbenchSurface));
+      requestSubstrateSurface(workbenchSurface);
+      return;
+    }
+    lastMosAppHref = appHref;
     const query = desktopQueryFromAppHref(appHref);
     if (win && win.history && typeof win.history.replaceState === 'function') {
       win.history.replaceState(null, '', query);
@@ -260,6 +293,10 @@ export function bootMosDesktopShell(options) {
   subscribeMosComposerOpen((entry) => dispatchComposerEvent({ kind: 'open', entry }));
 
   let committed = false;
+  // The last MOS route the shell showed (the workbench handoff excludes
+  // itself) — the resume controller returns here when the host switches
+  // back from a substrate surface.
+  let lastMosAppHref = '/';
   const mountShell = (routeView) => {
     currentRouteViewBundle = routeView;
     const element = (
@@ -364,6 +401,13 @@ export function bootMosDesktopShell(options) {
       platform.setDocumentTitle(mosRouteTitle(route));
       shellViewRef.current = shellResult;
 
+      // AGENT WORKBENCH boot: a `?route=/workbench*` load (deep link or
+      // reload while a substrate surface is showing) hands the surface to
+      // the host immediately — the MOS chrome still mounts underneath
+      // (hidden by the host), so returning needs no re-boot.
+      const bootWorkbenchSurface =
+        route.kind === 'unknown' ? workbenchSurfaceFromAppPath(route.path) : null;
+
       // …mount the chrome with the loading surface while the page model
       // loads…
       mountShell({
@@ -373,6 +417,12 @@ export function bootMosDesktopShell(options) {
         onDeclareLabIntent,
         onDeclareConsoleIntent,
       });
+
+      if (bootWorkbenchSurface !== null) {
+        platform.setDocumentTitle(workbenchTitleFor(bootWorkbenchSurface));
+        requestSubstrateSurface(bootWorkbenchSurface);
+        return undefined;
+      }
 
       // …then resolve the page model and mount it (one pass per load).
       return loadMosRouteView(composition, route, shellResult)
@@ -392,4 +442,14 @@ export function bootMosDesktopShell(options) {
     .catch((error) => {
       bootstrapError(error instanceof Error ? error.message : String(error));
     });
+
+  // The RESUME controller: the host calls this when switching back from a
+  // substrate surface (the floating back control) — the shell re-resolves
+  // the last MOS route's page model against the SAME composition and
+  // remounts in place (soft navigation, no document reload).
+  return {
+    resumeMosSurface() {
+      softNavigateTo(lastMosAppHref);
+    },
+  };
 }

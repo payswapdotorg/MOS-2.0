@@ -30,7 +30,19 @@ export type ShellSectionId =
   | 'notifications'
   | 'measurement'
   | 'distribution'
-  | 'experiments';
+  | 'experiments'
+  /**
+   * The AGENT WORKBENCH group (the owner's build-ON-ZCode directive): the
+   * substrate's best surfaces — the session/group/project workspace, the
+   * Automations main view, and the substrate Settings — presented as
+   * first-class MOS navigation. The DESKTOP composition binds these rows;
+   * the host renderer answers their routes by mounting the substrate
+   * surface (the shell itself never imports substrate code — the boundary
+   * stays presentation-only, the desktop entry owns the handoff).
+   */
+  | 'workbench'
+  | 'workbench-automations'
+  | 'workbench-settings';
 
 /**
  * Availability of a product surface in this shell build. Unavailable is a
@@ -42,6 +54,13 @@ export type SurfaceAvailabilityView =
   | { readonly kind: 'available' }
   | { readonly kind: 'not-yet-available'; readonly dependsOn: string };
 
+/**
+ * Which rail group a section renders in. `navigation` (the default) is the
+ * MOS product rail; `workbench` is the Agent Workbench group (the substrate
+ * surfaces the desktop composition mounts behind the MOS chrome).
+ */
+export type ShellSectionGroup = 'navigation' | 'workbench';
+
 /** One navigation section as presented by the shell. */
 export interface ShellSectionView {
   readonly id: ShellSectionId;
@@ -50,6 +69,8 @@ export interface ShellSectionView {
   /** App-internal route path (`/`, `/missions`, …). */
   readonly route: string;
   readonly availability: SurfaceAvailabilityView;
+  /** Rail group this section renders in (defaults to `navigation`). */
+  readonly group?: ShellSectionGroup;
 }
 
 /** The tenant/workspace context the shell is presenting (spec §31). */

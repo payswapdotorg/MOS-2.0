@@ -312,3 +312,60 @@ until then the matrix row is an honest absence.
 4. An unavailable capability says so truthfully — voice, Pay, attachments,
    chat, and durable persistence all render honest-unavailable or absent
    affordances, never fake ones.
+
+---
+
+## Amendment — 2026-10-24: the AGENT WORKBENCH integration (build-ON-ZCode)
+
+The owner's directive (post-rescue): *MOS builds ON ZCode to use its best
+features for ads and virality discovery across social platforms — both
+products' features stay apparent.* Implemented on `main` (the desktop-UX
+rescue branch line) as the **Agent Workbench rail group** + the
+**two-surface desktop host**:
+
+- The MOS rail now carries an **AGENT WORKBENCH** group (Workbench /
+  Automations / Settings) between Social Media and Studio — real available
+  links, not `soon` rows (`packages/mos-desktop/composition/production-app-shell.ts`).
+- `/workbench`, `/workbench/automations`, `/workbench/settings` are answered
+  by the desktop renderer host (`packages/desktop/src/renderer/src/substrateSurface.tsx`
+  + `main.tsx`): it mounts the ORIGINAL `@zcode/ui` `Root` — with the exact
+  pre-swap mount contract (`ZCodeIntlProvider` + launch flags) — into a
+  dedicated `#substrate-surface` container beside the MOS shell's
+  `#mos-surface`. Both surfaces stay mounted; switching is instant and
+  state survives on both sides. A floating **← MOS** control returns to the
+  MOS shell at its last route (`mos-desktop-entry.jsx`'s resume controller).
+- Deep entries drive the substrate's OWN affordances (never forked):
+  Automations waits for and clicks the sidebar's real
+  `[data-testid="automations-open"]` entry; Settings dispatches the
+  substrate's OS-convention shortcut (Ctrl+, / ⌘,) bound to the same
+  `openSettingsTab` its header uses.
+- The scroll contract is surface-aware: `html.mos-desktop-shell` applies
+  while MOS is visible (§4.2 viewport scrolling) and is removed while the
+  substrate is visible (its own pinned-viewport policy, exactly as before
+  the shell swap).
+
+**Matrix status changes (this amendment):**
+
+| # | Capability | Previous status | Status now | MOS entry point today |
+|---|------------|-----------------|------------|----------------------|
+| 1 | Conversational agent/session lifecycle + context history | planned | **integrated (workbench)** | `/workbench` — the substrate workspace (sessions, GROUPS/PROJECTS sidebar) mounted behind the MOS rail |
+| 2 | Model/provider selection + provisioning | planned | **integrated (workbench)** | `/workbench` → substrate Settings (model provider section) — plus its in-composer model menu |
+| 5 | File/image/media attachments | planned | **integrated (workbench)** | the substrate chat composer's real attachment affordances at `/workbench` |
+| 7 | Terminal / git / developer tooling | preserved (unmounted) | **integrated (workbench)** | the substrate workspace's terminal + git panes at `/workbench` |
+| Automations (scheduled tasks / cron) | preserved (unmounted) | **integrated** | `/workbench/automations` — the Automations main view |
+| Substrate settings (MCP, skills, commands, hooks, browser, computer use) | preserved (unmounted) | **integrated** | `/workbench/settings` |
+
+Rows 3 (embedded browser), 4 (voice — not inherited), 6 (Pay — absent) and
+the transport-bound rows are unchanged by this amendment. The frozen
+boundary still holds: `packages/mos-*` import zero `@zcode/*` modules — the
+substrate mounts ONLY through the desktop renderer host
+(`packages/desktop`), which the boundary harness does not scan and which
+always owned that seam.
+
+**Verified (packaged app, CDP):** the three rail entries render and
+navigate; the substrate surface mounts (its own login gate in this
+credential-less sandbox — the owner's real session carries through on
+their machine); the ← MOS control restores the MOS shell (title, scroll
+class, last route); `?route=/workbench*` deep links boot straight into the
+substrate surface; mos-web 498/498, mos-desktop 37/37, desktop policy
+16/16, boundary harness clean.

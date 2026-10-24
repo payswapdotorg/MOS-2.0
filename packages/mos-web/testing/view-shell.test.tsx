@@ -36,12 +36,17 @@ test('the shell renders the target-design rail sections with Home and Missions f
     'Missions',
     'Research Lab',
     'Agent Console',
+    'Social Media',
     'Studio',
     'Distribution',
     'Experiments',
     'Measurement & Learning',
     'Connections',
     'Activity & Approvals',
+    'Agent Workbench',
+    'Workbench',
+    'Automations',
+    'Settings',
   ]) {
     assert.equal(navText.includes(label), true, `nav must show ${label}`);
   }
@@ -102,6 +107,43 @@ test('available sections are links; later surfaces are aria-disabled with their 
   assert.equal(activity?.type, 'a');
   assert.equal(activity?.props.href, '/notifications');
   assert.equal(renderTreeText(activity).includes('Activity & Approvals'), true);
+});
+
+test('the AGENT WORKBENCH group renders as its own rail section (build-ON-ZCode)', () => {
+  const tree = (
+    <MosAppShell
+      shellView={shellView(TENANT)}
+      routeView={{ kind: 'home' }}
+      onDeclareMissionIntent={noopIntent}
+      onDeclareLabIntent={noopLabIntent}
+      onDeclareConsoleIntent={noopConsoleIntent}
+      shellVersion="0.1.0-test"
+    />
+  );
+  // The workbench group's own list container.
+  const group = elementWithTestId(tree, 'shell-workbench-group');
+  assert.ok(group, 'the rail renders the Agent Workbench group');
+  const groupText = renderTreeText(group);
+  for (const label of ['Workbench', 'Automations', 'Settings']) {
+    assert.equal(groupText.includes(label), true, `workbench group must show ${label}`);
+  }
+  // The substrate surfaces are real available links (the desktop host
+  // answers their routes by mounting the substrate UI).
+  const workbench = elementWithTestId(tree, 'nav-workbench');
+  assert.equal(workbench?.type, 'a');
+  assert.equal(workbench?.props.href, '/workbench');
+  const automations = elementWithTestId(tree, 'nav-workbench-automations');
+  assert.equal(automations?.type, 'a');
+  assert.equal(automations?.props.href, '/workbench/automations');
+  const settings = elementWithTestId(tree, 'nav-workbench-settings');
+  assert.equal(settings?.type, 'a');
+  assert.equal(settings?.props.href, '/workbench/settings');
+  // None of the workbench rows leaks into the primary Navigation list.
+  const nav = elementsWithTag(tree, 'nav')[0];
+  const navText = renderTreeText(nav);
+  const navigationHeaderIndex = navText.indexOf('Navigation');
+  const workbenchHeaderIndex = navText.indexOf('Agent Workbench');
+  assert.ok(navigationHeaderIndex >= 0 && workbenchHeaderIndex > navigationHeaderIndex, 'the Agent Workbench group follows the Navigation group');
 });
 
 test('the active section is marked aria-current="page" (keyboard/AT navigation pin)', () => {
@@ -251,8 +293,10 @@ test('images/icons carry accessible labels; tables declare column scopes', () =>
 test('the section table the shell renders matches the port readiness verdicts', () => {
   // The composition seam's section table (the §5 target-design rail order,
   // UXR-WC — the Social Media slot between Agent Console and Studio is the
-  // UXR social wave's to add) is what the chrome presents; this pins the ten
-  // sections and their verdict kinds.
+  // UXR social wave's to add) is what the chrome presents; this pins the
+  // ten sections and their verdict kinds. The three AGENT WORKBENCH rows
+  // (build-ON-ZCode) sit between Social Media and Studio, mirrored from
+  // the production desktop composition.
   assert.deepEqual(
     SECTIONS.map((section) => section.id),
     [
@@ -260,6 +304,10 @@ test('the section table the shell renders matches the port readiness verdicts', 
       'missions',
       'lab',
       'console',
+      'social',
+      'workbench',
+      'workbench-automations',
+      'workbench-settings',
       'studio',
       'distribution',
       'experiments',
@@ -268,7 +316,7 @@ test('the section table the shell renders matches the port readiness verdicts', 
       'notifications',
     ],
   );
-  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 7);
+  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 11);
 });
 
 test('the shell header presents the mission-activity badge honestly (wave-24 target design)', () => {

@@ -87,12 +87,18 @@ test('the availability verdicts are honest for this release (the §5 target-desi
   // The §5 target rail order (social between Agent Console and Studio from
   // the UXR social wave): home, missions, lab, console, social, studio,
   // distribution, experiments, measurement, connections, notifications.
+  // The AGENT WORKBENCH group (build-ON-ZCode) sits between Social Media
+  // and Studio: workbench, workbench-automations, workbench-settings —
+  // the substrate surfaces the desktop host mounts behind the MOS chrome.
   assert.deepEqual(sections, [
     'home',
     'missions',
     'lab',
     'console',
     'social',
+    'workbench',
+    'workbench-automations',
+    'workbench-settings',
     'studio',
     'distribution',
     'experiments',
@@ -104,6 +110,28 @@ test('the availability verdicts are honest for this release (the §5 target-desi
   for (const id of ['home', 'missions', 'lab', 'console', 'social'] as const) {
     assert.deepEqual(byId.get(id)?.availability, { kind: 'available' }, `${id} is available`);
   }
+  // The AGENT WORKBENCH rows are available links in the workbench rail
+  // group — the desktop renderer's host answers their routes by mounting
+  // the substrate surface (see substrateSurface.tsx).
+  for (const id of ['workbench', 'workbench-automations', 'workbench-settings'] as const) {
+    assert.deepEqual(byId.get(id)?.availability, { kind: 'available' }, `${id} is available`);
+    assert.equal(byId.get(id)?.group, 'workbench', `${id} renders in the workbench rail group`);
+  }
+  assert.equal(
+    byId.get('workbench')?.label,
+    'Workbench',
+    'the substrate workspace rail label',
+  );
+  assert.equal(
+    byId.get('workbench-automations')?.label,
+    'Automations',
+    'the substrate automations rail label',
+  );
+  assert.equal(
+    byId.get('workbench-settings')?.label,
+    'Settings',
+    'the substrate settings rail label',
+  );
   assert.equal(byId.get('lab')?.label, 'Research Lab', 'the target design\'s rail label');
   assert.equal(
     byId.get('measurement')?.label,

@@ -6,6 +6,7 @@ import type {
   AppShellPort,
   AppShellView,
   ShellRecentMissionView,
+  ShellSectionGroup,
   ShellSectionId,
   ShellSectionView,
   SurfaceAvailabilityView,
@@ -91,6 +92,7 @@ const SECTION_TABLE: readonly {
   readonly label: string;
   readonly route: string;
   readonly availability: SurfaceAvailabilityView;
+  readonly group?: ShellSectionGroup;
 }[] = [
   { id: 'home', label: 'Home', route: '/', availability: { kind: 'available' } },
   { id: 'missions', label: 'Missions', route: '/missions', availability: { kind: 'available' } },
@@ -106,6 +108,36 @@ const SECTION_TABLE: readonly {
     label: 'Social Media',
     route: '/social',
     availability: { kind: 'available' },
+  },
+  /**
+   * The AGENT WORKBENCH group (the owner's build-ON-ZCode directive):
+   * the substrate's best surfaces as first-class MOS navigation. These
+   * routes are answered by the DESKTOP RENDERER host (the entry calls the
+   * host's `onRequestSubstrateSurface` and the host mounts the original
+   * substrate UI — sessions/groups workspace, Automations main view,
+   * substrate Settings — behind the MOS chrome). The shell stays
+   * presentation-only: it renders these rows like any other section link.
+   */
+  {
+    id: 'workbench',
+    label: 'Workbench',
+    route: '/workbench',
+    availability: { kind: 'available' },
+    group: 'workbench',
+  },
+  {
+    id: 'workbench-automations',
+    label: 'Automations',
+    route: '/workbench/automations',
+    availability: { kind: 'available' },
+    group: 'workbench',
+  },
+  {
+    id: 'workbench-settings',
+    label: 'Settings',
+    route: '/workbench/settings',
+    availability: { kind: 'available' },
+    group: 'workbench',
   },
   {
     id: 'studio',

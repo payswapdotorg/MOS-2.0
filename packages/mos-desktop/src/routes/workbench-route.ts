@@ -1,0 +1,36 @@
+/**
+ * The AGENT WORKBENCH route helper (the owner's build-ON-ZCode directive):
+ * the pure path match deciding which substrate surface a `/workbench*`
+ * route names. Deliberately DEPENDENCY-FREE (no `@mos/web` import) so the
+ * module is directly consumable from the node test runner through the
+ * package's built dist — the desktop route bridge re-exports it alongside
+ * its own parser (see desktop-route.ts).
+ *
+ * `/workbench` opens the substrate workspace (sessions, groups and
+ * projects), `/workbench/automations` the Automations main view,
+ * `/workbench/settings` the substrate Settings page. The desktop entry
+ * hands these surfaces to the host renderer's `onRequestSubstrateSurface`
+ * (see mos-desktop-entry.jsx); the MOS page model is never resolved for
+ * these routes.
+ */
+
+/** The substrate surface a workbench route names. */
+export type WorkbenchSurface = 'chat' | 'automations' | 'settings';
+
+const WORKBENCH_ROUTE_BY_PATH: Readonly<Record<string, WorkbenchSurface>> = {
+  '/workbench': 'chat',
+  '/workbench/': 'chat',
+  '/workbench/automations': 'automations',
+  '/workbench/settings': 'settings',
+};
+
+/**
+ * Resolve an app-internal path (or href) to the workbench surface it
+ * names, or `null` when the path is not a workbench route. Query strings
+ * and trailing slashes are tolerated (only the path decides the surface).
+ */
+export function workbenchSurfaceFromAppPath(path: string): WorkbenchSurface | null {
+  const withoutQuery = (path.split('?', 1)[0] ?? path).replace(/\/+$/, '') || '/';
+  const normalized = withoutQuery.startsWith('/') ? withoutQuery : `/${withoutQuery}`;
+  return WORKBENCH_ROUTE_BY_PATH[normalized] ?? null;
+}

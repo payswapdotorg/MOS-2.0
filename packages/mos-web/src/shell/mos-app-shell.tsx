@@ -25,29 +25,17 @@ import {
 } from './route-fallbacks.js';
 
 /**
- * The MOS app shell chrome (WEB-001; wave-24 target-design conversion): the
- * light three-zone chrome measured off the supplied MOS Agent Console
- * mockups — a header band (navy logo square, "MOS Agent Console" title +
- * "Mission-aware agent orchestration" subtitle, the mission-activity badge
- * and the tenant context), a left navigation rail (NAVIGATION sections +
- * RECENT MISSIONS), the route surface, and a footer carrying the shell
- * version and the presentation-only disclosure.
- *
- * Presentation-only by construction: every piece of state arrives through the
- * {@link AppShellView} read model and every command leaves through a
- * declared-intent callback (`onDeclareMissionIntent`,
- * `onDeclareLabIntent`, `onDeclareConsoleIntent`) — the component itself
- * holds no state, owns no authority and computes nothing.
+ * The MOS app shell chrome (WEB-001; wave-24 target design): header band
+ * (logo, title/subtitle, mission badge, tenant context), left navigation
+ * rail (NAVIGATION + AGENT WORKBENCH + RECENT MISSIONS), route surface,
+ * footer. Presentation-only: state arrives via the {@link AppShellView}
+ * read model, commands leave through the declared-intent callbacks.
  */
 
 /**
- * The shell-owned Ask MOS composer chrome (the §6 P0 universal-composer
- * wave — UXR-WC): the entries own the {@link ComposerUiState} value (the
- * composer state machine is PURE — `shell/composer-state.ts`) and pass its
- * projection in as this prop, exactly like every other shell read model;
- * every composer interaction leaves through the single `onEvent` callback
- * and the entry folds it through the reducer. Absent ⇒ no composer chrome
- * (the shell renders exactly what it is given).
+ * The Ask MOS composer chrome (§6 P0, UXR-WC): the entry owns the pure
+ * {@link ComposerUiState} and passes its projection in; interactions leave
+ * through the single `onEvent` callback. Absent ⇒ no composer chrome.
  */
 export interface ComposerChromeProps {
   /** The composer's current UI state (a plain value; the entry owns it). */
@@ -163,6 +151,10 @@ const SECTION_ICON_PATHS: Record<string, readonly string[]> = {
   connections: ['M9.5 13.5a4 4 0 0 0 6 .5l2.5-2.5a4 4 0 0 0-5.7-5.7l-1.4 1.4', 'M14.5 10.5a4 4 0 0 0-6-.5L6 12.5a4 4 0 0 0 5.7 5.7l1.4-1.4'],
   social: ['M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z', 'M10 9l6 3-6 3z'],
   notifications: ['M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9', 'M10.3 21a1.94 1.94 0 0 0 3.4 0'],
+  // The Agent Workbench group (build-ON-ZCode): the substrate surfaces.
+  workbench: ['M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-5 4z', 'M8 9.5h8', 'M8 12h5'],
+  'workbench-automations': ['M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6', 'M3 5.5A2.5 2.5 0 0 1 5.5 3H10', 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7', 'M12 10.5V12l1 1'],
+  'workbench-settings': ['M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7', 'M12 2.5v2.5', 'M12 19v2.5', 'M2.5 12H5', 'M19 12h2.5', 'M5.3 5.3l1.8 1.8', 'M16.9 16.9l1.8 1.8', 'M18.7 5.3l-1.8 1.8', 'M7.1 16.9l-1.8 1.8'],
 };
 
 function SectionIcon({ sectionId }: { readonly sectionId: string }) {
@@ -229,10 +221,37 @@ function SectionNavItem({
   );
 }
 
+/** One rail group: a titled section list (Navigation / Agent Workbench). */
+function RailGroup({
+  title,
+  sections,
+  activeRoute,
+  testId,
+}: {
+  readonly title: string;
+  readonly sections: readonly ShellSectionView[];
+  readonly activeRoute: string;
+  readonly testId?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-slate-400">{title}</p>
+      <ul className="flex flex-row flex-wrap gap-1 lg:flex-col" data-testid={testId}>
+        {sections.map((section) => (
+          <li key={section.id} className="max-w-full lg:w-full">
+            <SectionNavItem section={section} active={section.route === activeRoute} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /**
- * The shell's left navigation rail (target design): NAVIGATION sections and
- * RECENT MISSIONS. Below the lg: breakpoint the rail reflows into stacked
- * wrapping rows above the route surface (the small-viewport smoke target).
+ * The shell's left navigation rail (target design): NAVIGATION sections, the
+ * AGENT WORKBENCH group, and RECENT MISSIONS. Below the lg: breakpoint the
+ * rail reflows into stacked wrapping rows above the route surface (the
+ * small-viewport smoke target).
  */
 function ShellNav({
   sections,
@@ -243,23 +262,24 @@ function ShellNav({
   readonly activeRoute: string;
   readonly recentMissions: readonly ShellRecentMissionView[];
 }) {
+  const navigationSections = sections.filter(
+    (section) => section.group === undefined || section.group === 'navigation',
+  );
+  const workbenchSections = sections.filter((section) => section.group === 'workbench');
   return (
     <nav
       aria-label="MOS sections"
       className="flex flex-col gap-5 border-b border-slate-200 bg-white px-3 py-3 lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r lg:px-4 lg:py-6"
     >
-      <div className="flex flex-col gap-1">
-        <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-          Navigation
-        </p>
-        <ul className="flex flex-row flex-wrap gap-1 lg:flex-col">
-          {sections.map((section) => (
-            <li key={section.id} className="max-w-full lg:w-full">
-              <SectionNavItem section={section} active={section.route === activeRoute} />
-            </li>
-          ))}
-        </ul>
-      </div>
+      <RailGroup title="Navigation" sections={navigationSections} activeRoute={activeRoute} />
+      {workbenchSections.length > 0 ? (
+        <RailGroup
+          title="Agent Workbench"
+          sections={workbenchSections}
+          activeRoute={activeRoute}
+          testId="shell-workbench-group"
+        />
+      ) : null}
       <div className="flex flex-col gap-1">
         <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
           Recent missions
@@ -311,17 +331,13 @@ function RouteSurface({
       // second missions query.
       return <HomeView recentMissions={shellView.recentMissions} />;
     case 'missions':
-      return (
-        <MissionsView data={routeView.data} onDeclareMissionIntent={onDeclareMissionIntent} />
-      );
+      return <MissionsView data={routeView.data} onDeclareMissionIntent={onDeclareMissionIntent} />;
     case 'studio':
       return <StudioView data={routeView.data} />;
     case 'lab':
       return <LabView data={routeView.data} onDeclareLabIntent={onDeclareLabIntent} />;
     case 'console':
-      return (
-        <ConsoleView data={routeView.data} onDeclareConsoleIntent={onDeclareConsoleIntent} />
-      );
+      return <ConsoleView data={routeView.data} onDeclareConsoleIntent={onDeclareConsoleIntent} />;
     case 'connections':
       return <ConnectionsView data={routeView.data} />;
     case 'social':
@@ -329,19 +345,25 @@ function RouteSurface({
     case 'notifications':
       return <NotificationsSurfaceView data={routeView.data} />;
     case 'route-error':
-      return (
-        <MosRouteErrorView
-          code={routeView.code}
-          message={routeView.message}
-          retryHref={routeView.retryHref}
-        />
-      );
+      return <MosRouteErrorView code={routeView.code} message={routeView.message} retryHref={routeView.retryHref} />;
     case 'section':
       return <MosSectionNotAvailableView section={routeView.section} />;
     case 'unknown-route':
       return <MosUnknownRouteView path={routeView.path} />;
   }
 }
+
+/** The rail-active href per route-view kind (sections without surfaces stay inactive). */
+const ACTIVE_ROUTE_BY_VIEW_KIND: Readonly<Record<string, string>> = {
+  home: '/',
+  missions: '/missions',
+  studio: '/studio',
+  lab: '/lab',
+  console: '/console',
+  connections: '/connections',
+  social: '/social',
+  notifications: '/notifications',
+};
 
 /** The MOS app shell. Home and Missions come first in the section order. */
 export function MosAppShell({
@@ -353,24 +375,7 @@ export function MosAppShell({
   shellVersion,
   composer,
 }: MosAppShellProps) {
-  const activeRoute =
-    routeView.kind === 'missions'
-      ? '/missions'
-      : routeView.kind === 'studio'
-        ? '/studio'
-        : routeView.kind === 'lab'
-          ? '/lab'
-          : routeView.kind === 'console'
-            ? '/console'
-            : routeView.kind === 'connections'
-              ? '/connections'
-              : routeView.kind === 'social'
-                ? '/social'
-                : routeView.kind === 'notifications'
-                  ? '/notifications'
-                  : routeView.kind === 'home'
-                    ? '/'
-                    : '';
+  const activeRoute = ACTIVE_ROUTE_BY_VIEW_KIND[routeView.kind] ?? '';
   const composerRouteLabel =
     activeRoute === ''
       ? 'MOS'
@@ -388,16 +393,7 @@ export function MosAppShell({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-mos-navy-deep">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-6 w-6 text-white"
-                role="img"
-                aria-label="MOS logo"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              >
+              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" role="img" aria-label="MOS logo" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M3 17c3-6 6-9 9-9s6 3 9 9" />
                 <circle cx="12" cy="5" r="2" />
               </svg>

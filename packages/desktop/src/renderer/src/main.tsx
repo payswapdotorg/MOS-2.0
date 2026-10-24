@@ -29,6 +29,7 @@ import type { Locale } from "@zcode/shared";
 import type { IServiceAccessor } from "@zcode/services";
 import { syncAppTelemetryContext } from "../appTelemetryBridge.js";
 import { createDesktopPlatform } from "./desktopPlatform.js";
+import { createSubstrateSurfaceHost } from "./substrateSurface.js";
 import { startPerformanceTimelineCleanup } from "./performanceTimelineCleanup.js";
 import { initializeDesktopUserActionTrace } from "./userActionTraceBootstrap.js";
 import { buildRemoteWorkspaceSessionServices } from "./remoteWorkspaceSessionServices.js";
@@ -118,8 +119,23 @@ function readStringFlag(name: string): string | undefined {
   return value == null || value.trim() === "" ? undefined : value;
 }
 
+function readBooleanFlag(name: string, fallback: boolean): boolean {
+  const value = new URLSearchParams(window.location.search).get(name);
+  if (value === null) return fallback;
+  return value === "true" || value === "1";
+}
+
 const windowKind = readStringFlag("windowKind");
 const initialLocaleFlag = readStringFlag("locale");
+// The AGENT WORKBENCH host flags (the substrate Root's original mount
+// contract, verbatim from the pre-swap boot): session restore, the
+// settings capability, and the launch workspace descriptors the main
+// process passes on the load URL.
+const restoreSession = readBooleanFlag("restoreSession", true);
+const supportsSettings = readBooleanFlag("supportsSettings", true);
+const initialWorkspaceAbsPath = readStringFlag("initialWorkspacePath");
+const initialWorkspacePurposeFlag = readStringFlag("initialWorkspacePurpose");
+const unavailableWorkspacePath = readStringFlag("unavailableWorkspacePath");
 const initialLocale: Locale =
   initialLocaleFlag === "zh-CN" || initialLocaleFlag === "en-US"
     ? initialLocaleFlag
@@ -301,17 +317,55 @@ function initializeBusinessRoot(port: MessagePort): void {
   // 自身渲染崩溃，若依赖组件的 effect 注入，首帧就崩时上报会丢失。
   setReactErrorArmsReporter(desktopPlatform);
 
+  // AGENT WORKBENCH host (the owner's build-ON-ZCode directive): the
+  // renderer hosts TWO product surfaces in #root — the MOS shell (mounted
+  // by the @mos/desktop entry into the host's mos-surface container) and,
+  // lazily on the first /workbench* route, the ORIGINAL substrate UI
+  // (@zcode/ui Root — sessions/groups/projects workspace, Automations,
+  // Settings, and every other substrate capability) in the
+  // substrate-surface container. Both stay mounted once created: switching
+  // is instant and state on either side survives. The substrate tree is
+  // mounted with the EXACT pre-swap mount contract (ZCodeIntlProvider +
+  // Root with the launch flags) so its own theme/locale/session services
+  // behave exactly as they did before the MOS shell swap.
+  const hostRootElement = document.getElementById("root");
+  if (!hostRootElement) {
+    throw new Error("renderer root element missing at business initialization");
+  }
+  // The database-startup admission screen (rendered through appRoot) is
+  // superseded by the two-surface layout; clear it so only the live
+  // surfaces remain under #root.
+  appRoot?.render(null);
+  let mosShellController: { resumeMosSurface(): void } | null = null;
+  const substrateHost = createSubstrateSurfaceHost({
+    rootElement: hostRootElement,
+    services,
+    platform: desktopPlatform,
+    isMacDesktop,
+    isWindowsDesktop,
+    restoreSession,
+    supportsSettings,
+    initialWorkspaceAbsPath,
+    initialWorkspacePurpose:
+      initialWorkspacePurposeFlag === "conversation" ? "conversation" : "project",
+    unavailableWorkspacePath,
+    onBackToMos: () => {
+      substrateHost.hideSubstrateSurface();
+      mosShellController?.resumeMosSurface();
+    },
+  });
+
   // MOS 产品表面（desktop shell swap）：主窗口挂载 @mos/desktop 的 MOS shell
   // （与浏览器 shell 相同的 mos-web 路由组件树 + 桌面平台端口 + 生产 composition
   // root），替代此前的 @zcode/ui Root 编码产品表面。substrate 生命周期全部保留：
   // database-startup 握手已在上方完成，remote-workspace 服务端口继续注册消费，
   // telemetry/ARMS 引导不变。update-status 窗口分支仍渲染 @zcode/ui 的
-  // UpdateStatusWindowRoot（见文件尾）。
+  // UpdateStatusWindowRoot（见文件尾）。AGENT WORKBENCH：substrate Root 不再被
+  // 丢弃 —— 它由上方两表面宿主按需挂载，从 MOS 导轨的 Agent Workbench 分组进入。
   void import("@mos/desktop/mos-desktop-entry.jsx").then(
     ({ bootMosDesktopShell }) => {
-      bootMosDesktopShell({
-        reactRoot: appRoot ?? undefined,
-        rootElement: document.getElementById("root"),
+      mosShellController = bootMosDesktopShell({
+        rootElement: substrateHost.mosSurfaceElement,
         onFirstReactCommit: () => {
           // T5:React 首次 commit（MOS shell 首帧）。供启动分阶段耗时计算 react_commit 段。
           (
@@ -321,6 +375,11 @@ function initializeBusinessRoot(port: MessagePort): void {
           window.dispatchEvent(new Event("zcode-react-startup-ready"));
         },
         shellVersion: __ZCODE_VERSION__,
+        // The Agent Workbench handoff: /workbench* routes mount the substrate
+        // surface behind the MOS chrome (see substrateSurface.tsx).
+        onRequestSubstrateSurface: (surface) => {
+          substrateHost.showSubstrateSurface(surface);
+        },
       });
     },
     (error: unknown) => {

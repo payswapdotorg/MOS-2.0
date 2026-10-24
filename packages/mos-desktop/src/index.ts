@@ -34,3 +34,5 @@ export {
   isAppInternalHref,
   navigateDesktopAppHref,
 } from './routes/desktop-route.js';
+export { workbenchSurfaceFromAppPath } from './routes/workbench-route.js';
+export type { WorkbenchSurface } from './routes/workbench-route.js';

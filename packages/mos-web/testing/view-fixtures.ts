@@ -33,6 +33,35 @@ export const SECTIONS: readonly ShellSectionView[] = [
     availability: { kind: 'available' },
   },
   { id: 'console', label: 'Agent Console', route: '/console', availability: { kind: 'available' } },
+  {
+    id: 'social',
+    label: 'Social Media',
+    route: '/social',
+    availability: { kind: 'available' },
+  },
+  // The AGENT WORKBENCH group (build-ON-ZCode): mirrors the production
+  // desktop composition's rows verbatim.
+  {
+    id: 'workbench',
+    label: 'Workbench',
+    route: '/workbench',
+    availability: { kind: 'available' },
+    group: 'workbench',
+  },
+  {
+    id: 'workbench-automations',
+    label: 'Automations',
+    route: '/workbench/automations',
+    availability: { kind: 'available' },
+    group: 'workbench',
+  },
+  {
+    id: 'workbench-settings',
+    label: 'Settings',
+    route: '/workbench/settings',
+    availability: { kind: 'available' },
+    group: 'workbench',
+  },
   { id: 'studio', label: 'Studio', route: '/studio', availability: { kind: 'available' } },
   {
     id: 'distribution',

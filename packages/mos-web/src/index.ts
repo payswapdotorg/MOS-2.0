@@ -26,7 +26,7 @@
 export type {
   AppShellLoadFailure, AppShellPort, AppShellView,
   ShellMissionStatusView, ShellRecentMissionView,
-  ShellSectionId, ShellSectionView,
+  ShellSectionGroup, ShellSectionId, ShellSectionView,
   SurfaceAvailabilityView, TenantContextView
 } from "./ports/app-shell.js";
 export type {
