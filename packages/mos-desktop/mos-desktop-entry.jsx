@@ -128,11 +128,13 @@ export function bootMosDesktopShell(options) {
     }
   };
   const workbenchTitleFor = (surface) =>
-    surface === 'automations'
-      ? 'MOS — Agent Workbench · Automations'
-      : surface === 'settings'
-        ? 'MOS — Agent Workbench · Settings'
-        : 'MOS — Agent Workbench';
+    surface === 'new-task'
+      ? 'MOS — Agent Workbench · New Task'
+      : surface === 'automations'
+        ? 'MOS — Agent Workbench · Automations'
+        : surface === 'settings'
+          ? 'MOS — Agent Workbench · Settings'
+          : 'MOS — Agent Workbench';
   // Hosts pass their own React root (the desktop renderer pre-creates one
   // for the database-startup admission screen); otherwise this entry owns
   // the root.

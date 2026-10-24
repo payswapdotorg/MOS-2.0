@@ -124,11 +124,14 @@ test('the AGENT WORKBENCH group renders as its own rail section (build-ON-ZCode)
   const group = elementWithTestId(tree, 'shell-workbench-group');
   assert.ok(group, 'the rail renders the Agent Workbench group');
   const groupText = renderTreeText(group);
-  for (const label of ['Workbench', 'Automations', 'Settings']) {
+  for (const label of ['New Task', 'Workbench', 'Automations', 'Settings']) {
     assert.equal(groupText.includes(label), true, `workbench group must show ${label}`);
   }
   // The substrate surfaces are real available links (the desktop host
   // answers their routes by mounting the substrate UI).
+  const newTask = elementWithTestId(tree, 'nav-workbench-new-task');
+  assert.equal(newTask?.type, 'a');
+  assert.equal(newTask?.props.href, '/workbench/new-task');
   const workbench = elementWithTestId(tree, 'nav-workbench');
   assert.equal(workbench?.type, 'a');
   assert.equal(workbench?.props.href, '/workbench');
@@ -294,7 +297,7 @@ test('the section table the shell renders matches the port readiness verdicts', 
   // The composition seam's section table (the §5 target-design rail order,
   // UXR-WC — the Social Media slot between Agent Console and Studio is the
   // UXR social wave's to add) is what the chrome presents; this pins the
-  // ten sections and their verdict kinds. The three AGENT WORKBENCH rows
+  // ten sections and their verdict kinds. The four AGENT WORKBENCH rows
   // (build-ON-ZCode) sit between Social Media and Studio, mirrored from
   // the production desktop composition.
   assert.deepEqual(
@@ -305,6 +308,7 @@ test('the section table the shell renders matches the port readiness verdicts', 
       'lab',
       'console',
       'social',
+      'workbench-new-task',
       'workbench',
       'workbench-automations',
       'workbench-settings',
@@ -316,7 +320,7 @@ test('the section table the shell renders matches the port readiness verdicts', 
       'notifications',
     ],
   );
-  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 11);
+  assert.equal(SECTIONS.filter((section) => section.availability.kind === 'available').length, 12);
 });
 
 test('the shell header presents the mission-activity badge honestly (wave-24 target design)', () => {

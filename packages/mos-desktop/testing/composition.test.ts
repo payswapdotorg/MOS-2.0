@@ -88,14 +88,16 @@ test('the availability verdicts are honest for this release (the §5 target-desi
   // the UXR social wave): home, missions, lab, console, social, studio,
   // distribution, experiments, measurement, connections, notifications.
   // The AGENT WORKBENCH group (build-ON-ZCode) sits between Social Media
-  // and Studio: workbench, workbench-automations, workbench-settings —
-  // the substrate surfaces the desktop host mounts behind the MOS chrome.
+  // and Studio: workbench-new-task, workbench, workbench-automations,
+  // workbench-settings — the substrate surfaces the desktop host mounts
+  // behind the MOS chrome.
   assert.deepEqual(sections, [
     'home',
     'missions',
     'lab',
     'console',
     'social',
+    'workbench-new-task',
     'workbench',
     'workbench-automations',
     'workbench-settings',
@@ -113,10 +115,22 @@ test('the availability verdicts are honest for this release (the §5 target-desi
   // The AGENT WORKBENCH rows are available links in the workbench rail
   // group — the desktop renderer's host answers their routes by mounting
   // the substrate surface (see substrateSurface.tsx).
-  for (const id of ['workbench', 'workbench-automations', 'workbench-settings'] as const) {
+  for (
+    const id of ['workbench-new-task', 'workbench', 'workbench-automations', 'workbench-settings'] as const
+  ) {
     assert.deepEqual(byId.get(id)?.availability, { kind: 'available' }, `${id} is available`);
     assert.equal(byId.get(id)?.group, 'workbench', `${id} renders in the workbench rail group`);
   }
+  assert.equal(
+    byId.get('workbench-new-task')?.label,
+    'New Task',
+    'the substrate new-task rail label',
+  );
+  assert.equal(
+    byId.get('workbench-new-task')?.route,
+    '/workbench/new-task',
+    'the substrate new-task route',
+  );
   assert.equal(
     byId.get('workbench')?.label,
     'Workbench',

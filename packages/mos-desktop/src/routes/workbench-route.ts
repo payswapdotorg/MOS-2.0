@@ -6,18 +6,21 @@
  * package's built dist — the desktop route bridge re-exports it alongside
  * its own parser (see desktop-route.ts).
  *
- * `/workbench` opens the substrate workspace (sessions, groups and
- * projects), `/workbench/automations` the Automations main view,
- * `/workbench/settings` the substrate Settings page. The desktop entry
- * hands these surfaces to the host renderer's `onRequestSubstrateSurface`
- * (see mos-desktop-entry.jsx); the MOS page model is never resolved for
- * these routes.
+ * `/workbench/new-task` opens the substrate's New Task page (a fresh
+ * agent task in the workspace — the app's own new-task affordance),
+ * `/workbench` the substrate workspace (sessions, groups and projects),
+ * `/workbench/automations` the Automations main view, `/workbench/settings`
+ * the substrate Settings page. The desktop entry hands these surfaces to
+ * the host renderer's `onRequestSubstrateSurface` (see
+ * mos-desktop-entry.jsx); the MOS page model is never resolved for these
+ * routes.
  */
 
 /** The substrate surface a workbench route names. */
-export type WorkbenchSurface = 'chat' | 'automations' | 'settings';
+export type WorkbenchSurface = 'new-task' | 'chat' | 'automations' | 'settings';
 
 const WORKBENCH_ROUTE_BY_PATH: Readonly<Record<string, WorkbenchSurface>> = {
+  '/workbench/new-task': 'new-task',
   '/workbench': 'chat',
   '/workbench/': 'chat',
   '/workbench/automations': 'automations',

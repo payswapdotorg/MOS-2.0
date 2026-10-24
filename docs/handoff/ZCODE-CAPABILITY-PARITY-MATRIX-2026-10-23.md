@@ -323,10 +323,11 @@ products' features stay apparent.* Implemented on `main` (the desktop-UX
 rescue branch line) as the **Agent Workbench rail group** + the
 **two-surface desktop host**:
 
-- The MOS rail now carries an **AGENT WORKBENCH** group (Workbench /
-  Automations / Settings) between Social Media and Studio — real available
-  links, not `soon` rows (`packages/mos-desktop/composition/production-app-shell.ts`).
-- `/workbench`, `/workbench/automations`, `/workbench/settings` are answered
+- The MOS rail now carries an **AGENT WORKBENCH** group (New Task /
+  Workbench / Automations / Settings) between Social Media and Studio — real
+  available links, not `soon` rows (`packages/mos-desktop/composition/production-app-shell.ts`).
+- `/workbench/new-task`, `/workbench`, `/workbench/automations`, `/workbench/settings`
+  are answered
   by the desktop renderer host (`packages/desktop/src/renderer/src/substrateSurface.tsx`
   + `main.tsx`): it mounts the ORIGINAL `@zcode/ui` `Root` — with the exact
   pre-swap mount contract (`ZCodeIntlProvider` + launch flags) — into a
@@ -334,11 +335,17 @@ rescue branch line) as the **Agent Workbench rail group** + the
   `#mos-surface`. Both surfaces stay mounted; switching is instant and
   state survives on both sides. A floating **← MOS** control returns to the
   MOS shell at its last route (`mos-desktop-entry.jsx`'s resume controller).
-- Deep entries drive the substrate's OWN affordances (never forked):
-  Automations waits for and clicks the sidebar's real
-  `[data-testid="automations-open"]` entry; Settings dispatches the
-  substrate's OS-convention shortcut (Ctrl+, / ⌘,) bound to the same
-  `openSettingsTab` its header uses.
+- Deep entries drive the substrate's OWN affordances (never forked) and
+  wait TRANSPARENTLY through the substrate's own login gate (its designed
+  first-boot UX — the affordances exist only past the gate, so the driver
+  simply waits, up to 10 minutes, and engages the moment the workspace
+  mounts): New Task waits for and clicks the sidebar's real
+  `[data-testid="task-new-button"]` entry (the app's own new-task action,
+  landing on its New Task page — a fresh task draft); Automations waits for
+  and clicks the sidebar's real `[data-testid="automations-open"]` entry;
+  Settings dispatches the substrate's OS-convention shortcut (Ctrl+, / ⌘,)
+  bound to the same `openSettingsTab` its header uses, once the workspace
+  has mounted.
 - The scroll contract is surface-aware: `html.mos-desktop-shell` applies
   while MOS is visible (§4.2 viewport scrolling) and is removed while the
   substrate is visible (its own pinned-viewport policy, exactly as before
@@ -353,6 +360,7 @@ rescue branch line) as the **Agent Workbench rail group** + the
 | 5 | File/image/media attachments | planned | **integrated (workbench)** | the substrate chat composer's real attachment affordances at `/workbench` |
 | 7 | Terminal / git / developer tooling | preserved (unmounted) | **integrated (workbench)** | the substrate workspace's terminal + git panes at `/workbench` |
 | Automations (scheduled tasks / cron) | preserved (unmounted) | **integrated** | `/workbench/automations` — the Automations main view |
+| New-task page (fresh agent task draft in the workspace) | preserved (unmounted) | **integrated** | `/workbench/new-task` — the substrate's own New Task page (the rail entry clicks the app's own new-task affordance) |
 | Substrate settings (MCP, skills, commands, hooks, browser, computer use) | preserved (unmounted) | **integrated** | `/workbench/settings` |
 
 Rows 3 (embedded browser), 4 (voice — not inherited), 6 (Pay — absent) and
@@ -362,10 +370,17 @@ substrate mounts ONLY through the desktop renderer host
 (`packages/desktop`), which the boundary harness does not scan and which
 always owned that seam.
 
-**Verified (packaged app, CDP):** the three rail entries render and
-navigate; the substrate surface mounts (its own login gate in this
-credential-less sandbox — the owner's real session carries through on
-their machine); the ← MOS control restores the MOS shell (title, scroll
-class, last route); `?route=/workbench*` deep links boot straight into the
-substrate surface; mos-web 498/498, mos-desktop 37/37, desktop policy
-16/16, boundary harness clean.
+**Verified (packaged app, CDP):** the four rail entries render and navigate.
+The substrate's features were driven to EMERGE in this credential-less
+sandbox through the app's OWN designed entry path: WelcomeScreen →
+"Use API key" → "Skip" (writes `providerFamilyDomain`, the app's own
+per-session pass) → the first-boot onboarding (occupation → UI mode →
+preferences) → the full workspace (New task / Automations / Plugin
+Marketplace / Group / Project toggle / Projects / Tasks lists, the chat
+composer's New Task page with its suggestion cards, the Automations main
+view, and the Settings page with MCP Servers / Skills / Commands / Hooks).
+A `?route=/workbench/settings` reload boots to the substrate's own login
+gate; after the skip the PENDING deep entry engaged automatically and the
+Settings page opened — the login-gate-transparent wait proven end-to-end.
+Evidence: `public/mos-desktop/workbench-*.png` (VLM-verified). mos-web
+498/498, mos-desktop 37/37, desktop policy 16/16, boundary harness clean.

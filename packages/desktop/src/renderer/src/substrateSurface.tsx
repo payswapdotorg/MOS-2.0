@@ -36,20 +36,37 @@ import type { createDesktopPlatform } from "./desktopPlatform.js";
  *    document scrolls on the viewport (§4.2).
  *
  * Deep entries are driven through the substrate's OWN affordances — never
- * by forking its internals:
+ * by forking its internals — and wait TRANSPARENTLY through the
+ * substrate's own login gate (its designed first-boot UX: the affordances
+ * only exist once the user has connected an account, restored a session,
+ * or taken the app's own "skip" path):
+ *  - `/workbench/new-task` waits for the workspace sidebar's real
+ *    `[data-testid="task-new-button"]` entry and clicks it — the app's
+ *    own new-task action, landing on its New Task page (a fresh task in
+ *    the workspace);
  *  - `/workbench/automations` waits for the sidebar's real
  *    `[data-testid="automations-open"]` button and clicks it (the app's own
  *    navigation path);
- *  - `/workbench/settings` dispatches the substrate's OS-convention
- *    settings shortcut (Ctrl+, / ⌘,) that `useAppKeyboard` binds to
- *    `openSettingsTab` — the same action the app's own UI uses.
+ *  - `/workbench/settings` waits for the workspace to mount, then
+ *    dispatches the substrate's OS-convention settings shortcut (Ctrl+, /
+ *    ⌘,) that `useAppKeyboard` binds to `openSettingsTab` — the same
+ *    action the app's own UI uses;
+ *  - `/workbench` ("chat") needs no deep entry — the Root boots into the
+ *    workspace view (sessions, groups and projects) by default.
  */
 
 /** The substrate surface a workbench route names. */
-export type WorkbenchSurface = "chat" | "automations" | "settings";
+export type WorkbenchSurface = "new-task" | "chat" | "automations" | "settings";
 
-/** How long the deep-entry driver waits for the substrate UI to boot. */
-const DEEP_ENTRY_TIMEOUT_MS = 30_000;
+/**
+ * How long the deep-entry driver waits for the substrate UI to boot —
+ * INCLUDING the substrate's own login gate: the affordances surface only
+ * after the user connects an account or takes the app's own skip path,
+ * which can take minutes. The wait is passive (a MutationObserver + a
+ * slow poll); when it times out the substrate stays fully usable — the
+ * driver only logs.
+ */
+const DEEP_ENTRY_TIMEOUT_MS = 600_000;
 const DEEP_ENTRY_POLL_INTERVAL_MS = 250;
 
 type DesktopPlatform = ReturnType<typeof createDesktopPlatform>;
@@ -146,48 +163,103 @@ function waitForSelector(selector: string, timeoutMs: number): Promise<HTMLEleme
 }
 
 /** Drives the substrate's OWN affordances to open the requested surface. */
-function driveSubstrateEntry(surface: WorkbenchSurface, isMacDesktop: boolean): void {
+function driveSubstrateEntry(
+  surface: WorkbenchSurface,
+  isMacDesktop: boolean,
+  drivesInFlight: Set<WorkbenchSurface>,
+): void {
+  if (surface === "chat") {
+    // "chat" needs no deep entry — the Root boots into the workspace view
+    // (sessions, groups and projects) by default.
+    return;
+  }
+  // One drive per surface at a time: repeated surface requests while a
+  // drive is still waiting (or has already engaged) must not stack clicks.
+  if (drivesInFlight.has(surface)) {
+    return;
+  }
+  drivesInFlight.add(surface);
+  const driveSettled = (): void => {
+    drivesInFlight.delete(surface);
+  };
   if (surface === "automations") {
     // The substrate sidebar's real Automations entry (the app's own
-    // navigation path — workspaceMainView "automations").
-    void waitForSelector('[data-testid="automations-open"]', DEEP_ENTRY_TIMEOUT_MS)
+    // navigation path — workspaceMainView "automations"). The wait covers
+    // the substrate's own login gate transparently: the button exists only
+    // in the workspace view.
+    waitForSelector('[data-testid="automations-open"]', DEEP_ENTRY_TIMEOUT_MS)
       .then((button) => {
         button.click();
       })
       .catch((error: unknown) => {
         console.error("[substrate-surface] automations deep entry failed", error);
-      });
+      })
+      .finally(driveSettled);
     return;
   }
-  if (surface === "settings") {
-    // The substrate's OS-convention settings shortcut (CmdOrCtrl+Comma) —
-    // `useAppKeyboard` binds it to the same `openSettingsTab` action its own
-    // header/menu entries use. Verified by the settings-page test id below.
-    const dispatchSettingsShortcut = (): boolean => {
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: ",",
-          code: "Comma",
-          ctrlKey: !isMacDesktop,
-          metaKey: isMacDesktop,
-          bubbles: true,
-          cancelable: true,
-        }),
-      );
-      return globalThis.document.querySelector('[data-testid="settings-page"]') !== null;
-    };
-    dispatchSettingsShortcut();
-    // The substrate may still be mid-boot on the first request (the Root
-    // mounts its keyboard listener after React commits) — retry once the
-    // settings surface exists, keeping the shortcut semantics.
-    window.setTimeout(() => {
-      if (globalThis.document.querySelector('[data-testid="settings-page"]') === null) {
-        dispatchSettingsShortcut();
-      }
-    }, 1200);
+  // "new-task" and "settings" both anchor on the workspace having
+  // mounted — the sidebar's real new-task entry (`task-new-button`) is the
+  // workspace-present marker (it renders with the task list, past the
+  // substrate's own login gate).
+  const workspaceMounted = waitForSelector(
+    '[data-testid="task-new-button"]',
+    DEEP_ENTRY_TIMEOUT_MS,
+  );
+  if (surface === "new-task") {
+    workspaceMounted
+      .then((button) => {
+        // The app's own new-task action (the same button its sidebar
+        // renders) — lands on the New Task page: a fresh task draft in the
+        // active workspace.
+        button.click();
+      })
+      .catch((error: unknown) => {
+        console.error("[substrate-surface] new-task deep entry failed", error);
+      })
+      .finally(driveSettled);
+    return;
   }
-  // "chat" needs no deep entry — the Root boots into the workspace view
-  // (sessions, groups and projects) by default.
+  // "settings": the substrate's OS-convention settings shortcut
+  // (CmdOrCtrl+Comma) — `useAppKeyboard` binds it to the same
+  // `openSettingsTab` action its own header/menu entries use. Verified by
+  // the settings-page test id below.
+  workspaceMounted
+    .then(() => {
+      const dispatchSettingsShortcut = (): boolean => {
+        window.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: ",",
+            code: "Comma",
+            ctrlKey: !isMacDesktop,
+            metaKey: isMacDesktop,
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+        return globalThis.document.querySelector('[data-testid="settings-page"]') !== null;
+      };
+      if (!dispatchSettingsShortcut()) {
+        // The keyboard listener may bind a tick after the workspace mounts
+        // — retry the shortcut semantics a few times before giving up.
+        let attemptsRemaining = 5;
+        const retry = (): void => {
+          if (
+            globalThis.document.querySelector('[data-testid="settings-page"]') !== null ||
+            attemptsRemaining <= 0
+          ) {
+            return;
+          }
+          attemptsRemaining -= 1;
+          dispatchSettingsShortcut();
+          window.setTimeout(retry, 1200);
+        };
+        window.setTimeout(retry, 1200);
+      }
+    })
+    .catch((error: unknown) => {
+      console.error("[substrate-surface] settings deep entry failed", error);
+    })
+    .finally(driveSettled);
 }
 
 export interface SubstrateSurfaceHost {
@@ -218,6 +290,8 @@ export function createSubstrateSurfaceHost(
 
   let substrateRoot: Root | null = null;
   let substrateVisible = false;
+  // One deep-entry drive per surface at a time (see driveSubstrateEntry).
+  const drivesInFlight = new Set<WorkbenchSurface>();
 
   const applyDocumentPolicy = (): void => {
     // The shell-swap scroll contract (§4.2): the MOS document chain scrolls
@@ -270,7 +344,7 @@ export function createSubstrateSurfaceHost(
     mosSurface.style.display = "none";
     substrateSurface.style.display = "block";
     applyDocumentPolicy();
-    driveSubstrateEntry(surface, options.isMacDesktop);
+    driveSubstrateEntry(surface, options.isMacDesktop, drivesInFlight);
   };
 
   const hideSubstrateSurface = (): void => {

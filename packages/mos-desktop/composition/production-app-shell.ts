@@ -114,10 +114,18 @@ const SECTION_TABLE: readonly {
    * the substrate's best surfaces as first-class MOS navigation. These
    * routes are answered by the DESKTOP RENDERER host (the entry calls the
    * host's `onRequestSubstrateSurface` and the host mounts the original
-   * substrate UI — sessions/groups workspace, Automations main view,
-   * substrate Settings — behind the MOS chrome). The shell stays
-   * presentation-only: it renders these rows like any other section link.
+   * substrate UI — the New Task page, the sessions/groups workspace, the
+   * Automations main view, the substrate Settings — behind the MOS
+   * chrome). The shell stays presentation-only: it renders these rows
+   * like any other section link.
    */
+  {
+    id: 'workbench-new-task',
+    label: 'New Task',
+    route: '/workbench/new-task',
+    availability: { kind: 'available' },
+    group: 'workbench',
+  },
   {
     id: 'workbench',
     label: 'Workbench',

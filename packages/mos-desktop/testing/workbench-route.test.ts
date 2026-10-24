@@ -16,12 +16,14 @@ test('workbenchSurfaceFromAppPath resolves the substrate surface routes', () => 
   assert.equal(workbenchSurfaceFromAppPath('/workbench'), 'chat');
   assert.equal(workbenchSurfaceFromAppPath('/workbench/'), 'chat');
   assert.equal(workbenchSurfaceFromAppPath('workbench'), 'chat');
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/new-task'), 'new-task');
   assert.equal(workbenchSurfaceFromAppPath('/workbench/automations'), 'automations');
   assert.equal(workbenchSurfaceFromAppPath('/workbench/settings'), 'settings');
   // Trailing slashes and query strings are tolerated.
   assert.equal(workbenchSurfaceFromAppPath('/workbench/automations/'), 'automations');
   assert.equal(workbenchSurfaceFromAppPath('/workbench?focus=default'), 'chat');
   assert.equal(workbenchSurfaceFromAppPath('/workbench/settings?section=mcp'), 'settings');
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/new-task?draft=1'), 'new-task');
 });
 
 test('workbenchSurfaceFromAppPath rejects non-workbench paths (MOS routes resolve normally)', () => {
@@ -32,5 +34,7 @@ test('workbenchSurfaceFromAppPath rejects non-workbench paths (MOS routes resolv
   assert.equal(workbenchSurfaceFromAppPath('/workbench/unknown'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbenches'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/settingsx'), null);
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/new-tasks'), null);
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/new-task/extra'), null);
   assert.equal(workbenchSurfaceFromAppPath(''), null);
 });

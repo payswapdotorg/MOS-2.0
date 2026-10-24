@@ -33,13 +33,15 @@ export type ShellSectionId =
   | 'experiments'
   /**
    * The AGENT WORKBENCH group (the owner's build-ON-ZCode directive): the
-   * substrate's best surfaces — the session/group/project workspace, the
-   * Automations main view, and the substrate Settings — presented as
-   * first-class MOS navigation. The DESKTOP composition binds these rows;
-   * the host renderer answers their routes by mounting the substrate
-   * surface (the shell itself never imports substrate code — the boundary
-   * stays presentation-only, the desktop entry owns the handoff).
+   * substrate's best surfaces — the New Task page (a fresh agent task in
+   * the workspace), the session/group/project workspace, the Automations
+   * main view, and the substrate Settings — presented as first-class MOS
+   * navigation. The DESKTOP composition binds these rows; the host
+   * renderer answers their routes by mounting the substrate surface (the
+   * shell itself never imports substrate code — the boundary stays
+   * presentation-only, the desktop entry owns the handoff).
    */
+  | 'workbench-new-task'
   | 'workbench'
   | 'workbench-automations'
   | 'workbench-settings';

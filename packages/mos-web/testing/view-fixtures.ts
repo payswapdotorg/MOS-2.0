@@ -42,6 +42,13 @@ export const SECTIONS: readonly ShellSectionView[] = [
   // The AGENT WORKBENCH group (build-ON-ZCode): mirrors the production
   // desktop composition's rows verbatim.
   {
+    id: 'workbench-new-task',
+    label: 'New Task',
+    route: '/workbench/new-task',
+    availability: { kind: 'available' },
+    group: 'workbench',
+  },
+  {
     id: 'workbench',
     label: 'Workbench',
     route: '/workbench',

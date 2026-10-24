@@ -152,6 +152,7 @@ const SECTION_ICON_PATHS: Record<string, readonly string[]> = {
   social: ['M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z', 'M10 9l6 3-6 3z'],
   notifications: ['M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9', 'M10.3 21a1.94 1.94 0 0 0 3.4 0'],
   // The Agent Workbench group (build-ON-ZCode): the substrate surfaces.
+  'workbench-new-task': ['M7.9 20A9 9 0 1 0 4 16.1L2 22Z', 'M8 12h8', 'M12 8v8'],
   workbench: ['M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-5 4z', 'M8 9.5h8', 'M8 12h5'],
   'workbench-automations': ['M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6', 'M3 5.5A2.5 2.5 0 0 1 5.5 3H10', 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7', 'M12 10.5V12l1 1'],
   'workbench-settings': ['M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7', 'M12 2.5v2.5', 'M12 19v2.5', 'M2.5 12H5', 'M19 12h2.5', 'M5.3 5.3l1.8 1.8', 'M16.9 16.9l1.8 1.8', 'M18.7 5.3l-1.8 1.8', 'M7.1 16.9l-1.8 1.8'],
