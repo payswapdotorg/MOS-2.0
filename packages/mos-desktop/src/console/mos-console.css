@@ -1,0 +1,1616 @@
+/*
+ * The MOS console design layer (W32 — the payswap parallel-token law):
+ * every console surface renders mosc-* under mosc-theme-light /
+ * mosc-theme-dark — never cross-wired with the substrate's tokens.
+ *
+ * The palette: cool-stone neutrals (#f7f9fb canvas / #16263a ink), an
+ * EMERALD-ONLY accent (#0e8066 → #07966e — the concept gradient on
+ * primary actions), amber for ATTENTION and UNKNOWN, red for FAILURE
+ * only, slate for neutral states. No blue anywhere in the primary
+ * system.
+ */
+
+/* --------------------------------------------------------------------
+ * The token system
+ * -------------------------------------------------------------------- */
+
+.mosc-theme-light {
+  --mosc-canvas: #f7f9fb;
+  --mosc-surface: #ffffff;
+  --mosc-surface-sunken: #f1f4f8;
+  --mosc-ink: #16263a;
+  --mosc-ink-soft: #46596e;
+  --mosc-ink-faint: #7c8da0;
+  --mosc-line: #dde4ec;
+  --mosc-line-soft: #e9eef4;
+  --mosc-accent: #0e8066;
+  --mosc-accent-strong: #07966e;
+  --mosc-accent-ink: #ffffff;
+  --mosc-accent-wash: #e8f5f0;
+  --mosc-accent-line: #b9e2d5;
+  --mosc-attention: #a25e09;
+  --mosc-attention-wash: #fdf3e3;
+  --mosc-attention-line: #ecd3a8;
+  --mosc-failure: #b3261e;
+  --mosc-failure-wash: #fdeceb;
+  --mosc-failure-line: #f0c5c2;
+  --mosc-neutral-wash: #eef2f6;
+  --mosc-neutral-line: #dbe2ea;
+  --mosc-sim-wash: #f4f0fa;
+  --mosc-sim-line: #ddd2ef;
+  --mosc-sim-ink: #5b4a86;
+  --mosc-shadow: 0 1px 2px rgb(22 38 58 / 0.05), 0 4px 14px rgb(22 38 58 / 0.06);
+  --mosc-shadow-lift: 0 2px 6px rgb(22 38 58 / 0.08), 0 12px 34px rgb(22 38 58 / 0.14);
+  color-scheme: light;
+}
+
+.mosc-theme-dark {
+  --mosc-canvas: #0f1826;
+  --mosc-surface: #172335;
+  --mosc-surface-sunken: #1e2c41;
+  --mosc-ink: #e8eef6;
+  --mosc-ink-soft: #b6c3d4;
+  --mosc-ink-faint: #8598ad;
+  --mosc-line: #2b3c54;
+  --mosc-line-soft: #243349;
+  --mosc-accent: #12a37f;
+  --mosc-accent-strong: #19bd93;
+  --mosc-accent-ink: #04120d;
+  --mosc-accent-wash: #12312a;
+  --mosc-accent-line: #1d4a3d;
+  --mosc-attention: #e5a54b;
+  --mosc-attention-wash: #33270f;
+  --mosc-attention-line: #4d3b17;
+  --mosc-failure: #ef8a84;
+  --mosc-failure-wash: #3a1d1c;
+  --mosc-failure-line: #572826;
+  --mosc-neutral-wash: #1e2c41;
+  --mosc-neutral-line: #2b3c54;
+  --mosc-sim-wash: #252040;
+  --mosc-sim-line: #3a3163;
+  --mosc-sim-ink: #b9a8e6;
+  --mosc-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.35);
+  --mosc-shadow-lift: 0 2px 6px rgb(0 0 0 / 0.45), 0 12px 34px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------------------
+ * The root + shell layout (the sticky-footer law: the main column is a
+ * flex column with the footer at mt-auto — it sticks on short pages
+ * and is pushed naturally on long ones)
+ * -------------------------------------------------------------------- */
+
+.mosc-root {
+  background: var(--mosc-canvas);
+  color: var(--mosc-ink);
+  font-family: inherit;
+  min-height: 100dvh;
+}
+
+.mosc-shell {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.mosc-main-column {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mosc-main {
+  flex: 1 1 auto;
+  /* Clearance for the floating agent dock + panel (the standard
+     floating-widget posture: content never hides behind the rail). */
+  padding: 1.75rem 2rem 11rem;
+}
+
+.mosc-footer {
+  margin-top: auto;
+  padding: 1.1rem 2rem 1.4rem;
+  padding-bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--mosc-line-soft);
+  background: var(--mosc-canvas);
+}
+
+.mosc-footer-line {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--mosc-ink-faint);
+  max-width: 70rem;
+}
+
+.mosc-footer-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--mosc-ink-soft);
+}
+
+/* --------------------------------------------------------------------
+ * The sidebar
+ * -------------------------------------------------------------------- */
+
+.mosc-sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 15rem;
+  border-right: 1px solid var(--mosc-line-soft);
+  background: var(--mosc-surface);
+  position: sticky;
+  top: 0;
+  max-height: 100dvh;
+  overflow-y: auto;
+  padding: 1.1rem 0.8rem 1rem;
+  scrollbar-width: thin;
+}
+
+.mosc-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.15rem 0.45rem 1rem;
+  align-items: center;
+}
+
+.mosc-brand-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.mosc-brand-name {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--mosc-ink);
+}
+
+.mosc-brand-frame {
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nav-group-label {
+  margin: 0.9rem 0.6rem 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosc-nav-item--pinned {
+  margin-top: 0.1rem;
+}
+
+.mosc-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--mosc-ink-soft);
+  font-size: 0.86rem;
+  font-weight: 550;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.mosc-nav-link:hover {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink);
+}
+
+.mosc-nav-link:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+}
+
+.mosc-nav-link.is-active {
+  background: var(--mosc-accent-wash);
+  color: var(--mosc-accent);
+  font-weight: 650;
+}
+
+.mosc-nav-link--workbench {
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nav-link--workbench:hover {
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-nav-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: currentColor;
+  opacity: 0.9;
+}
+
+.mosc-nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mosc-nav-divider {
+  height: 1px;
+  margin: 0.85rem 0.6rem;
+  background: var(--mosc-line-soft);
+}
+
+.mosc-sidebar-foot {
+  margin: auto 0.6rem 0.25rem;
+  padding-top: 0.9rem;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--mosc-ink-faint);
+}
+
+/* --------------------------------------------------------------------
+ * The mobile section row (hidden at lg+; the sidebar's counterpart)
+ * -------------------------------------------------------------------- */
+
+.mosc-sectionnav {
+  display: none;
+}
+
+/* --------------------------------------------------------------------
+ * The section scaffold
+ * -------------------------------------------------------------------- */
+
+.mosc-section {
+  max-width: 74rem;
+  margin: 0 auto;
+}
+
+.mosc-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.mosc-section-header--aside {
+  align-items: center;
+}
+
+.mosc-eyebrow {
+  margin: 0 0 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mosc-accent);
+}
+
+.mosc-section-title {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--mosc-ink);
+}
+
+.mosc-section-lede {
+  margin: 0.45rem 0 0;
+  max-width: 58rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.1rem;
+}
+
+/* --------------------------------------------------------------------
+ * Cards
+ * -------------------------------------------------------------------- */
+
+.mosc-card {
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.85rem;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow);
+  padding: 1.15rem 1.25rem 1.2rem;
+}
+
+.mosc-card + .mosc-card,
+.mosc-card + .mosc-reference,
+.mosc-reference + .mosc-card,
+.mosc-reference + .mosc-reference {
+  margin-top: 1.1rem;
+}
+
+.mosc-overview-grid > .mosc-card,
+.mosc-overview-grid > .mosc-reference {
+  margin-top: 0;
+}
+
+.mosc-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.mosc-card-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--mosc-ink);
+}
+
+.mosc-card-note {
+  margin: 0 0 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-line {
+  margin: 0.2rem 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-honesty-line {
+  margin: 0.75rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--mosc-line);
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------------------------
+ * Pills (the typed-state vocabulary — text first, tone second)
+ * -------------------------------------------------------------------- */
+
+.mosc-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.16rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.mosc-pill--ok {
+  background: var(--mosc-accent-wash);
+  border-color: var(--mosc-accent-line);
+  color: var(--mosc-accent);
+}
+
+.mosc-pill--attention {
+  background: var(--mosc-attention-wash);
+  border-color: var(--mosc-attention-line);
+  color: var(--mosc-attention);
+}
+
+.mosc-pill--unknown {
+  background: var(--mosc-attention-wash);
+  border-color: var(--mosc-attention-line);
+  color: var(--mosc-attention);
+}
+
+.mosc-pill--failure {
+  background: var(--mosc-failure-wash);
+  border-color: var(--mosc-failure-line);
+  color: var(--mosc-failure);
+}
+
+.mosc-pill--neutral {
+  background: var(--mosc-neutral-wash);
+  border-color: var(--mosc-neutral-line);
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-pill--simulation {
+  background: var(--mosc-sim-wash);
+  border-color: var(--mosc-sim-line);
+  color: var(--mosc-sim-ink);
+}
+
+.mosc-pill--info {
+  background: var(--mosc-neutral-wash);
+  border-color: var(--mosc-neutral-line);
+  color: var(--mosc-ink);
+}
+
+/* --------------------------------------------------------------------
+ * Buttons
+ * -------------------------------------------------------------------- */
+
+.mosc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: filter 140ms ease, background-color 140ms ease, border-color 140ms ease;
+}
+
+.mosc-button:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 2px;
+}
+
+.mosc-button--sm {
+  padding: 0.34rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+.mosc-button--primary {
+  /* The concept gradient: the one place the emerald family graduates. */
+  background: linear-gradient(135deg, var(--mosc-accent), var(--mosc-accent-strong));
+  color: var(--mosc-accent-ink);
+}
+
+.mosc-button--primary:hover {
+  filter: brightness(1.06);
+}
+
+.mosc-button--ghost {
+  background: var(--mosc-surface);
+  border-color: var(--mosc-neutral-line);
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-button--ghost:hover {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink);
+}
+
+/* --------------------------------------------------------------------
+ * Forms
+ * -------------------------------------------------------------------- */
+
+.mosc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.mosc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+  gap: 0.8rem;
+}
+
+.mosc-form-grid--tail {
+  align-items: end;
+}
+
+.mosc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.mosc-field--actions {
+  justify-content: flex-end;
+}
+
+.mosc-field-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-field-hint {
+  margin: 0;
+  font-size: 0.71rem;
+  line-height: 1.45;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-input {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.5rem;
+  background: var(--mosc-surface);
+  color: var(--mosc-ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  min-width: 0;
+}
+
+.mosc-input::placeholder {
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-input:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+  border-color: var(--mosc-accent);
+}
+
+.mosc-input--sm {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+.mosc-textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.mosc-select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--mosc-ink-faint) 50%),
+    linear-gradient(135deg, var(--mosc-ink-faint) 50%, transparent 50%);
+  background-position: calc(100% - 1.15rem) 55%, calc(100% - 0.85rem) 55%;
+  background-size: 0.3rem 0.3rem;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}
+
+.mosc-inline-form {
+  display: inline-flex;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+  align-items: center;
+}
+
+.mosc-receipt {
+  margin: 0.7rem 0 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.mosc-receipt--ok {
+  background: var(--mosc-accent-wash);
+  border: 1px solid var(--mosc-accent-line);
+  color: var(--mosc-accent);
+}
+
+.mosc-receipt--attention {
+  background: var(--mosc-attention-wash);
+  border: 1px solid var(--mosc-attention-line);
+  color: var(--mosc-attention);
+}
+
+/* --------------------------------------------------------------------
+ * The outcome cards (the typed action set)
+ * -------------------------------------------------------------------- */
+
+.mosc-outcome-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.9rem;
+}
+
+.mosc-outcome-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.85rem;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.mosc-outcome-card:hover {
+  border-color: var(--mosc-accent-line);
+  transform: translateY(-1px);
+  box-shadow: var(--mosc-shadow-lift);
+}
+
+.mosc-outcome-card:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 2px;
+}
+
+.mosc-outcome-label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--mosc-accent);
+}
+
+.mosc-outcome-line {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--mosc-ink-soft);
+}
+
+/* --------------------------------------------------------------------
+ * Attention list (the pending gates)
+ * -------------------------------------------------------------------- */
+
+.mosc-attention-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosc-attention-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--mosc-attention-line);
+  border-radius: 0.6rem;
+  background: var(--mosc-attention-wash);
+}
+
+.mosc-attention-line {
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--mosc-ink);
+}
+
+.mosc-attention-actions {
+  display: inline-flex;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------
+ * Registries + timeline
+ * -------------------------------------------------------------------- */
+
+.mosc-registry {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosc-registry-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.2rem;
+  border-bottom: 1px solid var(--mosc-line-soft);
+}
+
+.mosc-registry-row:last-child {
+  border-bottom: 0;
+}
+
+.mosc-registry-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.mosc-registry-main strong {
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--mosc-ink);
+}
+
+.mosc-registry-meta {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-registry-meta--dim {
+  color: var(--mosc-ink-faint);
+  font-size: 0.72rem;
+}
+
+.mosc-registry-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.mosc-sim-line {
+  margin-top: 0.2rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.45rem;
+  border: 1px dashed var(--mosc-sim-line);
+  background: var(--mosc-sim-wash);
+  color: var(--mosc-sim-ink);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.mosc-timeline {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosc-timeline-row {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.42rem 0.1rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  border-bottom: 1px dashed var(--mosc-line-soft);
+}
+
+.mosc-timeline-row:last-child {
+  border-bottom: 0;
+}
+
+.mosc-timeline-when {
+  flex-shrink: 0;
+  min-width: 8.2rem;
+  color: var(--mosc-ink-faint);
+  font-size: 0.72rem;
+}
+
+.mosc-timeline-kind {
+  flex-shrink: 0;
+  color: var(--mosc-accent);
+  font-weight: 650;
+  font-size: 0.72rem;
+}
+
+.mosc-timeline--long {
+  max-height: 26rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* --------------------------------------------------------------------
+ * The capability matrix
+ * -------------------------------------------------------------------- */
+
+.mosc-matrix-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.mosc-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.mosc-matrix th,
+.mosc-matrix td {
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--mosc-line-soft);
+  text-align: left;
+}
+
+.mosc-matrix thead th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-matrix tbody th {
+  font-weight: 650;
+  color: var(--mosc-ink);
+  white-space: nowrap;
+}
+
+.mosc-matrix-cell {
+  white-space: nowrap;
+}
+
+.mosc-matrix-cell--supported {
+  color: var(--mosc-accent);
+  font-weight: 600;
+}
+
+.mosc-matrix-cell--unknown {
+  color: var(--mosc-attention);
+  font-weight: 600;
+}
+
+.mosc-matrix-cell--unsupported {
+  color: var(--mosc-failure);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------
+ * Channels + budget row + vocab lists
+ * -------------------------------------------------------------------- */
+
+.mosc-channel-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosc-channel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.6rem;
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-channel-name {
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: var(--mosc-ink);
+}
+
+.mosc-budget-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.mosc-budget-value {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--mosc-ink);
+}
+
+.mosc-vocab-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.35rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosc-vocab-row {
+  font-size: 0.78rem;
+  color: var(--mosc-ink-soft);
+  padding: 0.18rem 0;
+  border-bottom: 1px dotted var(--mosc-line-soft);
+}
+
+/* --------------------------------------------------------------------
+ * The reference cards + facts
+ * -------------------------------------------------------------------- */
+
+.mosc-reference-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0.4rem 0 0;
+}
+
+.mosc-reference-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 16rem) 1fr;
+  gap: 0.4rem 1.1rem;
+}
+
+.mosc-reference-term {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--mosc-ink);
+}
+
+.mosc-reference-line {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-facts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.mosc-facts-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px dashed var(--mosc-line-soft);
+}
+
+.mosc-facts-term {
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-facts-value {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--mosc-ink);
+}
+
+/* --------------------------------------------------------------------
+ * Connections: the provider grid + two-lane + laws + rail
+ * -------------------------------------------------------------------- */
+
+.mosc-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
+  gap: 0.9rem;
+}
+
+.mosc-provider-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.85rem;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow);
+}
+
+.mosc-provider-card--primary {
+  border-color: var(--mosc-accent-line);
+  box-shadow: 0 0 0 1px var(--mosc-accent-wash), var(--mosc-shadow);
+}
+
+.mosc-provider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.mosc-provider-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--mosc-ink);
+}
+
+.mosc-provider-line {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.5;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-provider-domain {
+  margin: 0;
+  font-size: 0.73rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-provider-domain code {
+  font-size: 0.73rem;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-provider-card .mosc-button {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.mosc-two-lane {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 1.1rem;
+  margin-top: 1.1rem;
+}
+
+.mosc-two-lane > .mosc-card {
+  margin-top: 0;
+}
+
+.mosc-domain-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.7rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--mosc-accent-line);
+  border-radius: 999px;
+  background: var(--mosc-accent-wash);
+  font-size: 0.8rem;
+}
+
+.mosc-domain-pill-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--mosc-accent);
+}
+
+.mosc-domain-pill code {
+  font-weight: 650;
+  color: var(--mosc-ink);
+}
+
+.mosc-law-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  list-style: none;
+}
+
+.mosc-law-row {
+  position: relative;
+  padding-left: 1.3rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-law-row::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--mosc-accent);
+  font-weight: 800;
+}
+
+.mosc-rail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rail;
+}
+
+.mosc-rail-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--mosc-line-soft);
+  border-left: 3px solid var(--mosc-accent);
+  border-radius: 0.5rem;
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-rail-step-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--mosc-ink);
+}
+
+.mosc-rail-step-hint {
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-concept-disclaimer {
+  margin: 1.1rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px dashed var(--mosc-attention-line);
+  border-radius: 0.6rem;
+  background: var(--mosc-attention-wash);
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--mosc-attention);
+}
+
+/* --------------------------------------------------------------------
+ * The floating agent experience
+ * -------------------------------------------------------------------- */
+
+.mosc-agent {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+  pointer-events: none;
+}
+
+.mosc-agent > * {
+  pointer-events: auto;
+}
+
+.mosc-agent-guidance {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  max-width: 22rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.65rem;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow-lift);
+}
+
+.mosc-agent-guidance-line {
+  margin: 0;
+  font-size: 0.73rem;
+  line-height: 1.5;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-agent-guidance-dismiss {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mosc-ink-faint);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.mosc-agent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  max-width: 24rem;
+}
+
+.mosc-agent-chip {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--mosc-neutral-line);
+  border-radius: 999px;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow);
+  color: var(--mosc-ink-soft);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.mosc-agent-chip:hover {
+  border-color: var(--mosc-accent-line);
+  color: var(--mosc-accent);
+}
+
+.mosc-agent-chip:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 2px;
+}
+
+.mosc-agent-chip--connect {
+  border-color: var(--mosc-accent-line);
+  color: var(--mosc-accent);
+}
+
+.mosc-agent-dock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.05rem 0.55rem 0.6rem;
+  border: 0;
+  border-radius: 999px;
+  /* The concept gradient — the dock is the agent's presence. */
+  background: linear-gradient(135deg, var(--mosc-accent), var(--mosc-accent-strong));
+  color: var(--mosc-accent-ink);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 750;
+  box-shadow: var(--mosc-shadow-lift);
+  cursor: pointer;
+}
+
+.mosc-agent-dock:hover {
+  filter: brightness(1.06);
+}
+
+.mosc-agent-dock:focus-visible {
+  outline: 2px solid var(--mosc-accent-strong);
+  outline-offset: 2px;
+}
+
+.mosc-agent-dock-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.24);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.mosc-agent-panel {
+  position: absolute;
+  right: 0;
+  bottom: 4.4rem;
+  display: flex;
+  flex-direction: column;
+  width: min(24.5rem, calc(100vw - 2.8rem));
+  max-height: min(34rem, calc(100dvh - 8rem));
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.95rem;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow-lift);
+  overflow: hidden;
+}
+
+.mosc-agent-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--mosc-line-soft);
+}
+
+.mosc-agent-panel-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: var(--mosc-ink);
+}
+
+.mosc-agent-panel-close {
+  border: 0;
+  background: transparent;
+  color: var(--mosc-ink-faint);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.35rem;
+}
+
+.mosc-agent-panel-close:hover {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink);
+}
+
+.mosc-agent-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem 1rem 0.4rem;
+}
+
+.mosc-agent-task {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--mosc-line-soft);
+  border-radius: 0.55rem;
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-agent-task--attention {
+  border-color: var(--mosc-attention-line);
+  background: var(--mosc-attention-wash);
+}
+
+.mosc-agent-task strong {
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: var(--mosc-ink);
+}
+
+.mosc-agent-task span {
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-agent-transcript {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0.6rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  scrollbar-width: thin;
+}
+
+.mosc-agent-transcript-empty {
+  margin: 0.3rem 0;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-agent-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: 0.14rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.7rem;
+  max-width: 88%;
+}
+
+.mosc-agent-bubble--user {
+  align-self: flex-end;
+  background: var(--mosc-accent-wash);
+  border: 1px solid var(--mosc-accent-line);
+}
+
+.mosc-agent-bubble--mos {
+  align-self: flex-start;
+  background: var(--mosc-neutral-wash);
+  border: 1px solid var(--mosc-neutral-line);
+}
+
+.mosc-agent-bubble-role {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-agent-bubble-text {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.5;
+  color: var(--mosc-ink);
+}
+
+.mosc-agent-bubble-when {
+  font-size: 0.65rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-agent-composer {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.7rem 1rem 0.6rem;
+  border-top: 1px solid var(--mosc-line-soft);
+}
+
+.mosc-agent-input {
+  flex: 1 1 auto;
+}
+
+.mosc-agent-zero-authority {
+  margin: 0;
+  padding: 0.55rem 1rem 0.7rem;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--mosc-ink-faint);
+  border-top: 1px dashed var(--mosc-line-soft);
+}
+
+/* --------------------------------------------------------------------
+ * The empty state
+ * -------------------------------------------------------------------- */
+
+.mosc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 1.1rem 1.15rem;
+  border: 1px dashed var(--mosc-neutral-line);
+  border-radius: 0.75rem;
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-empty-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--mosc-ink);
+}
+
+.mosc-empty-description {
+  margin: 0 0 0.4rem;
+  font-size: 0.79rem;
+  line-height: 1.55;
+  color: var(--mosc-ink-soft);
+}
+
+/* --------------------------------------------------------------------
+ * Scrollbars + reduced motion
+ * -------------------------------------------------------------------- */
+
+.mosc-sidebar::-webkit-scrollbar,
+.mosc-agent-transcript::-webkit-scrollbar,
+.mosc-timeline--long::-webkit-scrollbar,
+.mosc-matrix-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.mosc-sidebar::-webkit-scrollbar-thumb,
+.mosc-agent-transcript::-webkit-scrollbar-thumb,
+.mosc-timeline--long::-webkit-scrollbar-thumb,
+.mosc-matrix-scroll::-webkit-scrollbar-thumb {
+  background: var(--mosc-neutral-line);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosc-nav-link,
+  .mosc-button,
+  .mosc-outcome-card,
+  .mosc-agent-chip,
+  .mosc-agent-dock {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------
+ * Responsive: below lg the sidebar yields to the horizontal section
+ * row; the main padding tightens; the agent rail keeps its clearance.
+ * -------------------------------------------------------------------- */
+
+@media (max-width: 1023px) {
+  .mosc-sidebar {
+    display: none;
+  }
+
+  .mosc-sectionnav {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--mosc-canvas);
+    border-bottom: 1px solid var(--mosc-line-soft);
+    padding: 0.55rem 0.9rem;
+  }
+
+  .mosc-sectionnav-list {
+    display: flex;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .mosc-sectionnav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--mosc-ink-soft);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .mosc-sectionnav-link.is-active {
+    background: var(--mosc-accent-wash);
+    border-color: var(--mosc-accent-line);
+    color: var(--mosc-accent);
+  }
+
+  .mosc-sectionnav-link:focus-visible {
+    outline: 2px solid var(--mosc-accent);
+    outline-offset: 1px;
+  }
+
+  .mosc-shell {
+    flex-direction: column;
+  }
+
+  .mosc-main {
+    padding: 1.2rem 1rem 10rem;
+  }
+
+  .mosc-footer {
+    padding: 1rem 1rem 1.2rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mosc-section-title {
+    font-size: 1.4rem;
+  }
+
+  .mosc-section-header {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .mosc-agent-guidance {
+    display: none;
+  }
+
+  .mosc-agent {
+    right: 0.9rem;
+    bottom: 0.9rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .mosc-outcome-cards,
+  .mosc-budget-row {
+    grid-template-columns: 1fr;
+  }
+
+  .mosc-registry-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mosc-registry-side {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .mosc-attention-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

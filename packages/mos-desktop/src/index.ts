@@ -36,3 +36,65 @@ export {
 } from './routes/desktop-route.js';
 export { workbenchSurfaceFromAppPath } from './routes/workbench-route.js';
 export type { WorkbenchSurface } from './routes/workbench-route.js';
+
+// ---- The MOS console (W32 — the payswap-pattern product surface) ----
+export {
+  MOS_ACTION_SET,
+  MOS_CONSOLE_SECTIONS,
+  MOS_WORKBENCH_NAV_ITEMS,
+  mosAction,
+  mosConsoleSection,
+  mosConsoleSectionFromPath,
+  mosConsoleSectionPath,
+  mosConsoleSectionTitle,
+} from './console/console-nav.js';
+export type {
+  MosActionDescriptor,
+  MosActionId,
+  MosConsoleSectionId,
+  MosConsoleSectionRecord,
+  MosWorkbenchNavDescriptor,
+} from './console/console-nav.js';
+export {
+  MOS_PROVIDER_CATALOGUE,
+  MOS_REWARD_METRIC_VOCABULARY,
+  MOS_SOCIAL_CAPABILITY_MATRIX,
+  MOS_SOCIAL_PLATFORMS,
+  MOS_AD_PLATFORMS,
+  MOS_MISSION_DIRECTIONS,
+  MOS_WORKSPACE_DURABILITY_FACT,
+  MOS_WORKSPACE_STORE_KEY,
+  createMosWorkspaceStore,
+  MosWorkspaceStoreError,
+} from './console/workspace-store.js';
+export type {
+  MosCampaignIntakeInput,
+  MosMissionDirection,
+  MosMissionIntakeInput,
+  MosPostComposerInput,
+  MosWorkspaceAccount,
+  MosWorkspaceApproval,
+  MosWorkspaceCampaign,
+  MosWorkspaceEvent,
+  MosWorkspaceMission,
+  MosWorkspacePost,
+  MosWorkspaceSnapshot,
+  MosWorkspaceStorage,
+  MosWorkspaceStore,
+  MosWorkspaceStoreHealth,
+  MosWorkspaceStoreOptions,
+} from './console/workspace-store.js';
+export { MosConsoleApp } from './console/console-app.js';
+export type {
+  MosConsoleAppProps,
+  MosConsoleController,
+  MosConsoleReceipts,
+} from './console/console-app.js';
+export {
+  MOS_AGENT_UNKNOWN_REPLY,
+  routeMosAgentText,
+} from './console/agent-routing.js';
+export type { MosAgentReply } from './console/agent-routing.js';
+export type { MosAgentTranscriptEntry } from './console/agent-rail.js';
+export type { MosMissionPrefill } from './console/sections/missions-section.js';
+
