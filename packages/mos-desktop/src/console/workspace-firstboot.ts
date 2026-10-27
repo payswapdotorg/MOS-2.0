@@ -23,6 +23,8 @@ interface MutableWorkspaceSeed {
   accounts: MosWorkspacePersisted['accounts'];
   events: MosWorkspacePersisted['events'];
   approvals: MosWorkspacePersisted['approvals'];
+  tasks: MosWorkspacePersisted['tasks'];
+  modelSettings: MosWorkspacePersisted['modelSettings'];
 }
 
 /**
@@ -46,6 +48,8 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
     accounts: [],
     events: [],
     approvals: [],
+    tasks: [],
+    modelSettings: { disabledModelIds: [] },
   };
   const bump = (): number => {
     const seq = nextSeq;

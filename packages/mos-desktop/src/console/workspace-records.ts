@@ -96,6 +96,37 @@ export interface MosWorkspaceApproval {
   readonly createdAt: string;
 }
 
+/**
+ * An agent task record (W35 — the New Task page's honest write): a task
+ * DRAFT composed on the emerged surface (title derived from the prompt,
+ * model + mode + mission context frozen at send). The substrate runs the
+ * task when an account is connected; this record is the workspace intent.
+ */
+export interface MosWorkspaceTask {
+  readonly id: string;
+  readonly seq: number;
+  readonly title: string;
+  readonly prompt: string;
+  readonly modelId: string;
+  readonly connectionMode: string;
+  readonly mode: string;
+  readonly planEnabled: boolean;
+  readonly reasoningLevel: string;
+  readonly missionId: string | null;
+  readonly status: 'DRAFT';
+  readonly createdAt: string;
+}
+
+/**
+ * The model-list workspace settings (W35): the DISABLED model ids (absent
+ * = every catalog model enabled — the honest default that keeps the full
+ * roster visible). Enable state is a workspace record, never provider
+ * truth.
+ */
+export interface MosWorkspaceModelSettings {
+  readonly disabledModelIds: readonly string[];
+}
+
 /** The whole store snapshot (rebuilt on every change; sections are pure). */
 export interface MosWorkspaceSnapshot {
   readonly missions: readonly MosWorkspaceMission[];
@@ -104,6 +135,8 @@ export interface MosWorkspaceSnapshot {
   readonly accounts: readonly MosWorkspaceAccount[];
   readonly events: readonly MosWorkspaceEvent[];
   readonly approvals: readonly MosWorkspaceApproval[];
+  readonly tasks: readonly MosWorkspaceTask[];
+  readonly modelSettings: MosWorkspaceModelSettings;
 }
 
 /* --------------------------------------------------------------------
@@ -133,6 +166,18 @@ export interface MosCampaignIntakeInput {
   readonly budget: string;
   readonly dailyCap: string;
   readonly audience: string;
+  readonly missionId: string | null;
+}
+
+/** The New Task page's composer submit (W35 — the emerged surface's write). */
+export interface MosAgentTaskIntakeInput {
+  readonly title: string;
+  readonly prompt: string;
+  readonly modelId: string;
+  readonly connectionMode: string;
+  readonly mode: string;
+  readonly planEnabled: boolean;
+  readonly reasoningLevel: string;
   readonly missionId: string | null;
 }
 
@@ -176,6 +221,9 @@ export interface MosWorkspacePersisted {
   readonly accounts: readonly MosWorkspaceAccount[];
   readonly events: readonly MosWorkspaceEvent[];
   readonly approvals: readonly MosWorkspaceApproval[];
+  /** W35 fields — absent in pre-W35 v1 snapshots; validation defaults them. */
+  readonly tasks: readonly MosWorkspaceTask[];
+  readonly modelSettings: MosWorkspaceModelSettings;
 }
 
 const EMPTY_PERSISTED: MosWorkspacePersisted = {
@@ -187,6 +235,8 @@ const EMPTY_PERSISTED: MosWorkspacePersisted = {
   accounts: [],
   events: [],
   approvals: [],
+  tasks: [],
+  modelSettings: { disabledModelIds: [] },
 };
 
 /** @internal The empty document (the quarantined store's fail-closed start). */
@@ -210,7 +260,32 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
       throw new Error(`workspace snapshot field "${field}" is malformed`);
     }
   }
-  return value as unknown as MosWorkspacePersisted;
+  // W35 back-compat: pre-W35 v1 snapshots carry no tasks/modelSettings —
+  // absent fields default honestly (no tasks; every model enabled); a
+  // PRESENT-but-malformed field still fails closed.
+  if (
+    value.tasks !== undefined &&
+    (!Array.isArray(value.tasks) ||
+      value.tasks.some((entry) => !isRecord(entry) || typeof entry.id !== 'string' || typeof entry.seq !== 'number'))
+  ) {
+    throw new Error('workspace snapshot field "tasks" is malformed');
+  }
+  if (
+    value.modelSettings !== undefined &&
+    (!isRecord(value.modelSettings) ||
+      !Array.isArray(value.modelSettings.disabledModelIds) ||
+      value.modelSettings.disabledModelIds.some((entry) => typeof entry !== 'string'))
+  ) {
+    throw new Error('workspace snapshot field "modelSettings" is malformed');
+  }
+  return {
+    ...(value as unknown as MosWorkspacePersisted),
+    tasks: value.tasks === undefined ? [] : (value.tasks as unknown as MosWorkspaceTask[]),
+    modelSettings:
+      value.modelSettings === undefined
+        ? { disabledModelIds: [] }
+        : (value.modelSettings as unknown as MosWorkspaceModelSettings),
+  };
 }
 
 /* --------------------------------------------------------------------
@@ -225,6 +300,7 @@ export interface MosWorkspaceStoreHealth {
   readonly postCount: number;
   readonly campaignCount: number;
   readonly eventCount: number;
+  readonly taskCount: number;
   readonly quarantinedCount: number;
 }
 
@@ -256,6 +332,8 @@ export interface MosWorkspaceStore {
   compileCampaign(id: string, now?: string): MosWorkspaceCampaign;
   decideApproval(id: string, decision: 'approve' | 'deny', now?: string): MosWorkspaceApproval;
   beginProviderSetup(providerId: string, now?: string): MosWorkspaceAccount;
+  recordAgentTask(input: MosAgentTaskIntakeInput, now?: string): MosWorkspaceTask;
+  setModelDisabled(modelId: string, disabled: boolean, now?: string): MosWorkspaceModelSettings;
   health(): MosWorkspaceStoreHealth;
   quarantineEntries(): readonly MosWorkspaceQuarantineEntry[];
 }

@@ -1614,3 +1614,852 @@
     align-items: flex-start;
   }
 }
+
+/* --------------------------------------------------------------------
+ * W35 — THE NEW TASK PAGE (the substrate's draft surface, emerged as a
+ * native console section): the centered max-w-2xl stage, the greeting
+ * over the watermark, the composer card (context header + uncontrolled
+ * textarea + toolbar with native <details> menus), the suggested-prompt
+ * chip row. Everything renders mosc-* tokens (light + dark automatic).
+ * -------------------------------------------------------------------- */
+
+.mosc-nt {
+  display: block;
+}
+
+.mosc-nt-stage {
+  max-width: 42rem; /* the substrate's max-w-2xl */
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding-top: clamp(1.5rem, 7vh, 5rem);
+}
+
+.mosc-nt-hero {
+  position: relative;
+  text-align: center;
+  padding: 1.25rem 0 1.5rem;
+}
+
+.mosc-nt-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mosc-ink);
+  opacity: 0.045;
+  pointer-events: none;
+}
+
+.mosc-nt-greeting {
+  position: relative;
+  margin: 0;
+  font-size: clamp(1.375rem, 1rem + 1.6vw, 1.875rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--mosc-ink);
+}
+
+.mosc-nt-composer {
+  position: relative;
+  z-index: 1;
+  background: var(--mosc-surface);
+  border: 1px solid var(--mosc-line);
+  border-radius: 1rem;
+  box-shadow: var(--mosc-shadow);
+}
+
+.mosc-nt-composer-head {
+  display: flex;
+  padding: 0.5rem 0.6rem 0;
+  border-bottom: 1px solid var(--mosc-line-soft);
+}
+
+.mosc-nt-input {
+  display: block;
+  width: 100%;
+  min-height: 7.5rem;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  color: var(--mosc-ink);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  padding: 0.9rem 1rem;
+}
+
+.mosc-nt-input:focus {
+  outline: none;
+}
+
+.mosc-nt-input::placeholder {
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nt-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.45rem 0.55rem 0.6rem;
+}
+
+.mosc-nt-toolbar-lead,
+.mosc-nt-toolbar-trail {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+/* The native <details> menus (DOM-local open state — no re-render) */
+
+.mosc-nt-details {
+  position: relative;
+}
+
+.mosc-nt-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.34rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mosc-ink-soft);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.mosc-nt-summary::-webkit-details-marker {
+  display: none;
+}
+
+.mosc-nt-summary:hover {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink);
+}
+
+.mosc-nt-summary:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+}
+
+.mosc-nt-summary--icon {
+  padding: 0.34rem 0.45rem;
+}
+
+.mosc-nt-summary-label {
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mosc-nt-menu {
+  position: absolute;
+  bottom: calc(100% + 0.45rem);
+  left: 0;
+  min-width: 15rem;
+  max-width: min(22rem, calc(100vw - 3rem));
+  max-height: 18rem;
+  overflow-y: auto;
+  background: var(--mosc-surface);
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.75rem;
+  box-shadow: var(--mosc-shadow-lift);
+  padding: 0.4rem;
+  z-index: 40;
+}
+
+.mosc-nt-menu--context {
+  top: calc(100% + 0.45rem);
+  bottom: auto;
+}
+
+.mosc-nt-menuradio,
+.mosc-nt-menuaction,
+.mosc-nt-moderow,
+.mosc-nt-modelrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--mosc-ink-soft);
+  font-family: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.mosc-nt-menuradio:hover,
+.mosc-nt-menuaction:hover,
+.mosc-nt-moderow:hover,
+.mosc-nt-modelrow:hover {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink);
+}
+
+.mosc-nt-menuradio:focus-visible,
+.mosc-nt-menuaction:focus-visible,
+.mosc-nt-moderow:focus-visible,
+.mosc-nt-modelrow:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: -2px;
+}
+
+.mosc-nt-menuradio.is-selected,
+.mosc-nt-moderow.is-selected,
+.mosc-nt-modelrow.is-selected {
+  color: var(--mosc-ink);
+  font-weight: 650;
+}
+
+.mosc-nt-radiodot {
+  position: relative;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--mosc-ink-faint);
+  flex-shrink: 0;
+}
+
+.is-selected .mosc-nt-radiodot {
+  border-color: var(--mosc-accent);
+}
+
+.is-selected .mosc-nt-radiodot::after {
+  content: '';
+  position: absolute;
+  inset: 0.19rem;
+  border-radius: 50%;
+  background: var(--mosc-accent);
+}
+
+.mosc-nt-menu-divider {
+  height: 1px;
+  background: var(--mosc-line-soft);
+  margin: 0.35rem 0.3rem;
+}
+
+.mosc-nt-menu-empty {
+  margin: 0;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nt-menuaction--muted {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.mosc-nt-menuaction--muted:hover {
+  background: transparent;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-nt-planrow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+}
+
+.mosc-nt-planrow input[type='checkbox'] {
+  margin: 0.18rem 0 0;
+  accent-color: var(--mosc-accent);
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.mosc-nt-planname {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: var(--mosc-ink);
+}
+
+.mosc-nt-plandesc {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nt-moderow {
+  align-items: flex-start;
+}
+
+.mosc-nt-modelabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.mosc-nt-modename {
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.mosc-nt-modedesc {
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nt-moderow--warning .mosc-nt-modename {
+  color: var(--mosc-attention);
+}
+
+/* The model menu (provider header + connection-mode select + roster) */
+
+.mosc-nt-menu--model {
+  min-width: 19rem;
+}
+
+.mosc-nt-modelmenu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem 0.25rem;
+}
+
+.mosc-nt-modelmenu-family {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nt-modeselect {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--mosc-ink-soft);
+  background: var(--mosc-surface);
+  border: 1px solid var(--mosc-line);
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  cursor: pointer;
+}
+
+.mosc-nt-modeselect:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+}
+
+.mosc-nt-modelmenu-badge {
+  margin: 0 0 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-nt-modelname {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+/* The reasoning-effort cycle button */
+
+.mosc-nt-toolbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.34rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mosc-ink-faint);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.mosc-nt-toolbtn:hover {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-nt-toolbtn:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+}
+
+/* The send button (the concept gradient — the one emerald graduation) */
+
+.mosc-nt-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: linear-gradient(135deg, var(--mosc-accent), var(--mosc-accent-strong));
+  color: var(--mosc-accent-ink);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: filter 140ms ease, opacity 140ms ease;
+}
+
+.mosc-nt-send:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.mosc-nt-send:disabled {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink-faint);
+  cursor: default;
+}
+
+.mosc-nt-send:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 2px;
+}
+
+/* The suggested-prompt chip row (the substrate's waterfall) */
+
+.mosc-nt-suggested {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 1rem 0.25rem 0.4rem;
+  scrollbar-width: thin;
+}
+
+.mosc-nt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  padding: 0.42rem 0.8rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--mosc-line);
+  background: var(--mosc-surface);
+  color: var(--mosc-ink-soft);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 550;
+  cursor: pointer;
+  animation: mosc-nt-chip-waterfall 360ms ease both;
+  animation-delay: var(--mosc-nt-chip-delay, 0ms);
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+}
+
+.mosc-nt-chip:hover {
+  border-color: var(--mosc-accent-line);
+  background: var(--mosc-accent-wash);
+  color: var(--mosc-ink);
+}
+
+.mosc-nt-chip:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+}
+
+@keyframes mosc-nt-chip-waterfall {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The shared badges (model rows on both emerged surfaces) */
+
+.mosc-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.08rem 0.5rem;
+  border-radius: 999px;
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink-soft);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+.mosc-badge--vision {
+  background: var(--mosc-sim-wash);
+  color: var(--mosc-sim-ink);
+}
+
+.mosc-badge--context {
+  color: var(--mosc-ink-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 600;
+}
+
+.mosc-badge--plan {
+  background: var(--mosc-accent-wash);
+  color: var(--mosc-accent);
+}
+
+/* --------------------------------------------------------------------
+ * W35 — THE MODEL SETTINGS PAGE (the substrate's Model settings,
+ * emerged with the full roster): the split card (provider-family nav +
+ * family detail), the connection-mode select, the model list rows with
+ * badges + reasoning meta + enable switches.
+ * -------------------------------------------------------------------- */
+
+.mosc-models {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mosc-models-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mosc-models-description {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 0.9rem;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-models-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mosc-models-split {
+  display: grid;
+  grid-template-columns: 14.5rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.mosc-models-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: var(--mosc-surface);
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.8rem;
+  padding: 0.7rem;
+}
+
+.mosc-models-nav-group {
+  margin: 0.35rem 0 0.15rem 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-models-family {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.05rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: var(--mosc-ink-soft);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.mosc-models-family:hover {
+  background: var(--mosc-neutral-wash);
+}
+
+.mosc-models-family:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+}
+
+.mosc-models-family.is-active {
+  background: var(--mosc-accent-wash);
+  border-color: var(--mosc-accent-line);
+  color: var(--mosc-accent);
+}
+
+.mosc-models-family-name {
+  grid-column: 2;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.mosc-models-family-host {
+  grid-column: 2;
+  font-size: 0.72rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-models-family.is-active .mosc-models-family-host {
+  color: var(--mosc-accent);
+  opacity: 0.75;
+}
+
+.mosc-models-nav-empty {
+  margin: 0.15rem 0.3rem;
+  font-size: 0.8rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-models-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  background: var(--mosc-surface);
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.8rem;
+  padding: 1rem;
+}
+
+.mosc-models-family-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.mosc-models-family-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.mosc-models-family-line {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-models-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.45rem;
+}
+
+.mosc-models-mode-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-models-listcard {
+  border: 1px solid var(--mosc-line-soft);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+}
+
+.mosc-models-listcard-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.mosc-models-listcard-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.mosc-models-count {
+  margin-right: auto;
+  font-size: 0.75rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-models-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.mosc-models-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--mosc-surface-sunken);
+  border: 1px solid var(--mosc-line-soft);
+  border-radius: 0.55rem;
+}
+
+.mosc-models-row.is-disabled {
+  opacity: 0.55;
+}
+
+.mosc-models-row-name {
+  min-width: 13.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.mosc-models-row-reasoning {
+  min-width: 7.5rem;
+  font-size: 0.72rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-models-row-plans {
+  font-size: 0.7rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-models-row-current {
+  font-size: 0.7rem;
+  font-weight: 650;
+  color: var(--mosc-accent);
+}
+
+.mosc-models-row-scope {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-models-empty {
+  margin: 0;
+  padding: 0.9rem;
+  font-size: 0.84rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-switch {
+  position: relative;
+  width: 2.3rem;
+  height: 1.3rem;
+  padding: 0;
+  border: 1px solid var(--mosc-line);
+  border-radius: 999px;
+  background: var(--mosc-neutral-wash);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.mosc-switch-knob {
+  position: absolute;
+  top: 0.14rem;
+  left: 0.14rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  background: var(--mosc-surface);
+  border: 1px solid var(--mosc-line);
+  box-shadow: 0 1px 2px rgb(22 38 58 / 0.15);
+  transition: transform 140ms ease;
+}
+
+.mosc-switch.is-on {
+  background: var(--mosc-accent);
+  border-color: var(--mosc-accent);
+}
+
+.mosc-switch.is-on .mosc-switch-knob {
+  transform: translateX(1rem);
+  border-color: transparent;
+}
+
+.mosc-switch:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 2px;
+}
+
+/* The emerged surfaces' responsive posture */
+
+@media (max-width: 900px) {
+  .mosc-models-split {
+    grid-template-columns: 1fr;
+  }
+
+  .mosc-models-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .mosc-models-nav-group {
+    width: 100%;
+    margin: 0.25rem 0 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .mosc-models-header {
+    flex-direction: column;
+  }
+
+  .mosc-models-row {
+    flex-wrap: wrap;
+    row-gap: 0.3rem;
+  }
+
+  .mosc-models-row-name {
+    min-width: 10rem;
+    flex: 1 1 auto;
+  }
+
+  .mosc-models-row-scope {
+    margin-left: 0;
+  }
+
+  .mosc-nt-menu {
+    min-width: 13rem;
+  }
+
+  .mosc-nt-menu--model {
+    min-width: 16rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosc-nt-chip {
+    animation: none;
+  }
+}

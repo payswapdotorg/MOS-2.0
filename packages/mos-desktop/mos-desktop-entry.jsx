@@ -47,6 +47,7 @@ import {
   mosAction,
   routeMosAgentText,
   workbenchSurfaceFromAppPath,
+  initialMosNewTaskDraft,
 } from './src/index.js';
 import { MosConsoleApp } from './src/index.js';
 import './mos-desktop-shell.css';
@@ -55,7 +56,6 @@ import '../mos-web/src/styles.css';
 const SHELL_DOCUMENT_TITLE = 'MOS — Marketing Operating System';
 const DEFAULT_SHELL_VERSION = '0.1.0';
 const WORKBENCH_TITLES = {
-  'new-task': 'MOS — Agent Workbench · New Task',
   chat: 'MOS — Agent Workbench',
   automations: 'MOS — Agent Workbench · Automations',
   settings: 'MOS — Agent Workbench · Settings',
@@ -102,6 +102,25 @@ function FirstCommitNotifier({ onCommit }) {
   useEffect(() => {
     onCommit();
   }, []);
+  return null;
+}
+
+/**
+ * The New Task input focus restorer (W35): a discrete draft pick re-mounts
+ * the console; the composer's input re-gains focus after the commit (the
+ * substrate's own picker refocuses the chat input — we mirror it).
+ */
+function NewTaskFocusRestorer({ focusKey }) {
+  useEffect(() => {
+    if (focusKey > 0) {
+      const input = globalThis.document?.querySelector(
+        'textarea[data-testid="mosnt-input"]',
+      );
+      if (input) {
+        input.focus();
+      }
+    }
+  }, [focusKey]);
   return null;
 }
 
@@ -189,6 +208,8 @@ export function bootMosDesktopShell(options) {
     post: null,
     campaign: null,
     connection: null,
+    task: null,
+    model: null,
   };
   let agent = {
     open: false,
@@ -197,6 +218,13 @@ export function bootMosDesktopShell(options) {
   };
   let agentTranscriptSeq = 1;
   let committed = false;
+  // The W35 emerged-surface state: the New Task draft (the composer's
+  // model/mode/plan/context selection — the entry owns it, the hook-free
+  // section composes it), the Model Settings provider family, and the
+  // focus key (a discrete pick re-mounts; the restorer refocuses input).
+  let newTaskDraft = initialMosNewTaskDraft();
+  let modelProviderFamily = 'zai';
+  let newTaskFocusKey = 0;
   // The last MOS section the console showed (the workbench handoff
   // excludes itself) — the resume controller returns here when the host
   // switches back from a substrate surface.
@@ -239,8 +267,11 @@ export function bootMosDesktopShell(options) {
             prefillKey={prefillKey}
             receipts={receipts}
             agent={agent}
+            newTaskDraft={newTaskDraft}
+            modelProviderFamily={modelProviderFamily}
             controller={controller}
           />
+          <NewTaskFocusRestorer focusKey={newTaskFocusKey} />
         </MosDesktopErrorBoundary>
       </StrictMode>
     );
@@ -296,13 +327,11 @@ export function bootMosDesktopShell(options) {
 
     onWorkbenchSurface(surface) {
       const appPath =
-        surface === 'new-task'
-          ? '/workbench/new-task'
-          : surface === 'automations'
-            ? '/workbench/automations'
-            : surface === 'settings'
-              ? '/workbench/settings'
-              : '/workbench';
+        surface === 'automations'
+          ? '/workbench/automations'
+          : surface === 'settings'
+            ? '/workbench/settings'
+            : '/workbench';
       const query = desktopQueryFromAppHref(appPath);
       if (win && win.history && typeof win.history.replaceState === 'function') {
         win.history.replaceState(null, '', query);
@@ -311,6 +340,48 @@ export function bootMosDesktopShell(options) {
         doc.title = workbenchTitleFor(surface);
       }
       requestSubstrateSurface(surface);
+    },
+
+    onNewTaskDraftChange(partial) {
+      newTaskDraft = { ...newTaskDraft, ...partial };
+      newTaskFocusKey += 1;
+      remount();
+    },
+
+    onNewTaskSubmit(input) {
+      withReceipt('task', () => {
+        const task = store.recordAgentTask(input);
+        receipts = {
+          ...receipts,
+          task: `TASK_RECORDED — task ${task.id} "${task.title}" on ${task.modelId} (${task.mode} mode${task.planEnabled ? ' · plan' : ''}). A workspace record; the substrate runs it when an account is connected.`,
+        };
+      });
+    },
+
+    onManageModels() {
+      receipts = { ...receipts, model: null };
+      setSection('model-settings');
+      remount();
+    },
+
+    onSelectModelProviderFamily(family) {
+      modelProviderFamily = family;
+      remount();
+    },
+
+    onToggleModelEnabled(modelId, enabled) {
+      withReceipt('model', () => {
+        store.setModelDisabled(modelId, !enabled);
+        receipts = {
+          ...receipts,
+          model: `${modelId} ${enabled ? 'enabled' : 'disabled'} in the model list — the composer picker follows this workspace record.`,
+        };
+      });
+    },
+
+    onModelSettingsNote(note) {
+      receipts = { ...receipts, model: note };
+      remount();
     },
 
     onIntake(statement) {

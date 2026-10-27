@@ -23,12 +23,14 @@ import {
   type MosConsoleSectionRecord,
 } from './console-nav.js';
 import type {
+  MosAgentTaskIntakeInput,
   MosCampaignIntakeInput,
   MosMissionIntakeInput,
   MosPostComposerInput,
   MosWorkspaceSnapshot,
   MosWorkspaceStoreHealth,
 } from './workspace-store.js';
+import type { MosNewTaskDraft } from './new-task-draft.js';
 import type { WorkbenchSurface } from '../routes/workbench-route.js';
 import { MosAgentRail, type MosAgentTranscriptEntry } from './agent-rail.js';
 import { OverviewSection } from './sections/overview-section.js';
@@ -44,6 +46,11 @@ import { StudioSection } from './sections/studio-section.js';
 import { DistributionSection } from './sections/distribution-section.js';
 import { ExperimentsSection } from './sections/experiments-section.js';
 import { MeasurementSection } from './sections/measurement-section.js';
+import { NewTaskSection } from './sections/new-task-section.js';
+import {
+  ModelSettingsSection,
+  type MosModelProviderFamilyId,
+} from './sections/model-settings-section.js';
 import { MOS_WORKSPACE_DURABILITY_FACT } from './workspace-store.js';
 
 /* --------------------------------------------------------------------
@@ -73,10 +80,14 @@ const SECTION_ICONS: Readonly<Record<MosConsoleSectionId, never>> = {
   connections: glyph(<><path d="M9 2.8v5.4M15 2.8v5.4" /><path d="M6.2 8.2h11.6v3.6a5.8 5.8 0 0 1-11.6 0z" /><path d="M12 17.6v3.6" /></>),
   activity: glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.2v5l3.4 2" /></>),
   settings: glyph(<><path d="M3.5 7.2h9M17 7.2h3.5M3.5 16.8h3M11 16.8h9.5" /><circle cx="14.8" cy="7.2" r="2.2" /><circle cx="8.4" cy="16.8" r="2.2" /></>),
+  'new-task': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 8.2v7.6M8.2 12h7.6" /></>),
+  'model-settings': glyph(<><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4M12 11v10" /></>),
 };
 
-const WORKBENCH_ICONS: Readonly<Record<WorkbenchSurface, never>> = {
+/** The workbench nav glyphs, keyed by the descriptor's icon field. */
+const WORKBENCH_ICONS: Readonly<Record<string, never>> = {
   'new-task': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 8.2v7.6M8.2 12h7.6" /></>),
+  'model-settings': glyph(<><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4M12 11v10" /></>),
   chat: glyph(<><rect x="3.5" y="5" width="17" height="14" rx="2.5" /><path d="M7.5 14.5h9M7.5 10.5h6" /></>),
   automations: glyph(<><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="14.8" cy="7" r="2.2" /><circle cx="8.4" cy="17" r="2.2" /></>),
   settings: glyph(<><circle cx="12" cy="12" r="2.8" /><path d="M12 3.2v2.4M12 18.4v2.4M3.2 12h2.4M18.4 12h2.4M6 6l1.7 1.7M16.3 16.3 18 18M18 6l-1.7 1.7M7.7 16.3 6 18" /></>),
@@ -90,7 +101,7 @@ const WORKBENCH_ICONS: Readonly<Record<WorkbenchSurface, never>> = {
 export interface MosConsoleController {
   /** A MOS section navigation (the entry rewrites the route + title). */
   readonly onNavigateSection: (section: MosConsoleSectionId) => void;
-  /** An Agent Workbench entry (the host mounts the substrate surface). */
+  /** An Agent Workbench substrate entry (the host mounts the substrate surface). */
   readonly onWorkbenchSurface: (surface: WorkbenchSurface) => void;
   /** The overview intake submit (the convergence-law prefill). */
   readonly onIntake: (statement: string) => void;
@@ -107,6 +118,18 @@ export interface MosConsoleController {
   readonly onAgentToggle: () => void;
   readonly onAgentSubmitText: (text: string) => void;
   readonly onAgentDismissGuidance: () => void;
+  /** The New Task draft change (the entry owns the draft; a discrete pick). */
+  readonly onNewTaskDraftChange: (partial: Partial<MosNewTaskDraft>) => void;
+  /** The New Task composer submit (records the agent task). */
+  readonly onNewTaskSubmit: (input: MosAgentTaskIntakeInput) => void;
+  /** The composer picker's Manage models entry (navigates to Model Settings). */
+  readonly onManageModels: () => void;
+  /** The Model Settings provider family select. */
+  readonly onSelectModelProviderFamily: (family: MosModelProviderFamilyId) => void;
+  /** The Model Settings model-list enable toggle (a store write). */
+  readonly onToggleModelEnabled: (modelId: string, enabled: boolean) => void;
+  /** The Model Settings honest notes (Refresh / Add provider / Add model). */
+  readonly onModelSettingsNote: (note: string) => void;
 }
 
 /** The receipts the entry echoes under the intakes (null = none yet). */
@@ -116,6 +139,8 @@ export interface MosConsoleReceipts {
   readonly post: string | null;
   readonly campaign: string | null;
   readonly connection: string | null;
+  readonly task: string | null;
+  readonly model: string | null;
 }
 
 export interface MosConsoleAppProps {
@@ -133,6 +158,10 @@ export interface MosConsoleAppProps {
     readonly transcript: readonly MosAgentTranscriptEntry[];
     readonly guidanceVisible: boolean;
   };
+  /** The New Task draft (the entry owns it; the emerged surface composes it). */
+  readonly newTaskDraft: MosNewTaskDraft;
+  /** The Model Settings provider family the detail pane shows. */
+  readonly modelProviderFamily: MosModelProviderFamilyId;
   readonly controller: MosConsoleController;
 }
 
@@ -167,9 +196,16 @@ export function MosConsoleApp({
   prefillKey,
   receipts,
   agent,
+  newTaskDraft,
+  modelProviderFamily,
   controller,
 }: MosConsoleAppProps) {
-  const workspaceSections = MOS_CONSOLE_SECTIONS.filter((section) => section.id !== 'settings');
+  // The Workspace group lists the console sections EXCEPT the pinned
+  // Settings and the two W35 native workbench surfaces (those render in
+  // the Agent Workbench group — their home, with is-active state).
+  const workspaceSections = MOS_CONSOLE_SECTIONS.filter(
+    (section) => section.id !== 'settings' && section.id !== 'new-task' && section.id !== 'model-settings',
+  );
   const settingsSection = MOS_CONSOLE_SECTIONS.find((section) => section.id === 'settings');
   const activeSection = sectionRecord(sectionId);
   const section = (id: MosConsoleSectionId): MosConsoleSectionRecord => sectionRecord(id);
@@ -207,21 +243,40 @@ export function MosConsoleApp({
           <div className="mosc-nav-divider" aria-hidden="true" />
           <p className="mosc-nav-group-label">Agent Workbench</p>
           <ul className="mosc-nav-list">
-            {MOS_WORKBENCH_NAV_ITEMS.map((item) => (
-              <li key={item.surface} className="mosc-nav-item">
-                <button
-                  type="button"
-                  className="mosc-nav-link mosc-nav-link--workbench"
-                  data-testid={item.testId}
-                  onClick={() => controller.onWorkbenchSurface(item.surface)}
-                >
-                  <span className="mosc-nav-icon" aria-hidden="true">
-                    {WORKBENCH_ICONS[item.surface]}
-                  </span>
-                  <span className="mosc-nav-label">{item.label}</span>
-                </button>
-              </li>
-            ))}
+            {MOS_WORKBENCH_NAV_ITEMS.map((item) => {
+              // NATIVE entries (W35): console sections with is-active state;
+              // SUBSTRATE entries: the host-mounted surfaces behind the chrome.
+              const nativeActive =
+                item.kind === 'native' && item.section === sectionId;
+              return (
+                <li key={item.testId} className="mosc-nav-item">
+                  <button
+                    type="button"
+                    className={
+                      item.kind === 'native'
+                        ? nativeActive
+                          ? 'mosc-nav-link mosc-nav-link--workbench is-active'
+                          : 'mosc-nav-link mosc-nav-link--workbench'
+                        : 'mosc-nav-link mosc-nav-link--workbench'
+                    }
+                    aria-current={nativeActive ? 'page' : undefined}
+                    data-testid={item.testId}
+                    onClick={() => {
+                      if (item.kind === 'native') {
+                        controller.onNavigateSection(item.section);
+                      } else {
+                        controller.onWorkbenchSurface(item.surface);
+                      }
+                    }}
+                  >
+                    <span className="mosc-nav-icon" aria-hidden="true">
+                      {WORKBENCH_ICONS[item.icon]}
+                    </span>
+                    <span className="mosc-nav-label">{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           <div className="mosc-nav-divider" aria-hidden="true" />
           {settingsSection !== undefined ? (
@@ -249,21 +304,38 @@ export function MosConsoleApp({
                 </button>
               </li>
             ))}
-            {MOS_WORKBENCH_NAV_ITEMS.map((item) => (
-              <li key={item.surface} className="mosc-sectionnav-item">
-                <button
-                  type="button"
-                  className="mosc-sectionnav-link mosc-sectionnav-link--workbench"
-                  data-testid={`row-${item.testId}`}
-                  onClick={() => controller.onWorkbenchSurface(item.surface)}
-                >
-                  <span className="mosc-nav-icon" aria-hidden="true">
-                    {WORKBENCH_ICONS[item.surface]}
-                  </span>
-                  <span className="mosc-nav-label">{item.label}</span>
-                </button>
-              </li>
-            ))}
+            {MOS_WORKBENCH_NAV_ITEMS.map((item) => {
+              const nativeActive =
+                item.kind === 'native' && item.section === sectionId;
+              return (
+                <li key={item.testId} className="mosc-sectionnav-item">
+                  <button
+                    type="button"
+                    className={
+                      item.kind === 'native'
+                        ? nativeActive
+                          ? 'mosc-sectionnav-link mosc-sectionnav-link--workbench is-active'
+                          : 'mosc-sectionnav-link mosc-sectionnav-link--workbench'
+                        : 'mosc-sectionnav-link mosc-sectionnav-link--workbench'
+                    }
+                    aria-current={nativeActive ? 'page' : undefined}
+                    data-testid={`row-${item.testId}`}
+                    onClick={() => {
+                      if (item.kind === 'native') {
+                        controller.onNavigateSection(item.section);
+                      } else {
+                        controller.onWorkbenchSurface(item.surface);
+                      }
+                    }}
+                  >
+                    <span className="mosc-nav-icon" aria-hidden="true">
+                      {WORKBENCH_ICONS[item.icon]}
+                    </span>
+                    <span className="mosc-nav-label">{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
@@ -326,6 +398,29 @@ export function MosConsoleApp({
                 theme={theme}
                 onToggleTheme={controller.onToggleTheme}
                 shellVersion={shellVersion}
+              />
+            ) : sectionId === 'new-task' ? (
+              <NewTaskSection
+                section={section('new-task')}
+                workspace={workspace}
+                draft={newTaskDraft}
+                receipt={receipts.task}
+                onDraftChange={controller.onNewTaskDraftChange}
+                onSubmit={controller.onNewTaskSubmit}
+                onManageModels={controller.onManageModels}
+                onNavigate={controller.onNavigateSection}
+              />
+            ) : sectionId === 'model-settings' ? (
+              <ModelSettingsSection
+                section={section('model-settings')}
+                workspace={workspace}
+                draft={newTaskDraft}
+                providerFamily={modelProviderFamily}
+                receipt={receipts.model}
+                onSelectFamily={controller.onSelectModelProviderFamily}
+                onDraftChange={controller.onNewTaskDraftChange}
+                onToggleModel={controller.onToggleModelEnabled}
+                onNote={controller.onModelSettingsNote}
               />
             ) : sectionId === 'lab' ? (
               <LabSection section={section('lab')} workspace={workspace} />

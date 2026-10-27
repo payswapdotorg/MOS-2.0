@@ -1,9 +1,11 @@
 /**
- * Console NAV VOCABULARY pins (W32 — the payswap-pattern product IA):
- * the thirteen sections with their identity + paths, the typed outcome
- * action set, the AGENT WORKBENCH descriptors (with the stable CDP
- * verification testids), the section↔path mapping, and the section
- * titles (the document-title truth, including the W30 home baseline).
+ * Console NAV VOCABULARY pins (W32 — the payswap-pattern product IA;
+ * W35 — the two emerged native workbench sections join the registry):
+ * the fifteen sections with their identity + paths, the typed outcome
+ * action set, the AGENT WORKBENCH descriptors (native + substrate, with
+ * the stable CDP verification testids), the section↔path mapping, and the
+ * section titles (the document-title truth, including the W30 home
+ * baseline and the W35 emerged surfaces).
  */
 
 import assert from 'node:assert/strict';
@@ -20,8 +22,8 @@ import {
   mosConsoleSectionTitle,
 } from '../dist/console/console-nav.js';
 
-test('the console carries exactly the thirteen pinned sections', () => {
-  assert.equal(MOS_CONSOLE_SECTIONS.length, 13);
+test('the console carries exactly the fifteen pinned sections (13 + the two W35 emerged surfaces)', () => {
+  assert.equal(MOS_CONSOLE_SECTIONS.length, 15);
   assert.deepEqual(
     MOS_CONSOLE_SECTIONS.map((section) => section.id),
     [
@@ -38,6 +40,8 @@ test('the console carries exactly the thirteen pinned sections', () => {
       'connections',
       'activity',
       'settings',
+      'new-task',
+      'model-settings',
     ],
   );
 });
@@ -56,20 +60,26 @@ test('every section identity is complete (title + purpose + path, no dupes)', ()
   assert.equal(paths.size, MOS_CONSOLE_SECTIONS.length);
 });
 
-test('the section titles carry the document-title truth (the W30 home baseline included)', () => {
+test('the section titles carry the document-title truth (the W30 baseline + the W35 emerged surfaces)', () => {
   assert.equal(mosConsoleSectionTitle('overview'), 'MOS — Home');
   assert.equal(mosConsoleSectionTitle('social'), 'MOS — Social');
   assert.equal(mosConsoleSectionTitle('settings'), 'MOS — Settings');
+  assert.equal(mosConsoleSectionTitle('new-task'), 'MOS — New Task');
+  assert.equal(mosConsoleSectionTitle('model-settings'), 'MOS — Model Settings');
   assert.equal(mosConsoleSectionTitle('not-a-section'), 'MOS');
 });
 
-test('the section↔path mapping is total and honest (unknown → overview)', () => {
+test('the section↔path mapping is total and honest (unknown → overview; the emerged workbench paths resolve natively)', () => {
   assert.equal(mosConsoleSectionFromPath('/'), 'overview');
   assert.equal(mosConsoleSectionFromPath('/missions'), 'missions');
   assert.equal(mosConsoleSectionFromPath('/measurement'), 'measurement');
   assert.equal(mosConsoleSectionFromPath('/nonsense'), 'overview');
   assert.equal(mosConsoleSectionFromPath(''), 'overview');
   assert.equal(mosConsoleSectionFromPath('/social?platform=youtube'), 'social');
+  // The W35 emergence: /workbench/new-task + /workbench/models resolve to
+  // the NATIVE console sections (no substrate handoff).
+  assert.equal(mosConsoleSectionFromPath('/workbench/new-task'), 'new-task');
+  assert.equal(mosConsoleSectionFromPath('/workbench/models'), 'model-settings');
   for (const section of MOS_CONSOLE_SECTIONS) {
     assert.equal(mosConsoleSectionFromPath(section.path), section.id);
     assert.equal(mosConsoleSectionPath(section.id), section.path);
@@ -89,17 +99,37 @@ test('the typed outcome action set is PROMOTE / PUBLISH / GROW / MEASURE', () =>
   assert.equal(mosAction('pay'), undefined);
 });
 
-test('the AGENT WORKBENCH group carries the four substrate surfaces with the stable testids', () => {
+test('the AGENT WORKBENCH group carries the two native surfaces + the three substrate surfaces with the stable testids', () => {
   assert.deepEqual(
-    MOS_WORKBENCH_NAV_ITEMS.map((item) => item.surface),
-    ['new-task', 'chat', 'automations', 'settings'],
+    MOS_WORKBENCH_NAV_ITEMS.map((item) => item.kind),
+    ['native', 'native', 'substrate', 'substrate', 'substrate'],
   );
   assert.deepEqual(
     MOS_WORKBENCH_NAV_ITEMS.map((item) => item.testId),
-    ['nav-workbench-new-task', 'nav-workbench', 'nav-workbench-automations', 'nav-workbench-settings'],
+    [
+      'nav-workbench-new-task',
+      'nav-workbench-models',
+      'nav-workbench',
+      'nav-workbench-automations',
+      'nav-workbench-settings',
+    ],
+  );
+  assert.equal(MOS_WORKBENCH_NAV_ITEMS[0]?.kind, 'native');
+  assert.equal(
+    MOS_WORKBENCH_NAV_ITEMS[0]?.kind === 'native' ? MOS_WORKBENCH_NAV_ITEMS[0].section : undefined,
+    'new-task',
   );
   assert.equal(MOS_WORKBENCH_NAV_ITEMS[0]?.path, '/workbench/new-task');
-  assert.equal(MOS_WORKBENCH_NAV_ITEMS[3]?.path, '/workbench/settings');
+  assert.equal(
+    MOS_WORKBENCH_NAV_ITEMS[1]?.kind === 'native' ? MOS_WORKBENCH_NAV_ITEMS[1].section : undefined,
+    'model-settings',
+  );
+  assert.equal(MOS_WORKBENCH_NAV_ITEMS[1]?.path, '/workbench/models');
+  assert.deepEqual(
+    MOS_WORKBENCH_NAV_ITEMS.slice(2).map((item) => (item.kind === 'substrate' ? item.surface : undefined)),
+    ['chat', 'automations', 'settings'],
+  );
+  assert.equal(MOS_WORKBENCH_NAV_ITEMS[4]?.path, '/workbench/settings');
 });
 
 test('mosConsoleSection resolves records and rejects unknowns honestly', () => {

@@ -30,6 +30,7 @@ import {
   MosWorkspaceStoreError,
   emptyMosWorkspacePersisted,
   validateMosWorkspacePersisted,
+  type MosAgentTaskIntakeInput,
   type MosCampaignIntakeInput,
   type MosMissionIntakeInput,
   type MosPostComposerInput,
@@ -37,6 +38,7 @@ import {
   type MosWorkspaceApproval,
   type MosWorkspaceCampaign,
   type MosWorkspaceMission,
+  type MosWorkspaceModelSettings,
   type MosWorkspacePersisted,
   type MosWorkspacePost,
   type MosWorkspaceQuarantineEntry,
@@ -44,7 +46,10 @@ import {
   type MosWorkspaceStorage,
   type MosWorkspaceStore,
   type MosWorkspaceStoreOptions,
+  type MosWorkspaceTask,
 } from './workspace-records.js';
+import { mosAgentModel, mosModelConnectionMode } from './model-catalog.js';
+import { mosNewTaskMode } from './new-task-draft.js';
 import { mosWorkspaceFirstbootRecords } from './workspace-firstboot.js';
 import {
   requireAdPlatform,
@@ -173,6 +178,8 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         // Timeline reads oldest-first (the append-only ledger reads forward).
         events: [...state.events].sort((a, b) => a.seq - b.seq).slice(-60),
         approvals: [...state.approvals].sort((a, b) => b.seq - a.seq),
+        tasks: [...state.tasks].sort((a, b) => b.seq - a.seq),
+        modelSettings: state.modelSettings,
       };
     },
 
@@ -364,6 +371,79 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
       });
     },
 
+    recordAgentTask(input: MosAgentTaskIntakeInput, now?: string): MosWorkspaceTask {
+      const at = now ?? clock();
+      const title = input.title.trim();
+      const prompt = input.prompt.trim();
+      if (prompt.length < 3) {
+        throw new MosWorkspaceStoreError('validation', 'the task prompt needs at least 3 characters');
+      }
+      if (title.length === 0) {
+        throw new MosWorkspaceStoreError('validation', 'the task title is required — it is derived from the prompt');
+      }
+      if (mosAgentModel(input.modelId) === undefined) {
+        throw new MosWorkspaceStoreError('validation', `unknown model "${input.modelId}" — the roster is frozen to the substrate builtin catalog`);
+      }
+      if (mosModelConnectionMode(input.connectionMode) === undefined) {
+        throw new MosWorkspaceStoreError('validation', `unknown connection mode "${input.connectionMode}"`);
+      }
+      if (mosNewTaskMode(input.mode) === undefined) {
+        throw new MosWorkspaceStoreError('validation', `unknown permission mode "${input.mode}"`);
+      }
+      if (input.missionId !== null) {
+        missionById(input.missionId); // fail-closed: the context must name a real mission
+      }
+      return commit((): MosWorkspaceTask => {
+        const { id, seq } = nextId('tsk');
+        const task: MosWorkspaceTask = {
+          id,
+          seq,
+          title,
+          prompt,
+          modelId: input.modelId,
+          connectionMode: input.connectionMode,
+          mode: input.mode,
+          planEnabled: input.planEnabled,
+          reasoningLevel: input.reasoningLevel,
+          missionId: input.missionId,
+          status: 'DRAFT',
+          createdAt: at,
+        };
+        state = { ...state, tasks: [...state.tasks, task] };
+        appendEvent(
+          'agent-task-recorded',
+          `Task ${id} drafted — "${title.slice(0, 48)}${title.length > 48 ? '…' : ''}" on ${input.modelId} (${input.mode} mode). The substrate runs it when an account is connected.`,
+          at,
+        );
+        return task;
+      });
+    },
+
+    setModelDisabled(modelId: string, disabled: boolean, now?: string): MosWorkspaceModelSettings {
+      const at = now ?? clock();
+      if (mosAgentModel(modelId) === undefined) {
+        throw new MosWorkspaceStoreError('validation', `unknown model "${modelId}" — the roster is frozen to the substrate builtin catalog`);
+      }
+      return commit((): MosWorkspaceModelSettings => {
+        const current = state.modelSettings.disabledModelIds;
+        const next = disabled
+          ? current.includes(modelId)
+            ? current
+            : [...current, modelId]
+          : current.filter((entry) => entry !== modelId);
+        if (next === current) {
+          return state.modelSettings; // idempotent no-op: nobody is notified
+        }
+        state = { ...state, modelSettings: { disabledModelIds: next } };
+        appendEvent(
+          'model-list-changed',
+          `${modelId} ${disabled ? 'disabled' : 'enabled'} in the model list — the workspace record the composer picker follows`,
+          at,
+        );
+        return state.modelSettings;
+      });
+    },
+
     health() {
       return {
         durability: 'BROWSER_PROFILE' as const,
@@ -372,6 +452,7 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         postCount: state.posts.length,
         campaignCount: state.campaigns.length,
         eventCount: state.events.length,
+        taskCount: state.tasks.length,
         quarantinedCount: quarantined.length,
       };
     },

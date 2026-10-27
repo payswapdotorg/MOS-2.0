@@ -292,3 +292,112 @@ test('the timeline reads oldest-first and is capped (the append-only ledger)', (
   }
   assert.ok(events.length <= 60, 'the snapshot caps the tail at 60 events');
 });
+
+/* --------------------------------------------------------------------
+ * W35 — the emerged surfaces' writes: agent task records + model list
+ * settings + the pre-W35 snapshot migration
+ * -------------------------------------------------------------------- */
+
+test('recordAgentTask records the composer submit honestly (task DRAFT + timeline event)', () => {
+  const store = createMosWorkspaceStore({ storage: memoryStorage(), clock: FIXED_CLOCK, seed: false });
+  const task = store.recordAgentTask({
+    title: 'Help me understand and run this repository',
+    prompt: 'Help me understand and run this repository',
+    modelId: 'GLM-5.3',
+    connectionMode: 'individual',
+    mode: 'build',
+    planEnabled: false,
+    reasoningLevel: 'high',
+    missionId: null,
+  });
+  assert.equal(task.status, 'DRAFT');
+  assert.equal(task.id, 'tsk-001');
+  assert.equal(task.modelId, 'GLM-5.3');
+  const snapshot = store.getSnapshot();
+  assert.equal(snapshot.tasks.length, 1);
+  assert.equal(snapshot.tasks[0]?.id, task.id);
+  assert.ok(snapshot.events.some((event) => event.kind === 'agent-task-recorded'));
+  assert.equal(store.health().taskCount, 1);
+  // The mission context must name a real mission (fail-closed).
+  assert.throws(() =>
+    store.recordAgentTask({
+      title: 'x',
+      prompt: 'linked to nothing',
+      modelId: 'GLM-5.3',
+      connectionMode: 'individual',
+      mode: 'build',
+      planEnabled: false,
+      reasoningLevel: 'high',
+      missionId: 'mis-999',
+    }),
+    MosWorkspaceStoreError,
+  );
+});
+
+test('recordAgentTask validates fail-closed (prompt, title, model, mode, connection)', () => {
+  const store = createMosWorkspaceStore({ storage: memoryStorage(), clock: FIXED_CLOCK, seed: false });
+  const base = {
+    title: 'Summarize the week',
+    prompt: 'Summarize the week across the running channels',
+    modelId: 'GLM-5.3',
+    connectionMode: 'individual',
+    mode: 'build',
+    planEnabled: false,
+    reasoningLevel: 'high',
+    missionId: null,
+  };
+  store.recordAgentTask(base);
+  assert.throws(() => store.recordAgentTask({ ...base, prompt: 'no' }), MosWorkspaceStoreError);
+  assert.throws(() => store.recordAgentTask({ ...base, title: '  ' }), MosWorkspaceStoreError);
+  assert.throws(() => store.recordAgentTask({ ...base, modelId: 'gpt-9' }), MosWorkspaceStoreError);
+  assert.throws(() => store.recordAgentTask({ ...base, connectionMode: 'enterprise' }), MosWorkspaceStoreError);
+  assert.throws(() => store.recordAgentTask({ ...base, mode: 'chaos' }), MosWorkspaceStoreError);
+  assert.equal(store.getSnapshot().tasks.length, 1);
+});
+
+test('setModelDisabled persists the model-list workspace record (toggle + idempotence)', () => {
+  const store = createMosWorkspaceStore({ storage: memoryStorage(), clock: FIXED_CLOCK, seed: false });
+  assert.deepEqual(store.getSnapshot().modelSettings.disabledModelIds, []);
+  store.setModelDisabled('GLM-4V-Flash', true);
+  assert.deepEqual(store.getSnapshot().modelSettings.disabledModelIds, ['GLM-4V-Flash']);
+  // Idempotent repeat: no duplicate, no event.
+  store.setModelDisabled('GLM-4V-Flash', true);
+  assert.deepEqual(store.getSnapshot().modelSettings.disabledModelIds, ['GLM-4V-Flash']);
+  store.setModelDisabled('GLM-5.1', true);
+  store.setModelDisabled('GLM-4V-Flash', false);
+  assert.deepEqual(store.getSnapshot().modelSettings.disabledModelIds, ['GLM-5.1']);
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'model-list-changed'));
+  assert.throws(() => store.setModelDisabled('gpt-9', true), MosWorkspaceStoreError);
+  // The write round-trips through the storage adapter.
+  const roundTripped = createMosWorkspaceStore({ storage: memoryStorage(new Map([['x', 'ignored'], [MOS_WORKSPACE_STORE_KEY, JSON.stringify({ ...store.getSnapshot(), schema: 1, nextSeq: 10 })]])), clock: FIXED_CLOCK, seed: false });
+  assert.ok(roundTripped.getSnapshot().modelSettings.disabledModelIds.includes('GLM-5.1'));
+});
+
+test('a pre-W35 v1 snapshot (no tasks / modelSettings) loads with honest defaults', () => {
+  const legacy = {
+    schema: 1,
+    nextSeq: 12,
+    missions: [
+      { id: 'mis-001', seq: 1, direction: 'promote', statement: 'Legacy mission', metric: 'qualified-reach', target: 't', horizon: 'h', audience: 'a', constraints: '', status: 'INTENT_RECORDED', createdAt: FIXED_CLOCK() },
+    ],
+    posts: [],
+    campaigns: [],
+    accounts: [],
+    events: [],
+    approvals: [],
+  };
+  const backing = new Map<string, string>([[MOS_WORKSPACE_STORE_KEY, JSON.stringify(legacy)]]);
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK });
+  const snapshot = store.getSnapshot();
+  assert.equal(snapshot.missions.length, 1);
+  assert.deepEqual(snapshot.tasks, []);
+  assert.deepEqual(snapshot.modelSettings.disabledModelIds, []);
+  assert.equal(store.quarantineEntries().length, 0, 'the legacy snapshot is NOT quarantined');
+  // A present-but-malformed tasks field still fails closed.
+  const malformed = new Map<string, string>([
+    [MOS_WORKSPACE_STORE_KEY, JSON.stringify({ ...legacy, tasks: 'not-an-array' })],
+  ]);
+  const quarantined = createMosWorkspaceStore({ storage: memoryStorage(malformed), clock: FIXED_CLOCK });
+  assert.equal(quarantined.quarantineEntries().length, 1);
+  assert.equal(quarantined.getSnapshot().missions.length, 0, 'the malformed snapshot starts EMPTY');
+});

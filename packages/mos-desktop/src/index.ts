@@ -56,6 +56,40 @@ export type {
   MosWorkbenchNavDescriptor,
 } from './console/console-nav.js';
 export {
+  MOS_AGENT_MODEL_CATALOG,
+  MOS_MODEL_CONNECTION_MODES,
+  MOS_MODEL_PROVIDER_FAMILIES,
+  mosAgentModel,
+  mosModelConnectionMode,
+  mosModelContextBadge,
+  mosModelVisionBadgeVisible,
+  mosModelsForConnectionMode,
+  mosModelReasoningLine,
+} from './console/model-catalog.js';
+export type {
+  MosAgentModelRecord,
+  MosModelConnectionModeDescriptor,
+  MosModelConnectionModeId,
+  MosModelPlanId,
+  MosModelProviderFamily,
+} from './console/model-catalog.js';
+export {
+  MOS_NEW_TASK_MODES,
+  MOS_NEW_TASK_SUGGESTED_PROMPTS,
+  initialMosNewTaskDraft,
+  mosNewTaskDraftForConnectionMode,
+  mosNewTaskDraftForModel,
+  mosNewTaskGreeting,
+  mosNewTaskMode,
+  mosNewTaskTitleFromPrompt,
+} from './console/new-task-draft.js';
+export type {
+  MosNewTaskDraft,
+  MosNewTaskMode,
+  MosNewTaskModeDescriptor,
+  MosNewTaskSuggestedPrompt,
+} from './console/new-task-draft.js';
+export {
   MOS_PROVIDER_CATALOGUE,
   MOS_REWARD_METRIC_VOCABULARY,
   MOS_SOCIAL_CAPABILITY_MATRIX,
@@ -68,6 +102,7 @@ export {
   MosWorkspaceStoreError,
 } from './console/workspace-store.js';
 export type {
+  MosAgentTaskIntakeInput,
   MosCampaignIntakeInput,
   MosMissionDirection,
   MosMissionIntakeInput,
@@ -77,12 +112,14 @@ export type {
   MosWorkspaceCampaign,
   MosWorkspaceEvent,
   MosWorkspaceMission,
+  MosWorkspaceModelSettings,
   MosWorkspacePost,
   MosWorkspaceSnapshot,
   MosWorkspaceStorage,
   MosWorkspaceStore,
   MosWorkspaceStoreHealth,
   MosWorkspaceStoreOptions,
+  MosWorkspaceTask,
 } from './console/workspace-store.js';
 export { MosConsoleApp } from './console/console-app.js';
 export type {
@@ -97,4 +134,5 @@ export {
 export type { MosAgentReply } from './console/agent-routing.js';
 export type { MosAgentTranscriptEntry } from './console/agent-rail.js';
 export type { MosMissionPrefill } from './console/sections/missions-section.js';
+export type { MosModelProviderFamilyId } from './console/sections/model-settings-section.js';
 

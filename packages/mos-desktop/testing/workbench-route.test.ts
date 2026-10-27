@@ -7,29 +7,34 @@ import { test } from 'node:test';
 import { workbenchSurfaceFromAppPath } from '../dist/routes/workbench-route.js';
 
 /**
- * The AGENT WORKBENCH route helper (build-ON-ZCode): the pure path match
- * that decides which substrate surface a `/workbench*` route names. The
- * entry hands these to the host renderer's `onRequestSubstrateSurface`
- * (see mos-desktop-entry.jsx); every other path resolves a MOS page model.
+ * The AGENT WORKBENCH route helper (build-ON-ZCode, W35 emergence):
+ * the pure path match deciding which SUBSTRATE surface a `/workbench*`
+ * route names — `/workbench/new-task` and `/workbench/models` are NATIVE
+ * console routes now (they resolve through the section mapping and
+ * return null here). The entry hands substrate surfaces to the host
+ * renderer's `onRequestSubstrateSurface` (see mos-desktop-entry.jsx).
  */
 test('workbenchSurfaceFromAppPath resolves the substrate surface routes', () => {
   assert.equal(workbenchSurfaceFromAppPath('/workbench'), 'chat');
   assert.equal(workbenchSurfaceFromAppPath('/workbench/'), 'chat');
   assert.equal(workbenchSurfaceFromAppPath('workbench'), 'chat');
-  assert.equal(workbenchSurfaceFromAppPath('/workbench/new-task'), 'new-task');
   assert.equal(workbenchSurfaceFromAppPath('/workbench/automations'), 'automations');
   assert.equal(workbenchSurfaceFromAppPath('/workbench/settings'), 'settings');
   // Trailing slashes and query strings are tolerated.
   assert.equal(workbenchSurfaceFromAppPath('/workbench/automations/'), 'automations');
   assert.equal(workbenchSurfaceFromAppPath('/workbench?focus=default'), 'chat');
   assert.equal(workbenchSurfaceFromAppPath('/workbench/settings?section=mcp'), 'settings');
-  assert.equal(workbenchSurfaceFromAppPath('/workbench/new-task?draft=1'), 'new-task');
 });
 
 test('workbenchSurfaceFromAppPath rejects non-workbench paths (MOS routes resolve normally)', () => {
   for (const path of ['/', '/missions', '/social', '/console', '/lab', '/studio']) {
     assert.equal(workbenchSurfaceFromAppPath(path), null, `${path} is not a workbench route`);
   }
+  // The W35 emergence: the New Task page and Model Settings are NATIVE
+  // console routes — the substrate matcher must NOT claim them.
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/new-task'), null);
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/models'), null);
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/new-task?draft=1'), null);
   // Near-misses must not match (explicit unknowns, never guesses).
   assert.equal(workbenchSurfaceFromAppPath('/workbench/unknown'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbenches'), null);
