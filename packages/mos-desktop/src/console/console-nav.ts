@@ -37,7 +37,11 @@ export type MosConsoleSectionId =
   /** W35 — the substrate's New Task page, emerged as a native surface. */
   | 'new-task'
   /** W35 — the substrate's Model settings, emerged with the full roster. */
-  | 'model-settings';
+  | 'model-settings'
+  /** W36 — the substrate's task list + conversation view, emerged. */
+  | 'tasks'
+  /** W36 — the substrate's Automations main view, emerged. */
+  | 'automations';
 
 /** One console section's identity (title + purpose render verbatim). */
 export interface MosConsoleSectionRecord {
@@ -161,6 +165,20 @@ export const MOS_CONSOLE_SECTIONS: readonly MosConsoleSectionRecord[] = [
       'The agent model roster — the GLM family from GLM-5.3 to GLM-4V-Flash with per-model facts, the connection modes, and the workspace enable state. The substrate\'s Model settings, emerged as a native MOS surface.',
     path: '/workbench/models',
   },
+  {
+    id: 'tasks',
+    title: 'Tasks',
+    purpose:
+      'The recorded agent tasks and their conversations — the substrate\'s task list and chat view, emerged as a native MOS surface: every recorded task, its follow-ups, and the honest run state. No account gate.',
+    path: '/workbench/tasks',
+  },
+  {
+    id: 'automations',
+    title: 'Automations',
+    purpose:
+      'The scheduled agent tasks — the substrate\'s Automations main view, emerged as a native MOS surface: schedule records with honest lifecycle states. No account gate; runs dispatch when the substrate account is connected.',
+    path: '/workbench/automations',
+  },
 ];
 
 /** Resolve a section record by id (undefined when the id names no section). */
@@ -230,12 +248,13 @@ export function mosAction(id: string): MosActionDescriptor | undefined {
 
 /* --------------------------------------------------------------------
  * The AGENT WORKBENCH group (build-ON-ZCode). Two kinds of entries:
- * NATIVE surfaces (W35 — the substrate's own pages emerged as MOS
- * console sections: the New Task page and Model settings render in the
- * console itself, always available, no account gate) and SUBSTRATE
- * surfaces (the host renderer mounts the substrate UI behind the MOS
- * chrome — these still require the substrate account to be connected).
- * The data-testids are the stable verification hooks (the W28–W35 CDP
+ * NATIVE surfaces (W35/W36 — the substrate's own pages emerged as MOS
+ * console sections: the New Task page, Model settings, the Tasks list +
+ * conversation view, and the Automations main view render in the console
+ * itself, always available, no account gate) and SUBSTRATE surfaces (the
+ * host renderer mounts the substrate UI behind the MOS chrome — these
+ * still require the substrate account to be connected).
+ * The data-testids are the stable verification hooks (the W28–W36 CDP
  * drivers click these).
  * -------------------------------------------------------------------- */
 
@@ -247,7 +266,7 @@ export type MosWorkbenchNavDescriptor =
       readonly label: string;
       readonly path: string;
       readonly testId: string;
-      readonly icon: 'new-task' | 'model-settings';
+      readonly icon: 'new-task' | 'model-settings' | 'tasks' | 'automations';
     }
   | {
       readonly kind: 'substrate';
@@ -255,15 +274,16 @@ export type MosWorkbenchNavDescriptor =
       readonly label: string;
       readonly path: string;
       readonly testId: string;
-      readonly icon: 'chat' | 'automations' | 'settings';
+      readonly icon: 'chat' | 'settings';
     };
 
-/** The Agent Workbench group items (pinned order: the native surfaces lead). */
+/** The Agent Workbench group items (pinned order: the native product loop first — New Task → Tasks → Models → Automations — then the substrate surfaces). */
 export const MOS_WORKBENCH_NAV_ITEMS: readonly MosWorkbenchNavDescriptor[] = [
   { kind: 'native', section: 'new-task', label: 'New Task', path: '/workbench/new-task', testId: 'nav-workbench-new-task', icon: 'new-task' },
+  { kind: 'native', section: 'tasks', label: 'Tasks', path: '/workbench/tasks', testId: 'nav-workbench-tasks', icon: 'tasks' },
   { kind: 'native', section: 'model-settings', label: 'Model Settings', path: '/workbench/models', testId: 'nav-workbench-models', icon: 'model-settings' },
+  { kind: 'native', section: 'automations', label: 'Automations', path: '/workbench/automations', testId: 'nav-workbench-automations', icon: 'automations' },
   { kind: 'substrate', surface: 'chat', label: 'Workbench', path: '/workbench', testId: 'nav-workbench', icon: 'chat' },
-  { kind: 'substrate', surface: 'automations', label: 'Automations', path: '/workbench/automations', testId: 'nav-workbench-automations', icon: 'automations' },
   { kind: 'substrate', surface: 'settings', label: 'Agent Settings', path: '/workbench/settings', testId: 'nav-workbench-settings', icon: 'settings' },
 ];
 

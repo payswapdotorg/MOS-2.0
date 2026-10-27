@@ -11,31 +11,32 @@
  * section (path `/workbench/new-task` resolves through the console
  * section mapping in console-nav.ts; the entry renders it in the MOS
  * surface with no account gate). `/workbench/models` (Model Settings)
- * is native the same way. The remaining substrate routes: `/workbench`
- * the substrate workspace (sessions, groups and projects),
- * `/workbench/automations` the Automations main view, `/workbench/settings`
- * the substrate Settings page. The desktop entry hands these surfaces to
- * the host renderer's `onRequestSubstrateSurface` (see
- * mos-desktop-entry.jsx); the MOS page model is never resolved for these
- * routes.
+ * is native the same way. W36: `/workbench/tasks` (the Tasks list +
+ * conversation view) and `/workbench/automations` (the Automations main
+ * view) emerged native too. The remaining substrate routes: `/workbench`
+ * the substrate workspace (sessions, groups and projects) and
+ * `/workbench/settings` the substrate Settings page. The desktop entry
+ * hands these surfaces to the host renderer's
+ * `onRequestSubstrateSurface` (see mos-desktop-entry.jsx); the MOS page
+ * model is never resolved for these routes.
  */
 
 /** The substrate surface a workbench route names. */
-export type WorkbenchSurface = 'chat' | 'automations' | 'settings';
+export type WorkbenchSurface = 'chat' | 'settings';
 
 const WORKBENCH_ROUTE_BY_PATH: Readonly<Record<string, WorkbenchSurface>> = {
   '/workbench': 'chat',
   '/workbench/': 'chat',
-  '/workbench/automations': 'automations',
   '/workbench/settings': 'settings',
 };
 
 /**
  * Resolve an app-internal path (or href) to the workbench surface it
  * names, or `null` when the path is not a substrate workbench route
- * (native workbench routes — `/workbench/new-task`, `/workbench/models`
- * — resolve through the console section mapping instead). Query strings
- * and trailing slashes are tolerated (only the path decides the surface).
+ * (native workbench routes — `/workbench/new-task`, `/workbench/models`,
+ * `/workbench/tasks`, `/workbench/automations` — resolve through the
+ * console section mapping instead). Query strings and trailing slashes
+ * are tolerated (only the path decides the surface).
  */
 export function workbenchSurfaceFromAppPath(path: string): WorkbenchSurface | null {
   const withoutQuery = (path.split('?', 1)[0] ?? path).replace(/\/+$/, '') || '/';

@@ -88,6 +88,14 @@ test('the first-boot seed lands the disclosed evaluation records', () => {
   assert.equal(snapshot.posts.length, 4);
   assert.equal(snapshot.campaigns.length, 3);
   assert.equal(snapshot.approvals.length, 2);
+  // W36: the Tasks surface's evaluation records (one pinned, one with a
+  // follow-up turn) + the Automations records (one active, one paused).
+  assert.equal(snapshot.tasks.length, 2);
+  assert.equal(snapshot.tasks.filter((task) => task.pinned).length, 1);
+  assert.equal(snapshot.tasks.reduce((total, task) => total + task.followUps.length, 0), 1);
+  assert.equal(snapshot.automations.length, 2);
+  assert.equal(snapshot.automations.filter((automation) => automation.lifecycleStatus === 'active').length, 1);
+  assert.equal(snapshot.automations.filter((automation) => automation.lifecycleStatus === 'paused').length, 1);
   assert.ok(snapshot.events.length >= 9, 'the seed timeline is populated');
   // The three lifecycle rungs are all present in the registry.
   assert.ok(snapshot.campaigns.some((campaign) => campaign.status === 'DRAFT'));
@@ -99,6 +107,9 @@ test('the first-boot seed lands the disclosed evaluation records', () => {
   // The seed honesty: workspace-opened + workspace-seeded events exist.
   assert.ok(snapshot.events.some((event) => event.kind === 'workspace-opened'));
   assert.ok(snapshot.events.some((event) => event.kind === 'workspace-seeded'));
+  // The seed's task + automation events are on the timeline.
+  assert.ok(snapshot.events.some((event) => event.kind === 'agent-task-recorded'));
+  assert.ok(snapshot.events.some((event) => event.kind === 'automation-recorded'));
 });
 
 test('the seed is idempotent across reloads (persisted, not re-seeded)', () => {
@@ -392,6 +403,8 @@ test('a pre-W35 v1 snapshot (no tasks / modelSettings) loads with honest default
   assert.equal(snapshot.missions.length, 1);
   assert.deepEqual(snapshot.tasks, []);
   assert.deepEqual(snapshot.modelSettings.disabledModelIds, []);
+  assert.deepEqual(snapshot.automations, []);
+  assert.equal(snapshot.automationSettings.keepAwake, false);
   assert.equal(store.quarantineEntries().length, 0, 'the legacy snapshot is NOT quarantined');
   // A present-but-malformed tasks field still fails closed.
   const malformed = new Map<string, string>([
@@ -400,4 +413,209 @@ test('a pre-W35 v1 snapshot (no tasks / modelSettings) loads with honest default
   const quarantined = createMosWorkspaceStore({ storage: memoryStorage(malformed), clock: FIXED_CLOCK });
   assert.equal(quarantined.quarantineEntries().length, 1);
   assert.equal(quarantined.getSnapshot().missions.length, 0, 'the malformed snapshot starts EMPTY');
+});
+
+/* --------------------------------------------------------------------
+ * W36 — the Tasks surface's workspace decisions + the Automations
+ * records + the pre-W36 snapshot migration
+ * -------------------------------------------------------------------- */
+
+function bareTaskInput() {
+  return {
+    title: 'Diagnose the failing boundary checks',
+    prompt: 'Run the existing checks and diagnose failures',
+    modelId: 'GLM-5.3',
+    connectionMode: 'individual',
+    mode: 'build',
+    planEnabled: true,
+    reasoningLevel: 'high',
+    missionId: null,
+  } as const;
+}
+
+function taskStore() {
+  return createMosWorkspaceStore({ storage: memoryStorage(), clock: FIXED_CLOCK, seed: false });
+}
+
+test('setTaskPinned toggles the pin workspace decision (event + idempotence)', () => {
+  const store = taskStore();
+  const created = store.recordAgentTask({
+    title: 'Diagnose',
+    prompt: 'Run the existing checks and diagnose failures',
+    modelId: 'GLM-5.3',
+    connectionMode: 'individual',
+    mode: 'build',
+    planEnabled: false,
+    reasoningLevel: 'high',
+    missionId: null,
+  });
+  assert.equal(created.pinned, false);
+  const pinned = store.setTaskPinned(created.id, true);
+  assert.equal(pinned.pinned, true);
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'task-pinned'));
+  // Idempotent repeat: no state change, no duplicate event.
+  const eventsBefore = store.getSnapshot().events.length;
+  store.setTaskPinned(created.id, true);
+  assert.equal(store.getSnapshot().events.length, eventsBefore);
+  store.setTaskPinned(created.id, false);
+  assert.equal(store.getSnapshot().tasks[0]?.pinned, false);
+  assert.throws(() => store.setTaskPinned('tsk-999', true), MosWorkspaceStoreError);
+});
+
+test('setTaskArchived moves the record between the active list and the Archived view', () => {
+  const store = taskStore();
+  const created = store.recordAgentTask({
+    title: 'Diagnose',
+    prompt: 'Run the existing checks and diagnose failures',
+    modelId: 'GLM-5.3',
+    connectionMode: 'individual',
+    mode: 'build',
+    planEnabled: false,
+    reasoningLevel: 'high',
+    missionId: null,
+  });
+  const archived = store.setTaskArchived(created.id, true);
+  assert.equal(archived.archived, true);
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'task-archived'));
+  // The record is KEPT (the honest archive: removed from the active list, not deleted).
+  assert.equal(store.getSnapshot().tasks.length, 1);
+  const restored = store.setTaskArchived(created.id, false);
+  assert.equal(restored.archived, false);
+  assert.throws(() => store.setTaskArchived('tsk-999', true), MosWorkspaceStoreError);
+});
+
+test('renameTask keeps the operator\'s own title verbatim (trim + cap + fail-closed)', () => {
+  const store = taskStore();
+  const created = store.recordAgentTask(bareTaskInput());
+  const renamed = store.renameTask(created.id, '  Boundary harness first pass  ');
+  assert.equal(renamed.title, 'Boundary harness first pass');
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'task-renamed'));
+  assert.throws(() => store.renameTask(created.id, '   '), MosWorkspaceStoreError);
+  assert.throws(() => store.renameTask(created.id, 'x'.repeat(201)), MosWorkspaceStoreError);
+  assert.throws(() => store.renameTask('tsk-999', 'nope'), MosWorkspaceStoreError);
+});
+
+test('appendTaskFollowUp appends the conversation turn + bumps updatedAt (the honest write)', () => {
+  const store = taskStore();
+  const created = store.recordAgentTask(bareTaskInput());
+  assert.equal(created.updatedAt, created.createdAt);
+  const later = '2026-11-01T09:00:00.000Z';
+  const updated = store.appendTaskFollowUp(created.id, 'Start with the boundary harness — report the first failing rule only.', later);
+  assert.equal(updated.followUps.length, 1);
+  assert.equal(updated.followUps[0]?.prompt, 'Start with the boundary harness — report the first failing rule only.');
+  assert.equal(updated.followUps[0]?.at, later);
+  assert.equal(updated.updatedAt, later);
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'task-follow-up-recorded'));
+  // The second follow-up stacks oldest-first.
+  const second = store.appendTaskFollowUp(created.id, 'Now the second rule.', '2026-11-01T09:05:00.000Z');
+  assert.equal(second.followUps.length, 2);
+  assert.equal(second.followUps[0]?.prompt.startsWith('Start with'), true);
+  // Validation: too-thin prompts and unknown tasks fail closed.
+  assert.throws(() => store.appendTaskFollowUp(created.id, 'no'), MosWorkspaceStoreError);
+  assert.throws(() => store.appendTaskFollowUp('tsk-999', 'a real prompt'), MosWorkspaceStoreError);
+});
+
+test('the automation lifecycle: pause/continue, the honest run request, delete, keep-awake', () => {
+  const store = seededStore(); // atm-001 active, atm-002 paused
+  const snapshot = store.getSnapshot();
+  const active = snapshot.automations.find((automation) => automation.id === 'atm-001');
+  const paused = snapshot.automations.find((automation) => automation.id === 'atm-002');
+  assert.ok(active !== undefined && paused !== undefined);
+
+  // Pause: the lifecycle decision flips — the nextRunAt RECORD stays
+  // (schedule math truth; the badge hides it by status, a Continue
+  // restores it untouched).
+  const pausedAtm = store.setAutomationPaused('atm-001', true);
+  assert.equal(pausedAtm.lifecycleStatus, 'paused');
+  assert.notEqual(pausedAtm.nextRunAt, null, 'the schedule record survives the pause');
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'automation-lifecycle-changed'));
+  // Continue: resumes with the schedule record intact.
+  const continued = store.setAutomationPaused('atm-001', false);
+  assert.equal(continued.lifecycleStatus, 'active');
+  assert.notEqual(continued.nextRunAt, null);
+
+  // The honest run request: runCount NEVER moves (no dispatch without the
+  // substrate account) — lastRunAt carries the request time.
+  const runRequested = store.requestAutomationRun('atm-001');
+  assert.equal(runRequested.runCount, 0);
+  assert.notEqual(runRequested.lastRunAt, null);
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'automation-run-requested'));
+
+  // Delete removes the record + the event says it cannot be undone.
+  const deleted = store.deleteAutomation('atm-002');
+  assert.equal(deleted.id, 'atm-002');
+  assert.equal(store.getSnapshot().automations.length, 1);
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'automation-deleted'));
+  assert.throws(() => store.deleteAutomation('atm-002'), MosWorkspaceStoreError);
+  assert.throws(() => store.setAutomationPaused('atm-999', true), MosWorkspaceStoreError);
+
+  // Keep-awake: the workspace settings record + idempotence.
+  assert.equal(store.getSnapshot().automationSettings.keepAwake, false);
+  store.setAutomationKeepAwake(true);
+  assert.equal(store.getSnapshot().automationSettings.keepAwake, true);
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'automation-keep-awake-changed'));
+  const eventsBefore = store.getSnapshot().events.length;
+  store.setAutomationKeepAwake(true);
+  assert.equal(store.getSnapshot().events.length, eventsBefore, 'the idempotent repeat notifies nobody');
+
+  // The health report carries the automations count.
+  assert.equal(store.health().automationCount, 1);
+});
+
+test('a pre-W36 v1 snapshot (W35-era tasks, no automations) migrates with honest defaults', () => {
+  const legacy = {
+    schema: 1,
+    nextSeq: 40,
+    missions: [],
+    posts: [],
+    campaigns: [],
+    accounts: [],
+    events: [],
+    approvals: [],
+    tasks: [
+      {
+        id: 'tsk-001',
+        seq: 30,
+        title: 'Legacy W35 task',
+        prompt: 'Run the existing checks',
+        modelId: 'GLM-5.3',
+        connectionMode: 'individual',
+        mode: 'build',
+        planEnabled: false,
+        reasoningLevel: 'high',
+        missionId: null,
+        status: 'DRAFT',
+        createdAt: '2026-10-20T09:00:00.000Z',
+        // No updatedAt / pinned / archived / followUps — the W35 shape.
+      },
+    ],
+    modelSettings: { disabledModelIds: ['GLM-5.1'] },
+    // No automations / automationSettings — the W35 shape.
+  };
+  const backing = new Map<string, string>([[MOS_WORKSPACE_STORE_KEY, JSON.stringify(legacy)]]);
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK });
+  const snapshot = store.getSnapshot();
+  assert.equal(store.quarantineEntries().length, 0, 'the W35-era snapshot is NOT quarantined');
+  assert.equal(snapshot.tasks.length, 1);
+  assert.equal(snapshot.tasks[0]?.updatedAt, '2026-10-20T09:00:00.000Z', 'updatedAt defaults to createdAt');
+  assert.equal(snapshot.tasks[0]?.pinned, false);
+  assert.equal(snapshot.tasks[0]?.archived, false);
+  assert.deepEqual(snapshot.tasks[0]?.followUps, []);
+  assert.deepEqual(snapshot.modelSettings.disabledModelIds, ['GLM-5.1'], 'the W35 field survives');
+  assert.deepEqual(snapshot.automations, []);
+  assert.equal(snapshot.automationSettings.keepAwake, false);
+
+  // Present-but-malformed W36 fields still fail closed.
+  const malformed = new Map<string, string>([
+    [MOS_WORKSPACE_STORE_KEY, JSON.stringify({ ...legacy, automations: 'not-an-array' })],
+  ]);
+  const quarantined = createMosWorkspaceStore({ storage: memoryStorage(malformed), clock: FIXED_CLOCK });
+  assert.equal(quarantined.quarantineEntries().length, 1);
+  assert.equal(quarantined.getSnapshot().tasks.length, 0, 'the malformed snapshot starts EMPTY');
+
+  const malformedTask = new Map<string, string>([
+    [MOS_WORKSPACE_STORE_KEY, JSON.stringify({ ...legacy, automations: [], tasks: [{ ...legacy.tasks[0], pinned: 'yes' }] })],
+  ]);
+  const quarantinedTask = createMosWorkspaceStore({ storage: memoryStorage(malformedTask), clock: FIXED_CLOCK });
+  assert.equal(quarantinedTask.quarantineEntries().length, 1, 'a malformed pinned field fails closed');
 });

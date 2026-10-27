@@ -55,9 +55,10 @@ import '../mos-web/src/styles.css';
 
 const SHELL_DOCUMENT_TITLE = 'MOS — Marketing Operating System';
 const DEFAULT_SHELL_VERSION = '0.1.0';
+// W36: the Automations surface is NATIVE now — the substrate handoff
+// covers only the chat workspace and the substrate Settings page.
 const WORKBENCH_TITLES = {
   chat: 'MOS — Agent Workbench',
-  automations: 'MOS — Agent Workbench · Automations',
   settings: 'MOS — Agent Workbench · Settings',
 };
 
@@ -103,6 +104,16 @@ function FirstCommitNotifier({ onCommit }) {
     onCommit();
   }, []);
   return null;
+}
+
+/**
+ * The render-time ISO now (W36): the Tasks surface's relative labels
+ * ("now" / "12m" / "3h" / "2d") and the Automations next-run labels
+ * are pure functions of this timestamp — read once per remount, never
+ * a live-ticking clock (a discrete interaction re-renders honestly).
+ */
+function renderNowIso() {
+  return new Date().toISOString();
 }
 
 /**
@@ -210,6 +221,8 @@ export function bootMosDesktopShell(options) {
     connection: null,
     task: null,
     model: null,
+    tasks: null,
+    automation: null,
   };
   let agent = {
     open: false,
@@ -225,6 +238,12 @@ export function bootMosDesktopShell(options) {
   let newTaskDraft = initialMosNewTaskDraft();
   let modelProviderFamily = 'zai';
   let newTaskFocusKey = 0;
+  // The W36 emerged-surface state: the Tasks surface's selected
+  // conversation + archived-view toggle, and the Automations surface's
+  // status filter (the entry owns it all; the sections stay hook-free).
+  let selectedTaskId = null;
+  let tasksShowArchived = false;
+  let automationStatusFilter = 'all';
   // The last MOS section the console showed (the workbench handoff
   // excludes itself) — the resume controller returns here when the host
   // switches back from a substrate surface.
@@ -269,6 +288,10 @@ export function bootMosDesktopShell(options) {
             agent={agent}
             newTaskDraft={newTaskDraft}
             modelProviderFamily={modelProviderFamily}
+            selectedTaskId={selectedTaskId}
+            tasksShowArchived={tasksShowArchived}
+            automationStatusFilter={automationStatusFilter}
+            renderNow={renderNowIso()}
             controller={controller}
           />
           <NewTaskFocusRestorer focusKey={newTaskFocusKey} />
@@ -326,12 +349,7 @@ export function bootMosDesktopShell(options) {
     },
 
     onWorkbenchSurface(surface) {
-      const appPath =
-        surface === 'automations'
-          ? '/workbench/automations'
-          : surface === 'settings'
-            ? '/workbench/settings'
-            : '/workbench';
+      const appPath = surface === 'settings' ? '/workbench/settings' : '/workbench';
       const query = desktopQueryFromAppHref(appPath);
       if (win && win.history && typeof win.history.replaceState === 'function') {
         win.history.replaceState(null, '', query);
@@ -381,6 +399,120 @@ export function bootMosDesktopShell(options) {
 
     onModelSettingsNote(note) {
       receipts = { ...receipts, model: note };
+      remount();
+    },
+
+    /* ---- W36 — the Tasks surface (the emerged task list + conversation) ---- */
+
+    onSelectTask(id) {
+      selectedTaskId = id;
+      receipts = { ...receipts, tasks: null };
+      remount();
+    },
+
+    onToggleTasksArchived() {
+      tasksShowArchived = !tasksShowArchived;
+      remount();
+    },
+
+    onTaskPinned(id, pinned) {
+      withReceipt('tasks', () => {
+        const task = store.setTaskPinned(id, pinned);
+        receipts = {
+          ...receipts,
+          tasks: `Task ${task.id} ${pinned ? 'pinned' : 'unpinned'} — the Pinned section follows this workspace decision.`,
+        };
+      });
+    },
+
+    onTaskArchived(id, archived) {
+      withReceipt('tasks', () => {
+        const task = store.setTaskArchived(id, archived);
+        if (archived && selectedTaskId === id) {
+          selectedTaskId = null;
+        }
+        receipts = {
+          ...receipts,
+          tasks: `Task ${task.id} ${archived ? 'archived — the record is kept in the Archived view' : 'restored to the active task list'}.`,
+        };
+      });
+    },
+
+    onRenameTask(id, title) {
+      withReceipt('tasks', () => {
+        const task = store.renameTask(id, title);
+        receipts = {
+          ...receipts,
+          tasks: `Renamed — task ${task.id} is now "${task.title}".`,
+        };
+      });
+    },
+
+    onAppendTaskFollowUp(id, prompt) {
+      withReceipt('tasks', () => {
+        const task = store.appendTaskFollowUp(id, prompt);
+        receipts = {
+          ...receipts,
+          tasks: `FOLLOW_UP_RECORDED — the turn is on task ${task.id}'s conversation. A workspace record; the substrate runs it when an account is connected.`,
+        };
+      });
+    },
+
+    /* ---- W36 — the Automations surface (the emerged schedule records) ---- */
+
+    onAutomationFilter(filter) {
+      automationStatusFilter = filter;
+      remount();
+    },
+
+    onAutomationPaused(id, paused) {
+      withReceipt('automation', () => {
+        const automation = store.setAutomationPaused(id, paused);
+        receipts = {
+          ...receipts,
+          automation: `Automation ${automation.id} (${automation.title}) ${paused ? 'paused — the schedule holds with no next run' : 'continued — the schedule record resumes'}.`,
+        };
+      });
+    },
+
+    onAutomationRun(id) {
+      withReceipt('automation', () => {
+        const automation = store.requestAutomationRun(id);
+        receipts = {
+          ...receipts,
+          automation: `RUN_REQUESTED — automation ${automation.id} (${automation.title}). The substrate dispatches it when an account is connected; runCount stays the honest ${automation.runCount}.`,
+        };
+      });
+    },
+
+    onAutomationDeleted(id) {
+      withReceipt('automation', () => {
+        const automation = store.deleteAutomation(id);
+        receipts = {
+          ...receipts,
+          automation: `Deleted — automation ${automation.id} (${automation.title}). This cannot be undone.`,
+        };
+      });
+    },
+
+    onAutomationKeepAwake(enabled) {
+      withReceipt('automation', () => {
+        store.setAutomationKeepAwake(enabled);
+        receipts = {
+          ...receipts,
+          automation: `Keep-awake ${enabled ? 'on' : 'off'} — the workspace record the app follows while a chat runs.`,
+        };
+      });
+    },
+
+    onAutomationNote(note) {
+      receipts = {
+        ...receipts,
+        automation:
+          note === 'refresh'
+            ? 'Refreshed — the automations are workspace records in this profile; there is no remote list to re-fetch.'
+            : null,
+      };
       remount();
     },
 

@@ -51,6 +51,9 @@ import {
   ModelSettingsSection,
   type MosModelProviderFamilyId,
 } from './sections/model-settings-section.js';
+import { TasksSection } from './sections/tasks-section.js';
+import { AutomationsSection } from './sections/automations-section.js';
+import type { MosAutomationStatusFilter } from './automation-presentation.js';
 import { MOS_WORKSPACE_DURABILITY_FACT } from './workspace-store.js';
 
 /* --------------------------------------------------------------------
@@ -82,14 +85,17 @@ const SECTION_ICONS: Readonly<Record<MosConsoleSectionId, never>> = {
   settings: glyph(<><path d="M3.5 7.2h9M17 7.2h3.5M3.5 16.8h3M11 16.8h9.5" /><circle cx="14.8" cy="7.2" r="2.2" /><circle cx="8.4" cy="16.8" r="2.2" /></>),
   'new-task': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 8.2v7.6M8.2 12h7.6" /></>),
   'model-settings': glyph(<><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4M12 11v10" /></>),
+  'tasks': glyph(<><path d="M9 5.5h11M9 12h11M9 18.5h11" /><path d="m3.5 5.5 1.4 1.4L7.6 4.2M3.5 12l1.4 1.4 2.7-2.7M3.5 18.5l1.4 1.4 2.7-2.7" /></>),
+  'automations': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3.2 2" /></>),
 };
 
 /** The workbench nav glyphs, keyed by the descriptor's icon field. */
 const WORKBENCH_ICONS: Readonly<Record<string, never>> = {
   'new-task': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 8.2v7.6M8.2 12h7.6" /></>),
   'model-settings': glyph(<><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4M12 11v10" /></>),
+  'tasks': glyph(<><path d="M9 5.5h11M9 12h11M9 18.5h11" /><path d="m3.5 5.5 1.4 1.4L7.6 4.2M3.5 12l1.4 1.4 2.7-2.7M3.5 18.5l1.4 1.4 2.7-2.7" /></>),
+  'automations': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3.2 2" /></>),
   chat: glyph(<><rect x="3.5" y="5" width="17" height="14" rx="2.5" /><path d="M7.5 14.5h9M7.5 10.5h6" /></>),
-  automations: glyph(<><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="14.8" cy="7" r="2.2" /><circle cx="8.4" cy="17" r="2.2" /></>),
   settings: glyph(<><circle cx="12" cy="12" r="2.8" /><path d="M12 3.2v2.4M12 18.4v2.4M3.2 12h2.4M18.4 12h2.4M6 6l1.7 1.7M16.3 16.3 18 18M18 6l-1.7 1.7M7.7 16.3 6 18" /></>),
 };
 
@@ -130,6 +136,32 @@ export interface MosConsoleController {
   readonly onToggleModelEnabled: (modelId: string, enabled: boolean) => void;
   /** The Model Settings honest notes (Refresh / Add provider / Add model). */
   readonly onModelSettingsNote: (note: string) => void;
+  /* ---- W36 — the Tasks surface ---- */
+  /** The task-list selection (null = the pane's empty state). */
+  readonly onSelectTask: (id: string | null) => void;
+  /** The Archived-view toggle. */
+  readonly onToggleTasksArchived: () => void;
+  /** The task list's pin workspace decision. */
+  readonly onTaskPinned: (id: string, pinned: boolean) => void;
+  /** The task list's archive workspace decision. */
+  readonly onTaskArchived: (id: string, archived: boolean) => void;
+  /** The Rename dialog's confirm. */
+  readonly onRenameTask: (id: string, title: string) => void;
+  /** The conversation composer's follow-up submit. */
+  readonly onAppendTaskFollowUp: (id: string, prompt: string) => void;
+  /* ---- W36 — the Automations surface ---- */
+  /** The status-filter pill select. */
+  readonly onAutomationFilter: (filter: MosAutomationStatusFilter) => void;
+  /** Pause / Continue (a workspace lifecycle decision). */
+  readonly onAutomationPaused: (id: string, paused: boolean) => void;
+  /** Run now (records the honest run request). */
+  readonly onAutomationRun: (id: string) => void;
+  /** Delete (two-click confirm; removes the record). */
+  readonly onAutomationDeleted: (id: string) => void;
+  /** The keep-awake workspace record. */
+  readonly onAutomationKeepAwake: (enabled: boolean) => void;
+  /** Refresh answers honestly (no remote list exists). */
+  readonly onAutomationNote: (note: string) => void;
 }
 
 /** The receipts the entry echoes under the intakes (null = none yet). */
@@ -141,6 +173,10 @@ export interface MosConsoleReceipts {
   readonly connection: string | null;
   readonly task: string | null;
   readonly model: string | null;
+  /** W36 — the Tasks surface's receipt (follow-up / rename / archive). */
+  readonly tasks: string | null;
+  /** W36 — the Automations surface's receipt. */
+  readonly automation: string | null;
 }
 
 export interface MosConsoleAppProps {
@@ -162,6 +198,14 @@ export interface MosConsoleAppProps {
   readonly newTaskDraft: MosNewTaskDraft;
   /** The Model Settings provider family the detail pane shows. */
   readonly modelProviderFamily: MosModelProviderFamilyId;
+  /** W36 — the Tasks surface's selected conversation (null = empty state). */
+  readonly selectedTaskId: string | null;
+  /** W36 — the Tasks surface's archived-view toggle. */
+  readonly tasksShowArchived: boolean;
+  /** W36 — the Automations surface's active status filter. */
+  readonly automationStatusFilter: MosAutomationStatusFilter;
+  /** W36 — the render-time ISO now (the relative labels are pure functions of it). */
+  readonly renderNow: string;
   readonly controller: MosConsoleController;
 }
 
@@ -198,13 +242,22 @@ export function MosConsoleApp({
   agent,
   newTaskDraft,
   modelProviderFamily,
+  selectedTaskId,
+  tasksShowArchived,
+  automationStatusFilter,
+  renderNow,
   controller,
 }: MosConsoleAppProps) {
   // The Workspace group lists the console sections EXCEPT the pinned
-  // Settings and the two W35 native workbench surfaces (those render in
+  // Settings and the W35/W36 native workbench surfaces (those render in
   // the Agent Workbench group — their home, with is-active state).
   const workspaceSections = MOS_CONSOLE_SECTIONS.filter(
-    (section) => section.id !== 'settings' && section.id !== 'new-task' && section.id !== 'model-settings',
+    (section) =>
+      section.id !== 'settings' &&
+      section.id !== 'new-task' &&
+      section.id !== 'model-settings' &&
+      section.id !== 'tasks' &&
+      section.id !== 'automations',
   );
   const settingsSection = MOS_CONSOLE_SECTIONS.find((section) => section.id === 'settings');
   const activeSection = sectionRecord(sectionId);
@@ -421,6 +474,41 @@ export function MosConsoleApp({
                 onDraftChange={controller.onNewTaskDraftChange}
                 onToggleModel={controller.onToggleModelEnabled}
                 onNote={controller.onModelSettingsNote}
+              />
+            ) : sectionId === 'tasks' ? (
+              <TasksSection
+                section={section('tasks')}
+                workspace={workspace}
+                selectedTaskId={selectedTaskId}
+                showArchived={tasksShowArchived}
+                receipt={receipts.tasks}
+                now={renderNow}
+                onSelectTask={controller.onSelectTask}
+                onToggleArchived={controller.onToggleTasksArchived}
+                onTaskPinned={controller.onTaskPinned}
+                onTaskArchived={controller.onTaskArchived}
+                onRenameTask={controller.onRenameTask}
+                onAppendFollowUp={controller.onAppendTaskFollowUp}
+                onNavigate={controller.onNavigateSection}
+              />
+            ) : sectionId === 'automations' ? (
+              <AutomationsSection
+                section={section('automations')}
+                workspace={workspace}
+                statusFilter={automationStatusFilter}
+                receipt={receipts.automation}
+                now={renderNow}
+                onFilter={controller.onAutomationFilter}
+                onPauseToggle={controller.onAutomationPaused}
+                onRun={controller.onAutomationRun}
+                onDelete={controller.onAutomationDeleted}
+                onKeepAwake={controller.onAutomationKeepAwake}
+                onRefresh={() => {
+                  controller.onAutomationNote('refresh');
+                }}
+                onCreate={() => {
+                  controller.onNavigateSection('new-task');
+                }}
               />
             ) : sectionId === 'lab' ? (
               <LabSection section={section('lab')} workspace={workspace} />

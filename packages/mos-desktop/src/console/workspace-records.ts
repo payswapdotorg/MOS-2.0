@@ -101,6 +101,11 @@ export interface MosWorkspaceApproval {
  * DRAFT composed on the emerged surface (title derived from the prompt,
  * model + mode + mission context frozen at send). The substrate runs the
  * task when an account is connected; this record is the workspace intent.
+ *
+ * W36 — the record grew the conversation-view facts: `followUps` (the
+ * session composer's appended prompts), `updatedAt` (the list ordering
+ * truth), and the pin/archive workspace decisions. The original `prompt`
+ * stays the FIRST turn (pre-W36 snapshots default the new fields).
  */
 export interface MosWorkspaceTask {
   readonly id: string;
@@ -115,6 +120,53 @@ export interface MosWorkspaceTask {
   readonly missionId: string | null;
   readonly status: 'DRAFT';
   readonly createdAt: string;
+  /** W36 — the last turn's time (defaults to createdAt pre-W36). */
+  readonly updatedAt: string;
+  /** W36 — the pin workspace decision (the task list's Pinned section). */
+  readonly pinned: boolean;
+  /** W36 — the archive workspace decision (the archived view). */
+  readonly archived: boolean;
+  /** W36 — the conversation's follow-up turns, oldest-first. */
+  readonly followUps: readonly MosWorkspaceTaskFollowUp[];
+}
+
+/** One follow-up turn on a task's conversation (the session composer's write). */
+export interface MosWorkspaceTaskFollowUp {
+  readonly id: string;
+  readonly prompt: string;
+  readonly at: string;
+}
+
+/**
+ * A scheduled agent task (W36 — the Automations surface's record, the
+ * substrate's ZCodeAutomation adapted to the workspace-intent law): the
+ * schedule + prompt + lifecycle are THIS store's workspace truth; no run
+ * dispatches without the substrate account, so `runCount` stays the
+ * honest zero until a real dispatch exists and `nextRunAt` is schedule
+ * math (an intent), never platform truth.
+ */
+export interface MosWorkspaceAutomation {
+  readonly id: string;
+  readonly seq: number;
+  readonly title: string;
+  readonly prompt: string;
+  /** The cron expression record (schedule math truth). */
+  readonly cronExpr: string;
+  /** The human schedule line the card badge renders ("Every weekday at 9:00 AM"). */
+  readonly schedule: string;
+  /** active | paused are the workspace decisions this store can make honestly. */
+  readonly lifecycleStatus: 'active' | 'paused' | 'completed' | 'failed';
+  readonly runCount: number;
+  /** The next scheduled run (schedule math; null when paused/no recurrence). */
+  readonly nextRunAt: string | null;
+  readonly lastRunAt: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+/** The Automations workspace settings (W36): the keep-awake record. */
+export interface MosWorkspaceAutomationSettings {
+  readonly keepAwake: boolean;
 }
 
 /**
@@ -137,6 +189,9 @@ export interface MosWorkspaceSnapshot {
   readonly approvals: readonly MosWorkspaceApproval[];
   readonly tasks: readonly MosWorkspaceTask[];
   readonly modelSettings: MosWorkspaceModelSettings;
+  /** W36 — the scheduled agent tasks + the Automations settings. */
+  readonly automations: readonly MosWorkspaceAutomation[];
+  readonly automationSettings: MosWorkspaceAutomationSettings;
 }
 
 /* --------------------------------------------------------------------
@@ -224,6 +279,9 @@ export interface MosWorkspacePersisted {
   /** W35 fields — absent in pre-W35 v1 snapshots; validation defaults them. */
   readonly tasks: readonly MosWorkspaceTask[];
   readonly modelSettings: MosWorkspaceModelSettings;
+  /** W36 fields — absent in pre-W36 v1 snapshots; validation defaults them. */
+  readonly automations: readonly MosWorkspaceAutomation[];
+  readonly automationSettings: MosWorkspaceAutomationSettings;
 }
 
 const EMPTY_PERSISTED: MosWorkspacePersisted = {
@@ -237,6 +295,8 @@ const EMPTY_PERSISTED: MosWorkspacePersisted = {
   approvals: [],
   tasks: [],
   modelSettings: { disabledModelIds: [] },
+  automations: [],
+  automationSettings: { keepAwake: false },
 };
 
 /** @internal The empty document (the quarantined store's fail-closed start). */
@@ -278,13 +338,81 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
   ) {
     throw new Error('workspace snapshot field "modelSettings" is malformed');
   }
+  // W36 back-compat: pre-W36 tasks carry no updatedAt/pinned/archived/
+  // followUps — absent fields default honestly (updatedAt = createdAt,
+  // unpinned, unarchived, no follow-ups); a PRESENT-but-malformed field
+  // still fails closed.
+  if (Array.isArray(value.tasks)) {
+    for (const task of value.tasks) {
+      if (!isRecord(task)) continue;
+      if (task.updatedAt !== undefined && typeof task.updatedAt !== 'string') {
+        throw new Error('workspace snapshot field "tasks" is malformed (updatedAt)');
+      }
+      if (task.pinned !== undefined && typeof task.pinned !== 'boolean') {
+        throw new Error('workspace snapshot field "tasks" is malformed (pinned)');
+      }
+      if (task.archived !== undefined && typeof task.archived !== 'boolean') {
+        throw new Error('workspace snapshot field "tasks" is malformed (archived)');
+      }
+      if (
+        task.followUps !== undefined &&
+        (!Array.isArray(task.followUps) ||
+          task.followUps.some(
+            (entry) => !isRecord(entry) || typeof entry.id !== 'string' || typeof entry.prompt !== 'string' || typeof entry.at !== 'string',
+          ))
+      ) {
+        throw new Error('workspace snapshot field "tasks" is malformed (followUps)');
+      }
+    }
+  }
+  if (
+    value.automations !== undefined &&
+    (!Array.isArray(value.automations) ||
+      value.automations.some(
+        (entry) =>
+          !isRecord(entry) ||
+          typeof entry.id !== 'string' ||
+          typeof entry.seq !== 'number' ||
+          typeof entry.title !== 'string' ||
+          typeof entry.prompt !== 'string' ||
+          typeof entry.cronExpr !== 'string' ||
+          typeof entry.schedule !== 'string' ||
+          typeof entry.lifecycleStatus !== 'string' ||
+          typeof entry.runCount !== 'number' ||
+          typeof entry.createdAt !== 'string' ||
+          typeof entry.updatedAt !== 'string',
+      ))
+  ) {
+    throw new Error('workspace snapshot field "automations" is malformed');
+  }
+  if (
+    value.automationSettings !== undefined &&
+    (!isRecord(value.automationSettings) || typeof value.automationSettings.keepAwake !== 'boolean')
+  ) {
+    throw new Error('workspace snapshot field "automationSettings" is malformed');
+  }
+  const tasks = (value.tasks === undefined ? [] : (value.tasks as unknown as MosWorkspaceTask[])).map(
+    (task) => ({
+      ...task,
+      updatedAt: task.updatedAt ?? task.createdAt,
+      pinned: task.pinned ?? false,
+      archived: task.archived ?? false,
+      followUps: task.followUps ?? [],
+    }),
+  );
   return {
     ...(value as unknown as MosWorkspacePersisted),
-    tasks: value.tasks === undefined ? [] : (value.tasks as unknown as MosWorkspaceTask[]),
+    tasks,
     modelSettings:
       value.modelSettings === undefined
         ? { disabledModelIds: [] }
         : (value.modelSettings as unknown as MosWorkspaceModelSettings),
+    automations:
+      value.automations === undefined ? [] : (value.automations as unknown as MosWorkspaceAutomation[]),
+    automationSettings:
+      value.automationSettings === undefined
+        ? { keepAwake: false }
+        : (value.automationSettings as unknown as MosWorkspaceAutomationSettings),
   };
 }
 
@@ -301,6 +429,8 @@ export interface MosWorkspaceStoreHealth {
   readonly campaignCount: number;
   readonly eventCount: number;
   readonly taskCount: number;
+  /** W36 — the scheduled agent tasks count. */
+  readonly automationCount: number;
   readonly quarantinedCount: number;
 }
 
@@ -334,6 +464,16 @@ export interface MosWorkspaceStore {
   beginProviderSetup(providerId: string, now?: string): MosWorkspaceAccount;
   recordAgentTask(input: MosAgentTaskIntakeInput, now?: string): MosWorkspaceTask;
   setModelDisabled(modelId: string, disabled: boolean, now?: string): MosWorkspaceModelSettings;
+  /** W36 — the task list + conversation workspace decisions. */
+  setTaskPinned(id: string, pinned: boolean, now?: string): MosWorkspaceTask;
+  setTaskArchived(id: string, archived: boolean, now?: string): MosWorkspaceTask;
+  renameTask(id: string, title: string, now?: string): MosWorkspaceTask;
+  appendTaskFollowUp(id: string, prompt: string, now?: string): MosWorkspaceTask;
+  /** W36 — the Automations workspace records. */
+  setAutomationPaused(id: string, paused: boolean, now?: string): MosWorkspaceAutomation;
+  requestAutomationRun(id: string, now?: string): MosWorkspaceAutomation;
+  deleteAutomation(id: string, now?: string): MosWorkspaceAutomation;
+  setAutomationKeepAwake(enabled: boolean, now?: string): MosWorkspaceAutomationSettings;
   health(): MosWorkspaceStoreHealth;
   quarantineEntries(): readonly MosWorkspaceQuarantineEntry[];
 }

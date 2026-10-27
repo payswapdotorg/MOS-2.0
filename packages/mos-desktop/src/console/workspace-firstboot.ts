@@ -25,12 +25,15 @@ interface MutableWorkspaceSeed {
   approvals: MosWorkspacePersisted['approvals'];
   tasks: MosWorkspacePersisted['tasks'];
   modelSettings: MosWorkspacePersisted['modelSettings'];
+  automations: MosWorkspacePersisted['automations'];
+  automationSettings: MosWorkspacePersisted['automationSettings'];
 }
 
 /**
  * Build the first-boot seed: 4 missions, 4 posts, 3 campaigns (one per
- * lifecycle rung), 2 approvals (one pending, one decided), and the
- * timeline that records every step.
+ * lifecycle rung), 2 approvals (one pending, one decided), 2 recorded
+ * agent tasks (W36 — the Tasks surface's evaluation records), 2
+ * scheduled automations (W36), and the timeline that records every step.
  */
 export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
   const T0 = '2026-10-24T09:00:00.000Z';
@@ -50,6 +53,8 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
     approvals: [],
     tasks: [],
     modelSettings: { disabledModelIds: [] },
+    automations: [],
+    automationSettings: { keepAwake: false },
   };
   const bump = (): number => {
     const seq = nextSeq;
@@ -131,7 +136,103 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
   const approvalPending = { id: 'apv-002', seq: bump(), kind: 'arm-gate' as const, campaignId: 'cmp-002', status: 'PENDING' as const, decidedAt: null, createdAt: T3 };
   persisted.approvals = [approvalApproved, approvalPending];
   event('gate-approved', 'Arm gate approved — campaign cmp-003 is ARMED (workspace record; live spend still awaits a connected ad transport)', T4);
-  event('workspace-seeded', 'Seed complete — 4 missions, 4 posts, 3 campaigns, 2 approvals, this timeline', T4);
+
+  // W36 — the recorded agent tasks (the Tasks surface's evaluation
+  // records: the substrate's task-list row shapes + the conversation's
+  // turn shapes, disclosed as workspace drafts that never ran).
+  const task = (
+    id: string,
+    title: string,
+    prompt: string,
+    modelId: string,
+    mode: string,
+    planEnabled: boolean,
+    pinned: boolean,
+    missionId: string | null,
+    followUps: MosWorkspacePersisted['tasks'][number]['followUps'],
+    createdAt: string,
+    updatedAt: string,
+  ): void => {
+    const seq = bump();
+    persisted.tasks = [
+      ...persisted.tasks,
+      { id, seq, title, prompt, modelId, connectionMode: 'individual', mode, planEnabled, reasoningLevel: 'high', missionId, status: 'DRAFT' as const, createdAt, updatedAt, pinned, archived: false, followUps },
+    ];
+  };
+  task(
+    'tsk-001',
+    'Diagnose the failing boundary checks',
+    'Run the existing checks and diagnose failures',
+    'GLM-5.3',
+    'build',
+    true,
+    true,
+    null,
+    [{ id: 'tsk-fu-001', prompt: 'Start with the boundary harness — report the first failing rule only.', at: T4 }],
+    T2,
+    T4,
+  );
+  task(
+    'tsk-002',
+    'Draft the EP release-day copy set',
+    'Draft the release-day announcement copy for Instagram and X, mission rules respected',
+    'GLM-5.3-Flash',
+    'edit',
+    false,
+    false,
+    'mis-003',
+    [],
+    T3,
+    T3,
+  );
+  event('agent-task-recorded', 'Task tsk-001 drafted — "Diagnose the failing boundary checks" on GLM-5.3 (build mode · plan). The substrate runs it when an account is connected.', T2);
+  event('agent-task-recorded', 'Task tsk-002 drafted — "Draft the EP release-day copy set" on GLM-5.3-Flash (edit mode). The substrate runs it when an account is connected.', T3);
+  event('task-follow-up-recorded', 'Follow-up on task tsk-001 — "Start with the boundary harness — report the first failing rule…". A workspace record; the substrate runs it when an account is connected.', T4);
+  event('task-pinned', 'Task tsk-001 pinned — the task list\'s Pinned section follows it', T4);
+
+  // W36 — the scheduled automations (the Automations surface's
+  // evaluation records; the first prompt is the substrate's own
+  // create-in-chat example, verbatim).
+  const automation = (
+    id: string,
+    title: string,
+    prompt: string,
+    cronExpr: string,
+    schedule: string,
+    lifecycleStatus: 'active' | 'paused',
+    nextRunAt: string | null,
+    createdAt: string,
+  ): void => {
+    const seq = bump();
+    persisted.automations = [
+      ...persisted.automations,
+      { id, seq, title, prompt, cronExpr, schedule, lifecycleStatus, runCount: 0, nextRunAt, lastRunAt: null, createdAt, updatedAt: createdAt },
+    ];
+  };
+  automation(
+    'atm-001',
+    'Weekday change summary',
+    'Every weekday at 9 AM, summarize code changes and follow-ups for this project.',
+    '0 9 * * 1-5',
+    'Every weekday at 9:00 AM',
+    'active',
+    '2026-10-27T09:00:00.000Z',
+    T3,
+  );
+  automation(
+    'atm-002',
+    'Weekly audience report',
+    'Every Monday at 8 AM, compile the weekly audience-growth report from the measurement vocabulary — no vanity metrics.',
+    '0 8 * * 1',
+    'Every Monday at 8:00 AM',
+    'paused',
+    null,
+    T3,
+  );
+  event('automation-recorded', 'Automation atm-001 (Weekday change summary) recorded — Every weekday at 9:00 AM. The substrate dispatches runs when an account is connected.', T3);
+  event('automation-recorded', 'Automation atm-002 (Weekly audience report) recorded — Every Monday at 8:00 AM, paused. The substrate dispatches runs when an account is connected.', T3);
+
+  event('workspace-seeded', 'Seed complete — 4 missions, 4 posts, 3 campaigns, 2 approvals, 2 tasks, 2 automations, this timeline', T4);
 
   persisted.nextSeq = nextSeq;
   return persisted;

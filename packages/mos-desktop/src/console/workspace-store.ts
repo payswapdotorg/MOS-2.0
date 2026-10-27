@@ -36,6 +36,8 @@ import {
   type MosPostComposerInput,
   type MosWorkspaceAccount,
   type MosWorkspaceApproval,
+  type MosWorkspaceAutomation,
+  type MosWorkspaceAutomationSettings,
   type MosWorkspaceCampaign,
   type MosWorkspaceMission,
   type MosWorkspaceModelSettings,
@@ -163,6 +165,22 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
     return campaign;
   }
 
+  function taskById(id: string): MosWorkspaceTask {
+    const task = state.tasks.find((entry) => entry.id === id);
+    if (task === undefined) {
+      throw new MosWorkspaceStoreError('not-found', `no task ${id} exists in this workspace`);
+    }
+    return task;
+  }
+
+  function automationById(id: string): MosWorkspaceAutomation {
+    const automation = state.automations.find((entry) => entry.id === id);
+    if (automation === undefined) {
+      throw new MosWorkspaceStoreError('not-found', `no automation ${id} exists in this workspace`);
+    }
+    return automation;
+  }
+
   const store: MosWorkspaceStore = {
     subscribe(listener: () => void): () => void {
       listeners.add(listener);
@@ -180,6 +198,8 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         approvals: [...state.approvals].sort((a, b) => b.seq - a.seq),
         tasks: [...state.tasks].sort((a, b) => b.seq - a.seq),
         modelSettings: state.modelSettings,
+        automations: [...state.automations].sort((a, b) => b.seq - a.seq),
+        automationSettings: state.automationSettings,
       };
     },
 
@@ -408,6 +428,10 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
           missionId: input.missionId,
           status: 'DRAFT',
           createdAt: at,
+          updatedAt: at,
+          pinned: false,
+          archived: false,
+          followUps: [],
         };
         state = { ...state, tasks: [...state.tasks, task] };
         appendEvent(
@@ -444,6 +468,165 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
       });
     },
 
+    /* ------------------------------------------------------------------
+     * W36 — the Tasks surface's workspace decisions (pin / archive /
+     * rename / follow-up turns): every write is a REAL record change,
+     * fail-closed, appended to the timeline.
+     * ------------------------------------------------------------------ */
+
+    setTaskPinned(id: string, pinned: boolean, now?: string): MosWorkspaceTask {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceTask => {
+        const task = taskById(id);
+        if (task.pinned === pinned) {
+          return task; // idempotent no-op: nobody is notified
+        }
+        const updated: MosWorkspaceTask = { ...task, pinned, updatedAt: at };
+        state = { ...state, tasks: state.tasks.map((entry) => (entry.id === id ? updated : entry)) };
+        appendEvent('task-pinned', `Task ${id} ${pinned ? 'pinned' : 'unpinned'} — the task list's Pinned section follows it`, at);
+        return updated;
+      });
+    },
+
+    setTaskArchived(id: string, archived: boolean, now?: string): MosWorkspaceTask {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceTask => {
+        const task = taskById(id);
+        if (task.archived === archived) {
+          return task; // idempotent no-op: nobody is notified
+        }
+        const updated: MosWorkspaceTask = { ...task, archived };
+        state = { ...state, tasks: state.tasks.map((entry) => (entry.id === id ? updated : entry)) };
+        appendEvent(
+          'task-archived',
+          `Task ${id} ${archived ? 'archived — it leaves the active task list (a workspace decision, the record is kept)' : 'restored to the active task list'}`,
+          at,
+        );
+        return updated;
+      });
+    },
+
+    renameTask(id: string, title: string, now?: string): MosWorkspaceTask {
+      const at = now ?? clock();
+      const trimmed = title.trim();
+      if (trimmed.length === 0) {
+        throw new MosWorkspaceStoreError('validation', 'the task name is required — an empty title cannot be saved');
+      }
+      if (trimmed.length > 200) {
+        throw new MosWorkspaceStoreError('validation', 'the task name is capped at 200 characters');
+      }
+      return commit((): MosWorkspaceTask => {
+        const task = taskById(id);
+        const updated: MosWorkspaceTask = { ...task, title: trimmed, updatedAt: at };
+        state = { ...state, tasks: state.tasks.map((entry) => (entry.id === id ? updated : entry)) };
+        appendEvent('task-renamed', `Task ${id} renamed to "${trimmed}" — the operator's own title, kept verbatim`, at);
+        return updated;
+      });
+    },
+
+    appendTaskFollowUp(id: string, prompt: string, now?: string): MosWorkspaceTask {
+      const at = now ?? clock();
+      const trimmed = prompt.trim();
+      if (trimmed.length < 3) {
+        throw new MosWorkspaceStoreError('validation', 'the follow-up prompt needs at least 3 characters');
+      }
+      return commit((): MosWorkspaceTask => {
+        const task = taskById(id);
+        const { id: turnId } = nextId('tsk-fu');
+        const updated: MosWorkspaceTask = {
+          ...task,
+          followUps: [...task.followUps, { id: turnId, prompt: trimmed, at }],
+          updatedAt: at,
+        };
+        state = { ...state, tasks: state.tasks.map((entry) => (entry.id === id ? updated : entry)) };
+        appendEvent(
+          'task-follow-up-recorded',
+          `Follow-up on task ${id} — "${trimmed.slice(0, 48)}${trimmed.length > 48 ? '…' : ''}". A workspace record; the substrate runs it when an account is connected.`,
+          at,
+        );
+        return updated;
+      });
+    },
+
+    /* ------------------------------------------------------------------
+     * W36 — the Automations surface's workspace records (pause/continue,
+     * run request, delete, keep-awake): honest intent records — no run
+     * dispatches without the substrate account.
+     * ------------------------------------------------------------------ */
+
+    setAutomationPaused(id: string, paused: boolean, now?: string): MosWorkspaceAutomation {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceAutomation => {
+        const automation = automationById(id);
+        if (automation.lifecycleStatus === 'completed' || automation.lifecycleStatus === 'failed') {
+          throw new MosWorkspaceStoreError('validation', `automation ${id} is ${automation.lifecycleStatus} — its lifecycle no longer toggles`);
+        }
+        const next = paused ? 'paused' : 'active';
+        if (automation.lifecycleStatus === next) {
+          return automation; // idempotent no-op: nobody is notified
+        }
+        // The nextRunAt RECORD stays (schedule math truth — the badge hides
+        // it by lifecycle status, and a Continue restores it untouched);
+        // only the lifecycle decision flips.
+        const updated: MosWorkspaceAutomation = {
+          ...automation,
+          lifecycleStatus: next,
+          updatedAt: at,
+        };
+        state = { ...state, automations: state.automations.map((entry) => (entry.id === id ? updated : entry)) };
+        appendEvent(
+          'automation-lifecycle-changed',
+          `Automation ${id} (${automation.title}) ${paused ? 'paused' : 'continued'} — a workspace decision; the schedule record ${paused ? 'holds with no next run' : 'resumes'}`,
+          at,
+        );
+        return updated;
+      });
+    },
+
+    requestAutomationRun(id: string, now?: string): MosWorkspaceAutomation {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceAutomation => {
+        const automation = automationById(id);
+        // The honest record: the run is REQUESTED (the event + the last-run
+        // request time); runCount stays the honest count of dispatched
+        // runs — no dispatch exists without the substrate account.
+        const updated: MosWorkspaceAutomation = { ...automation, lastRunAt: at, updatedAt: at };
+        state = { ...state, automations: state.automations.map((entry) => (entry.id === id ? updated : entry)) };
+        appendEvent(
+          'automation-run-requested',
+          `Run requested for automation ${id} (${automation.title}) — the substrate dispatches it when an account is connected`,
+          at,
+        );
+        return updated;
+      });
+    },
+
+    deleteAutomation(id: string, now?: string): MosWorkspaceAutomation {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceAutomation => {
+        const automation = automationById(id);
+        state = { ...state, automations: state.automations.filter((entry) => entry.id !== id) };
+        appendEvent('automation-deleted', `Automation ${id} (${automation.title}) deleted — the schedule record is removed; this cannot be undone`, at);
+        return automation;
+      });
+    },
+
+    setAutomationKeepAwake(enabled: boolean, now?: string): MosWorkspaceAutomationSettings {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceAutomationSettings => {
+        if (state.automationSettings.keepAwake === enabled) {
+          return state.automationSettings; // idempotent no-op: nobody is notified
+        }
+        state = { ...state, automationSettings: { keepAwake: enabled } };
+        appendEvent(
+          'automation-keep-awake-changed',
+          `Keep-awake ${enabled ? 'on' : 'off'} — the workspace record the app follows while a chat runs`,
+          at,
+        );
+        return state.automationSettings;
+      });
+    },
+
     health() {
       return {
         durability: 'BROWSER_PROFILE' as const,
@@ -453,6 +636,7 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         campaignCount: state.campaigns.length,
         eventCount: state.events.length,
         taskCount: state.tasks.length,
+        automationCount: state.automations.length,
         quarantinedCount: quarantined.length,
       };
     },
