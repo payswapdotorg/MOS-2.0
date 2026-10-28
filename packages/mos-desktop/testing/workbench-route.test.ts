@@ -40,6 +40,10 @@ test('workbenchSurfaceFromAppPath rejects non-workbench paths (MOS routes resolv
   assert.equal(workbenchSurfaceFromAppPath('/workbench/settings'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/settings/'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/settings?section=mcp'), null);
+  // W39: the embedded browser pane is a NATIVE console route too.
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/browser'), null);
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/browser/'), null);
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/browser?url=x'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/tasks/'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/automations?filter=all'), null);
   // Near-misses must not match (explicit unknowns, never guesses).

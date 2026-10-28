@@ -163,3 +163,35 @@ export type {
   MosHookFormState,
   MosMcpFormState,
 } from './console/agent-settings-forms.js';
+
+// ---- The MOS browser pane (W39 — the substrate's embedded browser, emerged) ----
+export {
+  INITIAL_MOS_BROWSER_STATE,
+  MOS_BROWSER_ADDRESS_PLACEHOLDER,
+  MOS_BROWSER_DEFAULT_URL,
+  MOS_BROWSER_ELEMENT_PICKER_NOTE,
+  MOS_BROWSER_GUEST_KEY,
+  MOS_BROWSER_INVALID_URL_MESSAGE,
+  MOS_BROWSER_PARTITION,
+  MOS_BROWSER_RESPONSIVE_NOTE,
+  MOS_BROWSER_TABS_NOTE,
+  MOS_BROWSER_WORKSPACE_KEY,
+  displayMosBrowserUrl,
+  initialMosBrowserState,
+  isAllowedBrowserUrl,
+  isCertificateMosBrowserLoadErrorCode,
+  isDefaultBrowserOpenableUrl,
+  isRecoverableMosBrowserGuestExitReason,
+  mosBrowserGuestAttachedReceipt,
+  mosBrowserGuestUnavailableReceipt,
+  mosBrowserGuestFailedDetail,
+  mosBrowserLoadFailedMessage,
+  mosBrowserUrlRecordedReceipt,
+  normalizeMosBrowserUrl,
+  safeMosWebviewCall,
+} from './console/browser-presentation.js';
+export type {
+  MosBrowserGuestFailure,
+  MosBrowserState,
+} from './console/browser-presentation.js';
+export type { MosBrowserPaneProps } from './console/sections/browser-section.js';

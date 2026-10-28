@@ -4280,3 +4280,271 @@
   flex-wrap: wrap;
   gap: 0.6rem;
 }
+
+/* --------------------------------------------------------------------
+ * W39 — THE BROWSER PANE (the substrate's embedded browser, emerged).
+ * The toolbar idiom, the viewport surface, the address input, the More
+ * menu, the guest/load/empty states, and the honest notes row.
+ * -------------------------------------------------------------------- */
+
+.mosc-browser-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.mosc-browser-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.8rem;
+  background: var(--mosc-surface);
+}
+
+.mosc-browser-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mosc-ink-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.mosc-browser-tool:hover:not(:disabled) {
+  background: var(--mosc-surface-sunken);
+  color: var(--mosc-ink);
+}
+
+.mosc-browser-tool:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+}
+
+.mosc-browser-tool:disabled {
+  color: var(--mosc-ink-faint);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.mosc-browser-tool.is-active {
+  background: var(--mosc-accent-wash);
+  color: var(--mosc-accent-strong);
+}
+
+.mosc-browser-glyph {
+  display: block;
+}
+
+.mosc-browser-glyph.is-spinning {
+  animation: mosc-browser-spin 900ms linear infinite;
+}
+
+@keyframes mosc-browser-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.mosc-browser-address {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 2rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--mosc-line-soft);
+  border-radius: 0.55rem;
+  background: var(--mosc-surface-sunken);
+  color: var(--mosc-ink);
+  font-size: 0.86rem;
+  font-family: inherit;
+}
+
+.mosc-browser-address:focus {
+  outline: none;
+  border-color: var(--mosc-accent);
+  background: var(--mosc-surface);
+}
+
+.mosc-browser-address::placeholder {
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-browser-more {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mosc-browser-more > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  color: var(--mosc-ink-soft);
+  cursor: pointer;
+}
+
+.mosc-browser-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mosc-browser-more[open] > summary {
+  background: var(--mosc-surface-sunken);
+  color: var(--mosc-ink);
+}
+
+.mosc-browser-more-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 15rem;
+  padding: 0.3rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.7rem;
+  background: var(--mosc-surface);
+  box-shadow: 0 10px 28px rgba(22, 38, 58, 0.14);
+}
+
+.mosc-browser-more-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--mosc-ink);
+  font-size: 0.86rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mosc-browser-more-item:hover:not(:disabled) {
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-browser-more-item:disabled {
+  color: var(--mosc-ink-faint);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mosc-browser-surface {
+  position: relative;
+  min-height: 22rem;
+  height: min(58vh, 34rem);
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.8rem;
+  background: var(--mosc-surface);
+  overflow: hidden;
+}
+
+.mosc-browser-webview {
+  display: inline-flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #fff;
+}
+
+.mosc-browser-webview.is-covered {
+  display: none;
+}
+
+.mosc-browser-state {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 1.5rem 2rem;
+  text-align: center;
+}
+
+.mosc-browser-state--empty {
+  background: var(--mosc-surface);
+}
+
+.mosc-browser-state-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--mosc-ink);
+}
+
+.mosc-browser-state-line {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 0.86rem;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-browser-state-detail {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 0.78rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-inline-link {
+  display: inline;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--mosc-accent-strong);
+  font-size: inherit;
+  font-family: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.mosc-inline-link:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 2px;
+}
+
+.mosc-browser-session {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-browser-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mosc-theme-dark .mosc-browser-toolbar,
+.mosc-theme-dark .mosc-browser-surface {
+  border-color: var(--mosc-line);
+  background: var(--mosc-surface);
+}
+
+.mosc-theme-dark .mosc-browser-address {
+  background: var(--mosc-surface-sunken);
+  border-color: var(--mosc-line-soft);
+  color: var(--mosc-ink);
+}
+
+.mosc-theme-dark .mosc-browser-more-menu {
+  background: var(--mosc-surface);
+  border-color: var(--mosc-line);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+}

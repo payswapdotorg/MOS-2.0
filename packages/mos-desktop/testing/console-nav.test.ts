@@ -24,8 +24,8 @@ import {
   mosConsoleSectionTitle,
 } from '../dist/console/console-nav.js';
 
-test('the console carries exactly the nineteen pinned sections (13 + the six W35–W38 emerged surfaces)', () => {
-  assert.equal(MOS_CONSOLE_SECTIONS.length, 19);
+test('the console carries exactly the twenty pinned sections (13 + the seven W35–W39 emerged surfaces)', () => {
+  assert.equal(MOS_CONSOLE_SECTIONS.length, 20);
   assert.deepEqual(
     MOS_CONSOLE_SECTIONS.map((section) => section.id),
     [
@@ -48,6 +48,7 @@ test('the console carries exactly the nineteen pinned sections (13 + the six W35
       'automations',
       'marketplace',
       'agent-settings',
+      'browser',
     ],
   );
 });
@@ -115,10 +116,10 @@ test('the typed outcome action set is PROMOTE / PUBLISH / GROW / MEASURE', () =>
   assert.equal(mosAction('pay'), undefined);
 });
 
-test('the AGENT WORKBENCH group carries the six native surfaces + the chat substrate surface with the stable testids', () => {
+test('the AGENT WORKBENCH group carries the seven native surfaces + the chat substrate surface with the stable testids', () => {
   assert.deepEqual(
     MOS_WORKBENCH_NAV_ITEMS.map((item) => item.kind),
-    ['native', 'native', 'native', 'native', 'native', 'native', 'substrate'],
+    ['native', 'native', 'native', 'native', 'native', 'native', 'native', 'substrate'],
   );
   assert.deepEqual(
     MOS_WORKBENCH_NAV_ITEMS.map((item) => item.testId),
@@ -129,6 +130,7 @@ test('the AGENT WORKBENCH group carries the six native surfaces + the chat subst
       'nav-workbench-automations',
       'nav-workbench-plugins',
       'nav-workbench-settings',
+      'nav-workbench-browser',
       'nav-workbench',
     ],
   );
@@ -159,18 +161,24 @@ test('the AGENT WORKBENCH group carries the six native surfaces + the chat subst
   );
   assert.equal(MOS_WORKBENCH_NAV_ITEMS[4]?.path, '/workbench/plugins');
   // W38: the Agent Settings entry is NATIVE now — the settings hub
-  // renders in the MOS console (the last substrate-gated nav item
-  // emerged; only the chat workspace remains a substrate surface).
+  // renders in the MOS console. W39: the Browser entry is NATIVE too
+  // (the substrate's embedded browser pane with the real webview) — only
+  // the chat workspace remains a substrate surface.
   assert.equal(
     MOS_WORKBENCH_NAV_ITEMS[5]?.kind === 'native' ? MOS_WORKBENCH_NAV_ITEMS[5].section : undefined,
     'agent-settings',
   );
   assert.equal(MOS_WORKBENCH_NAV_ITEMS[5]?.path, '/workbench/settings');
+  assert.equal(
+    MOS_WORKBENCH_NAV_ITEMS[6]?.kind === 'native' ? MOS_WORKBENCH_NAV_ITEMS[6].section : undefined,
+    'browser',
+  );
+  assert.equal(MOS_WORKBENCH_NAV_ITEMS[6]?.path, '/workbench/browser');
   assert.deepEqual(
-    MOS_WORKBENCH_NAV_ITEMS.slice(6).map((item) => (item.kind === 'substrate' ? item.surface : undefined)),
+    MOS_WORKBENCH_NAV_ITEMS.slice(7).map((item) => (item.kind === 'substrate' ? item.surface : undefined)),
     ['chat'],
   );
-  assert.equal(MOS_WORKBENCH_NAV_ITEMS[6]?.path, '/workbench');
+  assert.equal(MOS_WORKBENCH_NAV_ITEMS[7]?.path, '/workbench');
 });
 
 test('mosConsoleSection resolves records and rejects unknowns honestly', () => {

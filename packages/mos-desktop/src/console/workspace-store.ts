@@ -41,6 +41,7 @@ import {
   type MosWorkspaceApproval,
   type MosWorkspaceAutomation,
   type MosWorkspaceAutomationSettings,
+  type MosWorkspaceBrowserSession,
   type MosWorkspaceCampaign,
   type MosWorkspaceHook,
   type MosWorkspaceMarketplacePlugin,
@@ -60,6 +61,7 @@ import {
 import { mosAgentModel, mosModelConnectionMode } from './model-catalog.js';
 import { mosMarketplacePluginById } from './marketplace-catalog.js';
 import { MOS_HOOK_EVENTS } from './agent-settings-presentation.js';
+import { MOS_BROWSER_DEFAULT_URL, normalizeMosBrowserUrl } from './browser-presentation.js';
 
 /** The hook event ids as a set (fail-closed write validation). */
 const HOOK_EVENT_IDS: ReadonlySet<string> = new Set<string>(MOS_HOOK_EVENTS);
@@ -218,6 +220,7 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         mcpServers: [...state.mcpServers].sort((a, b) => a.name.localeCompare(b.name)),
         userCommands: [...state.userCommands].sort((a, b) => a.name.localeCompare(b.name)),
         hooks: [...state.hooks].sort((a, b) => a.seq - b.seq),
+        browserSession: state.browserSession,
       };
     },
 
@@ -1020,6 +1023,66 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
       });
     },
 
+    /* ------------------------------------------------------------------
+     * W39 — the Browser surface's session record: the last confirmed
+     * URL. The write is FAIL-CLOSED (a URL the pane cannot load — a
+     * disallowed protocol — throws; about:blank never records) and the
+     * record stays a navigation fact: the substrate account is never
+     * involved, and nothing about the guest's CDP state is claimed.
+     * ------------------------------------------------------------------ */
+
+    recordBrowserUrl(url: string, now?: string): MosWorkspaceBrowserSession {
+      const at = now ?? clock();
+      const normalized = normalizeMosBrowserUrl(url);
+      if (normalized === null) {
+        throw new MosWorkspaceStoreError(
+          'validation',
+          `"${url}" is not a URL the built-in browser can open — only http, https, file, about, and data URLs are supported`,
+        );
+      }
+      if (normalized === MOS_BROWSER_DEFAULT_URL) {
+        throw new MosWorkspaceStoreError(
+          'validation',
+          'about:blank never records — confirm a real navigation first',
+        );
+      }
+      return commit((): MosWorkspaceBrowserSession => {
+        const existing = state.browserSession;
+        if (existing !== null && existing.url === normalized) {
+          return existing; // idempotent no-op: the same URL re-confirms silently
+        }
+        const record: MosWorkspaceBrowserSession = {
+          url: normalized,
+          firstSeenAt: existing !== null && existing.url === normalized ? existing.firstSeenAt : at,
+          updatedAt: at,
+        };
+        state = { ...state, browserSession: record };
+        appendEvent(
+          'browser-url-recorded',
+          `Browser URL recorded — ${normalized} is the workspace record the pane restores on entry`,
+          at,
+        );
+        return record;
+      });
+    },
+
+    clearBrowserUrl(now?: string): MosWorkspaceBrowserSession | null {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceBrowserSession | null => {
+        const existing = state.browserSession;
+        if (existing === null) {
+          return null; // idempotent no-op: nobody is notified
+        }
+        state = { ...state, browserSession: null };
+        appendEvent(
+          'browser-url-cleared',
+          `Browser URL cleared — ${existing.url} no longer restores; this cannot be undone`,
+          at,
+        );
+        return existing;
+      });
+    },
+
     health() {
       return {
         durability: 'BROWSER_PROFILE' as const,
@@ -1034,6 +1097,7 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         mcpServerCount: state.mcpServers.length,
         userCommandCount: state.userCommands.length,
         hookCount: state.hooks.length,
+        browserUrlRecorded: state.browserSession !== null,
         quarantinedCount: quarantined.length,
       };
     },

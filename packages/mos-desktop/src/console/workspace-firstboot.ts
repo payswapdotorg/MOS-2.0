@@ -31,6 +31,7 @@ interface MutableWorkspaceSeed {
   mcpServers: MosWorkspacePersisted['mcpServers'];
   userCommands: MosWorkspacePersisted['userCommands'];
   hooks: MosWorkspacePersisted['hooks'];
+  browserSession: MosWorkspacePersisted['browserSession'];
 }
 
 /**
@@ -63,6 +64,7 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
     mcpServers: [],
     userCommands: [],
     hooks: [],
+    browserSession: null,
   };
   const bump = (): number => {
     const seq = nextSeq;

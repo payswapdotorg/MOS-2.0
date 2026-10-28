@@ -1046,3 +1046,79 @@ test('W38: the first-boot seed carries the settings-hub evaluation records (1 MC
   assert.equal(store.health().userCommandCount, 1);
   assert.equal(store.health().hookCount, 1);
 });
+
+/* ------------------------------------------------------------------ */
+/* W39 — the Browser surface's session record                         */
+/* ------------------------------------------------------------------ */
+
+test('W39: recordBrowserUrl writes the session record with the honest event; the same URL re-confirms silently', () => {
+  const backing = new Map<string, string>();
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+  assert.equal(store.getSnapshot().browserSession, null, 'no URL is recorded at first');
+  const record = store.recordBrowserUrl('https://example.com/runs');
+  assert.equal(record.url, 'https://example.com/runs');
+  assert.equal(record.firstSeenAt, FIXED_CLOCK());
+  const snapshot = store.getSnapshot();
+  assert.equal(snapshot.browserSession?.url, 'https://example.com/runs');
+  assert.equal(store.health().browserUrlRecorded, true);
+  const eventsBefore = snapshot.events.length;
+  // The same URL re-confirming is an idempotent no-op — nobody is notified.
+  const again = store.recordBrowserUrl('https://example.com/runs');
+  assert.equal(again.url, 'https://example.com/runs');
+  assert.equal(store.getSnapshot().events.length, eventsBefore, 'no event for the same URL');
+  // A different URL updates the record.
+  store.recordBrowserUrl('http://localhost:3000/panel');
+  assert.equal(store.getSnapshot().browserSession?.url, 'http://localhost:3000/panel');
+  // Durability: the record survives a store re-open.
+  const reopened = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+  assert.equal(reopened.getSnapshot().browserSession?.url, 'http://localhost:3000/panel');
+  // clearBrowserUrl removes the record with the honest event.
+  const cleared = reopened.clearBrowserUrl();
+  assert.equal(cleared?.url, 'http://localhost:3000/panel');
+  assert.equal(reopened.getSnapshot().browserSession, null);
+  assert.equal(reopened.health().browserUrlRecorded, false);
+  // Clearing again is an idempotent no-op.
+  assert.equal(reopened.clearBrowserUrl(), null);
+});
+
+test('W39: recordBrowserUrl is fail-closed — disallowed protocols and about:blank throw typed errors', () => {
+  const store = createMosWorkspaceStore({ storage: memoryStorage(), clock: FIXED_CLOCK, seed: false });
+  assert.throws(
+    () => store.recordBrowserUrl('javascript:alert(1)'),
+    (error: unknown) =>
+      error instanceof MosWorkspaceStoreError && error.message.includes('only http, https, file, about, and data URLs'),
+  );
+  assert.throws(
+    () => store.recordBrowserUrl('about:blank'),
+    (error: unknown) =>
+      error instanceof MosWorkspaceStoreError && error.message.includes('about:blank never records'),
+  );
+  assert.throws(
+    () => store.recordBrowserUrl('   '),
+    (error: unknown) => error instanceof MosWorkspaceStoreError,
+  );
+  assert.equal(store.getSnapshot().browserSession, null, 'a failed write leaves the state unchanged');
+  // The address-bar normalization applies INSIDE the store (scheme-less input infers).
+  const inferred = store.recordBrowserUrl('example.com');
+  assert.equal(inferred.url, 'https://example.com');
+  const local = store.recordBrowserUrl('localhost:5173');
+  assert.equal(local.url, 'http://localhost:5173');
+});
+
+test('W39: a pre-W39 v1 snapshot (W38-era, no browserSession) migrates to null; malformed fields fail closed', () => {
+  const backing = new Map<string, string>();
+  const seedStore = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+  seedStore.recordBrowserUrl('https://example.com/seeded');
+  const persisted = JSON.parse(backing.get(MOS_WORKSPACE_STORE_KEY) ?? '{}') as Record<string, unknown>;
+  delete persisted.browserSession;
+  backing.set(MOS_WORKSPACE_STORE_KEY, JSON.stringify(persisted));
+  const migrated = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+  assert.equal(migrated.getSnapshot().browserSession, null, 'an absent field defaults to null — never guessed back');
+
+  const malformed = new Map<string, string>();
+  const malformedDoc = { ...persisted, browserSession: { url: 123 } };
+  malformed.set(MOS_WORKSPACE_STORE_KEY, JSON.stringify(malformedDoc));
+  const quarantined = createMosWorkspaceStore({ storage: memoryStorage(malformed), clock: FIXED_CLOCK, seed: false });
+  assert.equal(quarantined.quarantineEntries().length, 1, 'a malformed browserSession quarantines the whole snapshot');
+  assert.equal(quarantined.getSnapshot().browserSession, null, 'the quarantined store starts empty');
+});

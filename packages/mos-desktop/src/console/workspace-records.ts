@@ -297,6 +297,22 @@ export interface MosWorkspaceSnapshot {
   readonly userCommands: readonly MosWorkspaceUserCommand[];
   /** W38 — the Agent Settings hub's hooks. */
   readonly hooks: readonly MosWorkspaceHook[];
+  /** W39 — the Browser surface's session record (null = no URL confirmed yet). */
+  readonly browserSession: MosWorkspaceBrowserSession | null;
+}
+
+/**
+ * The browser session record (W39): the emerged Browser surface's
+ * persisted state — the last confirmed URL. The substrate's human tab
+ * persists its restorable URL the same way; here the workspace record IS
+ * the restorable state (the pane re-enters to it). It is a navigation
+ * fact, never capability truth — the substrate account is not involved.
+ */
+export interface MosWorkspaceBrowserSession {
+  /** The last confirmed URL (about:blank never records). */
+  readonly url: string;
+  readonly firstSeenAt: string;
+  readonly updatedAt: string;
 }
 
 /* --------------------------------------------------------------------
@@ -427,6 +443,8 @@ export interface MosWorkspacePersisted {
   readonly mcpServers: readonly MosWorkspaceMcpServer[];
   readonly userCommands: readonly MosWorkspaceUserCommand[];
   readonly hooks: readonly MosWorkspaceHook[];
+  /** W39 field — absent in pre-W39 v1 snapshots; validation defaults it to null. */
+  readonly browserSession: MosWorkspaceBrowserSession | null;
 }
 
 const EMPTY_PERSISTED: MosWorkspacePersisted = {
@@ -446,6 +464,7 @@ const EMPTY_PERSISTED: MosWorkspacePersisted = {
   mcpServers: [],
   userCommands: [],
   hooks: [],
+  browserSession: null,
 };
 
 /** @internal The empty document (the quarantined store's fail-closed start). */
@@ -623,6 +642,20 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
   ) {
     throw new Error('workspace snapshot field "hooks" is malformed');
   }
+  // W39 back-compat: pre-W39 snapshots carry no browserSession — absent
+  // defaults to null (no URL confirmed); a PRESENT-but-malformed field
+  // still fails closed.
+  if (
+    value.browserSession !== undefined &&
+    value.browserSession !== null &&
+    (!isRecord(value.browserSession) ||
+      typeof value.browserSession.url !== 'string' ||
+      typeof value.browserSession.updatedAt !== 'string' ||
+      (value.browserSession.firstSeenAt !== undefined &&
+        typeof value.browserSession.firstSeenAt !== 'string'))
+  ) {
+    throw new Error('workspace snapshot field "browserSession" is malformed');
+  }
   const tasks = (value.tasks === undefined ? [] : (value.tasks as unknown as MosWorkspaceTask[])).map(
     (task) => ({
       ...task,
@@ -654,6 +687,10 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
     userCommands:
       value.userCommands === undefined ? [] : (value.userCommands as unknown as MosWorkspaceUserCommand[]),
     hooks: value.hooks === undefined ? [] : (value.hooks as unknown as MosWorkspaceHook[]),
+    browserSession:
+      value.browserSession === undefined || value.browserSession === null
+        ? null
+        : (value.browserSession as unknown as MosWorkspaceBrowserSession),
   };
 }
 
@@ -678,6 +715,8 @@ export interface MosWorkspaceStoreHealth {
   readonly mcpServerCount: number;
   readonly userCommandCount: number;
   readonly hookCount: number;
+  /** W39 — whether the Browser surface's URL record exists. */
+  readonly browserUrlRecorded: boolean;
   readonly quarantinedCount: number;
 }
 
@@ -735,6 +774,9 @@ export interface MosWorkspaceStore {
   upsertHook(input: MosHookInput, now?: string): MosWorkspaceHook;
   deleteHook(id: string, now?: string): MosWorkspaceHook;
   setHookEnabled(id: string, enabled: boolean, now?: string): MosWorkspaceHook;
+  /** W39 — the Browser surface's session record (the last confirmed URL). */
+  recordBrowserUrl(url: string, now?: string): MosWorkspaceBrowserSession;
+  clearBrowserUrl(now?: string): MosWorkspaceBrowserSession | null;
   health(): MosWorkspaceStoreHealth;
   quarantineEntries(): readonly MosWorkspaceQuarantineEntry[];
 }

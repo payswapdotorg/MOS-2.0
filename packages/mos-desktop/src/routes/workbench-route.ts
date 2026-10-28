@@ -16,6 +16,8 @@
  * view) emerged native too. W37: `/workbench/plugins` (the Plugin
  * Marketplace) emerged native the same way. W38: `/workbench/settings`
  * (the substrate Settings page — the Agent Settings hub) emerged native
+ * too. W39: `/workbench/browser` (the substrate's embedded browser pane —
+ * the real webview + the browserViewAttachGuest report) emerged native
  * too. The remaining substrate route: `/workbench` the substrate
  * workspace (sessions, groups and projects). The desktop entry hands
  * that surface to the host renderer's `onRequestSubstrateSurface` (see
@@ -35,8 +37,8 @@ const WORKBENCH_ROUTE_BY_PATH: Readonly<Record<string, WorkbenchSurface>> = {
  * names, or `null` when the path is not a substrate workbench route
  * (native workbench routes — `/workbench/new-task`, `/workbench/models`,
  * `/workbench/tasks`, `/workbench/automations`, `/workbench/plugins`,
- * `/workbench/settings` — resolve through the console section mapping
- * instead). Query strings and trailing slashes are tolerated (only the
+ * `/workbench/settings`, `/workbench/browser` — resolve through the console
+ * section mapping instead). Query strings and trailing slashes are tolerated (only the
  * path decides the surface).
  */
 export function workbenchSurfaceFromAppPath(path: string): WorkbenchSurface | null {

@@ -45,7 +45,9 @@ export type MosConsoleSectionId =
   /** W37 — the substrate's Plugin Marketplace, emerged with the official listing. */
   | 'marketplace'
   /** W38 — the substrate's Settings page (the Agent Settings hub), emerged. */
-  | 'agent-settings';
+  | 'agent-settings'
+  /** W39 — the substrate's embedded browser pane, emerged with the real webview. */
+  | 'browser';
 
 /** One console section's identity (title + purpose render verbatim). */
 export interface MosConsoleSectionRecord {
@@ -197,6 +199,13 @@ export const MOS_CONSOLE_SECTIONS: readonly MosConsoleSectionRecord[] = [
       'The agent settings hub — the substrate\'s Settings page, emerged as a native MOS surface: the Basics / Agent capabilities / Data and statistics groups with MCP servers, commands, and hooks as real workspace records, and the emerged Model settings + Plugins surfaces one hop away. No account gate.',
     path: '/workbench/settings',
   },
+  {
+    id: 'browser',
+    title: 'Browser',
+    purpose:
+      'The built-in web browser — the substrate\'s embedded browser pane, emerged as a native MOS surface: a real webview tab with the address bar, back/forward/refresh, and DevTools, its guest CDP-attached by the substrate\'s own main process. One tab; the last URL persists as a workspace record.',
+    path: '/workbench/browser',
+  },
 ];
 
 /** Resolve a section record by id (undefined when the id names no section). */
@@ -284,7 +293,7 @@ export type MosWorkbenchNavDescriptor =
       readonly label: string;
       readonly path: string;
       readonly testId: string;
-      readonly icon: 'new-task' | 'model-settings' | 'tasks' | 'automations' | 'marketplace' | 'settings';
+      readonly icon: 'new-task' | 'model-settings' | 'tasks' | 'automations' | 'marketplace' | 'settings' | 'browser';
     }
   | {
       readonly kind: 'substrate';
@@ -295,7 +304,7 @@ export type MosWorkbenchNavDescriptor =
       readonly icon: 'chat' | 'settings';
     };
 
-/** The Agent Workbench group items (pinned order: the native product loop first — New Task → Tasks → Models → Automations → Marketplace → Agent Settings — then the substrate chat surface). */
+/** The Agent Workbench group items (pinned order: the native product loop first — New Task → Tasks → Models → Automations → Marketplace → Agent Settings → Browser — then the substrate chat surface). */
 export const MOS_WORKBENCH_NAV_ITEMS: readonly MosWorkbenchNavDescriptor[] = [
   { kind: 'native', section: 'new-task', label: 'New Task', path: '/workbench/new-task', testId: 'nav-workbench-new-task', icon: 'new-task' },
   { kind: 'native', section: 'tasks', label: 'Tasks', path: '/workbench/tasks', testId: 'nav-workbench-tasks', icon: 'tasks' },
@@ -303,6 +312,7 @@ export const MOS_WORKBENCH_NAV_ITEMS: readonly MosWorkbenchNavDescriptor[] = [
   { kind: 'native', section: 'automations', label: 'Automations', path: '/workbench/automations', testId: 'nav-workbench-automations', icon: 'automations' },
   { kind: 'native', section: 'marketplace', label: 'Plugin Marketplace', path: '/workbench/plugins', testId: 'nav-workbench-plugins', icon: 'marketplace' },
   { kind: 'native', section: 'agent-settings', label: 'Agent Settings', path: '/workbench/settings', testId: 'nav-workbench-settings', icon: 'settings' },
+  { kind: 'native', section: 'browser', label: 'Browser', path: '/workbench/browser', testId: 'nav-workbench-browser', icon: 'browser' },
   { kind: 'substrate', surface: 'chat', label: 'Workbench', path: '/workbench', testId: 'nav-workbench', icon: 'chat' },
 ];
 

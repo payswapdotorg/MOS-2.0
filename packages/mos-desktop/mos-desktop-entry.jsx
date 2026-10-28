@@ -51,6 +51,21 @@ import {
   initialMosCommandFormState,
   initialMosHookFormState,
   initialMosMcpFormState,
+  initialMosBrowserState,
+  displayMosBrowserUrl,
+  isDefaultBrowserOpenableUrl,
+  isRecoverableMosBrowserGuestExitReason,
+  mosBrowserGuestAttachedReceipt,
+  mosBrowserGuestUnavailableReceipt,
+  mosBrowserLoadFailedMessage,
+  normalizeMosBrowserUrl,
+  safeMosWebviewCall,
+  MOS_BROWSER_DEFAULT_URL,
+  MOS_BROWSER_ELEMENT_PICKER_NOTE,
+  MOS_BROWSER_GUEST_KEY,
+  MOS_BROWSER_INVALID_URL_MESSAGE,
+  MOS_BROWSER_RESPONSIVE_NOTE,
+  MOS_BROWSER_WORKSPACE_KEY,
   mosCommandFormFromCommand,
   mosHookFormFromHook,
   mosMcpFormFromServer,
@@ -233,6 +248,7 @@ export function bootMosDesktopShell(options) {
     automation: null,
     marketplace: null,
     agentSettings: null,
+    browser: null,
   };
   let agent = {
     open: false,
@@ -319,6 +335,10 @@ export function bootMosDesktopShell(options) {
             mcpForm={mcpForm}
             commandForm={commandForm}
             hookForm={hookForm}
+            browserState={browserState}
+            browserAddressValue={browserAddressValue}
+            browserWebviewGeneration={browserWebviewGeneration}
+            browserGuestAttach={browserGuestAttach}
             renderNow={renderNowIso()}
             controller={controller}
           />
@@ -348,6 +368,253 @@ export function bootMosDesktopShell(options) {
       return;
     }
     remount();
+  };
+
+  /* ------------------------------------------------------------------
+   * W39 — THE BROWSER PANE (the substrate's embedded browser, emerged).
+   *
+   * The entry owns the browser chrome (the address draft, the
+   * substrate's BrowserState shape, the guest generation) AND the
+   * webview node itself: the section renders the element and hands the
+   * node back through the STABLE ref callback below, so the guest is
+   * never re-created by a console re-mount (the substrate's own webview
+   * stability law — re-renders reconcile; only the section switch or a
+   * renderer-failure rebuild replaces the node).
+   *
+   * The guest report rides the substrate's own preload contract:
+   * window.zcode.browserViewAttachGuest (an unknown key takes main's
+   * documented legacy path — an unclaimed, user-scoped tab the main
+   * process CDP-attaches and can later hand to an authorized session).
+   * ------------------------------------------------------------------ */
+  let browserState = { ...initialMosBrowserState() };
+  let browserAddressValue = '';
+  let browserWebviewGeneration = 0;
+  /** 'idle' → 'pending' → 'attached' | 'rejected:<reason>' | 'unavailable'. */
+  let browserGuestAttach = 'idle';
+  let browserWebviewNode = null;
+  let browserWebviewWired = false;
+  /** The navigation queued before dom-ready (first nav / rebuild restore). */
+  let browserPendingUrl = null;
+  /** The last webContentsId reported to main (the detach-before-rebuild contract). */
+  let browserLastReportedGuestId = 0;
+
+  const browserRecordUrl = () => {
+    const session = store.getSnapshot().browserSession;
+    return session === null ? '' : session.url;
+  };
+
+  const browserSyncChrome = (node) => {
+    const canGoBack = safeMosWebviewCall(() => node.canGoBack(), false);
+    const canGoForward = safeMosWebviewCall(() => node.canGoForward(), false);
+    const currentUrl = safeMosWebviewCall(() => node.getURL(), browserState.currentUrl);
+    browserState = {
+      ...browserState,
+      canGoBack,
+      canGoForward,
+      currentUrl,
+      title: safeMosWebviewCall(() => node.getTitle(), browserState.title),
+    };
+    browserAddressValue = displayMosBrowserUrl(currentUrl);
+    remount();
+  };
+
+  /** Persist a confirmed navigation (fail-closed; the guest only commits loadable URLs). */
+  const browserOnNavigated = (url) => {
+    if (typeof url === 'string' && url !== '' && url !== MOS_BROWSER_DEFAULT_URL) {
+      try {
+        const record = store.recordBrowserUrl(url);
+        receipts = { ...receipts, browser: `RECORDED — ${record.url} is the workspace browser record now. The pane restores it on the next visit.` };
+      } catch (error) {
+        receipts = {
+          ...receipts,
+          browser: `STORE ERROR — ${error instanceof Error ? error.message : String(error)}`,
+        };
+      }
+    }
+    if (browserWebviewNode !== null) browserSyncChrome(browserWebviewNode);
+  };
+
+  /** Report the guest to the substrate's main process (deduped per webContentsId). */
+  const browserReportGuest = (node) => {
+    const bridge = win && win.zcode ? win.zcode : null;
+    const attach = bridge ? bridge.browserViewAttachGuest : undefined;
+    if (typeof attach !== 'function') {
+      if (browserGuestAttach !== 'unavailable') {
+        browserGuestAttach = 'unavailable';
+        receipts = { ...receipts, browser: mosBrowserGuestUnavailableReceipt() };
+        remount();
+      }
+      return;
+    }
+    const webContentsId = safeMosWebviewCall(() => node.getWebContentsId(), 0);
+    if (webContentsId <= 0 || webContentsId === browserLastReportedGuestId) return;
+    browserLastReportedGuestId = webContentsId;
+    browserGuestAttach = 'pending';
+    remount();
+    attach({
+      key: MOS_BROWSER_GUEST_KEY,
+      webContentsId,
+      active: true,
+      workspaceKey: MOS_BROWSER_WORKSPACE_KEY,
+    })
+      .then((result) => {
+        if (result === undefined || result === null || result.ok) {
+          browserGuestAttach = 'attached';
+          receipts = { ...receipts, browser: mosBrowserGuestAttachedReceipt(MOS_BROWSER_GUEST_KEY) };
+        } else {
+          browserGuestAttach = `rejected:${result.reason ?? 'unknown'}`;
+        }
+        remount();
+      })
+      .catch(() => {
+        browserGuestAttach = 'unavailable';
+        remount();
+      });
+  };
+
+  /** The renderer-failure rebuild (the substrate's detach-before-replacement law). */
+  const rebuildBrowserGuest = async () => {
+    const bridge = win && win.zcode ? win.zcode : null;
+    const detach = bridge ? bridge.browserViewDetachGuest : undefined;
+    if (browserLastReportedGuestId > 0 && typeof detach === 'function') {
+      try {
+        const detached = await detach({
+          key: MOS_BROWSER_GUEST_KEY,
+          webContentsId: browserLastReportedGuestId,
+        });
+        if (!detached) return; // main 未确认旧 CDP 断开 — 取消重建
+      } catch {
+        return;
+      }
+    }
+    browserLastReportedGuestId = 0;
+    browserWebviewWired = false;
+    const restorable =
+      browserState.currentUrl !== MOS_BROWSER_DEFAULT_URL
+        ? browserState.currentUrl
+        : browserRecordUrl();
+    browserPendingUrl = restorable !== '' ? restorable : null;
+    browserWebviewGeneration += 1;
+    browserState = {
+      ...initialMosBrowserState(),
+      currentUrl: restorable !== '' ? restorable : MOS_BROWSER_DEFAULT_URL,
+      isLoading: restorable !== '',
+    };
+    remount();
+  };
+
+  /** Wire one webview node's events (once per node — the ref hands every new node here). */
+  const wireBrowserWebview = (node) => {
+    if (browserWebviewWired) return;
+    browserWebviewWired = true;
+
+    node.addEventListener('did-attach', () => {
+      browserReportGuest(node);
+    });
+
+    node.addEventListener('dom-ready', () => {
+      browserState = { ...browserState, isReady: true };
+      browserReportGuest(node);
+      const pending = browserPendingUrl;
+      browserPendingUrl = null;
+      const current = safeMosWebviewCall(() => node.getURL(), '');
+      const restorable =
+        browserState.currentUrl !== MOS_BROWSER_DEFAULT_URL
+          ? browserState.currentUrl
+          : browserRecordUrl();
+      const target =
+        pending !== null
+          ? pending
+          : current === '' || current === MOS_BROWSER_DEFAULT_URL
+            ? restorable !== '' && restorable !== current
+              ? restorable
+              : null
+            : null;
+      if (target !== null) {
+        browserState = { ...browserState, isLoading: true };
+        remount();
+        node.loadURL(target).catch((error) => {
+          const message = error instanceof Error ? error.message : String(error);
+          if (!message.includes('ERR_ABORTED')) {
+            browserState = {
+              ...browserState,
+              errorMessage: mosBrowserLoadFailedMessage(message),
+              isLoading: false,
+            };
+            remount();
+          }
+        });
+        return;
+      }
+      browserSyncChrome(node);
+    });
+
+    node.addEventListener('did-start-loading', () => {
+      if (!browserState.isLoading) {
+        browserState = { ...browserState, isLoading: true };
+        remount();
+      }
+    });
+
+    node.addEventListener('did-stop-loading', () => {
+      browserState = { ...browserState, isLoading: false };
+      browserSyncChrome(node);
+    });
+
+    node.addEventListener('did-navigate', (event) => {
+      browserOnNavigated(event.url);
+    });
+
+    node.addEventListener('did-navigate-in-page', (event) => {
+      browserOnNavigated(event.url);
+    });
+
+    node.addEventListener('page-title-updated', (event) => {
+      if (browserState.title !== event.title) {
+        browserState = { ...browserState, title: event.title };
+        remount();
+      }
+    });
+
+    node.addEventListener('did-fail-load', (event) => {
+      if (!event.isMainFrame || event.errorCode === -3) return;
+      browserState = {
+        ...browserState,
+        currentUrl: event.validatedURL || browserState.currentUrl,
+        errorMessage: mosBrowserLoadFailedMessage(event.errorDescription),
+        loadErrorCode: event.errorCode,
+        isLoading: false,
+      };
+      browserAddressValue = displayMosBrowserUrl(
+        event.validatedURL || browserState.currentUrl,
+      );
+      remount();
+    });
+
+    node.addEventListener('render-process-gone', (event) => {
+      const reason = event.details ? event.details.reason : 'unknown';
+      const exitCode = event.details ? event.details.exitCode : 0;
+      if (isRecoverableMosBrowserGuestExitReason(reason)) {
+        void rebuildBrowserGuest();
+        return;
+      }
+      browserState = {
+        ...browserState,
+        guestFailure: { reason: String(reason), exitCode: Number(exitCode) },
+        isLoading: false,
+        isReady: false,
+      };
+      remount();
+    });
+  };
+
+  /** The STABLE webview ref callback (the section's onWebviewRef prop). */
+  const onBrowserWebviewRef = (node) => {
+    browserWebviewNode = node === null || node === undefined ? null : node;
+    browserWebviewWired = false;
+    if (browserWebviewNode !== null) {
+      wireBrowserWebview(browserWebviewNode);
+    }
   };
 
   const deliverMissionPrefill = (direction, statement) => {
@@ -841,6 +1108,135 @@ export function bootMosDesktopShell(options) {
       };
       remount();
     },
+
+    /* ---- W39 — the Browser surface ---- */
+    onBrowserAddressChange(value) {
+      browserAddressValue = value;
+      remount();
+    },
+
+    onBrowserSubmitAddress() {
+      const normalized = normalizeMosBrowserUrl(browserAddressValue);
+      if (normalized === null) {
+        browserState = {
+          ...browserState,
+          errorMessage: MOS_BROWSER_INVALID_URL_MESSAGE,
+          loadErrorCode: null,
+        };
+        remount();
+        return;
+      }
+      browserAddressValue = displayMosBrowserUrl(normalized);
+      browserState = {
+        ...browserState,
+        errorMessage: null,
+        loadErrorCode: null,
+        guestFailure: null,
+        currentUrl: normalized,
+        isLoading: true,
+      };
+      if (browserWebviewNode === null || !browserState.isReady) {
+        // The guest is not mounted/ready yet (first navigation or a
+        // rebuild in flight): queue to dom-ready — the substrate's law.
+        browserPendingUrl = normalized;
+        remount();
+        return;
+      }
+      remount();
+      browserWebviewNode.loadURL(normalized).catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!message.includes('ERR_ABORTED')) {
+          browserState = {
+            ...browserState,
+            errorMessage: mosBrowserLoadFailedMessage(message),
+            isLoading: false,
+          };
+          remount();
+        }
+      });
+    },
+
+    onBrowserGoBack() {
+      if (browserWebviewNode === null || !browserState.canGoBack) return;
+      safeMosWebviewCall(() => { browserWebviewNode.goBack(); }, undefined);
+    },
+
+    onBrowserGoForward() {
+      if (browserWebviewNode === null || !browserState.canGoForward) return;
+      safeMosWebviewCall(() => { browserWebviewNode.goForward(); }, undefined);
+    },
+
+    onBrowserReload() {
+      if (browserWebviewNode === null || !browserState.isReady) return;
+      safeMosWebviewCall(() => { browserWebviewNode.reload(); }, undefined);
+    },
+
+    onBrowserOpenExternal() {
+      if (browserWebviewNode === null || !browserState.isReady) return;
+      const currentUrl = safeMosWebviewCall(() => browserWebviewNode.getURL(), '');
+      if (!isDefaultBrowserOpenableUrl(currentUrl)) return;
+      const bridge = win && win.zcode ? win.zcode : null;
+      if (bridge && typeof bridge.openExternal === 'function') {
+        bridge.openExternal(currentUrl);
+      }
+    },
+
+    onBrowserOpenDevTools() {
+      if (browserWebviewNode === null || !browserState.isReady) return;
+      safeMosWebviewCall(() => { browserWebviewNode.openDevTools(); }, undefined);
+    },
+
+    onBrowserRetryGuest() {
+      void rebuildBrowserGuest();
+    },
+
+    onBrowserRetryLoad() {
+      const retryUrl =
+        browserState.currentUrl !== MOS_BROWSER_DEFAULT_URL
+          ? browserState.currentUrl
+          : browserRecordUrl();
+      if (retryUrl === '') return;
+      browserAddressValue = displayMosBrowserUrl(retryUrl);
+      browserState = {
+        ...browserState,
+        errorMessage: null,
+        loadErrorCode: null,
+        currentUrl: retryUrl,
+        isLoading: true,
+      };
+      if (browserWebviewNode === null || !browserState.isReady) {
+        browserPendingUrl = retryUrl;
+        remount();
+        return;
+      }
+      remount();
+      browserWebviewNode.loadURL(retryUrl).catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!message.includes('ERR_ABORTED')) {
+          browserState = {
+            ...browserState,
+            errorMessage: mosBrowserLoadFailedMessage(message),
+            isLoading: false,
+          };
+          remount();
+        }
+      });
+    },
+
+    onBrowserPickerNote() {
+      receipts = { ...receipts, browser: MOS_BROWSER_ELEMENT_PICKER_NOTE };
+      remount();
+    },
+
+    onBrowserResponsiveNote() {
+      receipts = { ...receipts, browser: MOS_BROWSER_RESPONSIVE_NOTE };
+      remount();
+    },
+
+    // The STABLE webview node callback — the section's onWebviewRef prop.
+    // Its identity never changes across re-mounts, so React never churns
+    // the node's ref (the substrate's webview stability law).
+    onBrowserWebviewRef,
 
     onIntake(statement) {
       receipts = {
