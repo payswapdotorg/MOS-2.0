@@ -28,6 +28,9 @@ interface MutableWorkspaceSeed {
   automations: MosWorkspacePersisted['automations'];
   automationSettings: MosWorkspacePersisted['automationSettings'];
   marketplacePlugins: MosWorkspacePersisted['marketplacePlugins'];
+  mcpServers: MosWorkspacePersisted['mcpServers'];
+  userCommands: MosWorkspacePersisted['userCommands'];
+  hooks: MosWorkspacePersisted['hooks'];
 }
 
 /**
@@ -57,6 +60,9 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
     automations: [],
     automationSettings: { keepAwake: false },
     marketplacePlugins: [],
+    mcpServers: [],
+    userCommands: [],
+    hooks: [],
   };
   const bump = (): number => {
     const seq = nextSeq;
@@ -234,7 +240,60 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
   event('automation-recorded', 'Automation atm-001 (Weekday change summary) recorded — Every weekday at 9:00 AM. The substrate dispatches runs when an account is connected.', T3);
   event('automation-recorded', 'Automation atm-002 (Weekly audience report) recorded — Every Monday at 8:00 AM, paused. The substrate dispatches runs when an account is connected.', T3);
 
-  event('workspace-seeded', 'Seed complete — 4 missions, 4 posts, 3 campaigns, 2 approvals, 2 tasks, 2 automations, this timeline', T4);
+  // W38 — the Agent Settings hub's evaluation records: one configured
+  // MCP server, one user command, one hook (the substrate's own row
+  // shapes, disclosed as workspace configuration records that never
+  // claimed a live connection).
+  persisted.mcpServers = [
+    {
+      id: 'mcp-001',
+      seq: bump(),
+      name: 'web-fetch',
+      storageLevel: 'user',
+      type: 'stdio',
+      command: 'uvx',
+      args: ['mcp-server-fetch'],
+      envJson: '',
+      url: '',
+      headersJson: '',
+      timeoutMs: null,
+      protocolVersion: '',
+      enabled: true,
+      createdAt: T2,
+      updatedAt: T2,
+    },
+  ];
+  event('mcp-server-added', 'MCP server "web-fetch" added (stdio · uvx mcp-server-fetch) — a workspace record; the substrate connects it when an account is connected', T2);
+  persisted.userCommands = [
+    {
+      id: 'cmd-001',
+      seq: bump(),
+      name: 'release-notes',
+      description: 'Draft release notes from the recent change summary',
+      argumentHint: '<summary>',
+      prompt: 'Draft the release notes from the change summary, grouped by audience impact. Keep the honest no-vanity tone.',
+      createdAt: T3,
+      updatedAt: T3,
+    },
+  ];
+  event('user-command-added', 'Command /release-notes added — a workspace record; the substrate\'s command picker reads it when an account is connected', T3);
+  persisted.hooks = [
+    {
+      id: 'hook-001',
+      seq: bump(),
+      event: 'PostToolUse',
+      matcher: 'Write, Edit',
+      type: 'command',
+      command: "echo 'Hello from hook'",
+      timeoutSeconds: null,
+      enabled: true,
+      createdAt: T3,
+      updatedAt: T3,
+    },
+  ];
+  event('hook-added', 'PostToolUse hook added — a workspace record; the substrate executes it on the real event when an account is connected', T3);
+
+  event('workspace-seeded', 'Seed complete — 4 missions, 4 posts, 3 campaigns, 2 approvals, 2 tasks, 2 automations, 1 MCP server, 1 command, 1 hook, this timeline', T4);
 
   persisted.nextSeq = nextSeq;
   return persisted;

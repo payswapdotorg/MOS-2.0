@@ -136,3 +136,30 @@ export type { MosAgentTranscriptEntry } from './console/agent-rail.js';
 export type { MosMissionPrefill } from './console/sections/missions-section.js';
 export type { MosModelProviderFamilyId } from './console/sections/model-settings-section.js';
 
+export type {
+  MosMarketplaceSegment,
+} from './console/marketplace-presentation.js';
+export type { MosAutomationStatusFilter } from './console/automation-presentation.js';
+export {
+  MOS_SETTINGS_DEFAULT_SECTION,
+  MOS_SETTINGS_SKILLS_REFRESH_NOTE,
+  MOS_SETTINGS_SKILLS_NEW_NOTE,
+  mosSettingsSection,
+} from './console/agent-settings-presentation.js';
+export type {
+  MosSettingsSectionEntry,
+  MosSettingsSectionId,
+} from './console/agent-settings-presentation.js';
+export {
+  initialMosCommandFormState,
+  initialMosHookFormState,
+  initialMosMcpFormState,
+  mosCommandFormFromCommand,
+  mosHookFormFromHook,
+  mosMcpFormFromServer,
+} from './console/agent-settings-forms.js';
+export type {
+  MosCommandFormState,
+  MosHookFormState,
+  MosMcpFormState,
+} from './console/agent-settings-forms.js';

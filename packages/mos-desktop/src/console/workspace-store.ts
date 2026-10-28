@@ -32,14 +32,19 @@ import {
   validateMosWorkspacePersisted,
   type MosAgentTaskIntakeInput,
   type MosCampaignIntakeInput,
+  type MosHookInput,
   type MosMissionIntakeInput,
+  type MosMcpServerInput,
   type MosPostComposerInput,
+  type MosUserCommandInput,
   type MosWorkspaceAccount,
   type MosWorkspaceApproval,
   type MosWorkspaceAutomation,
   type MosWorkspaceAutomationSettings,
   type MosWorkspaceCampaign,
+  type MosWorkspaceHook,
   type MosWorkspaceMarketplacePlugin,
+  type MosWorkspaceMcpServer,
   type MosWorkspaceMission,
   type MosWorkspaceModelSettings,
   type MosWorkspacePersisted,
@@ -50,9 +55,14 @@ import {
   type MosWorkspaceStore,
   type MosWorkspaceStoreOptions,
   type MosWorkspaceTask,
+  type MosWorkspaceUserCommand,
 } from './workspace-records.js';
 import { mosAgentModel, mosModelConnectionMode } from './model-catalog.js';
 import { mosMarketplacePluginById } from './marketplace-catalog.js';
+import { MOS_HOOK_EVENTS } from './agent-settings-presentation.js';
+
+/** The hook event ids as a set (fail-closed write validation). */
+const HOOK_EVENT_IDS: ReadonlySet<string> = new Set<string>(MOS_HOOK_EVENTS);
 import { mosNewTaskMode } from './new-task-draft.js';
 import { mosWorkspaceFirstbootRecords } from './workspace-firstboot.js';
 import {
@@ -205,6 +215,9 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         marketplacePlugins: [...state.marketplacePlugins].sort(
           (a, b) => (a.installedAt < b.installedAt ? 1 : a.installedAt > b.installedAt ? -1 : a.pluginId < b.pluginId ? -1 : 1),
         ),
+        mcpServers: [...state.mcpServers].sort((a, b) => a.name.localeCompare(b.name)),
+        userCommands: [...state.userCommands].sort((a, b) => a.name.localeCompare(b.name)),
+        hooks: [...state.hooks].sort((a, b) => a.seq - b.seq),
       };
     },
 
@@ -686,6 +699,327 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
       });
     },
 
+    /* ------------------------------------------------------------------
+     * W38 — the Agent Settings hub's workspace records: the MCP server
+     * configs, the user commands, and the hooks. Every write is fail-closed
+     * (duplicate names throw; invalid JSON env/headers throw; a stdio
+     * server without a command or an http-family server without a URL
+     * throws; unknown ids throw) and every record stays a configuration
+     * record — the substrate connects/executes when an account is
+     * connected, never before.
+     * ------------------------------------------------------------------ */
+
+    upsertMcpServer(input: MosMcpServerInput, now?: string): MosWorkspaceMcpServer {
+      const at = now ?? clock();
+      const name = input.name.trim();
+      if (name.length === 0) {
+        throw new MosWorkspaceStoreError('validation', 'the MCP server name is required');
+      }
+      if (input.type === 'stdio' && input.command.trim().length === 0) {
+        throw new MosWorkspaceStoreError('validation', `MCP server "${name}" needs a command — a stdio server without one cannot start`);
+      }
+      if (input.type !== 'stdio' && input.url.trim().length === 0) {
+        throw new MosWorkspaceStoreError('validation', `MCP server "${name}" needs a URL — an ${input.type} server without one cannot connect`);
+      }
+      const timeoutMs = input.timeoutMs.trim().length === 0 ? null : Number(input.timeoutMs.trim());
+      if (timeoutMs !== null && (!Number.isFinite(timeoutMs) || timeoutMs <= 0)) {
+        throw new MosWorkspaceStoreError('validation', `MCP server "${name}" has a malformed timeout — enter a positive number of milliseconds or leave it blank`);
+      }
+      if (input.type === 'stdio' && input.envJson.trim().length > 0) {
+        try {
+          const parsed: unknown = JSON.parse(input.envJson);
+          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+            throw new Error('not an object');
+          }
+        } catch {
+          throw new MosWorkspaceStoreError('validation', `MCP server "${name}" has malformed environment variables JSON — JSON parsing failed`);
+        }
+      }
+      if (input.type !== 'stdio' && input.headersJson.trim().length > 0) {
+        try {
+          const parsed: unknown = JSON.parse(input.headersJson);
+          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+            throw new Error('not an object');
+          }
+        } catch {
+          throw new MosWorkspaceStoreError('validation', `MCP server "${name}" has malformed headers JSON — JSON parsing failed`);
+        }
+      }
+      return commit((): MosWorkspaceMcpServer => {
+        const duplicate = state.mcpServers.find(
+          (entry) => entry.name === name && entry.id !== input.id,
+        );
+        if (duplicate !== undefined) {
+          throw new MosWorkspaceStoreError('validation', `an MCP server named "${name}" already exists in this workspace`);
+        }
+        const args = input.args.trim().length === 0 ? [] : input.args.trim().split(/\s+/);
+        if (input.id === null) {
+          const { id, seq } = nextId('mcp');
+          const record: MosWorkspaceMcpServer = {
+            id,
+            seq,
+            name,
+            storageLevel: input.storageLevel,
+            type: input.type,
+            command: input.type === 'stdio' ? input.command.trim() : '',
+            args,
+            envJson: input.type === 'stdio' ? input.envJson : '',
+            url: input.type === 'stdio' ? '' : input.url.trim(),
+            headersJson: input.type === 'stdio' ? '' : input.headersJson,
+            timeoutMs,
+            protocolVersion: input.protocolVersion,
+            enabled: true,
+            createdAt: at,
+            updatedAt: at,
+          };
+          state = { ...state, mcpServers: [...state.mcpServers, record] };
+          appendEvent(
+            'mcp-server-added',
+            `MCP server "${name}" added (${input.type}${input.type === 'stdio' ? ' · ' + input.command.trim() : ' · ' + input.url.trim()}) — a workspace record; the substrate connects it when an account is connected`,
+            at,
+          );
+          return record;
+        }
+        const existing = state.mcpServers.find((entry) => entry.id === input.id);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `no MCP server ${input.id} exists in this workspace`);
+        }
+        const updated: MosWorkspaceMcpServer = {
+          ...existing,
+          name,
+          storageLevel: input.storageLevel,
+          type: input.type,
+          command: input.type === 'stdio' ? input.command.trim() : '',
+          args,
+          envJson: input.type === 'stdio' ? input.envJson : '',
+          url: input.type === 'stdio' ? '' : input.url.trim(),
+          headersJson: input.type === 'stdio' ? '' : input.headersJson,
+          timeoutMs,
+          protocolVersion: input.protocolVersion,
+          updatedAt: at,
+        };
+        state = { ...state, mcpServers: state.mcpServers.map((entry) => (entry.id === updated.id ? updated : entry)) };
+        appendEvent(
+          'mcp-server-updated',
+          `MCP server "${name}" updated — the workspace record changed; the substrate re-reads it when an account is connected`,
+          at,
+        );
+        return updated;
+      });
+    },
+
+    deleteMcpServer(id: string, now?: string): MosWorkspaceMcpServer {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceMcpServer => {
+        const existing = state.mcpServers.find((entry) => entry.id === id);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `no MCP server ${id} exists in this workspace`);
+        }
+        state = { ...state, mcpServers: state.mcpServers.filter((entry) => entry.id !== id) };
+        appendEvent(
+          'mcp-server-deleted',
+          `MCP server "${existing.name}" deleted — the workspace record is removed; this cannot be undone`,
+          at,
+        );
+        return existing;
+      });
+    },
+
+    setMcpServerEnabled(id: string, enabled: boolean, now?: string): MosWorkspaceMcpServer {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceMcpServer => {
+        const existing = state.mcpServers.find((entry) => entry.id === id);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `no MCP server ${id} exists in this workspace`);
+        }
+        if (existing.enabled === enabled) {
+          return existing; // idempotent no-op: nobody is notified
+        }
+        const updated: MosWorkspaceMcpServer = { ...existing, enabled, updatedAt: at };
+        state = { ...state, mcpServers: state.mcpServers.map((entry) => (entry.id === id ? updated : entry)) };
+        appendEvent(
+          'mcp-server-enabled-changed',
+          `MCP server "${existing.name}" ${enabled ? 'enabled' : 'disabled'} — the workspace record the substrate follows when an account is connected`,
+          at,
+        );
+        return updated;
+      });
+    },
+
+    upsertUserCommand(input: MosUserCommandInput, now?: string): MosWorkspaceUserCommand {
+      const at = now ?? clock();
+      const name = input.name.trim();
+      if (name.length === 0) {
+        throw new MosWorkspaceStoreError('validation', 'the command name is required');
+      }
+      if (name.startsWith('/') || /\s/.test(name)) {
+        throw new MosWorkspaceStoreError('validation', `the command name "${name}" is invalid — use the bare name (no leading slash, no spaces), the picker shows it as /${name.replace(/^\/+/, '')}`);
+      }
+      if (input.prompt.trim().length === 0) {
+        throw new MosWorkspaceStoreError('validation', `command "${name}" needs a prompt — a command without one expands to nothing`);
+      }
+      return commit((): MosWorkspaceUserCommand => {
+        const duplicate = state.userCommands.find(
+          (entry) => entry.name === name && entry.id !== input.id,
+        );
+        if (duplicate !== undefined) {
+          throw new MosWorkspaceStoreError('validation', `a command named "${name}" already exists in this workspace`);
+        }
+        if (input.id === null) {
+          const { id, seq } = nextId('cmd');
+          const record: MosWorkspaceUserCommand = {
+            id,
+            seq,
+            name,
+            description: input.description.trim(),
+            argumentHint: input.argumentHint.trim(),
+            prompt: input.prompt.trim(),
+            createdAt: at,
+            updatedAt: at,
+          };
+          state = { ...state, userCommands: [...state.userCommands, record] };
+          appendEvent(
+            'user-command-added',
+            `Command /${name} added — a workspace record; the substrate's command picker reads it when an account is connected`,
+            at,
+          );
+          return record;
+        }
+        const existing = state.userCommands.find((entry) => entry.id === input.id);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `no command ${input.id} exists in this workspace`);
+        }
+        const updated: MosWorkspaceUserCommand = {
+          ...existing,
+          name,
+          description: input.description.trim(),
+          argumentHint: input.argumentHint.trim(),
+          prompt: input.prompt.trim(),
+          updatedAt: at,
+        };
+        state = { ...state, userCommands: state.userCommands.map((entry) => (entry.id === updated.id ? updated : entry)) };
+        appendEvent(
+          'user-command-updated',
+          `Command /${name} updated — the workspace record changed`,
+          at,
+        );
+        return updated;
+      });
+    },
+
+    deleteUserCommand(id: string, now?: string): MosWorkspaceUserCommand {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceUserCommand => {
+        const existing = state.userCommands.find((entry) => entry.id === id);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `no command ${id} exists in this workspace`);
+        }
+        state = { ...state, userCommands: state.userCommands.filter((entry) => entry.id !== id) };
+        appendEvent(
+          'user-command-deleted',
+          `Command /${existing.name} deleted — the workspace record is removed; this cannot be undone`,
+          at,
+        );
+        return existing;
+      });
+    },
+
+    upsertHook(input: MosHookInput, now?: string): MosWorkspaceHook {
+      const at = now ?? clock();
+      if (!HOOK_EVENT_IDS.has(input.event)) {
+        throw new MosWorkspaceStoreError('validation', `"${String(input.event)}" is not a hook event — the substrate's own event vocabulary is the only truth`);
+      }
+      if (input.command.trim().length === 0) {
+        throw new MosWorkspaceStoreError('validation', `a ${input.event} hook needs a command — a hook without one never runs`);
+      }
+      const timeoutSeconds = input.timeoutSeconds.trim().length === 0 ? null : Number(input.timeoutSeconds.trim());
+      if (timeoutSeconds !== null && (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)) {
+        throw new MosWorkspaceStoreError('validation', `the ${input.event} hook has a malformed timeout — enter a positive number of seconds or leave it blank`);
+      }
+      return commit((): MosWorkspaceHook => {
+        if (input.id === null) {
+          const { id, seq } = nextId('hook');
+          const record: MosWorkspaceHook = {
+            id,
+            seq,
+            event: input.event,
+            matcher: input.matcher.trim(),
+            type: input.type,
+            command: input.command.trim(),
+            timeoutSeconds,
+            enabled: true,
+            createdAt: at,
+            updatedAt: at,
+          };
+          state = { ...state, hooks: [...state.hooks, record] };
+          appendEvent(
+            'hook-added',
+            `${input.event} hook added — a workspace record; the substrate executes it on the real event when an account is connected`,
+            at,
+          );
+          return record;
+        }
+        const existing = state.hooks.find((entry) => entry.id === input.id);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `no hook ${input.id} exists in this workspace`);
+        }
+        const updated: MosWorkspaceHook = {
+          ...existing,
+          event: input.event,
+          matcher: input.matcher.trim(),
+          type: input.type,
+          command: input.command.trim(),
+          timeoutSeconds,
+          updatedAt: at,
+        };
+        state = { ...state, hooks: state.hooks.map((entry) => (entry.id === updated.id ? updated : entry)) };
+        appendEvent(
+          'hook-updated',
+          `${input.event} hook updated — the workspace record changed`,
+          at,
+        );
+        return updated;
+      });
+    },
+
+    deleteHook(id: string, now?: string): MosWorkspaceHook {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceHook => {
+        const existing = state.hooks.find((entry) => entry.id === id);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `no hook ${id} exists in this workspace`);
+        }
+        state = { ...state, hooks: state.hooks.filter((entry) => entry.id !== id) };
+        appendEvent(
+          'hook-deleted',
+          `${existing.event} hook deleted — the workspace record is removed; this cannot be undone`,
+          at,
+        );
+        return existing;
+      });
+    },
+
+    setHookEnabled(id: string, enabled: boolean, now?: string): MosWorkspaceHook {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceHook => {
+        const existing = state.hooks.find((entry) => entry.id === id);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `no hook ${id} exists in this workspace`);
+        }
+        if (existing.enabled === enabled) {
+          return existing; // idempotent no-op: nobody is notified
+        }
+        const updated: MosWorkspaceHook = { ...existing, enabled, updatedAt: at };
+        state = { ...state, hooks: state.hooks.map((entry) => (entry.id === id ? updated : entry)) };
+        appendEvent(
+          'hook-enabled-changed',
+          `${existing.event} hook ${enabled ? 'enabled' : 'disabled'} — the workspace record the substrate follows`,
+          at,
+        );
+        return updated;
+      });
+    },
+
     health() {
       return {
         durability: 'BROWSER_PROFILE' as const,
@@ -697,6 +1031,9 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         taskCount: state.tasks.length,
         automationCount: state.automations.length,
         marketplacePluginCount: state.marketplacePlugins.length,
+        mcpServerCount: state.mcpServers.length,
+        userCommandCount: state.userCommands.length,
+        hookCount: state.hooks.length,
         quarantinedCount: quarantined.length,
       };
     },

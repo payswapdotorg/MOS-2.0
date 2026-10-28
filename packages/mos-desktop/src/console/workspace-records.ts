@@ -193,6 +193,89 @@ export interface MosWorkspaceMarketplacePlugin {
   readonly installedAt: string;
 }
 
+/**
+ * One configured MCP server record (W38): the Agent Settings hub's MCP
+ * Servers section write. The record carries the substrate's own config
+ * vocabulary (stdio command/args/env or http-family url/headers, the
+ * user/workspace storage level, the optional timeout + protocol version);
+ * the substrate connects the server when an account is connected — the
+ * record itself never claims a live connection.
+ */
+export interface MosWorkspaceMcpServer {
+  readonly id: string;
+  readonly seq: number;
+  /** The server name (the row's identity; unique across the list). */
+  readonly name: string;
+  /** The storage level — 'user' or 'workspace' (the scope badge truth). */
+  readonly storageLevel: 'user' | 'workspace';
+  /** The transport family — stdio or one of the http-family types. */
+  readonly type: 'stdio' | 'http' | 'sse' | 'streamableHttp';
+  /** stdio: the executable command. */
+  readonly command: string;
+  /** stdio: the space-separated arguments (stored split). */
+  readonly args: readonly string[];
+  /** stdio: the env JSON text (validated on write; stored verbatim). */
+  readonly envJson: string;
+  /** http family: the server URL. */
+  readonly url: string;
+  /** http family: the headers JSON text (validated on write; stored verbatim). */
+  readonly headersJson: string;
+  /** The optional timeout in milliseconds. */
+  readonly timeoutMs: number | null;
+  /** The protocol version preference ('' = auto). */
+  readonly protocolVersion: string;
+  /** The enabled state (the row switch). */
+  readonly enabled: boolean;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+/**
+ * One user command record (W38): the Agent Settings hub's Commands section
+ * write — the substrate's custom slash-command shape (name, description,
+ * argument hint, prompt). The substrate reads commands from the workspace
+ * directory; here the workspace record IS the directory entry's honest
+ * mirror (the substrate syncs when an account is connected).
+ */
+export interface MosWorkspaceUserCommand {
+  readonly id: string;
+  readonly seq: number;
+  /** The command name (slash-invoked; unique across the list). */
+  readonly name: string;
+  readonly description: string;
+  readonly argumentHint: string;
+  /** The prompt the command expands to. */
+  readonly prompt: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+/**
+ * One hook record (W38): the Agent Settings hub's Hooks section write —
+ * the substrate's hook shape (event, optional matcher, the command/process
+ * runner, the optional timeout). The substrate executes hooks on real
+ * events; the workspace record is the configuration the substrate reads
+ * when an account is connected.
+ */
+export interface MosWorkspaceHook {
+  readonly id: string;
+  readonly seq: number;
+  /** The hook event (the substrate's own event vocabulary). */
+  readonly event: 'SessionStart' | 'UserPromptSubmit' | 'PreToolUse' | 'PermissionRequest' | 'PostToolUse' | 'PostToolUseFailure' | 'Stop';
+  /** The optional tool matcher (blank = match all input for the event). */
+  readonly matcher: string;
+  /** The runner type — shell command or process. */
+  readonly type: 'command' | 'process';
+  /** The command text. */
+  readonly command: string;
+  /** The optional timeout in seconds. */
+  readonly timeoutSeconds: number | null;
+  /** The enabled state (the row switch). */
+  readonly enabled: boolean;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
 /** The whole store snapshot (rebuilt on every change; sections are pure). */
 export interface MosWorkspaceSnapshot {
   readonly missions: readonly MosWorkspaceMission[];
@@ -208,6 +291,12 @@ export interface MosWorkspaceSnapshot {
   readonly automationSettings: MosWorkspaceAutomationSettings;
   /** W37 — the installed marketplace plugin inventory (workspace decisions). */
   readonly marketplacePlugins: readonly MosWorkspaceMarketplacePlugin[];
+  /** W38 — the Agent Settings hub's configured MCP servers. */
+  readonly mcpServers: readonly MosWorkspaceMcpServer[];
+  /** W38 — the Agent Settings hub's user commands. */
+  readonly userCommands: readonly MosWorkspaceUserCommand[];
+  /** W38 — the Agent Settings hub's hooks. */
+  readonly hooks: readonly MosWorkspaceHook[];
 }
 
 /* --------------------------------------------------------------------
@@ -250,6 +339,40 @@ export interface MosAgentTaskIntakeInput {
   readonly planEnabled: boolean;
   readonly reasoningLevel: string;
   readonly missionId: string | null;
+}
+
+/** The MCP server upsert input (W38 — id null = create). */
+export interface MosMcpServerInput {
+  readonly id: string | null;
+  readonly name: string;
+  readonly storageLevel: 'user' | 'workspace';
+  readonly type: 'stdio' | 'http' | 'sse' | 'streamableHttp';
+  readonly command: string;
+  readonly args: string;
+  readonly envJson: string;
+  readonly url: string;
+  readonly headersJson: string;
+  readonly timeoutMs: string;
+  readonly protocolVersion: string;
+}
+
+/** The user command upsert input (W38 — id null = create). */
+export interface MosUserCommandInput {
+  readonly id: string | null;
+  readonly name: string;
+  readonly description: string;
+  readonly argumentHint: string;
+  readonly prompt: string;
+}
+
+/** The hook upsert input (W38 — id null = create). */
+export interface MosHookInput {
+  readonly id: string | null;
+  readonly event: MosWorkspaceHook['event'];
+  readonly matcher: string;
+  readonly type: 'command' | 'process';
+  readonly command: string;
+  readonly timeoutSeconds: string;
 }
 
 /** The typed store error (fail-closed: state unchanged when thrown). */
@@ -300,6 +423,10 @@ export interface MosWorkspacePersisted {
   readonly automationSettings: MosWorkspaceAutomationSettings;
   /** W37 fields — absent in pre-W37 v1 snapshots; validation defaults them. */
   readonly marketplacePlugins: readonly MosWorkspaceMarketplacePlugin[];
+  /** W38 fields — absent in pre-W38 v1 snapshots; validation defaults them. */
+  readonly mcpServers: readonly MosWorkspaceMcpServer[];
+  readonly userCommands: readonly MosWorkspaceUserCommand[];
+  readonly hooks: readonly MosWorkspaceHook[];
 }
 
 const EMPTY_PERSISTED: MosWorkspacePersisted = {
@@ -316,6 +443,9 @@ const EMPTY_PERSISTED: MosWorkspacePersisted = {
   automations: [],
   automationSettings: { keepAwake: false },
   marketplacePlugins: [],
+  mcpServers: [],
+  userCommands: [],
+  hooks: [],
 };
 
 /** @internal The empty document (the quarantined store's fail-closed start). */
@@ -429,6 +559,70 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
   ) {
     throw new Error('workspace snapshot field "marketplacePlugins" is malformed');
   }
+  // W38 back-compat: pre-W38 v1 snapshots carry no mcpServers/userCommands/
+  // hooks — the absent fields default to empty lists; a PRESENT-but-
+  // malformed field still fails closed.
+  if (
+    value.mcpServers !== undefined &&
+    (!Array.isArray(value.mcpServers) ||
+      value.mcpServers.some(
+        (entry) =>
+          !isRecord(entry) ||
+          typeof entry.id !== 'string' ||
+          typeof entry.seq !== 'number' ||
+          typeof entry.name !== 'string' ||
+          (entry.storageLevel !== 'user' && entry.storageLevel !== 'workspace') ||
+          typeof entry.type !== 'string' ||
+          typeof entry.command !== 'string' ||
+          !Array.isArray(entry.args) ||
+          typeof entry.envJson !== 'string' ||
+          typeof entry.url !== 'string' ||
+          typeof entry.headersJson !== 'string' ||
+          typeof entry.protocolVersion !== 'string' ||
+          typeof entry.enabled !== 'boolean' ||
+          typeof entry.createdAt !== 'string' ||
+          typeof entry.updatedAt !== 'string',
+      ))
+  ) {
+    throw new Error('workspace snapshot field "mcpServers" is malformed');
+  }
+  if (
+    value.userCommands !== undefined &&
+    (!Array.isArray(value.userCommands) ||
+      value.userCommands.some(
+        (entry) =>
+          !isRecord(entry) ||
+          typeof entry.id !== 'string' ||
+          typeof entry.seq !== 'number' ||
+          typeof entry.name !== 'string' ||
+          typeof entry.description !== 'string' ||
+          typeof entry.argumentHint !== 'string' ||
+          typeof entry.prompt !== 'string' ||
+          typeof entry.createdAt !== 'string' ||
+          typeof entry.updatedAt !== 'string',
+      ))
+  ) {
+    throw new Error('workspace snapshot field "userCommands" is malformed');
+  }
+  if (
+    value.hooks !== undefined &&
+    (!Array.isArray(value.hooks) ||
+      value.hooks.some(
+        (entry) =>
+          !isRecord(entry) ||
+          typeof entry.id !== 'string' ||
+          typeof entry.seq !== 'number' ||
+          typeof entry.event !== 'string' ||
+          typeof entry.matcher !== 'string' ||
+          (entry.type !== 'command' && entry.type !== 'process') ||
+          typeof entry.command !== 'string' ||
+          typeof entry.enabled !== 'boolean' ||
+          typeof entry.createdAt !== 'string' ||
+          typeof entry.updatedAt !== 'string',
+      ))
+  ) {
+    throw new Error('workspace snapshot field "hooks" is malformed');
+  }
   const tasks = (value.tasks === undefined ? [] : (value.tasks as unknown as MosWorkspaceTask[])).map(
     (task) => ({
       ...task,
@@ -455,6 +649,11 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
       value.marketplacePlugins === undefined
         ? []
         : (value.marketplacePlugins as unknown as MosWorkspaceMarketplacePlugin[]),
+    mcpServers:
+      value.mcpServers === undefined ? [] : (value.mcpServers as unknown as MosWorkspaceMcpServer[]),
+    userCommands:
+      value.userCommands === undefined ? [] : (value.userCommands as unknown as MosWorkspaceUserCommand[]),
+    hooks: value.hooks === undefined ? [] : (value.hooks as unknown as MosWorkspaceHook[]),
   };
 }
 
@@ -475,6 +674,10 @@ export interface MosWorkspaceStoreHealth {
   readonly automationCount: number;
   /** W37 — the installed marketplace plugin count. */
   readonly marketplacePluginCount: number;
+  /** W38 — the Agent Settings hub's record counts. */
+  readonly mcpServerCount: number;
+  readonly userCommandCount: number;
+  readonly hookCount: number;
   readonly quarantinedCount: number;
 }
 
@@ -521,6 +724,17 @@ export interface MosWorkspaceStore {
   /** W37 — the marketplace plugin inventory workspace decisions. */
   installMarketplacePlugin(pluginId: string, now?: string): MosWorkspaceMarketplacePlugin;
   uninstallMarketplacePlugin(pluginId: string, now?: string): MosWorkspaceMarketplacePlugin;
+  /** W38 — the Agent Settings hub's MCP server workspace records. */
+  upsertMcpServer(input: MosMcpServerInput, now?: string): MosWorkspaceMcpServer;
+  deleteMcpServer(id: string, now?: string): MosWorkspaceMcpServer;
+  setMcpServerEnabled(id: string, enabled: boolean, now?: string): MosWorkspaceMcpServer;
+  /** W38 — the Agent Settings hub's user command workspace records. */
+  upsertUserCommand(input: MosUserCommandInput, now?: string): MosWorkspaceUserCommand;
+  deleteUserCommand(id: string, now?: string): MosWorkspaceUserCommand;
+  /** W38 — the Agent Settings hub's hook workspace records. */
+  upsertHook(input: MosHookInput, now?: string): MosWorkspaceHook;
+  deleteHook(id: string, now?: string): MosWorkspaceHook;
+  setHookEnabled(id: string, enabled: boolean, now?: string): MosWorkspaceHook;
   health(): MosWorkspaceStoreHealth;
   quarantineEntries(): readonly MosWorkspaceQuarantineEntry[];
 }

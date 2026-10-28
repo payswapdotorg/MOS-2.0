@@ -48,6 +48,14 @@ import {
   routeMosAgentText,
   workbenchSurfaceFromAppPath,
   initialMosNewTaskDraft,
+  initialMosCommandFormState,
+  initialMosHookFormState,
+  initialMosMcpFormState,
+  mosCommandFormFromCommand,
+  mosHookFormFromHook,
+  mosMcpFormFromServer,
+  MOS_SETTINGS_SKILLS_REFRESH_NOTE,
+  MOS_SETTINGS_SKILLS_NEW_NOTE,
 } from './src/index.js';
 import { MosConsoleApp } from './src/index.js';
 import './mos-desktop-shell.css';
@@ -55,8 +63,8 @@ import '../mos-web/src/styles.css';
 
 const SHELL_DOCUMENT_TITLE = 'MOS — Marketing Operating System';
 const DEFAULT_SHELL_VERSION = '0.1.0';
-// W36: the Automations surface is NATIVE now — the substrate handoff
-// covers only the chat workspace and the substrate Settings page.
+// W38: the Agent Settings surface is NATIVE now — the substrate handoff
+// covers only the chat workspace.
 const WORKBENCH_TITLES = {
   chat: 'MOS — Agent Workbench',
   settings: 'MOS — Agent Workbench · Settings',
@@ -224,6 +232,7 @@ export function bootMosDesktopShell(options) {
     tasks: null,
     automation: null,
     marketplace: null,
+    agentSettings: null,
   };
   let agent = {
     open: false,
@@ -250,6 +259,13 @@ export function bootMosDesktopShell(options) {
   // the section stays hook-free).
   let marketplaceSegment = 'public';
   let marketplaceInstalledView = false;
+  // The W38 emerged-surface state: the Agent Settings hub's active
+  // settings section + the three form drafts (null = the list view —
+  // the entry owns it all; the section stays hook-free).
+  let activeSettingsSection = 'general';
+  let mcpForm = null;
+  let commandForm = null;
+  let hookForm = null;
   // The last MOS section the console showed (the workbench handoff
   // excludes itself) — the resume controller returns here when the host
   // switches back from a substrate surface.
@@ -299,6 +315,10 @@ export function bootMosDesktopShell(options) {
             automationStatusFilter={automationStatusFilter}
             marketplaceSegment={marketplaceSegment}
             marketplaceInstalledView={marketplaceInstalledView}
+            activeSettingsSection={activeSettingsSection}
+            mcpForm={mcpForm}
+            commandForm={commandForm}
+            hookForm={hookForm}
             renderNow={renderNowIso()}
             controller={controller}
           />
@@ -573,6 +593,251 @@ export function bootMosDesktopShell(options) {
         ...receipts,
         marketplace:
           'Installed plugins are workspace records in this profile — the substrate syncs their skills and MCP servers when an account is connected.',
+      };
+      remount();
+    },
+
+    /* ---- W38 — the Agent Settings surface (the emerged settings hub) ---- */
+
+    onSelectSettingsSection(id) {
+      activeSettingsSection = id;
+      mcpForm = null;
+      commandForm = null;
+      hookForm = null;
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onOpenMcpForm() {
+      mcpForm = initialMosMcpFormState();
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onEditMcpForm(recordId) {
+      const record = store.getSnapshot().mcpServers.find((entry) => entry.id === recordId);
+      if (record === undefined) {
+        receipts = {
+          ...receipts,
+          agentSettings: `no MCP server ${recordId} exists in this workspace`,
+        };
+        remount();
+        return;
+      }
+      mcpForm = mosMcpFormFromServer(record);
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onMcpFormChange(partial) {
+      if (mcpForm === null) return;
+      mcpForm = { ...mcpForm, ...partial };
+      remount();
+    },
+
+    onMcpFormCancel() {
+      mcpForm = null;
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onMcpFormSubmit() {
+      withReceipt('agentSettings', () => {
+        const form = mcpForm;
+        if (form === null) return;
+        const record = store.upsertMcpServer({
+          id: form.editingId,
+          name: form.name,
+          storageLevel: form.storageLevel,
+          type: form.type,
+          command: form.command,
+          args: form.args,
+          envJson: form.envJson,
+          url: form.url,
+          headersJson: form.headersJson,
+          timeoutMs: form.timeoutMs,
+          protocolVersion: form.protocolVersion,
+        });
+        mcpForm = null;
+        receipts = {
+          ...receipts,
+          agentSettings: `SAVED — MCP server "${record.name}" is a workspace record now. The substrate connects it when an account is connected.`,
+        };
+      });
+    },
+
+    onToggleMcpServer(id, enabled) {
+      withReceipt('agentSettings', () => {
+        const record = store.setMcpServerEnabled(id, enabled);
+        receipts = {
+          ...receipts,
+          agentSettings: `MCP server "${record.name}" ${enabled ? 'enabled' : 'disabled'} — the workspace record the substrate follows when an account is connected.`,
+        };
+      });
+    },
+
+    onDeleteMcpServer(id) {
+      withReceipt('agentSettings', () => {
+        const record = store.deleteMcpServer(id);
+        receipts = {
+          ...receipts,
+          agentSettings: `Deleted — MCP server "${record.name}"'s workspace record was removed; this cannot be undone.`,
+        };
+      });
+    },
+
+    onOpenCommandForm() {
+      commandForm = initialMosCommandFormState();
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onEditCommandForm(recordId) {
+      const record = store.getSnapshot().userCommands.find((entry) => entry.id === recordId);
+      if (record === undefined) {
+        receipts = {
+          ...receipts,
+          agentSettings: `no command ${recordId} exists in this workspace`,
+        };
+        remount();
+        return;
+      }
+      commandForm = mosCommandFormFromCommand(record);
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onCommandFormChange(partial) {
+      if (commandForm === null) return;
+      commandForm = { ...commandForm, ...partial };
+      remount();
+    },
+
+    onCommandFormCancel() {
+      commandForm = null;
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onCommandFormSubmit() {
+      withReceipt('agentSettings', () => {
+        const form = commandForm;
+        if (form === null) return;
+        const record = store.upsertUserCommand({
+          id: form.editingId,
+          name: form.name,
+          description: form.description,
+          argumentHint: form.argumentHint,
+          prompt: form.prompt,
+        });
+        commandForm = null;
+        receipts = {
+          ...receipts,
+          agentSettings: `SAVED — command /${record.name} is a workspace record now. The substrate's command picker reads it when an account is connected.`,
+        };
+      });
+    },
+
+    onDeleteUserCommand(id) {
+      withReceipt('agentSettings', () => {
+        const record = store.deleteUserCommand(id);
+        receipts = {
+          ...receipts,
+          agentSettings: `Deleted — command /${record.name}'s workspace record was removed; this cannot be undone.`,
+        };
+      });
+    },
+
+    onOpenHookForm() {
+      hookForm = initialMosHookFormState();
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onEditHookForm(recordId) {
+      const record = store.getSnapshot().hooks.find((entry) => entry.id === recordId);
+      if (record === undefined) {
+        receipts = {
+          ...receipts,
+          agentSettings: `no hook ${recordId} exists in this workspace`,
+        };
+        remount();
+        return;
+      }
+      hookForm = mosHookFormFromHook(record);
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onHookFormChange(partial) {
+      if (hookForm === null) return;
+      hookForm = { ...hookForm, ...partial };
+      remount();
+    },
+
+    onHookFormCancel() {
+      hookForm = null;
+      receipts = { ...receipts, agentSettings: null };
+      remount();
+    },
+
+    onHookFormSubmit() {
+      withReceipt('agentSettings', () => {
+        const form = hookForm;
+        if (form === null) return;
+        const record = store.upsertHook({
+          id: form.editingId,
+          event: form.event,
+          matcher: form.matcher,
+          type: form.type,
+          command: form.command,
+          timeoutSeconds: form.timeoutSeconds,
+        });
+        hookForm = null;
+        receipts = {
+          ...receipts,
+          agentSettings: `SAVED — the ${record.event} hook is a workspace record now. The substrate executes it on the real event when an account is connected.`,
+        };
+      });
+    },
+
+    onToggleHook(id, enabled) {
+      withReceipt('agentSettings', () => {
+        const record = store.setHookEnabled(id, enabled);
+        receipts = {
+          ...receipts,
+          agentSettings: `${record.event} hook ${enabled ? 'enabled' : 'disabled'} — the workspace record the substrate follows.`,
+        };
+      });
+    },
+
+    onDeleteHook(id) {
+      withReceipt('agentSettings', () => {
+        const record = store.deleteHook(id);
+        receipts = {
+          ...receipts,
+          agentSettings: `Deleted — the ${record.event} hook's workspace record was removed; this cannot be undone.`,
+        };
+      });
+    },
+
+    onOpenModelSettings() {
+      receipts = { ...receipts, agentSettings: null };
+      setSection('model-settings');
+      remount();
+    },
+
+    onOpenMarketplace() {
+      receipts = { ...receipts, agentSettings: null };
+      setSection('marketplace');
+      remount();
+    },
+
+    onSkillsNote(note) {
+      receipts = {
+        ...receipts,
+        agentSettings:
+          note === 'refresh' ? MOS_SETTINGS_SKILLS_REFRESH_NOTE : MOS_SETTINGS_SKILLS_NEW_NOTE,
       };
       remount();
     },

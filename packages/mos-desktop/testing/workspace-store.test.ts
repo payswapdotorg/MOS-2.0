@@ -740,3 +740,309 @@ test('W37: the marketplace catalog is the frozen official listing (55 plugins, t
     assert.ok(entry.iconUrl.startsWith('https://cdn-zcode.z.ai/'), `${entry.id} uses the official CDN icon`);
   }
 });
+
+/* --------------------------------------------------------------------
+ * W38 — the Agent Settings hub's workspace records (MCP servers,
+ * user commands, hooks) + the pre-W38 snapshot migration
+ * -------------------------------------------------------------------- */
+
+test('W38: MCP server upsert records the config with the honest event; edits + deletes + toggles are real writes', () => {
+  const backing = new Map<string, string>();
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+
+  const record = store.upsertMcpServer({
+    id: null,
+    name: 'web-search',
+    storageLevel: 'workspace',
+    type: 'stdio',
+    command: 'uvx',
+    args: 'mcp-server-fetch --timeout 30',
+    envJson: '{"API_KEY":"secret"}',
+    url: '',
+    headersJson: '',
+    timeoutMs: '5000',
+    protocolVersion: '',
+  });
+  assert.equal(record.id, 'mcp-001');
+  assert.equal(record.name, 'web-search');
+  assert.equal(record.storageLevel, 'workspace');
+  assert.deepEqual(record.args, ['mcp-server-fetch', '--timeout', '30']);
+  assert.equal(record.timeoutMs, 5000);
+  assert.equal(record.enabled, true);
+  assert.equal(store.health().mcpServerCount, 1);
+  const event = store.getSnapshot().events.at(-1);
+  assert.ok(event?.line.includes('"web-search"'), 'the event carries the server name');
+  assert.ok(
+    event?.line.includes('the substrate connects it when an account is connected'),
+    'the event stays honest about connection',
+  );
+
+  // The persisted doc carries the record (durability).
+  const persisted = JSON.parse(backing.get(MOS_WORKSPACE_STORE_KEY) ?? '{}');
+  assert.equal(persisted.mcpServers.length, 1);
+  assert.equal(persisted.mcpServers[0]?.name, 'web-search');
+
+  // Edit: the update path rewrites the same record.
+  const updated = store.upsertMcpServer({
+    id: record.id,
+    name: 'web-search',
+    storageLevel: 'user',
+    type: 'http',
+    command: '',
+    args: '',
+    envJson: '',
+    url: 'https://mcp.example.com/sse',
+    headersJson: '{"Authorization":"Bearer token"}',
+    timeoutMs: '',
+    protocolVersion: '2025-06-18',
+  });
+  assert.equal(updated.id, record.id);
+  assert.equal(updated.type, 'http');
+  assert.equal(updated.url, 'https://mcp.example.com/sse');
+  assert.equal(updated.command, '');
+  assert.equal(updated.timeoutMs, null);
+  assert.equal(store.getSnapshot().mcpServers.length, 1, 'the edit replaced, not appended');
+
+  // Toggle is a real write; the second identical toggle is a no-op.
+  const disabled = store.setMcpServerEnabled(record.id, false);
+  assert.equal(disabled.enabled, false);
+  store.setMcpServerEnabled(record.id, false);
+  assert.equal(store.getSnapshot().mcpServers[0]?.enabled, false, 'the idempotent no-op changed nothing');
+
+  // Delete removes the record and answers the not-found law after.
+  const removed = store.deleteMcpServer(record.id);
+  assert.equal(removed.name, 'web-search');
+  assert.equal(store.getSnapshot().mcpServers.length, 0);
+  assert.throws(
+    () => store.deleteMcpServer(record.id),
+    /no MCP server/,
+    'deleting a missing record fails closed',
+  );
+});
+
+test('W38: MCP server upsert is fail-closed — duplicates, missing command/URL, malformed JSON and timeouts throw typed errors', () => {
+  const backing = new Map<string, string>();
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+
+  store.upsertMcpServer({
+    id: null, name: 'existing', storageLevel: 'user', type: 'stdio', command: 'npx',
+    args: '', envJson: '', url: '', headersJson: '', timeoutMs: '', protocolVersion: '',
+  });
+  assert.throws(
+    () =>
+      store.upsertMcpServer({
+        id: null, name: 'existing', storageLevel: 'user', type: 'stdio', command: 'npx',
+        args: '', envJson: '', url: '', headersJson: '', timeoutMs: '', protocolVersion: '',
+      }),
+    /already exists/,
+    'a duplicate name is a typed conflict',
+  );
+  assert.throws(
+    () =>
+      store.upsertMcpServer({
+        id: null, name: 'no-command', storageLevel: 'user', type: 'stdio', command: '  ',
+        args: '', envJson: '', url: '', headersJson: '', timeoutMs: '', protocolVersion: '',
+      }),
+    /needs a command/,
+    'a stdio server without a command never records',
+  );
+  assert.throws(
+    () =>
+      store.upsertMcpServer({
+        id: null, name: 'no-url', storageLevel: 'user', type: 'sse', command: '',
+        args: '', envJson: '', url: '', headersJson: '', timeoutMs: '', protocolVersion: '',
+      }),
+    /needs a URL/,
+    'an http-family server without a URL never records',
+  );
+  assert.throws(
+    () =>
+      store.upsertMcpServer({
+        id: null, name: 'bad-env', storageLevel: 'user', type: 'stdio', command: 'npx',
+        args: '', envJson: '{not json', url: '', headersJson: '', timeoutMs: '', protocolVersion: '',
+      }),
+    /JSON parsing failed/,
+    'malformed env JSON never records',
+  );
+  assert.throws(
+    () =>
+      store.upsertMcpServer({
+        id: null, name: 'bad-timeout', storageLevel: 'user', type: 'stdio', command: 'npx',
+        args: '', envJson: '', url: '', headersJson: '', timeoutMs: '-5', protocolVersion: '',
+      }),
+    /malformed timeout/,
+    'a negative timeout never records',
+  );
+  assert.throws(
+    () =>
+      store.upsertMcpServer({
+        id: 'mcp-999', name: 'ghost', storageLevel: 'user', type: 'stdio', command: 'npx',
+        args: '', envJson: '', url: '', headersJson: '', timeoutMs: '', protocolVersion: '',
+      }),
+    /no MCP server mcp-999/,
+    'editing an unknown id fails closed',
+  );
+  assert.equal(store.getSnapshot().mcpServers.length, 1, 'every failed write left the state unchanged');
+});
+
+test('W38: user command upsert records the slash-command shape; duplicates and invalid names throw', () => {
+  const backing = new Map<string, string>();
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+
+  const record = store.upsertUserCommand({
+    id: null,
+    name: 'audience-report',
+    description: 'Compile the weekly audience report',
+    argumentHint: '<week>',
+    prompt: 'Compile the audience growth report for {{week}} — no vanity metrics.',
+  });
+  assert.equal(record.id, 'cmd-001');
+  assert.equal(record.name, 'audience-report');
+  assert.equal(store.health().userCommandCount, 1);
+  assert.ok(
+    store.getSnapshot().events.at(-1)?.line.includes("/audience-report"),
+    'the event carries the slash name',
+  );
+
+  const persisted = JSON.parse(backing.get(MOS_WORKSPACE_STORE_KEY) ?? '{}');
+  assert.equal(persisted.userCommands.length, 1);
+
+  assert.throws(
+    () => store.upsertUserCommand({ id: null, name: 'audience-report', description: '', argumentHint: '', prompt: 'x' }),
+    /already exists/,
+    'a duplicate command name is a typed conflict',
+  );
+  assert.throws(
+    () => store.upsertUserCommand({ id: null, name: '/leading-slash', description: '', argumentHint: '', prompt: 'x' }),
+    /invalid/,
+    'a leading slash never records (the picker adds it)',
+  );
+  assert.throws(
+    () => store.upsertUserCommand({ id: null, name: 'has space', description: '', argumentHint: '', prompt: 'x' }),
+    /invalid/,
+    'a spaced name never records',
+  );
+  assert.throws(
+    () => store.upsertUserCommand({ id: null, name: 'empty-prompt', description: '', argumentHint: '', prompt: '   ' }),
+    /needs a prompt/,
+    'a command without a prompt never records',
+  );
+
+  const edited = store.upsertUserCommand({
+    id: record.id,
+    name: 'audience-report',
+    description: 'The weekly audience report, refreshed',
+    argumentHint: '',
+    prompt: 'Compile the audience growth report — no vanity metrics.',
+  });
+  assert.equal(edited.description, 'The weekly audience report, refreshed');
+  assert.equal(store.getSnapshot().userCommands.length, 1, 'the edit replaced, not appended');
+
+  const removed = store.deleteUserCommand(record.id);
+  assert.equal(removed.name, 'audience-report');
+  assert.throws(() => store.deleteUserCommand(record.id), /no command/);
+});
+
+test('W38: hook upsert records the event + runner + timeout; unknown events throw; toggles and deletes are real writes', () => {
+  const backing = new Map<string, string>();
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+
+  const record = store.upsertHook({
+    id: null,
+    event: 'PostToolUse',
+    matcher: 'Write, Edit',
+    type: 'command',
+    command: "echo 'Hello from hook'",
+    timeoutSeconds: '30',
+  });
+  assert.equal(record.id, 'hook-001');
+  assert.equal(record.event, 'PostToolUse');
+  assert.equal(record.timeoutSeconds, 30);
+  assert.equal(record.enabled, true);
+  assert.equal(store.health().hookCount, 1);
+  assert.ok(
+    store.getSnapshot().events.at(-1)?.line.includes('the substrate executes it on the real event'),
+    'the event stays honest about execution',
+  );
+
+  const persisted = JSON.parse(backing.get(MOS_WORKSPACE_STORE_KEY) ?? '{}');
+  assert.equal(persisted.hooks.length, 1);
+
+  assert.throws(
+    () => store.upsertHook({ id: null, event: 'NotAnEvent' as never, matcher: '', type: 'command', command: 'x', timeoutSeconds: '' }),
+    /is not a hook event/,
+    'an unknown event id never records (the substrate vocabulary is the only truth)',
+  );
+  assert.throws(
+    () => store.upsertHook({ id: null, event: 'Stop', matcher: '', type: 'command', command: '  ', timeoutSeconds: '' }),
+    /needs a command/,
+    'a hook without a command never records',
+  );
+  assert.throws(
+    () => store.upsertHook({ id: null, event: 'Stop', matcher: '', type: 'command', command: 'x', timeoutSeconds: 'zero' }),
+    /malformed timeout/,
+    'a non-numeric timeout never records',
+  );
+
+  const disabled = store.setHookEnabled(record.id, false);
+  assert.equal(disabled.enabled, false);
+  const removed = store.deleteHook(record.id);
+  assert.equal(removed.event, 'PostToolUse');
+  assert.throws(() => store.deleteHook(record.id), /no hook/);
+});
+
+test('W38: a pre-W38 v1 snapshot (W37-era, no settings records) migrates with empty lists; malformed fields fail closed', () => {
+  const legacy = {
+    schema: 1,
+    nextSeq: 12,
+    missions: [],
+    posts: [],
+    campaigns: [],
+    accounts: [],
+    events: [],
+    approvals: [],
+    tasks: [],
+    modelSettings: { disabledModelIds: [] },
+    automations: [],
+    automationSettings: { keepAwake: false },
+    marketplacePlugins: [],
+  };
+  const migrated = createMosWorkspaceStore({
+    storage: memoryStorage(new Map<string, string>([[MOS_WORKSPACE_STORE_KEY, JSON.stringify(legacy)]])),
+    clock: FIXED_CLOCK,
+  });
+  assert.equal(migrated.getSnapshot().mcpServers.length, 0);
+  assert.equal(migrated.getSnapshot().userCommands.length, 0);
+  assert.equal(migrated.getSnapshot().hooks.length, 0);
+
+  const malformed = new Map<string, string>([
+    [MOS_WORKSPACE_STORE_KEY, JSON.stringify({ ...legacy, mcpServers: [{ id: 'mcp-001' }] })],
+  ]);
+  const quarantined = createMosWorkspaceStore({ storage: memoryStorage(malformed), clock: FIXED_CLOCK });
+  assert.equal(quarantined.quarantineEntries().length, 1, 'a malformed mcpServers field fails closed');
+  assert.equal(quarantined.getSnapshot().mcpServers.length, 0, 'the malformed snapshot starts EMPTY');
+
+  const malformedHooks = new Map<string, string>([
+    [MOS_WORKSPACE_STORE_KEY, JSON.stringify({ ...legacy, hooks: [{ id: 'hook-001', event: 'Stop' }] })],
+  ]);
+  const quarantinedHooks = createMosWorkspaceStore({ storage: memoryStorage(malformedHooks), clock: FIXED_CLOCK });
+  assert.equal(quarantinedHooks.quarantineEntries().length, 1, 'a malformed hooks field fails closed');
+});
+
+test('W38: the first-boot seed carries the settings-hub evaluation records (1 MCP server, 1 command, 1 hook)', () => {
+  const store = seededStore();
+  const snapshot = store.getSnapshot();
+  assert.equal(snapshot.mcpServers.length, 1);
+  assert.equal(snapshot.mcpServers[0]?.name, 'web-fetch');
+  assert.equal(snapshot.mcpServers[0]?.command, 'uvx');
+  assert.deepEqual(snapshot.mcpServers[0]?.args, ['mcp-server-fetch']);
+  assert.equal(snapshot.userCommands.length, 1);
+  assert.equal(snapshot.userCommands[0]?.name, 'release-notes');
+  assert.ok((snapshot.userCommands[0]?.prompt ?? '').length > 20, 'the seeded command carries a real prompt');
+  assert.equal(snapshot.hooks.length, 1);
+  assert.equal(snapshot.hooks[0]?.event, 'PostToolUse');
+  assert.equal(snapshot.hooks[0]?.matcher, 'Write, Edit');
+  assert.equal(store.health().mcpServerCount, 1);
+  assert.equal(store.health().userCommandCount, 1);
+  assert.equal(store.health().hookCount, 1);
+});

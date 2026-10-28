@@ -56,6 +56,13 @@ import { AutomationsSection } from './sections/automations-section.js';
 import { MarketplaceSection } from './sections/marketplace-section.js';
 import type { MosAutomationStatusFilter } from './automation-presentation.js';
 import type { MosMarketplaceSegment } from './marketplace-presentation.js';
+import { AgentSettingsSection } from './sections/agent-settings-section.js';
+import type {
+  MosCommandFormState,
+  MosHookFormState,
+  MosMcpFormState,
+} from './agent-settings-forms.js';
+import type { MosSettingsSectionId } from './agent-settings-presentation.js';
 import { MOS_WORKSPACE_DURABILITY_FACT } from './workspace-store.js';
 
 /* --------------------------------------------------------------------
@@ -85,6 +92,7 @@ const SECTION_ICONS: Readonly<Record<MosConsoleSectionId, never>> = {
   connections: glyph(<><path d="M9 2.8v5.4M15 2.8v5.4" /><path d="M6.2 8.2h11.6v3.6a5.8 5.8 0 0 1-11.6 0z" /><path d="M12 17.6v3.6" /></>),
   activity: glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.2v5l3.4 2" /></>),
   settings: glyph(<><path d="M3.5 7.2h9M17 7.2h3.5M3.5 16.8h3M11 16.8h9.5" /><circle cx="14.8" cy="7.2" r="2.2" /><circle cx="8.4" cy="16.8" r="2.2" /></>),
+  'agent-settings': glyph(<><circle cx="12" cy="12" r="2.8" /><path d="M12 3.2v2.4M12 18.4v2.4M3.2 12h2.4M18.4 12h2.4M6 6l1.7 1.7M16.3 16.3 18 18M18 6l-1.7 1.7M7.7 16.3 6 18" /></>),
   'new-task': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 8.2v7.6M8.2 12h7.6" /></>),
   'model-settings': glyph(<><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4M12 11v10" /></>),
   'tasks': glyph(<><path d="M9 5.5h11M9 12h11M9 18.5h11" /><path d="m3.5 5.5 1.4 1.4L7.6 4.2M3.5 12l1.4 1.4 2.7-2.7M3.5 18.5l1.4 1.4 2.7-2.7" /></>),
@@ -179,6 +187,55 @@ export interface MosConsoleController {
   readonly onMarketplaceAddNote: () => void;
   /** The Installed strip management affordance answers honestly. */
   readonly onMarketplaceInstalledNote: () => void;
+  /* ---- W38 — the Agent Settings surface ---- */
+  /** The settings sidebar's section select (the hub navigation). */
+  readonly onSelectSettingsSection: (id: MosSettingsSectionId) => void;
+  /** The MCP form opens (create). */
+  readonly onOpenMcpForm: () => void;
+  /** The MCP form opens (edit — the row's own id). */
+  readonly onEditMcpForm: (recordId: string) => void;
+  /** The MCP form draft change. */
+  readonly onMcpFormChange: (partial: Partial<MosMcpFormState>) => void;
+  /** The MCP form cancels (back to the list). */
+  readonly onMcpFormCancel: () => void;
+  /** The MCP form submits (the store upsert). */
+  readonly onMcpFormSubmit: () => void;
+  /** The MCP row's enable toggle (a store write). */
+  readonly onToggleMcpServer: (id: string, enabled: boolean) => void;
+  /** The MCP row's delete (two-click confirm; removes the record). */
+  readonly onDeleteMcpServer: (id: string) => void;
+  /** The command form opens (create). */
+  readonly onOpenCommandForm: () => void;
+  /** The command form opens (edit). */
+  readonly onEditCommandForm: (recordId: string) => void;
+  /** The command form draft change. */
+  readonly onCommandFormChange: (partial: Partial<MosCommandFormState>) => void;
+  /** The command form cancels. */
+  readonly onCommandFormCancel: () => void;
+  /** The command form submits (the store upsert). */
+  readonly onCommandFormSubmit: () => void;
+  /** The command row's delete (two-click confirm). */
+  readonly onDeleteUserCommand: (id: string) => void;
+  /** The hook form opens (create). */
+  readonly onOpenHookForm: () => void;
+  /** The hook form opens (edit). */
+  readonly onEditHookForm: (recordId: string) => void;
+  /** The hook form draft change. */
+  readonly onHookFormChange: (partial: Partial<MosHookFormState>) => void;
+  /** The hook form cancels. */
+  readonly onHookFormCancel: () => void;
+  /** The hook form submits (the store upsert). */
+  readonly onHookFormSubmit: () => void;
+  /** The hook row's enable toggle (a store write). */
+  readonly onToggleHook: (id: string, enabled: boolean) => void;
+  /** The hook row's delete (two-click confirm). */
+  readonly onDeleteHook: (id: string) => void;
+  /** The Model settings cross-link (real navigation to the W35 surface). */
+  readonly onOpenModelSettings: () => void;
+  /** The Plugins cross-link (real navigation to the W37 surface). */
+  readonly onOpenMarketplace: () => void;
+  /** The Skills section's honest affordances (Refresh / New skill). */
+  readonly onSkillsNote: (note: 'refresh' | 'new') => void;
 }
 
 /** The receipts the entry echoes under the intakes (null = none yet). */
@@ -196,6 +253,8 @@ export interface MosConsoleReceipts {
   readonly automation: string | null;
   /** W37 — the Marketplace surface's receipt (install / uninstall). */
   readonly marketplace: string | null;
+  /** W38 — the Agent Settings surface's receipt (MCP / command / hook writes). */
+  readonly agentSettings: string | null;
 }
 
 export interface MosConsoleAppProps {
@@ -227,6 +286,14 @@ export interface MosConsoleAppProps {
   readonly marketplaceSegment: MosMarketplaceSegment;
   /** W37 — the Marketplace surface's Installed management view toggle. */
   readonly marketplaceInstalledView: boolean;
+  /** W38 — the Agent Settings hub's active settings section. */
+  readonly activeSettingsSection: MosSettingsSectionId;
+  /** W38 — the Agent Settings hub's MCP form draft (null = the list view). */
+  readonly mcpForm: MosMcpFormState | null;
+  /** W38 — the Agent Settings hub's command form draft (null = the list view). */
+  readonly commandForm: MosCommandFormState | null;
+  /** W38 — the Agent Settings hub's hook form draft (null = the list view). */
+  readonly hookForm: MosHookFormState | null;
   /** W36 — the render-time ISO now (the relative labels are pure functions of it). */
   readonly renderNow: string;
   readonly controller: MosConsoleController;
@@ -270,6 +337,10 @@ export function MosConsoleApp({
   automationStatusFilter,
   marketplaceSegment,
   marketplaceInstalledView,
+  activeSettingsSection,
+  mcpForm,
+  commandForm,
+  hookForm,
   renderNow,
   controller,
 }: MosConsoleAppProps) {
@@ -283,7 +354,8 @@ export function MosConsoleApp({
       section.id !== 'model-settings' &&
       section.id !== 'tasks' &&
       section.id !== 'automations' &&
-      section.id !== 'marketplace',
+      section.id !== 'marketplace' &&
+      section.id !== 'agent-settings',
   );
   const settingsSection = MOS_CONSOLE_SECTIONS.find((section) => section.id === 'settings');
   const activeSection = sectionRecord(sectionId);
@@ -549,6 +621,46 @@ export function MosConsoleApp({
                 onUninstall={controller.onUninstallMarketplacePlugin}
                 onAddNote={controller.onMarketplaceAddNote}
                 onInstalledNote={controller.onMarketplaceInstalledNote}
+              />
+            ) : sectionId === 'agent-settings' ? (
+              <AgentSettingsSection
+                section={section('agent-settings')}
+                workspace={workspace}
+                activeSection={activeSettingsSection}
+                mcpForm={mcpForm}
+                commandForm={commandForm}
+                hookForm={hookForm}
+                receipt={receipts.agentSettings}
+                onSelectSection={controller.onSelectSettingsSection}
+                onOpenMcpForm={controller.onOpenMcpForm}
+                onEditMcpForm={(record) => {
+                  controller.onEditMcpForm(record.id);
+                }}
+                onMcpFormChange={controller.onMcpFormChange}
+                onMcpFormCancel={controller.onMcpFormCancel}
+                onMcpFormSubmit={controller.onMcpFormSubmit}
+                onToggleMcpServer={controller.onToggleMcpServer}
+                onDeleteMcpServer={controller.onDeleteMcpServer}
+                onOpenCommandForm={controller.onOpenCommandForm}
+                onEditCommandForm={(record) => {
+                  controller.onEditCommandForm(record.id);
+                }}
+                onCommandFormChange={controller.onCommandFormChange}
+                onCommandFormCancel={controller.onCommandFormCancel}
+                onCommandFormSubmit={controller.onCommandFormSubmit}
+                onDeleteUserCommand={controller.onDeleteUserCommand}
+                onOpenHookForm={controller.onOpenHookForm}
+                onEditHookForm={(record) => {
+                  controller.onEditHookForm(record.id);
+                }}
+                onHookFormChange={controller.onHookFormChange}
+                onHookFormCancel={controller.onHookFormCancel}
+                onHookFormSubmit={controller.onHookFormSubmit}
+                onToggleHook={controller.onToggleHook}
+                onDeleteHook={controller.onDeleteHook}
+                onOpenModelSettings={controller.onOpenModelSettings}
+                onOpenMarketplace={controller.onOpenMarketplace}
+                onSkillsNote={controller.onSkillsNote}
               />
             ) : sectionId === 'lab' ? (
               <LabSection section={section('lab')} workspace={workspace} />

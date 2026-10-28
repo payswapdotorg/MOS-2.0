@@ -3807,3 +3807,476 @@
   line-height: 1.4rem;
   color: var(--mosc-ink-faint);
 }
+
+/* ====================================================================
+ * W38 — the Agent Settings hub (the substrate's Settings page replica)
+ * ==================================================================== */
+
+.mosc-aset-shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 1.4rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .mosc-aset-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .mosc-aset-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.9rem;
+  }
+
+  .mosc-aset-navgrouptitle {
+    width: 100%;
+    margin: 0.4rem 0 0.1rem;
+  }
+}
+
+.mosc-aset-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.9rem;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow);
+  padding: 0.8rem 0.6rem;
+}
+
+.mosc-aset-navgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.mosc-aset-navgrouptitle {
+  margin: 0 0 0.25rem;
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-aset-navitem {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.42rem 0.6rem;
+  border: none;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mosc-ink-soft);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.mosc-aset-navitem:hover {
+  background: var(--mosc-surface-sunken);
+  color: var(--mosc-ink);
+}
+
+.mosc-aset-navitem.is-active {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink);
+  font-weight: 600;
+}
+
+.mosc-aset-navitem svg {
+  flex-shrink: 0;
+}
+
+.mosc-aset-navlabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mosc-aset-content {
+  min-width: 0;
+}
+
+.mosc-aset-sectionview {
+  display: flex;
+  flex-direction: column;
+}
+
+.mosc-aset-viewhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.mosc-aset-viewtitle {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--mosc-ink);
+}
+
+.mosc-aset-viewnote {
+  margin: 0.45rem 0 1.2rem;
+  max-width: 46rem;
+  font-size: 0.88rem;
+  line-height: 1.45rem;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-aset-addbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.36rem 0.85rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mosc-ink);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.mosc-aset-addbtn:hover {
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-aset-grouphead {
+  margin: 0.6rem 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-aset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.9rem;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow);
+  padding: 0.55rem 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.mosc-aset-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.5rem;
+  border-radius: 0.6rem;
+  transition: background-color 140ms ease;
+}
+
+.mosc-aset-row:hover {
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-aset-rowicon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 0.7rem;
+  background: var(--mosc-surface-sunken);
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-aset-rowicon.is-mcp .mosc-aset-statusdot {
+  position: absolute;
+  right: -0.25rem;
+  bottom: -0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: var(--mosc-surface);
+}
+
+.mosc-aset-statusdot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+}
+
+.mosc-aset-statusdot.is-recorded {
+  background: var(--mosc-ink-faint);
+}
+
+.mosc-aset-statusdot.is-off {
+  background: var(--mosc-line);
+}
+
+.mosc-aset-rowbody {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.mosc-aset-rowtitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.mosc-aset-rowname {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--mosc-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mosc-aset-scope {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.4rem;
+  background: var(--mosc-surface);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-aset-scope.is-workspace {
+  border-color: var(--mosc-accent-line);
+  background: var(--mosc-accent-wash);
+  color: var(--mosc-accent);
+}
+
+.mosc-aset-arghint {
+  font-size: 0.72rem;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-aset-rowline {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.2rem;
+  color: var(--mosc-ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mosc-aset-rowactions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.mosc-aset-editbtn,
+.mosc-aset-deletebtn {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--mosc-ink-soft);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.mosc-aset-editbtn:hover {
+  background: var(--mosc-surface-sunken);
+  color: var(--mosc-ink);
+}
+
+.mosc-aset-deletebtn:hover,
+.mosc-aset-deletebtn[data-armed='true'] {
+  border-color: #d67777;
+  background: #fdeeee;
+  color: #b34040;
+}
+
+.mosc-aset-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 1px dashed var(--mosc-line);
+  border-radius: 0.9rem;
+  padding: 1.6rem 1rem;
+  text-align: center;
+}
+
+.mosc-aset-emptytitle {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--mosc-ink);
+}
+
+.mosc-aset-emptydesc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-aset-emptyline {
+  margin: 0.35rem 0 0.6rem;
+  font-size: 0.82rem;
+  line-height: 1.3rem;
+  color: var(--mosc-ink-faint);
+}
+
+/* The forms (the substrate's New/Edit MCP server + command + hook) */
+
+.mosc-aset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.mosc-aset-formhead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.mosc-aset-formtitle {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--mosc-ink);
+}
+
+.mosc-aset-formdesc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-aset-formgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1.1rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.9rem;
+  background: var(--mosc-surface);
+  box-shadow: var(--mosc-shadow);
+  padding: 1.1rem 1.2rem;
+}
+
+@media (max-width: 720px) {
+  .mosc-aset-formgrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mosc-aset-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.mosc-aset-field--wide {
+  grid-column: 1 / -1;
+}
+
+.mosc-aset-fieldlabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-aset-fieldhint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-aset-formactions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.mosc-aset-backbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.7rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--mosc-ink-faint);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 140ms ease, background-color 140ms ease;
+}
+
+.mosc-aset-backbtn:hover {
+  background: var(--mosc-surface-sunken);
+  color: var(--mosc-ink);
+}
+
+/* The honest cross-links + the skills affordances */
+
+.mosc-aset-crosbtn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 40rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--mosc-accent-line);
+  border-radius: 0.7rem;
+  background: var(--mosc-accent-wash);
+  color: var(--mosc-accent);
+  font-family: inherit;
+  font-size: 0.82rem;
+  line-height: 1.3rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.mosc-aset-crosbtn:hover {
+  background: var(--mosc-surface);
+}
+
+.mosc-aset-crosbtn svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.mosc-aset-skillactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
