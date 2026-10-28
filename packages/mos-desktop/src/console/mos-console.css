@@ -3457,3 +3457,353 @@
     transition: none;
   }
 }
+
+/* --------------------------------------------------------------------
+ * W37 — the PLUGIN MARKETPLACE section (the substrate's Plugin
+ * Marketplace store view replica): the content column, the page
+ * header + description, the Add / Installed / Public / Personal
+ * controls, the category sections with their cards, and the
+ * installed-strip management view.
+ * -------------------------------------------------------------------- */
+
+.mosc-mkt {
+  display: block;
+}
+
+.mosc-mkt-frame {
+  max-width: 64rem; /* the substrate's max-w-5xl store column */
+  display: flex;
+  flex-direction: column;
+}
+
+.mosc-mkt-title {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 2.125rem;
+  letter-spacing: -0.01em;
+  color: var(--mosc-ink);
+}
+
+.mosc-mkt-description {
+  margin: 0.5rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.45rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-mkt-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.4rem;
+}
+
+.mosc-mkt-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.8rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mosc-ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.mosc-mkt-add:hover {
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-mkt-installedtoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.8rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mosc-ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.mosc-mkt-installedtoggle:hover {
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-mkt-installedtoggle.is-active {
+  background: var(--mosc-neutral-wash);
+  border-color: var(--mosc-accent-line);
+}
+
+.mosc-mkt-installedcount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.mosc-mkt-installedtoggle.is-active .mosc-mkt-installedcount {
+  background: var(--mosc-accent-wash);
+  color: var(--mosc-accent);
+}
+
+.mosc-mkt-segments {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.mosc-mkt-segment {
+  padding: 0.28rem 0.85rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mosc-ink-faint);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.mosc-mkt-segment:hover {
+  color: var(--mosc-ink);
+}
+
+.mosc-mkt-segment.is-active {
+  background: var(--mosc-neutral-wash);
+  color: var(--mosc-ink);
+}
+
+.mosc-mkt-category {
+  margin-top: 1.6rem;
+}
+
+.mosc-mkt-categoryhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  list-style: none;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--mosc-line);
+}
+
+.mosc-mkt-categoryhead::-webkit-details-marker {
+  display: none;
+}
+
+.mosc-mkt-categorytitle {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--mosc-ink);
+}
+
+.mosc-mkt-grouptoggle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--mosc-accent);
+}
+
+.mosc-mkt-category[open] .mosc-mkt-toggle-more {
+  display: none;
+}
+
+.mosc-mkt-category:not([open]) .mosc-mkt-toggle-less {
+  display: none;
+}
+
+.mosc-mkt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.25rem;
+}
+
+.mosc-mkt-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.75rem;
+  background: transparent;
+  padding: 0.55rem 0.5rem;
+  transition: background-color 140ms ease;
+}
+
+.mosc-mkt-card:hover {
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-mkt-card.is-installed {
+  background: var(--mosc-neutral-wash);
+}
+
+.mosc-mkt-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  background: var(--mosc-surface);
+  overflow: hidden;
+}
+
+.mosc-mkt-card-icon img {
+  width: 66%;
+  height: 66%;
+  object-fit: contain;
+}
+
+.mosc-mkt-card-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--mosc-ink-soft);
+}
+
+.mosc-mkt-card-body {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.mosc-mkt-card-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--mosc-ink);
+}
+
+.mosc-mkt-card-description {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  line-height: 1.15rem;
+  color: var(--mosc-ink-faint);
+}
+
+.mosc-mkt-card-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.mosc-mkt-installbtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.9rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mosc-ink);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.mosc-mkt-installbtn:hover {
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-mkt-installedbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.9rem;
+  border: 1px solid var(--mosc-accent-line);
+  border-radius: 0.55rem;
+  background: var(--mosc-accent-wash);
+  color: var(--mosc-accent);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.mosc-mkt-installedbtn[data-armed='true'] {
+  border-color: #d67777;
+  color: #b34040;
+  background: #fdeeee;
+}
+
+.mosc-mkt-installedview {
+  margin-top: 1.6rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.mosc-mkt-installedhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--mosc-line);
+  padding-bottom: 0.5rem;
+}
+
+.mosc-mkt-installedtitle {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--mosc-ink);
+}
+
+.mosc-mkt-installedmanage {
+  border: none;
+  background: transparent;
+  color: var(--mosc-ink-faint);
+  font-family: inherit;
+  font-size: 0.78rem;
+  text-align: right;
+  max-width: 30rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mosc-mkt-installedmanage:hover {
+  color: var(--mosc-ink);
+  text-decoration: underline;
+}
+
+.mosc-mkt-emptyline {
+  margin: 1.2rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.4rem;
+  color: var(--mosc-ink-faint);
+}

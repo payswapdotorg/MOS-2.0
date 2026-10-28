@@ -223,6 +223,7 @@ export function bootMosDesktopShell(options) {
     model: null,
     tasks: null,
     automation: null,
+    marketplace: null,
   };
   let agent = {
     open: false,
@@ -244,6 +245,11 @@ export function bootMosDesktopShell(options) {
   let selectedTaskId = null;
   let tasksShowArchived = false;
   let automationStatusFilter = 'all';
+  // The W37 emerged-surface state: the Marketplace surface's segment
+  // pill + the Installed management view toggle (the entry owns it;
+  // the section stays hook-free).
+  let marketplaceSegment = 'public';
+  let marketplaceInstalledView = false;
   // The last MOS section the console showed (the workbench handoff
   // excludes itself) — the resume controller returns here when the host
   // switches back from a substrate surface.
@@ -291,6 +297,8 @@ export function bootMosDesktopShell(options) {
             selectedTaskId={selectedTaskId}
             tasksShowArchived={tasksShowArchived}
             automationStatusFilter={automationStatusFilter}
+            marketplaceSegment={marketplaceSegment}
+            marketplaceInstalledView={marketplaceInstalledView}
             renderNow={renderNowIso()}
             controller={controller}
           />
@@ -512,6 +520,59 @@ export function bootMosDesktopShell(options) {
           note === 'refresh'
             ? 'Refreshed — the automations are workspace records in this profile; there is no remote list to re-fetch.'
             : null,
+      };
+      remount();
+    },
+
+    /* ---- W37 — the Marketplace surface (the emerged plugin inventory) ---- */
+
+    onMarketplaceSegment(segment) {
+      marketplaceSegment = segment;
+      marketplaceInstalledView = false;
+      receipts = { ...receipts, marketplace: null };
+      remount();
+    },
+
+    onToggleMarketplaceInstalledView() {
+      marketplaceInstalledView = !marketplaceInstalledView;
+      receipts = { ...receipts, marketplace: null };
+      remount();
+    },
+
+    onInstallMarketplacePlugin(pluginId) {
+      withReceipt('marketplace', () => {
+        const record = store.installMarketplacePlugin(pluginId);
+        receipts = {
+          ...receipts,
+          marketplace: `INSTALLED — ${record.name} is a workspace record now. The substrate syncs its skills and MCP servers when an account is connected.`,
+        };
+      });
+    },
+
+    onUninstallMarketplacePlugin(pluginId) {
+      withReceipt('marketplace', () => {
+        const record = store.uninstallMarketplacePlugin(pluginId);
+        receipts = {
+          ...receipts,
+          marketplace: `Uninstalled — ${record.name}'s workspace record was removed.`,
+        };
+      });
+    },
+
+    onMarketplaceAddNote() {
+      receipts = {
+        ...receipts,
+        marketplace:
+          'The catalog is frozen to the official marketplace listing captured in this build. Adding marketplace sources arrives with a connected substrate account.',
+      };
+      remount();
+    },
+
+    onMarketplaceInstalledNote() {
+      receipts = {
+        ...receipts,
+        marketplace:
+          'Installed plugins are workspace records in this profile — the substrate syncs their skills and MCP servers when an account is connected.',
       };
       remount();
     },

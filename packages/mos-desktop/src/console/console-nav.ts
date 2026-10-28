@@ -41,7 +41,9 @@ export type MosConsoleSectionId =
   /** W36 — the substrate's task list + conversation view, emerged. */
   | 'tasks'
   /** W36 — the substrate's Automations main view, emerged. */
-  | 'automations';
+  | 'automations'
+  /** W37 — the substrate's Plugin Marketplace, emerged with the official listing. */
+  | 'marketplace';
 
 /** One console section's identity (title + purpose render verbatim). */
 export interface MosConsoleSectionRecord {
@@ -179,6 +181,13 @@ export const MOS_CONSOLE_SECTIONS: readonly MosConsoleSectionRecord[] = [
       'The scheduled agent tasks — the substrate\'s Automations main view, emerged as a native MOS surface: schedule records with honest lifecycle states. No account gate; runs dispatch when the substrate account is connected.',
     path: '/workbench/automations',
   },
+  {
+    id: 'marketplace',
+    title: 'Plugin Marketplace',
+    purpose:
+      'The official plugin marketplace — the substrate\'s Plugin Marketplace page, emerged as a native MOS surface: the frozen public listing with workspace-record installs. No account gate; skills and MCP servers sync when the substrate account is connected.',
+    path: '/workbench/plugins',
+  },
 ];
 
 /** Resolve a section record by id (undefined when the id names no section). */
@@ -266,7 +275,7 @@ export type MosWorkbenchNavDescriptor =
       readonly label: string;
       readonly path: string;
       readonly testId: string;
-      readonly icon: 'new-task' | 'model-settings' | 'tasks' | 'automations';
+      readonly icon: 'new-task' | 'model-settings' | 'tasks' | 'automations' | 'marketplace';
     }
   | {
       readonly kind: 'substrate';
@@ -283,6 +292,7 @@ export const MOS_WORKBENCH_NAV_ITEMS: readonly MosWorkbenchNavDescriptor[] = [
   { kind: 'native', section: 'tasks', label: 'Tasks', path: '/workbench/tasks', testId: 'nav-workbench-tasks', icon: 'tasks' },
   { kind: 'native', section: 'model-settings', label: 'Model Settings', path: '/workbench/models', testId: 'nav-workbench-models', icon: 'model-settings' },
   { kind: 'native', section: 'automations', label: 'Automations', path: '/workbench/automations', testId: 'nav-workbench-automations', icon: 'automations' },
+  { kind: 'native', section: 'marketplace', label: 'Plugin Marketplace', path: '/workbench/plugins', testId: 'nav-workbench-plugins', icon: 'marketplace' },
   { kind: 'substrate', surface: 'chat', label: 'Workbench', path: '/workbench', testId: 'nav-workbench', icon: 'chat' },
   { kind: 'substrate', surface: 'settings', label: 'Agent Settings', path: '/workbench/settings', testId: 'nav-workbench-settings', icon: 'settings' },
 ];

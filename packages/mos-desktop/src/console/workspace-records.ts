@@ -179,6 +179,20 @@ export interface MosWorkspaceModelSettings {
   readonly disabledModelIds: readonly string[];
 }
 
+/**
+ * One installed marketplace plugin record (W37): the workspace's plugin
+ * inventory decision. The catalog id must resolve against the frozen
+ * marketplace catalog; the substrate syncs the skills/MCP servers when
+ * an account is connected — the record itself never claims execution.
+ */
+export interface MosWorkspaceMarketplacePlugin {
+  /** The catalog plugin id (`{slug}@{marketplace}` — the store's own vocabulary). */
+  readonly pluginId: string;
+  /** The catalog display name at install time (the receipt basis). */
+  readonly name: string;
+  readonly installedAt: string;
+}
+
 /** The whole store snapshot (rebuilt on every change; sections are pure). */
 export interface MosWorkspaceSnapshot {
   readonly missions: readonly MosWorkspaceMission[];
@@ -192,6 +206,8 @@ export interface MosWorkspaceSnapshot {
   /** W36 — the scheduled agent tasks + the Automations settings. */
   readonly automations: readonly MosWorkspaceAutomation[];
   readonly automationSettings: MosWorkspaceAutomationSettings;
+  /** W37 — the installed marketplace plugin inventory (workspace decisions). */
+  readonly marketplacePlugins: readonly MosWorkspaceMarketplacePlugin[];
 }
 
 /* --------------------------------------------------------------------
@@ -282,6 +298,8 @@ export interface MosWorkspacePersisted {
   /** W36 fields — absent in pre-W36 v1 snapshots; validation defaults them. */
   readonly automations: readonly MosWorkspaceAutomation[];
   readonly automationSettings: MosWorkspaceAutomationSettings;
+  /** W37 fields — absent in pre-W37 v1 snapshots; validation defaults them. */
+  readonly marketplacePlugins: readonly MosWorkspaceMarketplacePlugin[];
 }
 
 const EMPTY_PERSISTED: MosWorkspacePersisted = {
@@ -297,6 +315,7 @@ const EMPTY_PERSISTED: MosWorkspacePersisted = {
   modelSettings: { disabledModelIds: [] },
   automations: [],
   automationSettings: { keepAwake: false },
+  marketplacePlugins: [],
 };
 
 /** @internal The empty document (the quarantined store's fail-closed start). */
@@ -391,6 +410,25 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
   ) {
     throw new Error('workspace snapshot field "automationSettings" is malformed');
   }
+  // W37 back-compat: pre-W37 v1 snapshots carry no marketplacePlugins —
+  // the absent field defaults to an empty inventory; a PRESENT-but-
+  // malformed field still fails closed. Every record's pluginId must be
+  // a non-empty string (catalog resolution is the store's write-time
+  // law; the validator only pins the persisted shape).
+  if (
+    value.marketplacePlugins !== undefined &&
+    (!Array.isArray(value.marketplacePlugins) ||
+      value.marketplacePlugins.some(
+        (entry) =>
+          !isRecord(entry) ||
+          typeof entry.pluginId !== 'string' ||
+          entry.pluginId.length === 0 ||
+          typeof entry.name !== 'string' ||
+          typeof entry.installedAt !== 'string',
+      ))
+  ) {
+    throw new Error('workspace snapshot field "marketplacePlugins" is malformed');
+  }
   const tasks = (value.tasks === undefined ? [] : (value.tasks as unknown as MosWorkspaceTask[])).map(
     (task) => ({
       ...task,
@@ -413,6 +451,10 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
       value.automationSettings === undefined
         ? { keepAwake: false }
         : (value.automationSettings as unknown as MosWorkspaceAutomationSettings),
+    marketplacePlugins:
+      value.marketplacePlugins === undefined
+        ? []
+        : (value.marketplacePlugins as unknown as MosWorkspaceMarketplacePlugin[]),
   };
 }
 
@@ -431,6 +473,8 @@ export interface MosWorkspaceStoreHealth {
   readonly taskCount: number;
   /** W36 — the scheduled agent tasks count. */
   readonly automationCount: number;
+  /** W37 — the installed marketplace plugin count. */
+  readonly marketplacePluginCount: number;
   readonly quarantinedCount: number;
 }
 
@@ -474,6 +518,9 @@ export interface MosWorkspaceStore {
   requestAutomationRun(id: string, now?: string): MosWorkspaceAutomation;
   deleteAutomation(id: string, now?: string): MosWorkspaceAutomation;
   setAutomationKeepAwake(enabled: boolean, now?: string): MosWorkspaceAutomationSettings;
+  /** W37 — the marketplace plugin inventory workspace decisions. */
+  installMarketplacePlugin(pluginId: string, now?: string): MosWorkspaceMarketplacePlugin;
+  uninstallMarketplacePlugin(pluginId: string, now?: string): MosWorkspaceMarketplacePlugin;
   health(): MosWorkspaceStoreHealth;
   quarantineEntries(): readonly MosWorkspaceQuarantineEntry[];
 }

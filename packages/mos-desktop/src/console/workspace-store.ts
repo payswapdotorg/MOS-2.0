@@ -39,6 +39,7 @@ import {
   type MosWorkspaceAutomation,
   type MosWorkspaceAutomationSettings,
   type MosWorkspaceCampaign,
+  type MosWorkspaceMarketplacePlugin,
   type MosWorkspaceMission,
   type MosWorkspaceModelSettings,
   type MosWorkspacePersisted,
@@ -51,6 +52,7 @@ import {
   type MosWorkspaceTask,
 } from './workspace-records.js';
 import { mosAgentModel, mosModelConnectionMode } from './model-catalog.js';
+import { mosMarketplacePluginById } from './marketplace-catalog.js';
 import { mosNewTaskMode } from './new-task-draft.js';
 import { mosWorkspaceFirstbootRecords } from './workspace-firstboot.js';
 import {
@@ -200,6 +202,9 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         modelSettings: state.modelSettings,
         automations: [...state.automations].sort((a, b) => b.seq - a.seq),
         automationSettings: state.automationSettings,
+        marketplacePlugins: [...state.marketplacePlugins].sort(
+          (a, b) => (a.installedAt < b.installedAt ? 1 : a.installedAt > b.installedAt ? -1 : a.pluginId < b.pluginId ? -1 : 1),
+        ),
       };
     },
 
@@ -627,6 +632,60 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
       });
     },
 
+    /* ------------------------------------------------------------------
+     * W37 — the Marketplace surface's workspace records (install /
+     * uninstall): the plugin inventory decisions. The catalog id must
+     * resolve against the frozen marketplace catalog (fail-closed); the
+     * record NEVER claims the substrate synced anything — skills and MCP
+     * servers arrive with a connected substrate account.
+     * ------------------------------------------------------------------ */
+
+    installMarketplacePlugin(pluginId: string, now?: string): MosWorkspaceMarketplacePlugin {
+      const at = now ?? clock();
+      const catalogEntry = mosMarketplacePluginById(pluginId);
+      if (catalogEntry === undefined) {
+        throw new MosWorkspaceStoreError(
+          'validation',
+          `unknown marketplace plugin "${pluginId}" — the catalog is frozen to the official listing captured in this build`,
+        );
+      }
+      return commit((): MosWorkspaceMarketplacePlugin => {
+        const existing = state.marketplacePlugins.find((entry) => entry.pluginId === pluginId);
+        if (existing !== undefined) {
+          throw new MosWorkspaceStoreError('validation', `plugin ${pluginId} (${existing.name}) is already installed in this workspace`);
+        }
+        const record: MosWorkspaceMarketplacePlugin = {
+          pluginId,
+          name: catalogEntry.name,
+          installedAt: at,
+        };
+        state = { ...state, marketplacePlugins: [...state.marketplacePlugins, record] };
+        appendEvent(
+          'marketplace-plugin-installed',
+          `Plugin ${pluginId} (${catalogEntry.name}) installed — a workspace record; the substrate syncs its skills and MCP servers when an account is connected`,
+          at,
+        );
+        return record;
+      });
+    },
+
+    uninstallMarketplacePlugin(pluginId: string, now?: string): MosWorkspaceMarketplacePlugin {
+      const at = now ?? clock();
+      return commit((): MosWorkspaceMarketplacePlugin => {
+        const existing = state.marketplacePlugins.find((entry) => entry.pluginId === pluginId);
+        if (existing === undefined) {
+          throw new MosWorkspaceStoreError('not-found', `plugin ${pluginId} is not installed in this workspace`);
+        }
+        state = { ...state, marketplacePlugins: state.marketplacePlugins.filter((entry) => entry.pluginId !== pluginId) };
+        appendEvent(
+          'marketplace-plugin-uninstalled',
+          `Plugin ${pluginId} (${existing.name}) uninstalled — the workspace record is removed; this cannot be undone`,
+          at,
+        );
+        return existing;
+      });
+    },
+
     health() {
       return {
         durability: 'BROWSER_PROFILE' as const,
@@ -637,6 +696,7 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         eventCount: state.events.length,
         taskCount: state.tasks.length,
         automationCount: state.automations.length,
+        marketplacePluginCount: state.marketplacePlugins.length,
         quarantinedCount: quarantined.length,
       };
     },

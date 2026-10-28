@@ -39,6 +39,7 @@ test('workbenchSurfaceFromAppPath rejects non-workbench paths (MOS routes resolv
   assert.equal(workbenchSurfaceFromAppPath('/workbench/new-task?draft=1'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/tasks'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/automations'), null);
+  assert.equal(workbenchSurfaceFromAppPath('/workbench/plugins'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/tasks/'), null);
   assert.equal(workbenchSurfaceFromAppPath('/workbench/automations?filter=all'), null);
   // Near-misses must not match (explicit unknowns, never guesses).

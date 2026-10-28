@@ -27,6 +27,7 @@ interface MutableWorkspaceSeed {
   modelSettings: MosWorkspacePersisted['modelSettings'];
   automations: MosWorkspacePersisted['automations'];
   automationSettings: MosWorkspacePersisted['automationSettings'];
+  marketplacePlugins: MosWorkspacePersisted['marketplacePlugins'];
 }
 
 /**
@@ -55,6 +56,7 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
     modelSettings: { disabledModelIds: [] },
     automations: [],
     automationSettings: { keepAwake: false },
+    marketplacePlugins: [],
   };
   const bump = (): number => {
     const seq = nextSeq;

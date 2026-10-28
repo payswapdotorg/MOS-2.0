@@ -19,6 +19,12 @@ import {
   MosWorkspaceStoreError,
   createMosWorkspaceStore,
 } from '../dist/console/workspace-store.js';
+import {
+  MOS_MARKETPLACE_CATEGORIES,
+  MOS_MARKETPLACE_PLUGINS,
+  mosMarketplacePluginById,
+  mosMarketplacePluginsForCategory,
+} from '../dist/console/marketplace-catalog.js';
 
 /** An in-memory storage adapter (the localStorage double for tests). */
 function memoryStorage(initial = new Map<string, string>()) {
@@ -618,4 +624,119 @@ test('a pre-W36 v1 snapshot (W35-era tasks, no automations) migrates with honest
   ]);
   const quarantinedTask = createMosWorkspaceStore({ storage: memoryStorage(malformedTask), clock: FIXED_CLOCK });
   assert.equal(quarantinedTask.quarantineEntries().length, 1, 'a malformed pinned field fails closed');
+});
+
+/* --------------------------------------------------------------------
+ * W37 — the Marketplace plugin inventory workspace records + the
+ * pre-W37 snapshot migration
+ * -------------------------------------------------------------------- */
+
+test('W37: install records the plugin inventory decision with the catalog name + the honest event', () => {
+  const backing = new Map<string, string>();
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK });
+
+  const record = store.installMarketplacePlugin('github@zcode-plugins-official');
+  assert.equal(record.pluginId, 'github@zcode-plugins-official');
+  assert.equal(record.name, 'Github');
+  assert.equal(record.installedAt, '2026-10-26T12:00:00.000Z');
+  assert.equal(store.getSnapshot().marketplacePlugins.length, 1);
+  assert.equal(store.health().marketplacePluginCount, 1);
+  const event = store.getSnapshot().events.at(-1);
+  assert.ok(event?.line.includes('github@zcode-plugins-official'), 'the event carries the plugin id');
+  assert.ok(
+    event?.line.includes('the substrate syncs its skills and MCP servers when an account is connected'),
+    'the event stays honest about execution',
+  );
+
+  // Install is durable (the persisted doc carries the record).
+  const persisted = JSON.parse(backing.get(MOS_WORKSPACE_STORE_KEY) ?? '{}');
+  assert.equal(persisted.marketplacePlugins.length, 1);
+  assert.equal(persisted.marketplacePlugins[0]?.pluginId, 'github@zcode-plugins-official');
+
+  // Uninstall removes the record + answers the not-found law after.
+  const removed = store.uninstallMarketplacePlugin('github@zcode-plugins-official');
+  assert.equal(removed.name, 'Github');
+  assert.equal(store.getSnapshot().marketplacePlugins.length, 0);
+  assert.equal(store.health().marketplacePluginCount, 0);
+  assert.throws(
+    () => store.uninstallMarketplacePlugin('github@zcode-plugins-official'),
+    /not installed in this workspace/,
+    'uninstalling a missing record fails closed',
+  );
+});
+
+test('W37: install is fail-closed — unknown catalog ids and double installs throw typed errors', () => {
+  const backing = new Map<string, string>();
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK });
+
+  assert.throws(
+    () => store.installMarketplacePlugin('not-in-catalog@nowhere'),
+    /unknown marketplace plugin/,
+    'an unknown catalog id never records',
+  );
+  assert.equal(store.getSnapshot().marketplacePlugins.length, 0, 'the failed write left no record');
+
+  store.installMarketplacePlugin('blender@zcode-plugins-official');
+  assert.throws(
+    () => store.installMarketplacePlugin('blender@zcode-plugins-official'),
+    /already installed/,
+    'a double install is a typed conflict',
+  );
+  assert.equal(store.getSnapshot().marketplacePlugins.length, 1, 'the conflict left the original record intact');
+});
+
+test('W37: a pre-W37 v1 snapshot (W36-era, no marketplacePlugins) migrates with an empty inventory; malformed fields fail closed', () => {
+  const legacy = {
+    schema: 1,
+    nextSeq: 12,
+    missions: [],
+    posts: [],
+    campaigns: [],
+    accounts: [],
+    events: [],
+    approvals: [],
+    tasks: [],
+    modelSettings: { disabledModelIds: [] },
+    automations: [],
+    automationSettings: { keepAwake: false },
+    // No marketplacePlugins — the W36 shape.
+  };
+  const backing = new Map<string, string>([[MOS_WORKSPACE_STORE_KEY, JSON.stringify(legacy)]]);
+  const store = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK });
+  const snapshot = store.getSnapshot();
+  assert.equal(store.quarantineEntries().length, 0, 'the W36-era snapshot is NOT quarantined');
+  assert.deepEqual(snapshot.marketplacePlugins, [], 'the absent field defaults to the empty inventory');
+  assert.equal(store.health().marketplacePluginCount, 0);
+
+  const malformed = new Map<string, string>([
+    [
+      MOS_WORKSPACE_STORE_KEY,
+      JSON.stringify({
+        ...legacy,
+        marketplacePlugins: [{ pluginId: '', name: 'x', installedAt: '2026-10-26T12:00:00.000Z' }],
+      }),
+    ],
+  ]);
+  const quarantined = createMosWorkspaceStore({ storage: memoryStorage(malformed), clock: FIXED_CLOCK });
+  assert.equal(quarantined.quarantineEntries().length, 1, 'an empty pluginId fails closed');
+  assert.equal(quarantined.getSnapshot().marketplacePlugins.length, 0, 'the malformed snapshot starts EMPTY');
+});
+
+test('W37: the marketplace catalog is the frozen official listing (55 plugins, the five categories, unique ids)', () => {
+  const ids = new Set(MOS_MARKETPLACE_PLUGINS.map((entry) => entry.id));
+  assert.equal(MOS_MARKETPLACE_PLUGINS.length, 54, 'the captured official roster');
+  assert.equal(ids.size, MOS_MARKETPLACE_PLUGINS.length, 'no duplicate listing ids');
+  assert.equal(MOS_MARKETPLACE_CATEGORIES.length, 5);
+  assert.equal(mosMarketplacePluginById('github@zcode-plugins-official')?.name, 'Github');
+  assert.equal(mosMarketplacePluginById('unreal-engine@zcode-plugins-official')?.categoryId, 'games-3d');
+  assert.equal(mosMarketplacePluginsForCategory('developer-tools').length, 11);
+  assert.equal(mosMarketplacePluginsForCategory('productivity').length, 21);
+  assert.equal(mosMarketplacePluginsForCategory('finance').length, 14);
+  assert.equal(mosMarketplacePluginsForCategory('other').length, 1);
+  assert.equal(mosMarketplacePluginsForCategory('games-3d').length, 7);
+  for (const entry of MOS_MARKETPLACE_PLUGINS) {
+    assert.ok(entry.name.length > 0, `${entry.id} carries a name`);
+    assert.ok(entry.description.length > 20, `${entry.id} carries its listing description`);
+    assert.ok(entry.iconUrl.startsWith('https://cdn-zcode.z.ai/'), `${entry.id} uses the official CDN icon`);
+  }
 });

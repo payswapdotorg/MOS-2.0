@@ -53,7 +53,9 @@ import {
 } from './sections/model-settings-section.js';
 import { TasksSection } from './sections/tasks-section.js';
 import { AutomationsSection } from './sections/automations-section.js';
+import { MarketplaceSection } from './sections/marketplace-section.js';
 import type { MosAutomationStatusFilter } from './automation-presentation.js';
+import type { MosMarketplaceSegment } from './marketplace-presentation.js';
 import { MOS_WORKSPACE_DURABILITY_FACT } from './workspace-store.js';
 
 /* --------------------------------------------------------------------
@@ -87,6 +89,7 @@ const SECTION_ICONS: Readonly<Record<MosConsoleSectionId, never>> = {
   'model-settings': glyph(<><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4M12 11v10" /></>),
   'tasks': glyph(<><path d="M9 5.5h11M9 12h11M9 18.5h11" /><path d="m3.5 5.5 1.4 1.4L7.6 4.2M3.5 12l1.4 1.4 2.7-2.7M3.5 18.5l1.4 1.4 2.7-2.7" /></>),
   'automations': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3.2 2" /></>),
+  'marketplace': glyph(<><path d="M3.5 8.5 12 4l8.5 4.5v7L12 20l-8.5-4.5z" /><path d="M3.5 8.5 12 13l8.5-4.5M12 13v7" /></>),
 };
 
 /** The workbench nav glyphs, keyed by the descriptor's icon field. */
@@ -95,6 +98,7 @@ const WORKBENCH_ICONS: Readonly<Record<string, never>> = {
   'model-settings': glyph(<><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4M12 11v10" /></>),
   'tasks': glyph(<><path d="M9 5.5h11M9 12h11M9 18.5h11" /><path d="m3.5 5.5 1.4 1.4L7.6 4.2M3.5 12l1.4 1.4 2.7-2.7M3.5 18.5l1.4 1.4 2.7-2.7" /></>),
   'automations': glyph(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3.2 2" /></>),
+  'marketplace': glyph(<><path d="M3.5 8.5 12 4l8.5 4.5v7L12 20l-8.5-4.5z" /><path d="M3.5 8.5 12 13l8.5-4.5M12 13v7" /></>),
   chat: glyph(<><rect x="3.5" y="5" width="17" height="14" rx="2.5" /><path d="M7.5 14.5h9M7.5 10.5h6" /></>),
   settings: glyph(<><circle cx="12" cy="12" r="2.8" /><path d="M12 3.2v2.4M12 18.4v2.4M3.2 12h2.4M18.4 12h2.4M6 6l1.7 1.7M16.3 16.3 18 18M18 6l-1.7 1.7M7.7 16.3 6 18" /></>),
 };
@@ -162,6 +166,19 @@ export interface MosConsoleController {
   readonly onAutomationKeepAwake: (enabled: boolean) => void;
   /** Refresh answers honestly (no remote list exists). */
   readonly onAutomationNote: (note: string) => void;
+  /* ---- W37 — the Marketplace surface ---- */
+  /** The Public/Personal segment pill select. */
+  readonly onMarketplaceSegment: (segment: MosMarketplaceSegment) => void;
+  /** The Installed management view toggle. */
+  readonly onToggleMarketplaceInstalledView: () => void;
+  /** Install (records the plugin inventory workspace decision). */
+  readonly onInstallMarketplacePlugin: (pluginId: string) => void;
+  /** Uninstall (two-click confirm; removes the record). */
+  readonly onUninstallMarketplacePlugin: (pluginId: string) => void;
+  /** The Add affordance answers honestly (the Model Settings precedent). */
+  readonly onMarketplaceAddNote: () => void;
+  /** The Installed strip management affordance answers honestly. */
+  readonly onMarketplaceInstalledNote: () => void;
 }
 
 /** The receipts the entry echoes under the intakes (null = none yet). */
@@ -177,6 +194,8 @@ export interface MosConsoleReceipts {
   readonly tasks: string | null;
   /** W36 — the Automations surface's receipt. */
   readonly automation: string | null;
+  /** W37 — the Marketplace surface's receipt (install / uninstall). */
+  readonly marketplace: string | null;
 }
 
 export interface MosConsoleAppProps {
@@ -204,6 +223,10 @@ export interface MosConsoleAppProps {
   readonly tasksShowArchived: boolean;
   /** W36 — the Automations surface's active status filter. */
   readonly automationStatusFilter: MosAutomationStatusFilter;
+  /** W37 — the Marketplace surface's active segment pill. */
+  readonly marketplaceSegment: MosMarketplaceSegment;
+  /** W37 — the Marketplace surface's Installed management view toggle. */
+  readonly marketplaceInstalledView: boolean;
   /** W36 — the render-time ISO now (the relative labels are pure functions of it). */
   readonly renderNow: string;
   readonly controller: MosConsoleController;
@@ -245,6 +268,8 @@ export function MosConsoleApp({
   selectedTaskId,
   tasksShowArchived,
   automationStatusFilter,
+  marketplaceSegment,
+  marketplaceInstalledView,
   renderNow,
   controller,
 }: MosConsoleAppProps) {
@@ -257,7 +282,8 @@ export function MosConsoleApp({
       section.id !== 'new-task' &&
       section.id !== 'model-settings' &&
       section.id !== 'tasks' &&
-      section.id !== 'automations',
+      section.id !== 'automations' &&
+      section.id !== 'marketplace',
   );
   const settingsSection = MOS_CONSOLE_SECTIONS.find((section) => section.id === 'settings');
   const activeSection = sectionRecord(sectionId);
@@ -509,6 +535,20 @@ export function MosConsoleApp({
                 onCreate={() => {
                   controller.onNavigateSection('new-task');
                 }}
+              />
+            ) : sectionId === 'marketplace' ? (
+              <MarketplaceSection
+                section={section('marketplace')}
+                workspace={workspace}
+                segment={marketplaceSegment}
+                installedView={marketplaceInstalledView}
+                receipt={receipts.marketplace}
+                onSegment={controller.onMarketplaceSegment}
+                onToggleInstalledView={controller.onToggleMarketplaceInstalledView}
+                onInstall={controller.onInstallMarketplacePlugin}
+                onUninstall={controller.onUninstallMarketplacePlugin}
+                onAddNote={controller.onMarketplaceAddNote}
+                onInstalledNote={controller.onMarketplaceInstalledNote}
               />
             ) : sectionId === 'lab' ? (
               <LabSection section={section('lab')} workspace={workspace} />

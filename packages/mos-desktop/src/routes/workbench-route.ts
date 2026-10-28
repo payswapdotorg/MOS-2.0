@@ -13,10 +13,11 @@
  * surface with no account gate). `/workbench/models` (Model Settings)
  * is native the same way. W36: `/workbench/tasks` (the Tasks list +
  * conversation view) and `/workbench/automations` (the Automations main
- * view) emerged native too. The remaining substrate routes: `/workbench`
- * the substrate workspace (sessions, groups and projects) and
- * `/workbench/settings` the substrate Settings page. The desktop entry
- * hands these surfaces to the host renderer's
+ * view) emerged native too. W37: `/workbench/plugins` (the Plugin
+ * Marketplace) emerged native the same way. The remaining substrate
+ * routes: `/workbench` the substrate workspace (sessions, groups and
+ * projects) and `/workbench/settings` the substrate Settings page. The
+ * desktop entry hands these surfaces to the host renderer's
  * `onRequestSubstrateSurface` (see mos-desktop-entry.jsx); the MOS page
  * model is never resolved for these routes.
  */
