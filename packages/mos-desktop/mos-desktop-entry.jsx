@@ -71,6 +71,16 @@ import {
   mosMcpFormFromServer,
   MOS_SETTINGS_SKILLS_REFRESH_NOTE,
   MOS_SETTINGS_SKILLS_NEW_NOTE,
+  // W40 — the composer attachment queue law (the substrate's own paste
+  // law + queue facts, verbatim).
+  MOS_NEW_TASK_ATTACHMENT_LIMIT,
+  mosNewTaskBasenameFromPath,
+  mosNewTaskClipboardTextAttachmentFilename,
+  mosNewTaskCountClipboardTextLines,
+  mosNewTaskDraftWithAttachmentAdded,
+  mosNewTaskFormatAttachmentSize,
+  mosNewTaskInferAttachmentMimeType,
+  mosNewTaskShouldCreateClipboardTextAttachment,
 } from './src/index.js';
 import { MosConsoleApp } from './src/index.js';
 import './mos-desktop-shell.css';
@@ -256,6 +266,7 @@ export function bootMosDesktopShell(options) {
     transcript: [],
   };
   let agentTranscriptSeq = 1;
+  let attachmentSeq = 1;
   let committed = false;
   // The W35 emerged-surface state: the New Task draft (the composer's
   // model/mode/plan/context selection — the entry owns it, the hook-free
@@ -662,13 +673,152 @@ export function bootMosDesktopShell(options) {
     },
 
     onNewTaskSubmit(input) {
+      // W40 — the submit freezes the draft's attachment queue on the task
+      // record (the store's own write); the draft queue itself resets so
+      // the next compose starts empty (the substrate's composer law).
+      if (newTaskDraft.attachments.length > 0) {
+        newTaskDraft = { ...newTaskDraft, attachments: [] };
+      }
       withReceipt('task', () => {
         const task = store.recordAgentTask(input);
         receipts = {
           ...receipts,
-          task: `TASK_RECORDED — task ${task.id} "${task.title}" on ${task.modelId} (${task.mode} mode${task.planEnabled ? ' · plan' : ''}). A workspace record; the substrate runs it when an account is connected.`,
+          task: `TASK_RECORDED — task ${task.id} "${task.title}" on ${task.modelId} (${task.mode} mode${task.planEnabled ? ' · plan' : ''}${task.attachments.length > 0 ? ` · ${task.attachments.length} attachment${task.attachments.length === 1 ? '' : 's'} frozen on the record` : ''}). A workspace record; the substrate runs it when an account is connected.`,
         };
       });
+    },
+
+    /* ---- W40 — the composer's native attachment flow ---- */
+
+    /**
+     * The substrate's own long-paste law (verbatim): a paste of 15*1024
+     * chars or more NEVER becomes input text — it materializes a REAL
+     * local file through the substrate's own temp-attachment IPC and
+     * renders the chip. Returns true when the paste was intercepted.
+     */
+    onNewTaskPasteText(text) {
+      if (!mosNewTaskShouldCreateClipboardTextAttachment(text)) {
+        return false;
+      }
+      if (newTaskDraft.attachments.length >= MOS_NEW_TASK_ATTACHMENT_LIMIT) {
+        receipts = {
+          ...receipts,
+          task: `You can attach up to ${MOS_NEW_TASK_ATTACHMENT_LIMIT} attachments`,
+        };
+        remount();
+        return true;
+      }
+      const bridge = win && win.zcode ? win.zcode : null;
+      const create = bridge && typeof bridge.createTempTextAttachment === 'function'
+        ? bridge.createTempTextAttachment.bind(bridge)
+        : null;
+      if (create === null) {
+        receipts = {
+          ...receipts,
+          task: 'Failed to read attachment: the temp-attachment bridge is unavailable in this shell',
+        };
+        remount();
+        return true;
+      }
+      create({
+        text,
+        filename: mosNewTaskClipboardTextAttachmentFilename(new Date()),
+      })
+        .then((result) => {
+          newTaskDraft = mosNewTaskDraftWithAttachmentAdded(newTaskDraft, {
+            id: `att-${attachmentSeq}`,
+            filename: result.filename,
+            sourceKind: 'clipboard-text',
+            mimeType: result.mimeType,
+            sizeBytes: result.sizeBytes,
+            charCount: text.length,
+            lineCount: mosNewTaskCountClipboardTextLines(text),
+            localPath: result.localPath,
+          });
+          attachmentSeq += 1;
+          receipts = {
+            ...receipts,
+            task: `PASTED TEXT SAVED AS FILE — ${result.filename} (${mosNewTaskFormatAttachmentSize(result.sizeBytes)}) materialized through the substrate's own temp-attachment IPC and attached to this draft.`,
+          };
+          remount();
+        })
+        .catch((error) => {
+          receipts = {
+            ...receipts,
+            task: `Failed to read attachment: ${error && error.message ? error.message : String(error)}`,
+          };
+          remount();
+        });
+      return true;
+    },
+
+    /**
+     * The + menu's Attachments item: the substrate's OWN file-picker IPC
+     * (window.zcode.selectFiles) returns real local paths; each becomes a
+     * path chip (the basename + the inferred MIME type; the size stays
+     * honestly 0 until a stat exists — the substrate's own path-attachment
+     * law).
+     */
+    onNewTaskPickAttachmentFiles() {
+      if (newTaskDraft.attachments.length >= MOS_NEW_TASK_ATTACHMENT_LIMIT) {
+        receipts = {
+          ...receipts,
+          task: `You can attach up to ${MOS_NEW_TASK_ATTACHMENT_LIMIT} attachments`,
+        };
+        remount();
+        return;
+      }
+      const bridge = win && win.zcode ? win.zcode : null;
+      const selectFiles = bridge && typeof bridge.selectFiles === 'function'
+        ? bridge.selectFiles.bind(bridge)
+        : null;
+      if (selectFiles === null) {
+        receipts = {
+          ...receipts,
+          task: 'Failed to read attachment: the file-picker bridge is unavailable in this shell',
+        };
+        remount();
+        return;
+      }
+      selectFiles()
+        .then((paths) => {
+          const room = MOS_NEW_TASK_ATTACHMENT_LIMIT - newTaskDraft.attachments.length;
+          const picked = (Array.isArray(paths) ? paths : [])
+            .slice(0, Math.max(room, 0))
+            .map((localPath) => {
+              const filename = mosNewTaskBasenameFromPath(String(localPath));
+              const attachment = {
+                id: `att-${attachmentSeq}`,
+                filename,
+                sourceKind: 'picker-path',
+                mimeType: mosNewTaskInferAttachmentMimeType(filename),
+                sizeBytes: 0,
+                charCount: null,
+                lineCount: null,
+                localPath: String(localPath),
+              };
+              attachmentSeq += 1;
+              return attachment;
+            });
+          if (picked.length === 0) {
+            return; // the picker was dismissed — nothing recorded, honestly
+          }
+          for (const attachment of picked) {
+            newTaskDraft = mosNewTaskDraftWithAttachmentAdded(newTaskDraft, attachment);
+          }
+          receipts = {
+            ...receipts,
+            task: `FILES ATTACHED — ${picked.length} local path${picked.length === 1 ? '' : 's'} recorded on the draft; the substrate reads them when an account is connected.`,
+          };
+          remount();
+        })
+        .catch((error) => {
+          receipts = {
+            ...receipts,
+            task: `Failed to read attachment: ${error && error.message ? error.message : String(error)}`,
+          };
+          remount();
+        });
     },
 
     onManageModels() {

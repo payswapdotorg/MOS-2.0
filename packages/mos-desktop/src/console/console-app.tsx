@@ -144,6 +144,10 @@ export interface MosConsoleController {
   readonly onNewTaskDraftChange: (partial: Partial<MosNewTaskDraft>) => void;
   /** The New Task composer submit (records the agent task). */
   readonly onNewTaskSubmit: (input: MosAgentTaskIntakeInput) => void;
+  /** W40 — the composer's long-paste law decision (true = the paste becomes an attachment, never input text). */
+  readonly onNewTaskPasteText: (text: string) => boolean;
+  /** W40 — the + menu's Attachments item (the substrate's own file-picker IPC). */
+  readonly onNewTaskPickAttachmentFiles: () => void;
   /** The composer picker's Manage models entry (navigates to Model Settings). */
   readonly onManageModels: () => void;
   /** The Model Settings provider family select. */
@@ -601,6 +605,8 @@ export function MosConsoleApp({
                 onSubmit={controller.onNewTaskSubmit}
                 onManageModels={controller.onManageModels}
                 onNavigate={controller.onNavigateSection}
+                onPasteText={controller.onNewTaskPasteText}
+                onPickAttachmentFiles={controller.onNewTaskPickAttachmentFiles}
               />
             ) : sectionId === 'model-settings' ? (
               <ModelSettingsSection

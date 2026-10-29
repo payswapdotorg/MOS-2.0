@@ -2041,6 +2041,97 @@
   outline-offset: 2px;
 }
 
+/* W40 — the composer's attachment chip row (the substrate's own chip
+ * anatomy: the paperclip + the truncated filename + the facts line + the
+ * size pill + the remove control, and the honest record note under it) */
+
+.mosc-nt-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.55rem 0.65rem 0.15rem;
+  border: 1px solid var(--mosc-line-soft);
+  border-radius: 0.6rem;
+  background: var(--mosc-surface-sunken);
+}
+
+.mosc-nt-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  padding: 0.34rem 0.55rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.5rem;
+  background: var(--mosc-surface);
+  color: var(--mosc-ink);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.mosc-nt-attachment > svg {
+  flex-shrink: 0;
+  color: var(--mosc-accent);
+}
+
+.mosc-nt-attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 13rem;
+  font-weight: 600;
+}
+
+.mosc-nt-attachment-facts {
+  color: var(--mosc-ink-faint);
+  white-space: nowrap;
+}
+
+.mosc-nt-attachment-size {
+  flex-shrink: 0;
+  padding: 0.08rem 0.42rem;
+  border-radius: 999px;
+  background: var(--mosc-neutral-wash);
+  border: 1px solid var(--mosc-neutral-line);
+  color: var(--mosc-ink-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mosc-nt-attachment-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mosc-ink-faint);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.mosc-nt-attachment-remove:hover {
+  background: var(--mosc-failure-wash);
+  color: var(--mosc-failure);
+}
+
+.mosc-nt-attachment-remove:focus-visible {
+  outline: 2px solid var(--mosc-accent);
+  outline-offset: 1px;
+}
+
+.mosc-nt-att-note {
+  flex-basis: 100%;
+  margin: 0.2rem 0 0.15rem;
+  color: var(--mosc-ink-faint);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
 /* The suggested-prompt chip row (the substrate's waterfall) */
 
 .mosc-nt-suggested {
@@ -2701,6 +2792,30 @@
   color: var(--mosc-ink-faint);
 }
 
+/* W40 — the task row's frozen-attachment badge (the paperclip + count,
+ * between the title and the relative time) */
+
+.mosc-tk-row-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+  margin-left: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--mosc-accent-wash);
+  border: 1px solid var(--mosc-accent-line);
+  color: var(--mosc-accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.mosc-tk-row-badge svg {
+  width: 11px;
+  height: 11px;
+}
+
 .mosc-tk-row-actions {
   position: absolute;
   right: 0.3rem;
@@ -2797,6 +2912,62 @@
 .mosc-tk-chip--mission {
   background: var(--mosc-accent-wash);
   color: var(--mosc-accent);
+}
+
+/* W40 — the conversation head's frozen attachment chips (the submit's
+ * queue, frozen verbatim on the record: the paperclip + the truncated
+ * filename + the facts + the size pill; the seed record renders the
+ * name alone) */
+
+.mosc-tk-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+}
+
+.mosc-tk-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--mosc-line);
+  border-radius: 0.5rem;
+  background: var(--mosc-surface-sunken);
+  color: var(--mosc-ink);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.mosc-tk-attachment > svg {
+  flex-shrink: 0;
+  color: var(--mosc-accent);
+}
+
+.mosc-tk-attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 15rem;
+  font-weight: 600;
+}
+
+.mosc-tk-attachment-facts {
+  color: var(--mosc-ink-faint);
+  white-space: nowrap;
+}
+
+.mosc-tk-attachment-size {
+  flex-shrink: 0;
+  padding: 0.08rem 0.42rem;
+  border-radius: 999px;
+  background: var(--mosc-neutral-wash);
+  border: 1px solid var(--mosc-neutral-line);
+  color: var(--mosc-ink-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .mosc-tk-timeline {

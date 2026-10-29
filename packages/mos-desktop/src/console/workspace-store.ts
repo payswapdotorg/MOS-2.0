@@ -56,6 +56,7 @@ import {
   type MosWorkspaceStore,
   type MosWorkspaceStoreOptions,
   type MosWorkspaceTask,
+  type MosWorkspaceTaskAttachment,
   type MosWorkspaceUserCommand,
 } from './workspace-records.js';
 import { mosAgentModel, mosModelConnectionMode } from './model-catalog.js';
@@ -434,6 +435,57 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
       if (input.missionId !== null) {
         missionById(input.missionId); // fail-closed: the context must name a real mission
       }
+      // W40 — fail-closed intake attachments (the composer queue's law:
+      // closed sourceKind vocabulary, non-negative integer facts, real
+      // path-or-null; 'seed' stays firstboot-only — the public intake
+      // never claims it).
+      const queue: MosWorkspaceTaskAttachment[] = [];
+      for (const [index, attachment] of (input.attachments ?? []).entries()) {
+        if (typeof attachment.filename !== 'string' || attachment.filename.trim().length === 0) {
+          throw new MosWorkspaceStoreError('validation', `attachment ${index + 1} needs a filename`);
+        }
+        if (attachment.sourceKind !== 'clipboard-text' && attachment.sourceKind !== 'picker-path') {
+          throw new MosWorkspaceStoreError(
+            'validation',
+            `attachment "${attachment.filename}" carries an unknown source kind "${String(attachment.sourceKind)}" — the intake vocabulary is closed (clipboard-text, picker-path)`,
+          );
+        }
+        if (typeof attachment.mimeType !== 'string' || attachment.mimeType.length === 0) {
+          throw new MosWorkspaceStoreError('validation', `attachment "${attachment.filename}" needs a MIME type`);
+        }
+        if (
+          typeof attachment.sizeBytes !== 'number' ||
+          !Number.isSafeInteger(attachment.sizeBytes) ||
+          attachment.sizeBytes < 0
+        ) {
+          throw new MosWorkspaceStoreError('validation', `attachment "${attachment.filename}" needs a non-negative byte size`);
+        }
+        const counts: [name: string, value: unknown][] = [
+          ['charCount', attachment.charCount],
+          ['lineCount', attachment.lineCount],
+        ];
+        for (const [name, value] of counts) {
+          if (
+            value !== null &&
+            (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0)
+          ) {
+            throw new MosWorkspaceStoreError('validation', `attachment "${attachment.filename}" carries a malformed ${name}`);
+          }
+        }
+        if (attachment.localPath !== null && (typeof attachment.localPath !== 'string' || attachment.localPath.length === 0)) {
+          throw new MosWorkspaceStoreError('validation', `attachment "${attachment.filename}" carries a malformed local path`);
+        }
+        queue.push({
+          filename: attachment.filename,
+          sourceKind: attachment.sourceKind,
+          mimeType: attachment.mimeType,
+          sizeBytes: attachment.sizeBytes,
+          charCount: attachment.charCount ?? null,
+          lineCount: attachment.lineCount ?? null,
+          localPath: attachment.localPath ?? null,
+          addedAt: at,
+        });
+      }
       return commit((): MosWorkspaceTask => {
         const { id, seq } = nextId('tsk');
         const task: MosWorkspaceTask = {
@@ -453,11 +505,12 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
           pinned: false,
           archived: false,
           followUps: [],
+          attachments: queue,
         };
         state = { ...state, tasks: [...state.tasks, task] };
         appendEvent(
           'agent-task-recorded',
-          `Task ${id} drafted — "${title.slice(0, 48)}${title.length > 48 ? '…' : ''}" on ${input.modelId} (${input.mode} mode). The substrate runs it when an account is connected.`,
+          `Task ${id} drafted — "${title.slice(0, 48)}${title.length > 48 ? '…' : ''}" on ${input.modelId} (${input.mode} mode${input.planEnabled ? ' · plan' : ''}${queue.length > 0 ? ` · ${queue.length} attachment${queue.length === 1 ? '' : 's'} frozen on the record` : ''}). The substrate runs it when an account is connected.`,
           at,
         );
         return task;
@@ -1098,6 +1151,7 @@ export function createMosWorkspaceStore(options: MosWorkspaceStoreOptions = {}):
         userCommandCount: state.userCommands.length,
         hookCount: state.hooks.length,
         browserUrlRecorded: state.browserSession !== null,
+        taskAttachmentCount: state.tasks.reduce((total, task) => total + task.attachments.length, 0),
         quarantinedCount: quarantined.length,
       };
     },

@@ -11,13 +11,24 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+  MOS_NEW_TASK_ATTACHMENT_LIMIT,
   MOS_NEW_TASK_MODES,
   MOS_NEW_TASK_SUGGESTED_PROMPTS,
   initialMosNewTaskDraft,
+  mosNewTaskAttachmentFacts,
+  mosNewTaskBasenameFromPath,
+  mosNewTaskClipboardTextAttachmentFilename,
+  mosNewTaskCountClipboardTextLines,
+  mosNewTaskDraftWithAttachmentAdded,
+  mosNewTaskDraftWithAttachmentRemoved,
   mosNewTaskDraftForConnectionMode,
   mosNewTaskDraftForModel,
+  mosNewTaskFormatAttachmentSize,
   mosNewTaskGreeting,
+  mosNewTaskInferAttachmentMimeType,
+  mosNewTaskIntakeAttachments,
   mosNewTaskMode,
+  mosNewTaskShouldCreateClipboardTextAttachment,
   mosNewTaskTitleFromPrompt,
 } from '../dist/console/new-task-draft.js';
 
@@ -114,4 +125,81 @@ test('the task title derives from the prompt\'s first line, collapsed and capped
   assert.ok(title.endsWith('…'));
   assert.equal(mosNewTaskTitleFromPrompt(''), '');
   assert.equal(mosNewTaskTitleFromPrompt('ab'), 'ab');
+});
+
+/* --------------------------------------------------------------------
+ * W40 — the composer attachment queue (the substrate's own paste law,
+ * verbatim pins)
+ * -------------------------------------------------------------------- */
+
+test('the long-paste law is the substrate\'s own threshold, verbatim (15 * 1024 chars)', () => {
+  assert.equal(mosNewTaskShouldCreateClipboardTextAttachment('x'.repeat(15 * 1024 - 1)), false);
+  assert.equal(mosNewTaskShouldCreateClipboardTextAttachment('x'.repeat(15 * 1024)), true);
+  assert.equal(mosNewTaskShouldCreateClipboardTextAttachment('x'.repeat(15 * 1024 + 1)), true);
+  assert.equal(mosNewTaskShouldCreateClipboardTextAttachment(''), false);
+  assert.equal(MOS_NEW_TASK_ATTACHMENT_LIMIT, 8);
+});
+
+test('the paste filename derives the substrate\'s own pasted-text pattern', () => {
+  assert.equal(
+    mosNewTaskClipboardTextAttachmentFilename(new Date(2026, 9, 29, 8, 42, 15)),
+    'pasted-text-20261029-084215.txt',
+  );
+});
+
+test('the paste line count follows the substrate\'s \n/\r separator law', () => {
+  assert.equal(mosNewTaskCountClipboardTextLines(''), 0);
+  assert.equal(mosNewTaskCountClipboardTextLines('one line'), 1);
+  assert.equal(mosNewTaskCountClipboardTextLines('a\nb\nc'), 3);
+  assert.equal(mosNewTaskCountClipboardTextLines('a\rb'), 2);
+  assert.equal(mosNewTaskCountClipboardTextLines(Array.from({ length: 4100 }, (_, i) => `line ${i + 1}`).join('\n')), 4100);
+});
+
+test('the attachment size formats follow the substrate\'s KB/MB law, verbatim', () => {
+  assert.equal(mosNewTaskFormatAttachmentSize(1024), '1 KB');
+  assert.equal(mosNewTaskFormatAttachmentSize(302292), '296 KB'); // the W40 evidence's own 4,100-line paste
+  assert.equal(mosNewTaskFormatAttachmentSize(1024 * 1024), '1.0 MB');
+  assert.equal(mosNewTaskFormatAttachmentSize(1.5 * 1024 * 1024), '1.5 MB');
+  assert.equal(mosNewTaskFormatAttachmentSize(12.4 * 1024 * 1024), '12 MB');
+});
+
+test('the chip facts line renders the locale-grouped counts', () => {
+  assert.equal(mosNewTaskAttachmentFacts(294092, 4100), '4,100 lines · 294,092 chars');
+});
+
+test('the picked path resolves the substrate\'s basename + MIME inference laws', () => {
+  assert.equal(mosNewTaskBasenameFromPath('/home/z/notes/boundary-findings.md'), 'boundary-findings.md');
+  assert.equal(mosNewTaskBasenameFromPath('C:\\Users\\z\\report.txt'), 'report.txt');
+  assert.equal(mosNewTaskBasenameFromPath('plainname'), 'plainname');
+  assert.equal(mosNewTaskInferAttachmentMimeType('a.md'), 'text/markdown');
+  assert.equal(mosNewTaskInferAttachmentMimeType('a.TXT'), 'text/plain');
+  assert.equal(mosNewTaskInferAttachmentMimeType('a.json'), 'application/json');
+  assert.equal(mosNewTaskInferAttachmentMimeType('a.png'), 'image/png');
+  assert.equal(mosNewTaskInferAttachmentMimeType('a.pdf'), 'application/pdf');
+  assert.equal(mosNewTaskInferAttachmentMimeType('a.weird'), 'application/octet-stream');
+});
+
+test('the draft queue transitions are pure (add / remove / intake projection)', () => {
+  const draft = initialMosNewTaskDraft();
+  assert.deepEqual(draft.attachments, []);
+  const pasted = {
+    id: 'att-1',
+    filename: 'pasted-text-20261029-084215.txt',
+    sourceKind: 'clipboard-text' as const,
+    mimeType: 'text/plain',
+    sizeBytes: 302292,
+    charCount: 294092,
+    lineCount: 4100,
+    localPath: '/root/tmp/paste-attachments/2026-10-29/pasted-text-20261029-084215-420213b1.txt',
+  };
+  const withOne = mosNewTaskDraftWithAttachmentAdded(draft, pasted);
+  assert.equal(withOne.attachments.length, 1);
+  assert.equal(withOne.attachments[0]?.id, 'att-1');
+  assert.equal(withOne.mode, draft.mode); // the queue never disturbs the rest of the draft
+  const removed = mosNewTaskDraftWithAttachmentRemoved(withOne, 'att-1');
+  assert.deepEqual(removed.attachments, []);
+  const intake = mosNewTaskIntakeAttachments(withOne);
+  assert.equal(intake.length, 1);
+  assert.equal(intake[0]?.filename, pasted.filename);
+  assert.equal('id' in (intake[0] ?? {}), false); // the draft-only id never reaches the intake
 });

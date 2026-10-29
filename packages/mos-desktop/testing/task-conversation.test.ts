@@ -52,6 +52,7 @@ function task(overrides: Partial<MosWorkspaceTask> = {}): MosWorkspaceTask {
     pinned: false,
     archived: false,
     followUps: [],
+    attachments: [],
     ...overrides,
   };
 }

@@ -18,6 +18,7 @@ import {
   MOS_WORKSPACE_STORE_KEY,
   MosWorkspaceStoreError,
   createMosWorkspaceStore,
+  type MosAgentTaskIntakeAttachmentInput,
 } from '../dist/console/workspace-store.js';
 import {
   MOS_MARKETPLACE_CATEGORIES,
@@ -326,6 +327,7 @@ test('recordAgentTask records the composer submit honestly (task DRAFT + timelin
     planEnabled: false,
     reasoningLevel: 'high',
     missionId: null,
+    attachments: [],
   });
   assert.equal(task.status, 'DRAFT');
   assert.equal(task.id, 'tsk-001');
@@ -346,6 +348,7 @@ test('recordAgentTask records the composer submit honestly (task DRAFT + timelin
       planEnabled: false,
       reasoningLevel: 'high',
       missionId: 'mis-999',
+      attachments: [],
     }),
     MosWorkspaceStoreError,
   );
@@ -362,6 +365,7 @@ test('recordAgentTask validates fail-closed (prompt, title, model, mode, connect
     planEnabled: false,
     reasoningLevel: 'high',
     missionId: null,
+    attachments: [],
   };
   store.recordAgentTask(base);
   assert.throws(() => store.recordAgentTask({ ...base, prompt: 'no' }), MosWorkspaceStoreError);
@@ -436,6 +440,7 @@ function bareTaskInput() {
     planEnabled: true,
     reasoningLevel: 'high',
     missionId: null,
+    attachments: [],
   } as const;
 }
 
@@ -454,6 +459,7 @@ test('setTaskPinned toggles the pin workspace decision (event + idempotence)', (
     planEnabled: false,
     reasoningLevel: 'high',
     missionId: null,
+    attachments: [],
   });
   assert.equal(created.pinned, false);
   const pinned = store.setTaskPinned(created.id, true);
@@ -479,6 +485,7 @@ test('setTaskArchived moves the record between the active list and the Archived 
     planEnabled: false,
     reasoningLevel: 'high',
     missionId: null,
+    attachments: [],
   });
   const archived = store.setTaskArchived(created.id, true);
   assert.equal(archived.archived, true);
@@ -1121,4 +1128,151 @@ test('W39: a pre-W39 v1 snapshot (W38-era, no browserSession) migrates to null; 
   const quarantined = createMosWorkspaceStore({ storage: memoryStorage(malformed), clock: FIXED_CLOCK, seed: false });
   assert.equal(quarantined.quarantineEntries().length, 1, 'a malformed browserSession quarantines the whole snapshot');
   assert.equal(quarantined.getSnapshot().browserSession, null, 'the quarantined store starts empty');
+});
+
+/* --------------------------------------------------------------------
+ * W40 — the composer's frozen attachment queue (the substrate's own
+ * paste law materialized on the task record) + the pre-W40 snapshot
+ * migration + the disclosed seed attachment
+ * -------------------------------------------------------------------- */
+
+test('W40: recordAgentTask freezes the attachment queue on the task record (verbatim facts + durability + the event clause)', () => {
+  const store = taskStore();
+  const task = store.recordAgentTask({
+    ...bareTaskInput(),
+    title: 'Summarize the pasted attachment and draft the weekly digest',
+    prompt: 'Summarize the pasted attachment and draft the weekly digest',
+    attachments: [
+      {
+        filename: 'pasted-text-20261029-084215-420213b1.txt',
+        sourceKind: 'clipboard-text' as const,
+        mimeType: 'text/plain',
+        sizeBytes: 302292,
+        charCount: 294092,
+        lineCount: 4100,
+        localPath: '/root/tmp/paste-attachments/2026-10-29/pasted-text-20261029-084215-420213b1.txt',
+      },
+      {
+        filename: 'boundary-findings.md',
+        sourceKind: 'picker-path' as const,
+        mimeType: 'text/markdown',
+        sizeBytes: 0,
+        charCount: null,
+        lineCount: null,
+        localPath: '/home/z/notes/boundary-findings.md',
+      },
+    ],
+  });
+  assert.equal(task.attachments.length, 2);
+  const pasted = task.attachments[0];
+  assert.equal(pasted?.filename, 'pasted-text-20261029-084215-420213b1.txt');
+  assert.equal(pasted?.sourceKind, 'clipboard-text');
+  assert.equal(pasted?.sizeBytes, 302292);
+  assert.equal(pasted?.charCount, 294092);
+  assert.equal(pasted?.lineCount, 4100);
+  assert.equal(pasted?.addedAt, FIXED_CLOCK());
+  const picked = task.attachments[1];
+  assert.equal(picked?.sizeBytes, 0);
+  assert.equal(picked?.charCount, null);
+  // The event line carries the attachment clause.
+  const event = store.getSnapshot().events.find((entry) => entry.kind === 'agent-task-recorded');
+  assert.ok(event?.line.includes('2 attachments frozen on the record'));
+  // Health counts the frozen queue.
+  assert.equal(store.health().taskAttachmentCount, 2);
+  // Durability: the queue round-trips through the persisted snapshot.
+  const backing = new Map<string, string>();
+  const persistent = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+  persistent.recordAgentTask({
+    ...bareTaskInput(),
+    attachments: [{ filename: 'notes.txt', sourceKind: 'picker-path' as const, mimeType: 'text/plain', sizeBytes: 0, charCount: null, lineCount: null, localPath: '/home/z/notes.txt' }],
+  });
+  const reloaded = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+  assert.equal(reloaded.getSnapshot().tasks[0]?.attachments.length, 1);
+  assert.equal(reloaded.getSnapshot().tasks[0]?.attachments[0]?.filename, 'notes.txt');
+});
+
+test('W40: the intake attachment validation is fail-closed (closed sourceKind vocabulary, honest facts)', () => {
+  const store = taskStore();
+  const attachment: MosAgentTaskIntakeAttachmentInput = {
+    filename: 'x.txt',
+    sourceKind: 'clipboard-text',
+    mimeType: 'text/plain',
+    sizeBytes: 10,
+    charCount: null,
+    lineCount: null,
+    localPath: null,
+  };
+  store.recordAgentTask({ ...bareTaskInput(), attachments: [attachment] });
+  assert.throws(
+    () => store.recordAgentTask({ ...bareTaskInput(), attachments: [{ ...attachment, filename: '  ' }] }),
+    MosWorkspaceStoreError,
+  );
+  assert.throws(
+    () => store.recordAgentTask({ ...bareTaskInput(), attachments: [{ ...attachment, sourceKind: 'seed' as never }] }),
+    MosWorkspaceStoreError,
+  );
+  assert.throws(
+    () => store.recordAgentTask({ ...bareTaskInput(), attachments: [{ ...attachment, sourceKind: 'telepathy' as never }] }),
+    MosWorkspaceStoreError,
+  );
+  assert.throws(
+    () => store.recordAgentTask({ ...bareTaskInput(), attachments: [{ ...attachment, mimeType: '' }] }),
+    MosWorkspaceStoreError,
+  );
+  assert.throws(
+    () => store.recordAgentTask({ ...bareTaskInput(), attachments: [{ ...attachment, sizeBytes: -1 }] }),
+    MosWorkspaceStoreError,
+  );
+  assert.throws(
+    () => store.recordAgentTask({ ...bareTaskInput(), attachments: [{ ...attachment, sizeBytes: 1.5 }] }),
+    MosWorkspaceStoreError,
+  );
+  assert.throws(
+    () => store.recordAgentTask({ ...bareTaskInput(), attachments: [{ ...attachment, charCount: -3 }] }),
+    MosWorkspaceStoreError,
+  );
+  assert.throws(
+    () => store.recordAgentTask({ ...bareTaskInput(), attachments: [{ ...attachment, localPath: '' }] }),
+    MosWorkspaceStoreError,
+  );
+  assert.equal(store.health().taskAttachmentCount, 1, 'the failed writes left the state unchanged');
+});
+
+test('W40: a pre-W40 v1 snapshot (tasks with no attachments) migrates to the empty queue; malformed attachments fail closed', () => {
+  const backing = new Map<string, string>();
+  const writer = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+  writer.recordAgentTask(bareTaskInput());
+  const persisted = JSON.parse(backing.get(MOS_WORKSPACE_STORE_KEY) ?? '{}') as Record<string, unknown>;
+  delete (persisted.tasks as Record<string, unknown>[])[0]?.attachments;
+  backing.set(MOS_WORKSPACE_STORE_KEY, JSON.stringify(persisted));
+  const migrated = createMosWorkspaceStore({ storage: memoryStorage(backing), clock: FIXED_CLOCK, seed: false });
+  assert.deepEqual(migrated.getSnapshot().tasks[0]?.attachments, [], 'an absent queue defaults empty — never guessed back');
+  assert.equal(migrated.health().taskAttachmentCount, 0);
+
+  const malformed = new Map<string, string>();
+  const tasks = persisted.tasks as Record<string, unknown>[];
+  tasks[0] = { ...tasks[0], attachments: [{ filename: 'x.txt', sourceKind: 'dark-matter' }] };
+  malformed.set(MOS_WORKSPACE_STORE_KEY, JSON.stringify({ ...persisted, tasks }));
+  const quarantined = createMosWorkspaceStore({ storage: memoryStorage(malformed), clock: FIXED_CLOCK, seed: false });
+  assert.equal(quarantined.quarantineEntries().length, 1, 'a malformed attachments field quarantines the whole snapshot');
+  assert.equal(quarantined.getSnapshot().tasks.length, 0, 'the quarantined store starts empty');
+});
+
+test('W40: the first-boot seed carries the disclosed evaluation attachment on tsk-001 (name-only chip facts)', () => {
+  const store = seededStore();
+  const tsk001 = store.getSnapshot().tasks.find((task) => task.id === 'tsk-001');
+  assert.ok(tsk001 !== undefined);
+  assert.equal(tsk001.attachments.length, 1);
+  const seedAttachment = tsk001.attachments[0];
+  assert.equal(seedAttachment?.filename, 'boundary-findings.md');
+  assert.equal(seedAttachment?.sourceKind, 'seed');
+  assert.equal(seedAttachment?.mimeType, 'text/markdown');
+  assert.equal(seedAttachment?.sizeBytes, 0);
+  assert.equal(seedAttachment?.charCount, null);
+  assert.equal(seedAttachment?.lineCount, null);
+  assert.equal(seedAttachment?.localPath, null);
+  assert.ok(store.getSnapshot().events.some((event) => event.kind === 'task-attachment-frozen'));
+  assert.equal(store.health().taskAttachmentCount, 1);
+  const tsk002 = store.getSnapshot().tasks.find((task) => task.id === 'tsk-002');
+  assert.deepEqual(tsk002?.attachments, []);
 });

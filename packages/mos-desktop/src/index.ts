@@ -74,17 +74,28 @@ export type {
   MosModelProviderFamily,
 } from './console/model-catalog.js';
 export {
+  MOS_NEW_TASK_ATTACHMENT_LIMIT,
   MOS_NEW_TASK_MODES,
   MOS_NEW_TASK_SUGGESTED_PROMPTS,
   initialMosNewTaskDraft,
+  mosNewTaskBasenameFromPath,
+  mosNewTaskClipboardTextAttachmentFilename,
+  mosNewTaskCountClipboardTextLines,
   mosNewTaskDraftForConnectionMode,
   mosNewTaskDraftForModel,
+  mosNewTaskDraftWithAttachmentAdded,
+  mosNewTaskDraftWithAttachmentRemoved,
+  mosNewTaskFormatAttachmentSize,
   mosNewTaskGreeting,
+  mosNewTaskInferAttachmentMimeType,
+  mosNewTaskIntakeAttachments,
   mosNewTaskMode,
+  mosNewTaskShouldCreateClipboardTextAttachment,
   mosNewTaskTitleFromPrompt,
 } from './console/new-task-draft.js';
 export type {
   MosNewTaskDraft,
+  MosNewTaskDraftAttachment,
   MosNewTaskMode,
   MosNewTaskModeDescriptor,
   MosNewTaskSuggestedPrompt,
@@ -103,6 +114,7 @@ export {
 } from './console/workspace-store.js';
 export type {
   MosAgentTaskIntakeInput,
+  MosAgentTaskIntakeAttachmentInput,
   MosCampaignIntakeInput,
   MosMissionDirection,
   MosMissionIntakeInput,
@@ -120,6 +132,7 @@ export type {
   MosWorkspaceStoreHealth,
   MosWorkspaceStoreOptions,
   MosWorkspaceTask,
+  MosWorkspaceTaskAttachment,
 } from './console/workspace-store.js';
 export { MosConsoleApp } from './console/console-app.js';
 export type {

@@ -22,6 +22,119 @@ import { mosAgentModel, mosModelConnectionMode } from './model-catalog.js';
 /** The composer permission modes (the substrate's agent model states). */
 export type MosNewTaskMode = 'build' | 'edit' | 'yolo';
 
+/* --------------------------------------------------------------------
+ * W40 — the composer attachment queue (the substrate's own paste law,
+ * verbatim: packages/ui/src/lib/chatAttachments.ts + chatAttachmentMetadata.ts)
+ * -------------------------------------------------------------------- */
+
+/** One queued composer attachment (the substrate's ChatComposerAttachment, workspace-record shape). */
+export interface MosNewTaskDraftAttachment {
+  readonly id: string;
+  readonly filename: string;
+  readonly sourceKind: 'clipboard-text' | 'picker-path';
+  readonly mimeType: string;
+  readonly sizeBytes: number;
+  readonly charCount: number | null;
+  readonly lineCount: number | null;
+  readonly localPath: string | null;
+}
+
+/** The queue cap (the substrate's MAX_CHAT_ATTACHMENTS, verbatim). */
+export const MOS_NEW_TASK_ATTACHMENT_LIMIT = 8;
+
+/** The long-paste threshold (the substrate's LONG_PASTE_TEXT_ATTACHMENT_CHAR_THRESHOLD, verbatim). */
+const LONG_PASTE_TEXT_ATTACHMENT_CHAR_THRESHOLD = 15 * 1024;
+
+/** The long-paste law (the substrate's shouldCreateClipboardTextAttachment, verbatim). */
+export function mosNewTaskShouldCreateClipboardTextAttachment(text: string): boolean {
+  return text.length >= LONG_PASTE_TEXT_ATTACHMENT_CHAR_THRESHOLD;
+}
+
+/** The paste filename derivation (the substrate's createClipboardTextAttachmentFilename, verbatim). */
+export function mosNewTaskClipboardTextAttachmentFilename(now: Date): string {
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  const date = [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join('');
+  const time = [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join('');
+  return `pasted-text-${date}-${time}.txt`;
+}
+
+/** Count the paste's lines (the substrate's countClipboardTextLines, verbatim: \n and \r each separate). */
+export function mosNewTaskCountClipboardTextLines(text: string): number {
+  if (text.length === 0) {
+    return 0;
+  }
+  let lines = 1;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === '\n') {
+      lines += 1;
+      continue;
+    }
+    if (char === '\r') {
+      lines += 1;
+    }
+  }
+  return lines;
+}
+
+/** Format an attachment's size (the substrate's formatAttachmentSize, verbatim). */
+export function mosNewTaskFormatAttachmentSize(sizeBytes: number): string {
+  const mib = sizeBytes / (1024 * 1024);
+  return mib >= 1 ? `${mib.toFixed(mib >= 10 ? 0 : 1)} MB` : `${Math.ceil(sizeBytes / 1024)} KB`;
+}
+
+/** The chip's facts line (the substrate's "{lineCount} lines" extended with the char count). */
+export function mosNewTaskAttachmentFacts(charCount: number, lineCount: number): string {
+  return `${lineCount.toLocaleString('en-US')} lines · ${charCount.toLocaleString('en-US')} chars`;
+}
+
+/** The basename of a picked path (the substrate's basenameFromPath, verbatim). */
+export function mosNewTaskBasenameFromPath(path: string): string {
+  return path.split(/[\\/]/u).filter(Boolean).pop() ?? path;
+}
+
+/** Infer a filename's MIME type (the substrate's inferAttachmentMimeType, verbatim). */
+export function mosNewTaskInferAttachmentMimeType(filename: string): string {
+  const extension = filename.split('.').pop()?.toLocaleLowerCase() ?? '';
+  if (extension === 'md') return 'text/markdown';
+  if (extension === 'json') return 'application/json';
+  if (extension === 'csv') return 'text/csv';
+  if (extension === 'txt' || extension === 'log') return 'text/plain';
+  if (extension === 'png') return 'image/png';
+  if (extension === 'jpg' || extension === 'jpeg') return 'image/jpeg';
+  if (extension === 'gif') return 'image/gif';
+  if (extension === 'webp') return 'image/webp';
+  if (extension === 'svg') return 'image/svg+xml';
+  if (extension === 'mp4') return 'video/mp4';
+  if (extension === 'm4v') return 'video/x-m4v';
+  if (extension === 'mov') return 'video/quicktime';
+  if (extension === 'webm') return 'video/webm';
+  if (extension === 'mkv') return 'video/x-matroska';
+  if (extension === 'avi') return 'video/x-msvideo';
+  if (extension === 'pdf') return 'application/pdf';
+  return 'application/octet-stream';
+}
+
+/** The queue after one more attachment (the limit is the caller's law). */
+export function mosNewTaskDraftWithAttachmentAdded(
+  draft: MosNewTaskDraft,
+  attachment: MosNewTaskDraftAttachment,
+): MosNewTaskDraft {
+  return { ...draft, attachments: [...draft.attachments, attachment] };
+}
+
+/** The queue after a remove (the chip's own control). */
+export function mosNewTaskDraftWithAttachmentRemoved(draft: MosNewTaskDraft, id: string): MosNewTaskDraft {
+  return { ...draft, attachments: draft.attachments.filter((entry) => entry.id !== id) };
+}
+
+/** The submit's intake attachments (the queue minus the draft-only id). */
+export function mosNewTaskIntakeAttachments(
+  draft: MosNewTaskDraft,
+): readonly Omit<MosNewTaskDraftAttachment, 'id'>[] {
+  return draft.attachments.map(({ id: _id, ...rest }) => rest);
+}
+
 /** One permission mode descriptor (labels verbatim from the substrate). */
 export interface MosNewTaskModeDescriptor {
   readonly id: MosNewTaskMode;
@@ -71,6 +184,8 @@ export interface MosNewTaskDraft {
   readonly reasoningLevel: string;
   /** The mission context (null = Home, no mission scope). */
   readonly missionId: string | null;
+  /** W40 — the composer attachment queue (the submit freezes it on the task record). */
+  readonly attachments: readonly MosNewTaskDraftAttachment[];
 }
 
 /** The default model per connection mode (the flagship, honestly seeded). */
@@ -90,6 +205,7 @@ export function initialMosNewTaskDraft(): MosNewTaskDraft {
     connectionMode: 'individual',
     reasoningLevel: 'high',
     missionId: null,
+    attachments: [],
   };
 }
 

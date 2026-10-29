@@ -150,6 +150,10 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
   // W36 — the recorded agent tasks (the Tasks surface's evaluation
   // records: the substrate's task-list row shapes + the conversation's
   // turn shapes, disclosed as workspace drafts that never ran).
+  // W40 — tsk-001 carries the disclosed evaluation attachment
+  // (boundary-findings.md): the record the task would hand the substrate,
+  // seeded with the firstboot-only 'seed' source kind and no local file
+  // (the substrate reads it when an account is connected).
   const task = (
     id: string,
     title: string,
@@ -160,13 +164,14 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
     pinned: boolean,
     missionId: string | null,
     followUps: MosWorkspacePersisted['tasks'][number]['followUps'],
+    attachments: MosWorkspacePersisted['tasks'][number]['attachments'],
     createdAt: string,
     updatedAt: string,
   ): void => {
     const seq = bump();
     persisted.tasks = [
       ...persisted.tasks,
-      { id, seq, title, prompt, modelId, connectionMode: 'individual', mode, planEnabled, reasoningLevel: 'high', missionId, status: 'DRAFT' as const, createdAt, updatedAt, pinned, archived: false, followUps },
+      { id, seq, title, prompt, modelId, connectionMode: 'individual', mode, planEnabled, reasoningLevel: 'high', missionId, status: 'DRAFT' as const, createdAt, updatedAt, pinned, archived: false, followUps, attachments },
     ];
   };
   task(
@@ -179,6 +184,18 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
     true,
     null,
     [{ id: 'tsk-fu-001', prompt: 'Start with the boundary harness — report the first failing rule only.', at: T4 }],
+    [
+      {
+        filename: 'boundary-findings.md',
+        sourceKind: 'seed' as const,
+        mimeType: 'text/markdown',
+        sizeBytes: 0,
+        charCount: null,
+        lineCount: null,
+        localPath: null,
+        addedAt: T4,
+      },
+    ],
     T2,
     T4,
   );
@@ -192,6 +209,7 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
     false,
     'mis-003',
     [],
+    [],
     T3,
     T3,
   );
@@ -199,6 +217,7 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
   event('agent-task-recorded', 'Task tsk-002 drafted — "Draft the EP release-day copy set" on GLM-5.3-Flash (edit mode). The substrate runs it when an account is connected.', T3);
   event('task-follow-up-recorded', 'Follow-up on task tsk-001 — "Start with the boundary harness — report the first failing rule…". A workspace record; the substrate runs it when an account is connected.', T4);
   event('task-pinned', 'Task tsk-001 pinned — the task list\'s Pinned section follows it', T4);
+  event('task-attachment-frozen', 'Attachment boundary-findings.md frozen on task tsk-001 — the disclosed evaluation record; the substrate reads it when an account is connected', T4);
 
   // W36 — the scheduled automations (the Automations surface's
   // evaluation records; the first prompt is the substrate's own
@@ -295,7 +314,7 @@ export function mosWorkspaceFirstbootRecords(): MosWorkspacePersisted {
   ];
   event('hook-added', 'PostToolUse hook added — a workspace record; the substrate executes it on the real event when an account is connected', T3);
 
-  event('workspace-seeded', 'Seed complete — 4 missions, 4 posts, 3 campaigns, 2 approvals, 2 tasks, 2 automations, 1 MCP server, 1 command, 1 hook, this timeline', T4);
+  event('workspace-seeded', 'Seed complete — 4 missions, 4 posts, 3 campaigns, 2 approvals, 2 tasks, 2 automations, 1 MCP server, 1 command, 1 hook, 1 seed attachment, this timeline', T4);
 
   persisted.nextSeq = nextSeq;
   return persisted;

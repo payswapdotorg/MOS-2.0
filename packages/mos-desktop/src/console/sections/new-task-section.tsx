@@ -32,7 +32,11 @@ import type { MosNewTaskDraft, MosNewTaskMode } from '../new-task-draft.js';
 import {
   MOS_NEW_TASK_MODES,
   MOS_NEW_TASK_SUGGESTED_PROMPTS,
+  mosNewTaskAttachmentFacts,
+  mosNewTaskDraftWithAttachmentRemoved,
+  mosNewTaskFormatAttachmentSize,
   mosNewTaskGreeting,
+  mosNewTaskIntakeAttachments,
   mosNewTaskTitleFromPrompt,
   mosNewTaskDraftForConnectionMode,
   mosNewTaskDraftForModel,
@@ -119,6 +123,12 @@ const CHECK_SQUARE_GLYPH = icon(<><path d="M9 11.5 11.5 14 16 8.5" /><rect x="4"
 const FILE_GLYPH = icon(<><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></>);
 const WAND_GLYPH = icon(<><path d="m4 20 12-12" /><path d="M14 4v4h4" /><path d="M19 9v3M17.5 10.5 21 7M8 4l.9 2.1L11 7l-2.1.9L8 10l-.9-2.1L5 7l2.1-.9z" /></>);
 
+/* W40 — the attachment chip glyphs (the paperclip + the remove ×). */
+const PAPERCLIP_GLYPH = icon(
+  <><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></>,
+);
+const REMOVE_GLYPH = icon(<><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>);
+
 /** The suggested-prompt chip glyphs (rotating set, presentation-only). */
 const CHIP_GLYPHS: readonly never[] = [SEARCH_GLYPH, CHECK_SQUARE_GLYPH, FILE_GLYPH, WAND_GLYPH];
 
@@ -135,6 +145,8 @@ export function NewTaskSection({
   onSubmit,
   onManageModels,
   onNavigate,
+  onPasteText,
+  onPickAttachmentFiles,
 }: {
   readonly section: MosConsoleSectionRecord;
   readonly workspace: MosWorkspaceSnapshot;
@@ -144,6 +156,10 @@ export function NewTaskSection({
   readonly onSubmit: (input: MosAgentTaskIntakeInput) => void;
   readonly onManageModels: () => void;
   readonly onNavigate: (section: MosConsoleSectionId) => void;
+  /** W40 — the long-paste law: true = the paste becomes an attachment (never input text). */
+  readonly onPasteText: (text: string) => boolean;
+  /** W40 — the + menu's Attachments item (the substrate's own file-picker IPC). */
+  readonly onPickAttachmentFiles: () => void;
 }) {
   const greeting = mosNewTaskGreeting(new Date().getHours());
   const model = mosAgentModel(draft.modelId);
@@ -204,6 +220,7 @@ export function NewTaskSection({
               planEnabled: draft.planEnabled,
               reasoningLevel: draft.reasoningLevel,
               missionId: draft.missionId,
+              attachments: mosNewTaskIntakeAttachments(draft),
             });
             event.currentTarget.reset();
           }}
@@ -279,7 +296,59 @@ export function NewTaskSection({
             onInput={(event) => {
               updateSendState(event.currentTarget);
             }}
+            onPaste={(event) => {
+              // W40 — the substrate's own long-paste law: a long paste
+              // NEVER becomes input text; it materializes a real
+              // attachment file through the substrate's own IPC.
+              const text = event.clipboardData?.getData('text/plain') ?? '';
+              if (onPasteText(text)) {
+                event.preventDefault();
+              }
+            }}
           />
+
+          {draft.attachments.length > 0 ? (
+            <div className="mosc-nt-attachments" data-testid="mosnt-attachments">
+              {draft.attachments.map((attachment) => (
+                <span
+                  key={attachment.id}
+                  className="mosc-nt-attachment"
+                  data-testid="mosnt-attachment"
+                  title={attachment.localPath ?? undefined}
+                >
+                  {PAPERCLIP_GLYPH}
+                  <span className="mosc-nt-attachment-name">{attachment.filename}</span>
+                  {attachment.charCount !== null && attachment.lineCount !== null ? (
+                    <span className="mosc-nt-attachment-facts">
+                      {mosNewTaskAttachmentFacts(attachment.charCount, attachment.lineCount)}
+                    </span>
+                  ) : null}
+                  {attachment.sizeBytes > 0 ? (
+                    <span className="mosc-nt-attachment-size">
+                      {mosNewTaskFormatAttachmentSize(attachment.sizeBytes)}
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="mosc-nt-attachment-remove"
+                    data-testid="mosnt-attachment-remove"
+                    aria-label="Remove attachment"
+                    title="Remove attachment"
+                    onClick={() => {
+                      onDraftChange(
+                        mosNewTaskDraftWithAttachmentRemoved(draft, attachment.id) satisfies Partial<MosNewTaskDraft>,
+                      );
+                    }}
+                  >
+                    {REMOVE_GLYPH}
+                  </button>
+                </span>
+              ))}
+              <p className="mosc-nt-att-note" data-testid="mosnt-att-note">
+                Attached files are recorded on the task — the substrate uploads them to the session when an account is connected.
+              </p>
+            </div>
+          ) : null}
 
           <div className="mosc-nt-toolbar">
             <div className="mosc-nt-toolbar-lead">
@@ -332,6 +401,20 @@ export function NewTaskSection({
                   >
                     {SPARK_GLYPH}
                     Choose skills
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="mosc-nt-menuaction"
+                    data-testid="mosnt-attachment-trigger"
+                    title="Add file attachments to the current message. You can also paste images directly."
+                    onClick={(event) => {
+                      closeDetails(event.currentTarget);
+                      onPickAttachmentFiles();
+                    }}
+                  >
+                    {PAPERCLIP_GLYPH}
+                    Attachments
                   </button>
                   <button
                     type="button"

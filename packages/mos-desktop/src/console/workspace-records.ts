@@ -106,6 +106,12 @@ export interface MosWorkspaceApproval {
  * session composer's appended prompts), `updatedAt` (the list ordering
  * truth), and the pin/archive workspace decisions. The original `prompt`
  * stays the FIRST turn (pre-W36 snapshots default the new fields).
+ *
+ * W40 — the record grew the frozen attachment queue: the composer's
+ * chips at submit, the substrate's own attachment facts verbatim (the
+ * REAL local path the substrate's temp-attachment IPC wrote, the
+ * clipboard-text char/line counts, the picked-path basename). Pre-W40
+ * snapshots default the queue empty.
  */
 export interface MosWorkspaceTask {
   readonly id: string;
@@ -128,6 +134,8 @@ export interface MosWorkspaceTask {
   readonly archived: boolean;
   /** W36 — the conversation's follow-up turns, oldest-first. */
   readonly followUps: readonly MosWorkspaceTaskFollowUp[];
+  /** W40 — the frozen attachment queue (defaults to [] pre-W40). */
+  readonly attachments: readonly MosWorkspaceTaskAttachment[];
 }
 
 /** One follow-up turn on a task's conversation (the session composer's write). */
@@ -135,6 +143,26 @@ export interface MosWorkspaceTaskFollowUp {
   readonly id: string;
   readonly prompt: string;
   readonly at: string;
+}
+
+/**
+ * One frozen attachment on a task record (W40 — the composer's queue at
+ * submit). The substrate's own ChatComposerAttachment facts, frozen
+ * verbatim: the filename, the source kind (the substrate's closed
+ * vocabulary plus the firstboot-only 'seed'), the MIME type, the byte
+ * size, the clipboard-text char/line counts (null for picked paths),
+ * the REAL local path the substrate's own temp-attachment IPC wrote
+ * (null for the disclosed seed record), and the freeze time.
+ */
+export interface MosWorkspaceTaskAttachment {
+  readonly filename: string;
+  readonly sourceKind: 'clipboard-text' | 'picker-path' | 'seed';
+  readonly mimeType: string;
+  readonly sizeBytes: number;
+  readonly charCount: number | null;
+  readonly lineCount: number | null;
+  readonly localPath: string | null;
+  readonly addedAt: string;
 }
 
 /**
@@ -355,6 +383,19 @@ export interface MosAgentTaskIntakeInput {
   readonly planEnabled: boolean;
   readonly reasoningLevel: string;
   readonly missionId: string | null;
+  /** W40 — the composer's attachment queue at submit (frozen on the record). */
+  readonly attachments: readonly MosAgentTaskIntakeAttachmentInput[];
+}
+
+/** One queued attachment on the submit's intake (the draft chip minus the id; 'seed' is firstboot-only). */
+export interface MosAgentTaskIntakeAttachmentInput {
+  readonly filename: string;
+  readonly sourceKind: 'clipboard-text' | 'picker-path';
+  readonly mimeType: string;
+  readonly sizeBytes: number;
+  readonly charCount: number | null;
+  readonly lineCount: number | null;
+  readonly localPath: string | null;
 }
 
 /** The MCP server upsert input (W38 — id null = create). */
@@ -476,6 +517,42 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+const TASK_ATTACHMENT_SOURCE_KINDS: readonly string[] = ['clipboard-text', 'picker-path', 'seed'];
+
+/** W40 — the attachments field's structural law (each entry: closed sourceKind vocabulary, non-negative integers, path-or-null). */
+function isValidTaskAttachments(value: unknown): boolean {
+  if (!Array.isArray(value)) {
+    return false;
+  }
+  return value.every((entry) => {
+    if (!isRecord(entry)) {
+      return false;
+    }
+    if (typeof entry.filename !== 'string' || entry.filename.length === 0) {
+      return false;
+    }
+    if (typeof entry.sourceKind !== 'string' || !TASK_ATTACHMENT_SOURCE_KINDS.includes(entry.sourceKind)) {
+      return false;
+    }
+    if (typeof entry.mimeType !== 'string' || entry.mimeType.length === 0) {
+      return false;
+    }
+    if (typeof entry.sizeBytes !== 'number' || !Number.isSafeInteger(entry.sizeBytes) || entry.sizeBytes < 0) {
+      return false;
+    }
+    if (entry.charCount !== null && (typeof entry.charCount !== 'number' || !Number.isSafeInteger(entry.charCount) || entry.charCount < 0)) {
+      return false;
+    }
+    if (entry.lineCount !== null && (typeof entry.lineCount !== 'number' || !Number.isSafeInteger(entry.lineCount) || entry.lineCount < 0)) {
+      return false;
+    }
+    if (entry.localPath !== null && (typeof entry.localPath !== 'string' || entry.localPath.length === 0)) {
+      return false;
+    }
+    return typeof entry.addedAt === 'string';
+  });
+}
+
 /** Shape validation: every persisted record must be structurally sound. */
 export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersisted {
   if (!isRecord(value) || value.schema !== 1 || typeof value.nextSeq !== 'number') {
@@ -530,6 +607,12 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
           ))
       ) {
         throw new Error('workspace snapshot field "tasks" is malformed (followUps)');
+      }
+      // W40 back-compat: pre-W40 tasks carry no attachments — absent
+      // defaults to [] (no frozen queue); a PRESENT-but-malformed field
+      // still fails closed.
+      if (task.attachments !== undefined && !isValidTaskAttachments(task.attachments)) {
+        throw new Error('workspace snapshot field "tasks" is malformed (attachments)');
       }
     }
   }
@@ -663,6 +746,7 @@ export function validateMosWorkspacePersisted(value: unknown): MosWorkspacePersi
       pinned: task.pinned ?? false,
       archived: task.archived ?? false,
       followUps: task.followUps ?? [],
+      attachments: task.attachments ?? [],
     }),
   );
   return {
@@ -717,6 +801,8 @@ export interface MosWorkspaceStoreHealth {
   readonly hookCount: number;
   /** W39 — whether the Browser surface's URL record exists. */
   readonly browserUrlRecorded: boolean;
+  /** W40 — the frozen task-attachment records count (across all tasks). */
+  readonly taskAttachmentCount: number;
   readonly quarantinedCount: number;
 }
 
